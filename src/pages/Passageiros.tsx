@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -33,8 +33,9 @@ const Passageiros = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Input placeholder="Buscar por nome..." className="w-full" startContent={<Search className="h-4 w-4" />} />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input placeholder="Buscar por nome..." className="w-full pl-9" />
             </div>
             <select className="bg-white border border-gray-300 rounded-md px-3 py-2">
               <option value="">Todas as cidades</option>
