@@ -8,6 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import CadastrarPassageiro from "./pages/CadastrarPassageiro";
+import Passageiros from "./pages/Passageiros";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +25,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/cadastrar-passageiro" element={<CadastrarPassageiro />} />
               <Route path="/viagens" element={<div className="container py-6"><h1 className="text-3xl font-bold">Viagens</h1></div>} />
-              <Route path="/passageiros" element={<div className="container py-6"><h1 className="text-3xl font-bold">Passageiros</h1></div>} />
+              <Route path="/passageiros" element={<Passageiros />} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
               <Route path="/embarques" element={<div className="container py-6"><h1 className="text-3xl font-bold">Embarques</h1></div>} />
               <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
