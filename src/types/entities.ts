@@ -14,6 +14,20 @@ export interface Passageiro {
   numero_onibus: string;
 }
 
+export interface Cliente {
+  id?: string;
+  nome: string;
+  endereco: string;
+  complemento?: string;
+  telefone: string;
+  cidade: string;
+  estado: string;
+  cpf: string;
+  data_nascimento: Date;
+  email: string;
+  observacoes?: string;
+}
+
 export interface Viagem {
   id?: string;
   data_viagem: Date;
