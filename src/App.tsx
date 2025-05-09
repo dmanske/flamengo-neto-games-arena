@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
+import CadastrarPassageiro from "./pages/CadastrarPassageiro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/cadastrar-passageiro" element={<CadastrarPassageiro />} />
               <Route path="/viagens" element={<div className="container py-6"><h1 className="text-3xl font-bold">Viagens</h1></div>} />
               <Route path="/passageiros" element={<div className="container py-6"><h1 className="text-3xl font-bold">Passageiros</h1></div>} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />

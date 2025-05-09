@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bus, CalendarCheck, CreditCard, User, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   // Mock data for the dashboard
@@ -53,7 +54,12 @@ const Dashboard = () => {
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-secondary">Dashboard</h1>
-        <Button className="bg-primary hover:bg-primary/90">Nova Viagem</Button>
+        <div className="flex gap-3">
+          <Button className="bg-primary hover:bg-primary/90">Nova Viagem</Button>
+          <Button asChild className="bg-green-600 hover:bg-green-700">
+            <Link to="/cadastrar-passageiro">Cadastrar Passageiro</Link>
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
