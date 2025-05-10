@@ -31,13 +31,14 @@ backend = "postgres"
 [[storage.buckets]]
 name = "logos"
 public = true
+file_size_limit = "10MB"
 
 [[storage.policies]]
 name = "Public Access"
 bucket = "logos"
 policy = "CREATE"
 definition = """\
-(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+(bucket_id, name) => bucket_id = 'logos'\
 """
 
 [[storage.policies]]
@@ -53,7 +54,7 @@ name = "Public Access"
 bucket = "logos"
 policy = "UPDATE"
 definition = """\
-(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+(bucket_id, name) => bucket_id = 'logos'\
 """
 
 [[storage.policies]]
@@ -61,5 +62,5 @@ name = "Public Access"
 bucket = "logos"
 policy = "DELETE"
 definition = """\
-(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+(bucket_id, name) => bucket_id = 'logos'\
 """

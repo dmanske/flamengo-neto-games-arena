@@ -5,13 +5,15 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/FileUpload";
 import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Configuracoes = () => {
   const [logoFlamengo, setLogoFlamengo] = useState<string | null>(
     "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Buscar o logo atual do Flamengo
   useEffect(() => {
@@ -42,11 +44,31 @@ const Configuracoes = () => {
     fetchLogoFlamengo();
   }, []);
 
+  // Verificar se o bucket existe
+  useEffect(() => {
+    const checkBucketExists = async () => {
+      try {
+        const { data, error } = await supabase.storage.getBucket('logos');
+        if (error) {
+          console.error("Erro ao verificar bucket:", error);
+          setUploadError("O bucket 'logos' não existe no Supabase. Por favor, verifique a configuração.");
+        } else {
+          setUploadError(null);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar bucket:", err);
+      }
+    };
+
+    checkBucketExists();
+  }, []);
+
   const handleLogoChange = async (url: string | null) => {
     if (!url) return;
     
     try {
       setIsLoading(true);
+      setUploadError(null);
       
       // Atualizar o logo em todas as viagens existentes
       const { error } = await supabase
@@ -68,6 +90,28 @@ const Configuracoes = () => {
     }
   };
 
+  const createBucket = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.storage.createBucket('logos', { 
+        public: true,
+        fileSizeLimit: 10485760 // 10MB
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Bucket 'logos' criado com sucesso!");
+      setUploadError(null);
+    } catch (err) {
+      console.error("Erro ao criar bucket:", err);
+      toast.error("Erro ao criar bucket");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="container py-6">
       <h1 className="text-3xl font-bold mb-6">Configurações</h1>
@@ -84,6 +128,19 @@ const Configuracoes = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {uploadError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{uploadError}</AlertDescription>
+                    <button 
+                      className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
+                      onClick={createBucket}
+                    >
+                      Criar Bucket
+                    </button>
+                  </Alert>
+                )}
+                
                 <div className="flex items-center gap-4">
                   {logoFlamengo && (
                     <div className="w-32 h-32 border rounded-lg overflow-hidden flex items-center justify-center p-2">
