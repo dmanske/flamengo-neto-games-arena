@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,7 @@ import DetalhesViagem from "./pages/DetalhesViagem";
 import EditarViagem from "./pages/EditarViagem";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
+import Onibus from "./pages/Onibus";
 
 // Configurar o QueryClient com opções mais robustas
 const queryClient = new QueryClient({
@@ -55,7 +55,7 @@ const App = () => (
                   <Route path="/viagem/:id" element={<DetalhesViagem />} />
                   <Route path="/editar-viagem/:id" element={<EditarViagem />} />
                   <Route path="/clientes" element={<Clientes />} />
-                  <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
+                  <Route path="/onibus" element={<Onibus />} />
                   <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
                   <Route path="/configuracoes" element={<Configuracoes />} />
                 </Route>
