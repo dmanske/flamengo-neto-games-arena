@@ -14,6 +14,8 @@ import EditarCliente from "./pages/EditarCliente";
 import Clientes from "./pages/Clientes";
 import Viagens from "./pages/Viagens";
 import CadastrarViagem from "./pages/CadastrarViagem";
+import DetalhesViagem from "./pages/DetalhesViagem";
+import EditarViagem from "./pages/EditarViagem";
 import NotFound from "./pages/NotFound";
 
 // Configurar o QueryClient com opções mais robustas
@@ -41,7 +43,8 @@ const App = () => (
               <Route path="/editar-cliente/:id" element={<EditarCliente />} />
               <Route path="/viagens" element={<Viagens />} />
               <Route path="/cadastrar-viagem" element={<CadastrarViagem />} />
-              <Route path="/viagem/:id" element={<div className="container py-6"><h1 className="text-3xl font-bold">Detalhes da Viagem</h1></div>} />
+              <Route path="/viagem/:id" element={<DetalhesViagem />} />
+              <Route path="/editar-viagem/:id" element={<EditarViagem />} />
               <Route path="/passageiros" element={<Passageiros />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />

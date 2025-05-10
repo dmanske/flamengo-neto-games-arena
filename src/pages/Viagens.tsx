@@ -1,14 +1,27 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Plus, User, MapPin } from "lucide-react";
+import { Calendar, Plus, User, MapPin, Trash2 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Viagem {
   id: string;
@@ -30,36 +43,6 @@ const statusColors = {
   "Finalizada": "bg-gray-100 text-gray-800",
 };
 
-// Mapa com logos de times conhecidos brasileiros
-const logosTimesConhecidos: Record<string, string> = {
-  "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
-  "Fluminense": "https://upload.wikimedia.org/wikipedia/commons/a/a3/FFC_escudo.svg",
-  "Vasco": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Club_de_Regatas_Vasco_da_Gama.svg",
-  "Botafogo": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Escudo_Botafogo.png",
-  "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg",
-  "Corinthians": "https://upload.wikimedia.org/wikipedia/commons/5/51/Corinthians_logo.png",
-  "São Paulo": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg",
-  "Santos": "https://upload.wikimedia.org/wikipedia/commons/5/58/Santos_logo.svg",
-  "Cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/9/90/Cruzeiro_Esporte_Clube_%28logo%29.svg",
-  "Atlético Mineiro": "https://upload.wikimedia.org/wikipedia/commons/2/27/Clube_Atl%C3%A9tico_Mineiro_logo.svg",
-  "Internacional": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Sport_Club_Internacional.svg",
-  "Grêmio": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Gremio.svg",
-  "Bahia": "https://upload.wikimedia.org/wikipedia/commons/a/ac/ECBahia.svg",
-  "Sport": "https://upload.wikimedia.org/wikipedia/commons/4/45/Sport_Club_do_Recife.svg",
-  "Fortaleza": "https://upload.wikimedia.org/wikipedia/commons/4/40/FortalezaEsporteClube.svg",
-  "Ceará": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Ceara_logo.svg",
-  "Athletico Paranaense": "https://upload.wikimedia.org/wikipedia/commons/b/b3/CA_Paranaense.svg",
-  "Coritiba": "https://upload.wikimedia.org/wikipedia/commons/9/9a/Coritiba_FBC_%282011%29_-_PR.svg",
-  "Goiás": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Logo_of_Goias_Esporte_Clube.svg",
-  "Vitória": "https://upload.wikimedia.org/wikipedia/commons/0/0c/EC_Vit%C3%B3ria.svg",
-  "Ponte Preta": "https://upload.wikimedia.org/wikipedia/commons/0/03/Associa%C3%A7%C3%A3o_Atl%C3%A9tica_Ponte_Preta.svg",
-  "Chapecoense": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Associa%C3%A7%C3%A3o_Chapecoense_de_Futebol.svg",
-  "América Mineiro": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Escudo_do_Am%C3%A9rica_Futebol_Clube.svg",
-  "Cuiabá": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Cuiab%C3%A1_Esporte_Clube_logo.svg",
-  "Juventude": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Esporte_Clube_Juventude.svg",
-  "Bragantino": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Red_Bull_Bragantino_logo.svg",
-};
-
 // Função para obter o logo do time
 const getLogoTime = (time: string): string => {
   // Se o time estiver no nosso mapa de logos conhecidos, retorne o logo
@@ -79,6 +62,8 @@ const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [selectedViagemId, setSelectedViagemId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchViagens = async () => {
@@ -127,6 +112,40 @@ const Viagens = () => {
       return dateString;
     }
   };
+  
+  const handleDelete = async () => {
+    if (!selectedViagemId) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Call the delete_viagem function we created
+      const { error } = await supabase
+        .rpc('delete_viagem', { viagem_id: selectedViagemId });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update the list by removing the deleted trip
+      setViagens(viagens.filter(v => v.id !== selectedViagemId));
+      toast.success("Viagem excluída com sucesso!");
+    } catch (err) {
+      console.error("Erro ao excluir viagem:", err);
+      toast.error("Erro ao excluir viagem");
+    } finally {
+      setIsLoading(false);
+      setDeleteDialogOpen(false);
+      setSelectedViagemId(null);
+    }
+  };
+
+  const openDeleteDialog = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedViagemId(id);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <div className="container py-6">
@@ -156,84 +175,119 @@ const Viagens = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {viagens.map((viagem) => (
-            <Link to={`/viagem/${viagem.id}`} key={viagem.id} className="block transition-transform hover:-translate-y-1">
-              <Card className="h-full">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <Badge className={statusColors[viagem.status_viagem as keyof typeof statusColors] || "bg-gray-100"}>
-                      {viagem.status_viagem}
-                    </Badge>
+            <Card key={viagem.id} className="h-full transition-transform hover:-translate-y-1">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <Badge className={statusColors[viagem.status_viagem as keyof typeof statusColors] || "bg-gray-100"}>
+                    {viagem.status_viagem}
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive/80"
+                    onClick={(e) => openDeleteDialog(e, viagem.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardTitle className="text-xl mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-4">
+                      <Avatar className="h-10 w-10 border-2 border-white">
+                        <AvatarImage 
+                          src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                          alt="Flamengo" 
+                        />
+                        <AvatarFallback>FLA</AvatarFallback>
+                      </Avatar>
+                      <Avatar className="h-10 w-10 border-2 border-white">
+                        <AvatarImage 
+                          src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`} 
+                          alt={viagem.adversario}
+                          onError={(e) => {
+                            // Se a imagem falhar, use um fallback
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null; // Previne loops infinitos
+                            target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+                          }}
+                        />
+                        <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <span>Flamengo x {viagem.adversario}</span>
                   </div>
-                  <CardTitle className="text-xl mt-2">
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{formatDate(viagem.data_jogo)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{viagem.rota}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ônibus: {viagem.tipo_onibus} ({viagem.empresa})</p>
+                  </div>
+                  <div className="pt-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex -space-x-4">
-                        <Avatar className="h-10 w-10 border-2 border-white">
-                          <AvatarImage 
-                            src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
-                            alt="Flamengo" 
-                          />
-                          <AvatarFallback>FLA</AvatarFallback>
-                        </Avatar>
-                        <Avatar className="h-10 w-10 border-2 border-white">
-                          <AvatarImage 
-                            src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`} 
-                            alt={viagem.adversario}
-                            onError={(e) => {
-                              // Se a imagem falhar, use um fallback
-                              const target = e.target as HTMLImageElement;
-                              target.onerror = null; // Previne loops infinitos
-                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Passageiros confirmados</span>
+                          <span>{passageirosCount[viagem.id] || 0} de {viagem.capacidade_onibus}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full" 
+                            style={{ 
+                              width: `${Math.min(100, ((passageirosCount[viagem.id] || 0) / viagem.capacidade_onibus) * 100)}%` 
                             }}
                           />
-                          <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <span>Flamengo x {viagem.adversario}</span>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{formatDate(viagem.data_jogo)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{viagem.rota}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Ônibus: {viagem.tipo_onibus} ({viagem.empresa})</p>
-                    </div>
-                    <div className="pt-2">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Passageiros confirmados</span>
-                            <span>{passageirosCount[viagem.id] || 0} de {viagem.capacidade_onibus}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
-                              style={{ 
-                                width: `${Math.min(100, ((passageirosCount[viagem.id] || 0) / viagem.capacidade_onibus) * 100)}%` 
-                              }}
-                            />
-                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Button variant="secondary" className="w-full">Ver Detalhes</Button>
-                </CardFooter>
-              </Card>
-            </Link>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button variant="secondary" className="w-full" asChild>
+                  <Link to={`/viagem/${viagem.id}`}>Ver Detalhes</Link>
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
         </div>
       )}
+
+      {/* Flamengo Logo Section */}
+      <div className="flex justify-center items-center my-8">
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
+          alt="Logo do Flamengo"
+          className="h-40 w-auto"
+        />
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta viagem? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

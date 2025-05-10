@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [clientCount, setClientCount] = useState<number>(0);
   const [viagemCount, setViagemCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [flamengoLogo, setFlamengoLogo] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -36,6 +37,18 @@ const Dashboard = () => {
           console.error('Erro ao buscar contagem de viagens:', tripError);
         } else {
           setViagemCount(tripCount || 0);
+        }
+        
+        // Fetch most recent trip to get the logo
+        const { data: recentTrip, error: logoError } = await supabase
+          .from('viagens')
+          .select('logo_flamengo')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (!logoError && recentTrip && recentTrip.logo_flamengo) {
+          setFlamengoLogo(recentTrip.logo_flamengo);
         }
         
       } catch (err) {
@@ -182,7 +195,7 @@ const Dashboard = () => {
       {/* Flamengo Logo Section */}
       <div className="flex justify-center items-center my-8">
         <img 
-          src="https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
+          src={flamengoLogo}
           alt="Logo do Flamengo"
           className="h-40 w-auto"
         />
