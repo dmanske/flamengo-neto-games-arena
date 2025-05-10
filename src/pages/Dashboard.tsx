@@ -1,16 +1,32 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bus, CalendarCheck, CreditCard, User, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+interface Viagem {
+  id: string;
+  adversario: string;
+  data_jogo: string;
+  tipo_onibus: string;
+  empresa: string;
+  rota: string;
+  capacidade_onibus: number;
+  status_viagem: string;
+  created_at: string;
+  logo_adversario: string | null;
+  logo_flamengo: string | null;
+}
 
 const Dashboard = () => {
   const [clientCount, setClientCount] = useState<number>(0);
   const [viagemCount, setViagemCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [flamengoLogo, setFlamengoLogo] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
+  const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -39,6 +55,21 @@ const Dashboard = () => {
           setViagemCount(tripCount || 0);
         }
         
+        // Fetch upcoming trips
+        const today = new Date().toISOString();
+        const { data: upcomingTrips, error: upcomingError } = await supabase
+          .from('viagens')
+          .select('*')
+          .gte('data_jogo', today)
+          .order('data_jogo', { ascending: true })
+          .limit(3);
+        
+        if (!upcomingError && upcomingTrips) {
+          setProximasViagens(upcomingTrips);
+        } else {
+          console.error('Erro ao buscar próximas viagens:', upcomingError);
+        }
+        
         // Fetch most recent trip to get the logo
         const { data: recentTrip, error: logoError } = await supabase
           .from('viagens')
@@ -65,6 +96,15 @@ const Dashboard = () => {
     if (count === 0) return 'Nenhuma viagem agendada';
     if (count === 1) return '1 viagem agendada';
     return `${count} viagens agendadas`;
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (
@@ -156,10 +196,50 @@ const Dashboard = () => {
             <CardDescription>Acompanhe as próximas caravanas</CardDescription>
           </CardHeader>
           <CardContent>
-            {viagemCount > 0 ? (
-              <div>
-                {/* Viagens serão listadas aqui */}
-                <Button asChild variant="outline" className="w-full mt-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <p className="text-muted-foreground">Carregando viagens...</p>
+              </div>
+            ) : proximasViagens.length > 0 ? (
+              <div className="space-y-4">
+                {proximasViagens.map((viagem) => (
+                  <div 
+                    key={viagem.id} 
+                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-2">
+                        <div className="h-8 w-8 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
+                          <img 
+                            src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                            alt="Flamengo" 
+                            className="h-6 w-6 object-contain"
+                          />
+                        </div>
+                        <div className="h-8 w-8 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
+                          <img 
+                            src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
+                            alt={viagem.adversario} 
+                            className="h-6 w-6 object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-medium">Flamengo x {viagem.adversario}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(viagem.data_jogo)}</p>
+                      </div>
+                    </div>
+                    <Link to={`/viagem/${viagem.id}`} className="text-sm text-primary hover:underline">
+                      Detalhes
+                    </Link>
+                  </div>
+                ))}
+                <Button asChild variant="outline" className="w-full">
                   <Link to="/viagens">Ver todas as viagens</Link>
                 </Button>
               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -55,7 +54,8 @@ const NavItem = ({
 };
 
 const MainLayout = () => {
-  const { isOpen: collapsed, setIsOpen: setCollapsed } = useSidebar(); // Fixed property names
+  // Set isOpen to false (meaning not collapsed, sidebar is open)
+  const { isOpen: collapsed, setIsOpen: setCollapsed } = useSidebar(); 
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();

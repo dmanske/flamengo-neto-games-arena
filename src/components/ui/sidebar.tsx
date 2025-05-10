@@ -28,9 +28,9 @@ type SidebarContextType = {
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-// Provider component
+// Provider component - set default to false (not collapsed)
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
       {children}
