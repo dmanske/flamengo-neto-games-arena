@@ -60,8 +60,6 @@ function Calendar({
       fromYear={1900}
       toYear={new Date().getFullYear()}
       fixedWeeks
-      // Add ISODate format to ensure correct date handling
-      mode="single"
       {...props}
       onDayClick={(day, modifiers, e) => {
         // Fix timezone issues by setting the time to noon
