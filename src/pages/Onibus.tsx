@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -89,11 +90,11 @@ const Onibus = () => {
   }, []);
   
   const handleImageChange = async (imageUrl: string | null, index: number) => {
-    const busType = busList[index].type;
-    const company = busList[index].companies[0];
-    
     try {
       setIsLoading(true);
+      
+      const busType = busList[index].type;
+      const company = busList[index].companies[0];
       
       // Ensure bucket exists before attempting operations
       await initOrCheckOnibusBucket();
