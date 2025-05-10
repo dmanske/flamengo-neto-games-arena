@@ -29,7 +29,7 @@ export const formSchema = z.object({
   }, { message: "Data inválida. Use o formato DD/MM/AAAA" }),
   email: z.string().email({ message: "Email inválido" }),
   como_conheceu: z.enum(["Instagram", "Indicação", "Facebook", "Google", "Outro", "WhatsApp"], {
-    message: "Por favor selecione como conheceu a Neto Tours"
+    message: "Por favor selecione como conheceu a FlaViagens"
   }),
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),

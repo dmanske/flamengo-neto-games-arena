@@ -14,6 +14,7 @@ import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
 import { formSchema, FormValues, estadosBrasileiros } from "./FormSchema";
+import { FileUpload } from "@/components/ui/file-upload";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -36,69 +37,78 @@ export function PublicRegistrationForm() {
   // Set up react-query mutation for adding client
   const addClientMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      // Convert string date to Date object for API
-      const dateParts = data.data_nascimento.split('/');
-      const dateObject = new Date(
-        parseInt(dateParts[2]), // year
-        parseInt(dateParts[1]) - 1, // month (0-based)
-        parseInt(dateParts[0]) // day
-      );
+      console.log("Starting form submission with data:", data);
+      
+      try {
+        // Convert string date to Date object for API
+        const dateParts = data.data_nascimento.split('/');
+        const dateObject = new Date(
+          parseInt(dateParts[2]), // year
+          parseInt(dateParts[1]) - 1, // month (0-based)
+          parseInt(dateParts[0]) // day
+        );
 
-      console.log("Inserting client data:", {
-        nome: data.nome,
-        endereco: data.endereco,
-        numero: data.numero,
-        complemento: data.complemento || null,
-        bairro: data.bairro,
-        telefone: data.telefone,
-        cep: data.cep,
-        cidade: data.cidade,
-        estado: data.estado,
-        cpf: data.cpf,
-        data_nascimento: dateObject.toISOString(),
-        email: data.email,
-        como_conheceu: data.como_conheceu,
-        indicacao_nome: data.indicacao_nome || null,
-        observacoes: data.observacoes || null,
-        fonte_cadastro: data.fonte_cadastro || fonte,
-        foto: data.foto || null,
-      });
+        console.log("Inserting client data:", {
+          nome: data.nome,
+          endereco: data.endereco,
+          numero: data.numero,
+          complemento: data.complemento || null,
+          bairro: data.bairro,
+          telefone: data.telefone,
+          cep: data.cep,
+          cidade: data.cidade,
+          estado: data.estado,
+          cpf: data.cpf,
+          data_nascimento: dateObject.toISOString(),
+          email: data.email,
+          como_conheceu: data.como_conheceu,
+          indicacao_nome: data.indicacao_nome || null,
+          observacoes: data.observacoes || null,
+          fonte_cadastro: data.fonte_cadastro || fonte,
+          foto: data.foto || null,
+        });
 
-      // Insert client into Supabase
-      const { data: client, error } = await supabase
-        .from('clientes')
-        .insert([
-          {
-            nome: data.nome,
-            endereco: data.endereco,
-            numero: data.numero,
-            complemento: data.complemento || null,
-            bairro: data.bairro,
-            telefone: data.telefone,
-            cep: data.cep,
-            cidade: data.cidade,
-            estado: data.estado,
-            cpf: data.cpf,
-            data_nascimento: dateObject.toISOString(),
-            email: data.email,
-            como_conheceu: data.como_conheceu,
-            indicacao_nome: data.indicacao_nome || null,
-            observacoes: data.observacoes || null,
-            fonte_cadastro: data.fonte_cadastro || fonte,
-            foto: data.foto || null,
-          }
-        ])
-        .select();
+        // Insert client into Supabase
+        const { data: client, error } = await supabase
+          .from('clientes')
+          .insert([
+            {
+              nome: data.nome,
+              endereco: data.endereco,
+              numero: data.numero,
+              complemento: data.complemento || null,
+              bairro: data.bairro,
+              telefone: data.telefone,
+              cep: data.cep,
+              cidade: data.cidade,
+              estado: data.estado,
+              cpf: data.cpf,
+              data_nascimento: dateObject.toISOString(),
+              email: data.email,
+              como_conheceu: data.como_conheceu,
+              indicacao_nome: data.indicacao_nome || null,
+              observacoes: data.observacoes || null,
+              fonte_cadastro: data.fonte_cadastro || fonte,
+              foto: data.foto || null,
+            }
+          ])
+          .select();
+          
+        console.log("Supabase response:", { client, error });
+
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
         
-      console.log("Supabase response:", { client, error });
-
-      if (error) {
-        console.error("Supabase error:", error);
+        return client;
+      } catch (error: any) {
+        console.error("Error in mutation function:", error);
         throw error;
       }
-      return client;
     },
     onSuccess: () => {
+      console.log("Form submission successful");
       // Send WhatsApp message (in production you'd use a proper API/service)
       console.log(`Enviando mensagem para ${form.getValues().telefone}: 🎟️ Olá, ${form.getValues().nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
       
@@ -170,7 +180,15 @@ export function PublicRegistrationForm() {
 
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
-    addClientMutation.mutate(values);
+    console.log("Form submitted with values:", values);
+    setLoading(true);
+    try {
+      await addClientMutation.mutateAsync(values);
+    } catch (error) {
+      console.error("Error during submission:", error);
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -195,15 +213,40 @@ export function PublicRegistrationForm() {
               control={form.control} 
               watchComoConheceu={watchComoConheceu} 
             />
+
+            {/* Photo Upload Field */}
+            <div className="md:col-span-2">
+              <Form.Field
+                control={form.control}
+                name="foto"
+                render={({ field }) => (
+                  <Form.Item>
+                    <Form.Label>Foto (opcional)</Form.Label>
+                    <Form.Control>
+                      <FileUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        bucketName="client-photos"
+                        folderPath="clientes"
+                        maxSizeInMB={2}
+                        showPreview={true}
+                        previewClassName="h-40 w-40 mx-auto"
+                      />
+                    </Form.Control>
+                    <Form.Message />
+                  </Form.Item>
+                )}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end mt-6">
             <Button 
               type="submit" 
               className="bg-[#e40016] hover:bg-[#c20012]"
-              disabled={addClientMutation.isPending}
+              disabled={loading || addClientMutation.isPending}
             >
-              {addClientMutation.isPending ? (
+              {(loading || addClientMutation.isPending) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                   Cadastrando...
