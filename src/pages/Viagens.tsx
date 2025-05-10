@@ -22,6 +22,7 @@ interface Viagem {
   capacidade_onibus: number;
   status_viagem: string;
   created_at: string;
+  logo_adversario?: string;
 }
 
 const statusColors = {
@@ -66,7 +67,12 @@ const logosTimesConhecidos: Record<string, string> = {
 };
 
 // Função para obter o logo do time
-const getLogoTime = (time: string): string => {
+const getLogoTime = (time: string, logoSalvo?: string): string => {
+  // Se temos um logo salvo no banco, use-o
+  if (logoSalvo) {
+    return logoSalvo;
+  }
+  
   // Se o time estiver no nosso mapa de logos conhecidos, retorne o logo
   if (logosTimesConhecidos[time]) {
     return logosTimesConhecidos[time];
@@ -76,7 +82,6 @@ const getLogoTime = (time: string): string => {
   const nomeTimeEscapado = encodeURIComponent(time);
   
   // Usamos API externas para encontrar logos de times
-  // 1. TheSportsDB API (versão gratuita com logos pequenos)
   return `https://www.thesportsdb.com/images/media/team/badge/small/${nomeTimeEscapado.toLowerCase().replace(/\s/g, '')}.png`;
 };
 
@@ -84,7 +89,6 @@ const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
-  const [timeLogos, setTimeLogos] = useState<Record<string, string>>({});
   const [logoErrors, setLogoErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -101,14 +105,6 @@ const Viagens = () => {
         }
         
         setViagens(data || []);
-        
-        // Buscar logos para todos os times adversários
-        const logos: Record<string, string> = {};
-        data?.forEach(viagem => {
-          logos[viagem.adversario] = getLogoTime(viagem.adversario);
-        });
-        
-        setTimeLogos(logos);
         
         // Fetch passenger counts for each trip
         if (data?.length) {
@@ -144,13 +140,18 @@ const Viagens = () => {
   };
 
   // Função para obter o logo com tratamento de erro
-  const getTeamLogo = (time: string) => {
-    if (logoErrors[time]) {
+  const getTeamLogo = (viagem: Viagem) => {
+    if (logoErrors[viagem.adversario]) {
       // Se já tivemos um erro com esse time, use placeholder
-      return `https://via.placeholder.com/150?text=${time.substring(0, 3)}`;
+      return `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`;
     }
     
-    return timeLogos[time] || getLogoTime(time);
+    // Usar o logo salvo no banco, se disponível
+    if (viagem.logo_adversario) {
+      return viagem.logo_adversario;
+    }
+    
+    return getLogoTime(viagem.adversario);
   };
 
   const formatDate = (dateString: string) => {
@@ -211,7 +212,7 @@ const Viagens = () => {
                         </Avatar>
                         <Avatar className="h-10 w-10 border-2 border-white">
                           <AvatarImage 
-                            src={getTeamLogo(viagem.adversario)} 
+                            src={getTeamLogo(viagem)} 
                             alt={viagem.adversario}
                             onError={() => handleImageError(viagem.adversario)}
                           />
