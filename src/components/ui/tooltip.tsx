@@ -5,7 +5,10 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import { cn } from "@/lib/utils"
 
 // Export the provider component for explicit use
-const TooltipProvider = ({ children, ...props }) => {
+const TooltipProvider: React.FC<TooltipPrimitive.TooltipProviderProps> = ({ 
+  children, 
+  ...props 
+}) => {
   return <TooltipPrimitive.Provider {...props}>{children}</TooltipPrimitive.Provider>
 }
 

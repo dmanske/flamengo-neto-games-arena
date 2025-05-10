@@ -183,15 +183,6 @@ const EditarCliente = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Informações do Cliente</CardTitle>
-          <Avatar className="h-16 w-16 border-2 border-primary">
-            {clienteFoto ? (
-              <AvatarImage src={clienteFoto} alt="Foto do cliente" />
-            ) : (
-              <AvatarFallback>
-                <User className="h-8 w-8 text-muted-foreground" />
-              </AvatarFallback>
-            )}
-          </Avatar>
         </CardHeader>
         <CardContent>
           {loading ? (

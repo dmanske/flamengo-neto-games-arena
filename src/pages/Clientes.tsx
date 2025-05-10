@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil, User } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
@@ -41,6 +43,7 @@ interface Cliente {
   cidade: string;
   estado: string;
   created_at: string;
+  foto: string | null;
 }
 
 const Clientes = () => {
@@ -51,6 +54,7 @@ const Clientes = () => {
   const [searchField, setSearchField] = useState<"nome" | "cidade" | "cpf">("nome");
   const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(true);
 
   // Fetch clientes from Supabase
   const fetchClientes = async () => {
@@ -188,14 +192,26 @@ const Clientes = () => {
             </Button>
           </div>
         </div>
-        <Button 
-          className="bg-primary hover:bg-primary/90 w-full md:w-auto"
-          asChild
-        >
-          <Link to="/cadastrar-cliente">
-            Cadastrar Novo Cliente
-          </Link>
-        </Button>
+        <div className="flex gap-4 items-center w-full md:w-auto">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-photos"
+              checked={showPhotos}
+              onCheckedChange={setShowPhotos}
+            />
+            <label htmlFor="show-photos" className="text-sm font-medium cursor-pointer">
+              Mostrar fotos
+            </label>
+          </div>
+          <Button 
+            className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+            asChild
+          >
+            <Link to="/cadastrar-cliente">
+              Cadastrar Novo Cliente
+            </Link>
+          </Button>
+        </div>
       </div>
       
       <Card>
@@ -226,24 +242,39 @@ const Clientes = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Cidade/Estado</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Data Nasc.</TableHead>
+                    <TableHead className="text-center">Nome</TableHead>
+                    <TableHead className="text-center">Telefone</TableHead>
+                    <TableHead className="text-center">Email</TableHead>
+                    <TableHead className="text-center">Cidade/Estado</TableHead>
+                    <TableHead className="text-center">CPF</TableHead>
+                    <TableHead className="text-center">Data Nasc.</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredClientes.map((cliente) => (
                     <TableRow key={cliente.id}>
-                      <TableCell className="font-medium">{cliente.nome}</TableCell>
-                      <TableCell>{cliente.telefone}</TableCell>
-                      <TableCell>{cliente.email}</TableCell>
-                      <TableCell>{cliente.cidade}/{cliente.estado}</TableCell>
-                      <TableCell>{formatCPF(cliente.cpf)}</TableCell>
-                      <TableCell>{formatDate(cliente.data_nascimento)}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {showPhotos && (
+                            <Avatar className="h-8 w-8">
+                              {cliente.foto ? (
+                                <AvatarImage src={cliente.foto} alt={cliente.nome} />
+                              ) : (
+                                <AvatarFallback>
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                          )}
+                          {cliente.nome}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">{cliente.telefone}</TableCell>
+                      <TableCell className="text-center">{cliente.email}</TableCell>
+                      <TableCell className="text-center">{cliente.cidade}/{cliente.estado}</TableCell>
+                      <TableCell className="text-center">{formatCPF(cliente.cpf)}</TableCell>
+                      <TableCell className="text-center">{formatDate(cliente.data_nascimento)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           <Button 
