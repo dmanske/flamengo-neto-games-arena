@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ const Dashboard = () => {
   const [clientCount, setClientCount] = useState<number>(0);
   const [viagemCount, setViagemCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [flamengoLogo, setFlamengoLogo] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
+  const [flamengoLogo, setFlamengoLogo] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
   const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
   const [busCount, setBusCount] = useState<number>(3); // We have 3 types of buses
   const [mostUsedBus, setMostUsedBus] = useState<OnibusCount | null>(null);
@@ -79,16 +80,17 @@ const Dashboard = () => {
           console.error('Erro ao buscar próximas viagens:', upcomingError);
         }
         
-        // Fetch most recent trip to get the logo
-        const { data: recentTrip, error: logoError } = await supabase
-          .from('viagens')
-          .select('logo_flamengo')
-          .order('created_at', { ascending: false })
-          .limit(1)
+        // Fetch Flamengo logo from system_config
+        const { data: logoData, error: logoError } = await supabase
+          .from('system_config')
+          .select('value')
+          .eq('key', 'flamengo_logo')
           .single();
         
-        if (!logoError && recentTrip && recentTrip.logo_flamengo) {
-          setFlamengoLogo(recentTrip.logo_flamengo);
+        if (!logoError && logoData && logoData.value) {
+          setFlamengoLogo(logoData.value);
+        } else {
+          console.error('Erro ao buscar logo do Flamengo:', logoError);
         }
 
         // Fetch most used bus type
@@ -371,11 +373,18 @@ const Dashboard = () => {
       
       {/* Flamengo Logo Section */}
       <div className="flex justify-center items-center my-8">
-        <img 
-          src={flamengoLogo}
-          alt="Logo do Flamengo"
-          className="h-40 w-auto"
-        />
+        <div className="flex flex-col items-center">
+          <img 
+            src={flamengoLogo}
+            alt="Logo do Flamengo"
+            className="h-40 w-auto mb-2"
+          />
+          <Button variant="link" asChild>
+            <Link to="/configuracoes" className="text-sm">
+              Personalizar logo nas configurações
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
