@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import CadastrarPassageiro from "./pages/CadastrarPassageiro";
 import Passageiros from "./pages/Passageiros";
 import CadastrarCliente from "./pages/CadastrarCliente";
+import Clientes from "./pages/Clientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,7 @@ const App = () => (
               <Route path="/cadastrar-cliente" element={<CadastrarCliente />} />
               <Route path="/viagens" element={<div className="container py-6"><h1 className="text-3xl font-bold">Viagens</h1></div>} />
               <Route path="/passageiros" element={<Passageiros />} />
-              <Route path="/clientes" element={<div className="container py-6"><h1 className="text-3xl font-bold">Clientes</h1></div>} />
+              <Route path="/clientes" element={<Clientes />} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
               <Route path="/embarques" element={<div className="container py-6"><h1 className="text-3xl font-bold">Embarques</h1></div>} />
               <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
