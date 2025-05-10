@@ -19,7 +19,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
@@ -41,6 +40,22 @@ const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
   "Em Andamento": "bg-blue-100 text-blue-800",
   "Finalizada": "bg-gray-100 text-gray-800",
+};
+
+// Define the missing logosTimesConhecidos object
+const logosTimesConhecidos: Record<string, string> = {
+  "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+  "Fluminense": "https://upload.wikimedia.org/wikipedia/pt/0/00/Fluminense_FC_escudo.png",
+  "Botafogo": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Escudo_Botafogo.png",
+  "Vasco": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Escudo_do_Club_de_Regatas_Vasco_da_Gama.png",
+  "São Paulo": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg",
+  "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg",
+  "Corinthians": "https://upload.wikimedia.org/wikipedia/pt/b/b4/Corinthians_simbolo.png",
+  "Santos": "https://upload.wikimedia.org/wikipedia/commons/0/02/Santos_Logo.svg",
+  "Grêmio": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Gremio-Logo.png",
+  "Internacional": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Sport_Club_Internacional.svg",
+  "Cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/9/90/Cruzeiro_Esporte_Clube_%28logo%29.svg",
+  "Atlético Mineiro": "https://upload.wikimedia.org/wikipedia/commons/2/27/Clube_Atl%C3%A9tico_Mineiro_logo.svg",
 };
 
 // Função para obter o logo do time
