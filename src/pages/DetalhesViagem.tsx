@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -461,6 +460,7 @@ const DetalhesViagem = () => {
         <h1 className="text-3xl font-bold">Detalhes da Caravana</h1>
       </div>
 
+      {/* Cards de informações da viagem */}
       <Card className="mb-6">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -588,20 +588,22 @@ const DetalhesViagem = () => {
         </CardContent>
       </Card>
 
+      {/* Resumo financeiro */}
       {passageiros.length > 0 && (
         <div className="mb-6">
           <FinancialSummary
             totalArrecadado={totalArrecadado}
             totalPago={totalPago}
             totalPendente={totalPendente}
-            percentualPagamento={calcularPercentualPagamento()}
+            percentualPagamento={Math.round((totalPago / totalArrecadado) * 100) || 0}
             totalPassageiros={passageiros.length}
-            valorPotencialTotal={calculatedValorPotencialTotal}
+            valorPotencialTotal={(viagem.valor_padrao || 0) * viagem.capacidade_onibus}
             capacidadeTotalOnibus={viagem.capacidade_onibus}
           />
         </div>
       )}
 
+      {/* Cards dos ônibus */}
       {onibusList.length > 0 && (
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-3">Ônibus da Viagem</h2>
@@ -610,10 +612,12 @@ const DetalhesViagem = () => {
             selectedOnibusId={selectedOnibusId}
             onSelectOnibus={handleSelectOnibus}
             passageirosCount={contadorPassageiros}
+            passageirosNaoAlocados={totalPassageirosNaoAlocados}
           />
         </div>
       )}
 
+      {/* Informações do ônibus selecionado */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -654,7 +658,7 @@ const DetalhesViagem = () => {
                 {searchTerm && (
                   <button 
                     className="absolute right-2 top-1/2 -translate-y-1/2" 
-                    onClick={clearSearch}
+                    onClick={() => setSearchTerm("")}
                     type="button"
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
@@ -717,7 +721,10 @@ const DetalhesViagem = () => {
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                onClick={() => openEditPassageiroDialog(passageiro)}
+                                onClick={() => {
+                                  setSelectedPassageiro(passageiro);
+                                  setEditPassageiroOpen(true);
+                                }}
                               >
                                 <Pencil className="h-3 w-3 mr-1" />
                                 Editar
@@ -726,7 +733,10 @@ const DetalhesViagem = () => {
                                 size="sm" 
                                 variant="outline" 
                                 className="text-destructive" 
-                                onClick={() => openDeletePassageiroDialog(passageiro)}
+                                onClick={() => {
+                                  setSelectedPassageiro(passageiro);
+                                  setDeletePassageiroOpen(true);
+                                }}
                               >
                                 <Trash2 className="h-3 w-3 mr-1" />
                                 Remover
@@ -768,16 +778,10 @@ const DetalhesViagem = () => {
           <div className="text-sm text-muted-foreground">
             {passageiros.length > 0 && (
               <>
-                {onibusList.length > 1 ? (
-                  <>
-                    {selectedOnibusId !== null ? (
-                      `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
-                    ) : (
-                      `${totalPassageirosNaoAlocados} passageiros não alocados`
-                    )}
-                  </>
+                {selectedOnibusId !== null ? (
+                  `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
                 ) : (
-                  `Ocupação total: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round((passageiros.length / viagem.capacidade_onibus) * 100)}%)`
+                  `${totalPassageirosNaoAlocados} passageiros não alocados`
                 )}
               </>
             )}

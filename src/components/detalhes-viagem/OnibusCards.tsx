@@ -19,16 +19,16 @@ interface OnibusCardsProps {
   onibusList: Onibus[];
   selectedOnibusId: string | null;
   onSelectOnibus: (id: string | null) => void;
-  onibusSelecionados?: number;
   passageirosCount?: Record<string, number>;
+  passageirosNaoAlocados?: number;
 }
 
 export function OnibusCards({ 
   onibusList, 
   selectedOnibusId, 
   onSelectOnibus, 
-  onibusSelecionados = 0,
-  passageirosCount = {}
+  passageirosCount = {},
+  passageirosNaoAlocados = 0
 }: OnibusCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
@@ -105,8 +105,17 @@ export function OnibusCards({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-16 text-muted-foreground">
-            <p>Passageiros sem alocação de ônibus</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>Passageiros não alocados: {passageirosNaoAlocados}</span>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-center h-8">
+                <span className="text-muted-foreground">Passageiros sem alocação de ônibus</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
