@@ -29,6 +29,7 @@ export interface Database {
           indicacao_nome: string | null
           observacoes: string | null
           created_at: string
+          foto: string | null
         }
         Insert: {
           id?: string
@@ -48,6 +49,7 @@ export interface Database {
           indicacao_nome?: string | null
           observacoes?: string | null
           created_at?: string
+          foto?: string | null
         }
         Update: {
           id?: string
@@ -67,6 +69,7 @@ export interface Database {
           indicacao_nome?: string | null
           observacoes?: string | null
           created_at?: string
+          foto?: string | null
         }
       }
     }
