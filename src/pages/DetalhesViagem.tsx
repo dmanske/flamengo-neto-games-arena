@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -473,7 +472,7 @@ const DetalhesViagem = () => {
             percentualPagamento={calcularPercentualPagamento()}
             totalPassageiros={passageiros.length}
             valorPotencialTotal={calculatedValorPotencialTotal}
-            capacidadeOnibus={viagem.capacidade_onibus}
+            capacidadeTotalOnibus={viagem.capacidade_onibus}
           />
         </div>
       )}

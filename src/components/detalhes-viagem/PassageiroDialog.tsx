@@ -1,14 +1,8 @@
 
 import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { X, Search } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
@@ -18,32 +12,40 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { FormaPagamento } from "@/types/entities";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { FormaPagamento, SetorMaracana, StatusPagamento } from "@/types/entities";
+import { formatCurrency } from "@/lib/utils";
 
-interface Cliente {
-  id: string;
-  nome: string;
-  telefone: string;
-  cidade: string;
-  cpf: string;
-  email: string;
-}
+// Define the form schema
+const formSchema = z.object({
+  cliente_id: z.string().min(1, "Selecione um cliente"),
+  setor_maracana: z.string().min(1, "Selecione um setor"),
+  status_pagamento: z.string().min(1, "Selecione um status"),
+  forma_pagamento: z.string().optional(),
+  valor: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
+  desconto: z.coerce.number().min(0, "Desconto deve ser maior ou igual a zero"),
+  onibus_id: z.string().min(1, "Selecione um ônibus"),
+});
 
-interface Onibus {
-  id: string;
-  tipo_onibus: string;
-  empresa: string;
-  capacidade_onibus: number;
-  numero_identificacao: string | null;
-}
-
+// Define the component props
 interface PassageiroDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,379 +55,360 @@ interface PassageiroDialogProps {
   setorPadrao?: string | null;
 }
 
+interface ClienteOption {
+  id: string;
+  nome: string;
+  telefone: string;
+  email: string;
+  cidade: string;
+}
+
+interface OnibusOption {
+  id: string;
+  numero_identificacao: string | null;
+  tipo_onibus: string;
+  empresa: string;
+}
+
 export function PassageiroDialog({
   open,
   onOpenChange,
   viagemId,
   onSuccess,
-  valorPadrao = 0,
-  setorPadrao = "Sem ingresso"
+  valorPadrao,
+  setorPadrao,
 }: PassageiroDialogProps) {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
-  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClienteId, setSelectedClienteId] = useState<string>("");
-  const [selectedOnibusId, setSelectedOnibusId] = useState<string>("");
-  const [setor, setSetor] = useState<string>(setorPadrao || "Sem ingresso");
-  const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("Pix");
-  const [valor, setValor] = useState<number>(valorPadrao || 0);
-  const [desconto, setDesconto] = useState<number>(0);
+  const [clientes, setClientes] = useState<ClienteOption[]>([]);
+  const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carregar clientes e ônibus ao abrir o modal
+  // Initialize the form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      cliente_id: "",
+      setor_maracana: setorPadrao || "",
+      status_pagamento: "Pendente",
+      forma_pagamento: "Pix",
+      valor: valorPadrao || 0,
+      desconto: 0,
+      onibus_id: "",
+    },
+  });
+
+  // Fetch clients and buses on component mount
   useEffect(() => {
-    const fetchData = async () => {
-      if (open) {
-        try {
-          // Carregar clientes
-          const { data: clientesData, error: clientesError } = await supabase
-            .from("clientes")
-            .select("id, nome, telefone, cidade, cpf, email");
-            
-          if (clientesError) throw clientesError;
-          setClientes(clientesData || []);
-          setFilteredClientes(clientesData || []);
-
-          // Carregar ônibus da viagem
-          const { data: onibusData, error: onibusError } = await supabase
-            .from("viagem_onibus")
-            .select("*")
-            .eq("viagem_id", viagemId);
-
-          if (onibusError) throw onibusError;
-          setOnibusList(onibusData || []);
-          
-          // Selecionar o primeiro ônibus como padrão
-          if (onibusData && onibusData.length > 0) {
-            setSelectedOnibusId(onibusData[0].id);
-          }
-          
-        } catch (err) {
-          console.error("Erro ao buscar dados:", err);
-          toast.error("Erro ao carregar dados");
-        }
-      }
-    };
-    
-    fetchData();
-    
-    // Reset form state when dialog opens
     if (open) {
-      setSearchTerm("");
-      setSelectedClienteId("");
-      setSetor(setorPadrao || "Sem ingresso");
-      setStatusPagamento("Pendente");
-      setFormaPagamento("Pix");
-      setValor(valorPadrao || 0);
-      setDesconto(0);
+      fetchClientes();
+      fetchOnibus();
     }
-  }, [open, setorPadrao, valorPadrao, viagemId]);
+  }, [open]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toLowerCase();
-    setSearchTerm(value);
-    
-    if (value.trim() === "") {
-      setFilteredClientes(clientes);
-    } else {
-      const filtered = clientes.filter(
-        cliente => 
-          cliente.nome.toLowerCase().includes(value) ||
-          cliente.cpf.toLowerCase().includes(value) ||
-          cliente.telefone.toLowerCase().includes(value)
-      );
-      setFilteredClientes(filtered);
+  // Fetch clients from the database
+  const fetchClientes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, nome, telefone, email, cidade")
+        .order("nome");
+
+      if (error) throw error;
+      setClientes(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      toast.error("Erro ao carregar a lista de clientes");
     }
   };
 
-  const handleAddPassageiro = async () => {
-    if (!viagemId || !selectedClienteId || !selectedOnibusId) {
-      if (!selectedOnibusId) {
-        toast.error("Selecione um ônibus para o passageiro");
-      }
-      return;
-    }
-    
+  // Fetch buses associated with this trip
+  const fetchOnibus = async () => {
     try {
-      setIsLoading(true);
-      
-      // Verificar se já existe este passageiro na viagem
-      const { data: existingPassageiro } = await supabase
-        .from("viagem_passageiros")
-        .select("*")
+      const { data, error } = await supabase
+        .from("viagem_onibus")
+        .select("id, numero_identificacao, tipo_onibus, empresa")
         .eq("viagem_id", viagemId)
-        .eq("cliente_id", selectedClienteId)
-        .single();
+        .order("created_at");
+
+      if (error) throw error;
+      setOnibusList(data || []);
       
+      // Set the first bus as default if available
+      if (data && data.length > 0) {
+        form.setValue("onibus_id", data[0].id);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar ônibus:", error);
+      toast.error("Erro ao carregar a lista de ônibus");
+    }
+  };
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!viagemId) return;
+    
+    setIsLoading(true);
+    try {
+      // Check if the cliente is already added to this trip
+      const { data: existingPassageiro, error: checkError } = await supabase
+        .from("viagem_passageiros")
+        .select("id")
+        .eq("viagem_id", viagemId)
+        .eq("cliente_id", values.cliente_id)
+        .single();
+
       if (existingPassageiro) {
-        toast.error("Este cliente já está adicionado como passageiro nesta viagem");
+        toast.error("Este cliente já está cadastrado nesta viagem");
+        setIsLoading(false);
         return;
       }
-      
-      // Adicionar o passageiro
-      const { error } = await supabase
-        .from("viagem_passageiros")
-        .insert({
-          viagem_id: viagemId,
-          cliente_id: selectedClienteId,
-          onibus_id: selectedOnibusId,
-          setor_maracana: setor,
-          status_pagamento: statusPagamento,
-          forma_pagamento: formaPagamento,
-          valor: valor,
-          desconto: desconto
-        });
-      
+
+      // Add the passenger to the trip
+      const { error } = await supabase.from("viagem_passageiros").insert({
+        viagem_id: viagemId,
+        cliente_id: values.cliente_id,
+        setor_maracana: values.setor_maracana,
+        status_pagamento: values.status_pagamento,
+        forma_pagamento: values.forma_pagamento,
+        valor: values.valor,
+        desconto: values.desconto,
+        onibus_id: values.onibus_id,
+      });
+
       if (error) throw error;
-      
-      toast.success("Passageiro adicionado com sucesso");
-      onOpenChange(false);
+
+      toast.success("Passageiro adicionado com sucesso!");
       onSuccess();
-      
-    } catch (err) {
-      console.error("Erro ao adicionar passageiro:", err);
+      onOpenChange(false);
+      form.reset({
+        cliente_id: "",
+        setor_maracana: setorPadrao || "",
+        status_pagamento: "Pendente",
+        forma_pagamento: "Pix",
+        valor: valorPadrao || 0,
+        desconto: 0,
+        onibus_id: onibusList.length > 0 ? onibusList[0].id : "",
+      });
+    } catch (error) {
+      console.error("Erro ao adicionar passageiro:", error);
       toast.error("Erro ao adicionar passageiro");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const clearSearch = () => {
-    setSearchTerm("");
-    setFilteredClientes(clientes);
-  };
-
-  // Formatar valor para exibição em reais
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  // Calcular valor final após descontos
-  const valorFinal = valor - desconto;
-
-  // Formatar identificação do ônibus
-  const formatOnibusLabel = (onibus: Onibus) => {
-    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${onibus.empresa})`;
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Adicionar Passageiro</DialogTitle>
           <DialogDescription>
-            Selecione um cliente cadastrado para adicionar como passageiro nesta viagem.
+            Adicione um passageiro à esta viagem.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="relative mb-4">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, CPF ou telefone..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          {searchTerm && (
-            <button 
-              className="absolute right-2 top-2.5" 
-              onClick={clearSearch}
-              type="button"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-          )}
-        </div>
-        
-        <div className="max-h-[300px] overflow-y-auto border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[30px]"></TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Telefone</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredClientes.length > 0 ? (
-                filteredClientes.map((cliente) => (
-                  <TableRow 
-                    key={cliente.id} 
-                    className={selectedClienteId === cliente.id ? "bg-muted" : ""}
-                    onClick={() => setSelectedClienteId(cliente.id)}
-                  >
-                    <TableCell>
-                      <input 
-                        type="radio" 
-                        checked={selectedClienteId === cliente.id}
-                        onChange={() => setSelectedClienteId(cliente.id)}
-                        className="rounded-full"
-                      />
-                    </TableCell>
-                    <TableCell>{cliente.nome}</TableCell>
-                    <TableCell>{cliente.cpf}</TableCell>
-                    <TableCell>{cliente.telefone}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4">
-                    {searchTerm ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
-        <div className="grid gap-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="onibus">Ônibus</Label>
-              <Select 
-                value={selectedOnibusId} 
-                onValueChange={setSelectedOnibusId}
-                disabled={onibusList.length <= 1}
-              >
-                <SelectTrigger id="onibus">
-                  <SelectValue placeholder="Selecione o ônibus" />
-                </SelectTrigger>
-                <SelectContent>
-                  {onibusList.map((onibus) => (
-                    <SelectItem key={onibus.id} value={onibus.id}>
-                      {formatOnibusLabel(onibus)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {onibusList.length <= 1 && (
-                <p className="text-xs text-muted-foreground">
-                  Esta viagem possui apenas um ônibus
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="setor">Setor do Maracanã</Label>
-              <Select value={setor} onValueChange={setSetor}>
-                <SelectTrigger id="setor">
-                  <SelectValue placeholder="Selecione o setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
-                  <SelectItem value="Norte">Norte</SelectItem>
-                  <SelectItem value="Sul">Sul</SelectItem>
-                  <SelectItem value="Leste">Leste</SelectItem>
-                  <SelectItem value="Oeste">Oeste</SelectItem>
-                  <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Status do Pagamento</Label>
-              <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Pendente" id="pendente" />
-                  <Label htmlFor="pendente">Pendente</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Pago" id="pago" />
-                  <Label htmlFor="pago">Pago</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
-              <Select value={formaPagamento} onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}>
-                <SelectTrigger id="forma-pagamento">
-                  <SelectValue placeholder="Selecione a forma de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pix">Pix</SelectItem>
-                  <SelectItem value="Cartão">Cartão</SelectItem>
-                  <SelectItem value="Boleto">Boleto</SelectItem>
-                  <SelectItem value="Paypal">Paypal</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor">Valor</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                <Input 
-                  id="valor" 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  value={valor} 
-                  onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
-                  className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="desconto">Desconto</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                <Input 
-                  id="desconto" 
-                  type="number" 
-                  min="0" 
-                  max={valor} 
-                  step="0.01" 
-                  value={desconto} 
-                  onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
-                  className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-2 border rounded-md p-3 bg-gray-50">
-            <div className="text-sm">
-              <div className="flex justify-between">
-                <span>Valor:</span>
-                <span>{formatCurrency(valor)}</span>
-              </div>
-              <div className="flex justify-between text-red-600">
-                <span>Desconto:</span>
-                <span>-{formatCurrency(desconto)}</span>
-              </div>
-              <div className="flex justify-between font-bold pt-1 border-t mt-1">
-                <span>Total:</span>
-                <span>{formatCurrency(valorFinal)}</span>
-              </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="cliente_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clientes.map((cliente) => (
+                        <SelectItem key={cliente.id} value={cliente.id}>
+                          {cliente.nome} - {cliente.cidade} ({cliente.telefone})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o cliente para esta viagem
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="onibus_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ônibus</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um ônibus" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {onibusList.map((onibus) => (
+                        <SelectItem key={onibus.id} value={onibus.id}>
+                          {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o ônibus para o passageiro
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="setor_maracana"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Setor do Maracanã</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um setor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Norte">Norte</SelectItem>
+                      <SelectItem value="Sul">Sul</SelectItem>
+                      <SelectItem value="Leste">Leste</SelectItem>
+                      <SelectItem value="Oeste">Oeste</SelectItem>
+                      <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                      <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="valor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor (R$)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="desconto"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desconto (R$)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleAddPassageiro}
-            disabled={!selectedClienteId || !selectedOnibusId || isLoading}
-          >
-            {isLoading ? "Adicionando..." : "Adicionar"}
-          </Button>
-        </DialogFooter>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status_pagamento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status do Pagamento</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Pendente">Pendente</SelectItem>
+                        <SelectItem value="Pago">Pago</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="forma_pagamento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Forma de Pagamento</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value || "Pix"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma forma" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Pix">Pix</SelectItem>
+                        <SelectItem value="Cartão">Cartão</SelectItem>
+                        <SelectItem value="Boleto">Boleto</SelectItem>
+                        <SelectItem value="Paypal">Paypal</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Salvando..." : "Salvar Passageiro"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

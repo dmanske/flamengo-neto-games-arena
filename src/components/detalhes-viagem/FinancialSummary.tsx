@@ -1,92 +1,112 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
 
-interface FinancialSummaryProps {
+export interface FinancialSummaryProps {
   totalArrecadado: number;
-  totalPendente: number;
   totalPago: number;
+  totalPendente: number;
   percentualPagamento: number;
   totalPassageiros: number;
   valorPotencialTotal: number;
-  capacidadeTotalOnibus: number;
+  capacidadeTotalOnibus: number; // Renamed from capacidadeOnibus to align with DetalhesViagem.tsx
 }
 
-export function FinancialSummary({ 
-  totalArrecadado, 
-  totalPendente, 
-  totalPago, 
+export function FinancialSummary({
+  totalArrecadado,
+  totalPago,
+  totalPendente,
   percentualPagamento,
   totalPassageiros,
   valorPotencialTotal,
-  capacidadeTotalOnibus
+  capacidadeTotalOnibus,
 }: FinancialSummaryProps) {
-  // Calcular percentual de ocupação
-  const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100) || 0;
-
+  // Calculate percentage of bus occupation
+  const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100);
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Resumo Financeiro</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="text-green-800 font-medium">Total Arrecadado</div>
-            <div className="text-2xl font-bold mt-1">{formatCurrency(totalArrecadado)}</div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-2">Financeiro</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor Arrecadado:</span>
+                <span className="font-medium">{formatCurrency(totalArrecadado)}</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor Pago:</span>
+                <span className="font-medium text-green-600">{formatCurrency(totalPago)}</span>
+              </div>
+              <Progress value={percentualPagamento} className="h-1" />
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor Pendente:</span>
+                <span className="font-medium text-amber-600">{formatCurrency(totalPendente)}</span>
+              </div>
+            </div>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-blue-800 font-medium">Valor Pago</div>
-            <div className="text-2xl font-bold mt-1">{formatCurrency(totalPago)}</div>
-          </div>
-          <div className="bg-amber-50 p-4 rounded-lg">
-            <div className="text-amber-800 font-medium">Valor Pendente</div>
-            <div className="text-2xl font-bold mt-1">{formatCurrency(totalPendente)}</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="text-purple-800 font-medium">Valor Potencial Total</div>
-            <div className="text-2xl font-bold mt-1">{formatCurrency(valorPotencialTotal)}</div>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">Status de Pagamentos</span>
-            <span className="text-sm font-bold">{percentualPagamento}%</span>
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-2">Ocupação</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Passageiros Confirmados:</span>
+                <span className="font-medium">{totalPassageiros} de {capacidadeTotalOnibus}</span>
+              </div>
+              <Progress value={percentualOcupacao} className="h-1" />
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Taxa de Ocupação:</span>
+                <span className="font-medium">{percentualOcupacao}%</span>
+              </div>
+            </div>
           </div>
-          <Progress value={percentualPagamento} className="h-2" />
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">Ocupação Total</span>
-            <span className="text-sm font-bold">{totalPassageiros}/{capacidadeTotalOnibus} ({percentualOcupacao}%)</span>
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-2">Potencial</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor Total Potencial:</span>
+                <span className="font-medium">{formatCurrency(valorPotencialTotal)}</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Valor Restante Potencial:</span>
+                <span className="font-medium">{formatCurrency(valorPotencialTotal - totalArrecadado)}</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Percentual Arrecadado:</span>
+                <span className="font-medium">
+                  {valorPotencialTotal > 0 ? Math.round((totalArrecadado / valorPotencialTotal) * 100) : 0}%
+                </span>
+              </div>
+              <Progress 
+                value={valorPotencialTotal > 0 ? Math.round((totalArrecadado / valorPotencialTotal) * 100) : 0} 
+                className="h-1" 
+              />
+            </div>
           </div>
-          <Progress value={percentualOcupacao} className="h-2" />
-        </div>
-
-        <div className="flex justify-between text-sm text-muted-foreground mt-4">
-          <div>Total de passageiros: {totalPassageiros}</div>
-          <div>Média por passageiro: {totalPassageiros > 0 ? formatCurrency(totalArrecadado / totalPassageiros) : formatCurrency(0)}</div>
-        </div>
-
-        <div className="mt-4 bg-gray-50 p-3 rounded-lg">
-          <div className="text-sm font-medium">Meta financeira:</div>
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-sm">{formatCurrency(totalArrecadado)}</span>
-            <span className="text-xs text-muted-foreground">
-              {Math.round((totalArrecadado / valorPotencialTotal) * 100) || 0}%
-            </span>
-            <span className="text-sm">{formatCurrency(valorPotencialTotal)}</span>
-          </div>
-          <Progress 
-            value={(totalArrecadado / valorPotencialTotal) * 100 || 0} 
-            className="h-2 mt-1" 
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
