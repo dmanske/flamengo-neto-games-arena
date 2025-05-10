@@ -1,1 +1,65 @@
+
+# This file is used to configure your Supabase project.
+# It's very minimal at the moment and uses default values.
+# For full config options, see the documentation: https://supabase.com/docs/guides/hosting/overview
+
+[general]
 project_id = "uroukakmvanyeqxicuzw"
+
+[api]
+port = 8000
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 5432
+major_version = 15
+
+[studio]
+port = 3000
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[storage]
+backend = "postgres"
+
+[[storage.buckets]]
+name = "logos"
+public = true
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "logos"
+policy = "CREATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "logos"
+policy = "SELECT"
+definition = """\
+(bucket_id, name) => bucket_id = 'logos'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "logos"
+policy = "UPDATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "logos"
+policy = "DELETE"
+definition = """\
+(bucket_id, name) => bucket_id = 'logos' AND auth.role() = 'anon'\
+"""
