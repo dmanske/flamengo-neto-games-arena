@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { FonteConhecimento } from "@/types/entities";
 
 import {
   Form,
@@ -21,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Schema de validação do formulário
 const formSchema = z.object({
@@ -37,7 +39,7 @@ const formSchema = z.object({
   numero: z.string().min(1, "Número é obrigatório"),
   complemento: z.string().optional(),
   observacoes: z.string().optional(),
-  como_conheceu: z.string().min(2, "Como conheceu deve ter pelo menos 2 caracteres"),
+  como_conheceu: z.string().min(2, "Selecione como conheceu a empresa"),
   indicacao_nome: z.string().optional(),
 });
 
@@ -140,6 +142,14 @@ const EditarCliente = () => {
       setSubmitting(false);
     }
   };
+
+  const fontesConhecimento: FonteConhecimento[] = [
+    "Instagram", 
+    "Indicação", 
+    "Facebook", 
+    "Google", 
+    "Outro"
+  ];
 
   return (
     <div className="container py-6">
@@ -338,20 +348,6 @@ const EditarCliente = () => {
 
                   <FormField
                     control={form.control}
-                    name="como_conheceu"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Como conheceu *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Como conheceu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="indicacao_nome"
                     render={({ field }) => (
                       <FormItem>
@@ -367,12 +363,41 @@ const EditarCliente = () => {
 
                 <FormField
                   control={form.control}
+                  name="como_conheceu"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Como conheceu *</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-wrap gap-4"
+                        >
+                          {fontesConhecimento.map((fonte) => (
+                            <FormItem key={fonte} className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={fonte} checked={field.value === fonte} />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {fonte}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="observacoes"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Observações</FormLabel>
                       <FormControl>
-                        <Input placeholder="Observações" {...field} />
+                        <Input placeholder="Observações (opcional)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
