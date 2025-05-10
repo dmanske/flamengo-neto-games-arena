@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -48,6 +49,7 @@ import { formatCEP, formatTelefone, formatCPF, fetchAddressByCEP } from "@/utils
 import { FonteConhecimento } from "@/types/entities";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
+import { FileUpload } from "@/components/FileUpload";
 
 // Define the form validation schema
 const formSchema = z.object({
@@ -81,6 +83,7 @@ const formSchema = z.object({
   }),
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),
+  foto: z.string().nullable().optional(),
 }).refine((data) => {
   // If como_conheceu is "Indicação", indicacao_nome is required
   if (data.como_conheceu === "Indicação" && (!data.indicacao_nome || data.indicacao_nome.length < 2)) {
@@ -135,6 +138,7 @@ const CadastrarCliente = () => {
         como_conheceu: data.como_conheceu,
         indicacao_nome: data.indicacao_nome || null,
         observacoes: data.observacoes || null,
+        foto: data.foto || null,
       });
 
       // Insert client into Supabase
@@ -157,6 +161,7 @@ const CadastrarCliente = () => {
             como_conheceu: data.como_conheceu,
             indicacao_nome: data.indicacao_nome || null,
             observacoes: data.observacoes || null,
+            foto: data.foto || null,
           }
         ])
         .select();
@@ -201,6 +206,7 @@ const CadastrarCliente = () => {
       como_conheceu: undefined,
       indicacao_nome: "",
       observacoes: "",
+      foto: null,
     },
   });
 
@@ -559,6 +565,27 @@ const CadastrarCliente = () => {
                     )}
                   />
                 )}
+
+                <FormField
+                  control={form.control}
+                  name="foto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Foto (opcional)</FormLabel>
+                      <FormControl>
+                        <FileUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          bucketName="client-photos"
+                          folderPath="clientes"
+                          allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                          maxSizeInMB={5}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <FormField
