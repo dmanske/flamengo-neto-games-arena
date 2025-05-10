@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { FonteConhecimento } from "@/types/entities";
+import { FileUpload } from "@/components/FileUpload";
 
 import {
   Form,
@@ -42,6 +42,7 @@ const formSchema = z.object({
   observacoes: z.string().optional().nullable().transform(val => val === null ? "" : val),
   como_conheceu: z.string().min(2, "Selecione como conheceu a empresa"),
   indicacao_nome: z.string().optional().nullable().transform(val => val === null ? "" : val),
+  foto: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,6 +72,7 @@ const EditarCliente = () => {
       observacoes: "",
       como_conheceu: "",
       indicacao_nome: "",
+      foto: null,
     },
   });
 
@@ -190,6 +192,27 @@ const EditarCliente = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Campo de Upload de Foto */}
+                  <FormField
+                    control={form.control}
+                    name="foto"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Foto do Cliente (opcional)</FormLabel>
+                        <FormControl>
+                          <FileUpload
+                            value={field.value}
+                            onChange={field.onChange}
+                            bucketName="client-photos"
+                            allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                            maxSizeInMB={5}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="nome"
