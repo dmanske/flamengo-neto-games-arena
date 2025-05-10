@@ -89,6 +89,7 @@ interface ViagemPassageiro {
   forma_pagamento: string;
   created_at: string;
   valor: number | null;
+  desconto: number | null;
   cliente?: Cliente;
 }
 
@@ -104,6 +105,7 @@ interface PassageiroDisplay {
   cliente_id: string;
   viagem_passageiro_id: string;
   valor: number | null;
+  desconto: number | null;
 }
 
 const DetalhesViagem = () => {
@@ -124,6 +126,7 @@ const DetalhesViagem = () => {
   const [totalArrecadado, setTotalArrecadado] = useState<number>(0);
   const [totalPago, setTotalPago] = useState<number>(0);
   const [totalPendente, setTotalPendente] = useState<number>(0);
+  const [valorPotencialTotal, setValorPotencialTotal] = useState<number>(0);
 
   useEffect(() => {
     const fetchViagem = async () => {
@@ -141,6 +144,12 @@ const DetalhesViagem = () => {
         
         if (viagemError) throw viagemError;
         setViagem(viagemData);
+        
+        // Calcular valor potencial total (valor padrão * capacidade)
+        if (viagemData.valor_padrao && viagemData.capacidade_onibus) {
+          const valorTotal = viagemData.valor_padrao * viagemData.capacidade_onibus;
+          setValorPotencialTotal(valorTotal);
+        }
         
         // Carregar passageiros da viagem
         await fetchPassageiros(id);
@@ -176,6 +185,7 @@ const DetalhesViagem = () => {
           status_pagamento,
           forma_pagamento,
           valor,
+          desconto,
           created_at,
           clientes:cliente_id (id, nome, telefone, cidade, cpf)
         `)
@@ -196,6 +206,7 @@ const DetalhesViagem = () => {
         cliente_id: item.cliente_id,
         viagem_passageiro_id: item.id,
         valor: item.valor || 0,
+        desconto: item.desconto || 0
       }));
       
       setPassageiros(formattedPassageiros);
@@ -207,7 +218,7 @@ const DetalhesViagem = () => {
       let pendente = 0;
       
       formattedPassageiros.forEach(passageiro => {
-        const valor = passageiro.valor || 0;
+        const valor = (passageiro.valor || 0) - (passageiro.desconto || 0);
         arrecadado += valor;
         
         if (passageiro.status_pagamento === "Pago") {
@@ -315,6 +326,11 @@ const DetalhesViagem = () => {
       </div>
     );
   }
+
+  // Calcular valor potencial total (caso não tenha sido calculado no useEffect)
+  const calculatedValorPotencialTotal = valorPotencialTotal > 0 ? 
+    valorPotencialTotal : 
+    ((viagem.valor_padrao || 0) * viagem.capacidade_onibus);
 
   return (
     <div className="container py-6">
@@ -456,6 +472,8 @@ const DetalhesViagem = () => {
             totalPendente={totalPendente}
             percentualPagamento={calcularPercentualPagamento()}
             totalPassageiros={passageiros.length}
+            valorPotencialTotal={calculatedValorPotencialTotal}
+            capacidadeOnibus={viagem.capacidade_onibus}
           />
         </div>
       )}
@@ -506,6 +524,8 @@ const DetalhesViagem = () => {
                       <TableHead>CPF</TableHead>
                       <TableHead>Setor</TableHead>
                       <TableHead>Valor</TableHead>
+                      <TableHead>Desconto</TableHead>
+                      <TableHead>Total</TableHead>
                       <TableHead>Pgto.</TableHead>
                       <TableHead>Forma</TableHead>
                       <TableHead className="text-center">Ações</TableHead>
@@ -521,6 +541,18 @@ const DetalhesViagem = () => {
                           <TableCell>{passageiro.cpf}</TableCell>
                           <TableCell>{passageiro.setor_maracana}</TableCell>
                           <TableCell>{formatCurrency(passageiro.valor)}</TableCell>
+                          <TableCell>
+                            {passageiro.desconto && passageiro.desconto > 0 ? (
+                              <span className="text-red-600">
+                                -{formatCurrency(passageiro.desconto)}
+                              </span>
+                            ) : (
+                              <span>R$ 0,00</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))}
+                          </TableCell>
                           <TableCell>
                             <Badge 
                               className={
@@ -558,7 +590,7 @@ const DetalhesViagem = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-4">
+                        <TableCell colSpan={11} className="text-center py-4">
                           {searchTerm ? "Nenhum passageiro encontrado com esse termo." : "Nenhum passageiro encontrado."}
                         </TableCell>
                       </TableRow>

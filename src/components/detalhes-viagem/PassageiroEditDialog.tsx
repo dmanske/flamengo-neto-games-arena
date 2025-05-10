@@ -30,6 +30,7 @@ interface PassageiroDisplay {
   cliente_id: string;
   viagem_passageiro_id: string;
   valor?: number | null;
+  desconto?: number | null;
 }
 
 interface PassageiroEditDialogProps {
@@ -49,6 +50,7 @@ export function PassageiroEditDialog({
   const [statusPagamento, setStatusPagamento] = useState<string>(passageiro?.status_pagamento || "Pendente");
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(passageiro?.forma_pagamento || "Pix");
   const [valor, setValor] = useState<number>(passageiro?.valor || 0);
+  const [desconto, setDesconto] = useState<number>(passageiro?.desconto || 0);
   const [isLoading, setIsLoading] = useState(false);
 
   // Atualizar os valores quando o passageiro é selecionado
@@ -58,6 +60,7 @@ export function PassageiroEditDialog({
       setStatusPagamento(passageiro.status_pagamento);
       setFormaPagamento(passageiro.forma_pagamento || "Pix");
       setValor(passageiro.valor || 0);
+      setDesconto(passageiro.desconto || 0);
     }
   }, [passageiro]);
 
@@ -73,7 +76,8 @@ export function PassageiroEditDialog({
           setor_maracana: setor,
           status_pagamento: statusPagamento,
           forma_pagamento: formaPagamento,
-          valor: valor
+          valor: valor,
+          desconto: desconto
         })
         .eq("id", passageiro.viagem_passageiro_id);
       
@@ -98,6 +102,9 @@ export function PassageiroEditDialog({
       currency: 'BRL'
     }).format(value);
   };
+
+  // Calcular valor final após descontos
+  const valorFinal = valor - desconto;
 
   if (!passageiro) return null;
 
@@ -168,6 +175,25 @@ export function PassageiroEditDialog({
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="edit-desconto">Desconto</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                  <Input 
+                    id="edit-desconto" 
+                    type="number" 
+                    min="0" 
+                    max={valor} 
+                    step="0.01" 
+                    value={desconto} 
+                    onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
+                    className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="edit-forma-pagamento">Forma de Pagamento</Label>
                 <Select 
                   value={formaPagamento} 
@@ -184,6 +210,23 @@ export function PassageiroEditDialog({
                     <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+                <div className="text-sm">
+                  <div className="flex justify-between">
+                    <span>Valor:</span>
+                    <span>{formatCurrency(valor)}</span>
+                  </div>
+                  <div className="flex justify-between text-red-600">
+                    <span>Desconto:</span>
+                    <span>-{formatCurrency(desconto)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold pt-1 border-t mt-1">
+                    <span>Total:</span>
+                    <span>{formatCurrency(valorFinal)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

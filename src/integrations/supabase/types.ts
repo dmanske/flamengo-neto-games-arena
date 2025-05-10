@@ -76,6 +76,7 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          desconto: number | null
           forma_pagamento: string
           id: string
           setor_maracana: string
@@ -86,6 +87,7 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          desconto?: number | null
           forma_pagamento?: string
           id?: string
           setor_maracana?: string
@@ -96,6 +98,7 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          desconto?: number | null
           forma_pagamento?: string
           id?: string
           setor_maracana?: string
