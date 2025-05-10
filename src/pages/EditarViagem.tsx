@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -611,6 +610,7 @@ const EditarViagem = () => {
                           <SelectItem value="Leste">Leste</SelectItem>
                           <SelectItem value="Oeste">Oeste</SelectItem>
                           <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                          <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
