@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -22,8 +23,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
-// Schema de validação do formulário
+// Schema de validação do formulário - corrigido para aceitar string vazia ou null nas observações
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
@@ -37,9 +39,9 @@ const formSchema = z.object({
   bairro: z.string().min(2, "Bairro deve ter pelo menos 2 caracteres"),
   numero: z.string().min(1, "Número é obrigatório"),
   complemento: z.string().optional(),
-  observacoes: z.string().optional(),
+  observacoes: z.string().optional().nullable().transform(val => val === null ? "" : val),
   como_conheceu: z.string().min(2, "Selecione como conheceu a empresa"),
-  indicacao_nome: z.string().optional(),
+  indicacao_nome: z.string().optional().nullable().transform(val => val === null ? "" : val),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,6 +102,10 @@ const EditarCliente = () => {
             formattedData.data_nascimento = format(dateObj, "yyyy-MM-dd");
           }
           
+          // Garantir que observacoes e indicacao_nome sejam strings vazias se for null
+          formattedData.observacoes = formattedData.observacoes || "";
+          formattedData.indicacao_nome = formattedData.indicacao_nome || "";
+          
           // Preencher o formulário com os dados do cliente
           form.reset(formattedData);
         }
@@ -125,6 +131,10 @@ const EditarCliente = () => {
       if (formattedValues.data_nascimento) {
         formattedValues.data_nascimento = new Date(formattedValues.data_nascimento).toISOString();
       }
+      
+      // Garantir que observacoes e indicacao_nome sejam strings vazias e não null
+      formattedValues.observacoes = formattedValues.observacoes || "";
+      formattedValues.indicacao_nome = formattedValues.indicacao_nome || "";
       
       const { error } = await supabase
         .from("clientes")
@@ -402,7 +412,11 @@ const EditarCliente = () => {
                     <FormItem>
                       <FormLabel>Observações</FormLabel>
                       <FormControl>
-                        <Input placeholder="Observações (opcional)" {...field} />
+                        <Textarea 
+                          placeholder="Observações (opcional)" 
+                          {...field} 
+                          value={field.value || ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
