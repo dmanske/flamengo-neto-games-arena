@@ -46,6 +46,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { formatCEP, formatTelefone, formatCPF, fetchAddressByCEP } from "@/utils/cepUtils";
 import { FonteConhecimento } from "@/types/entities";
+import { supabase } from "@/lib/supabase";
+import { useMutation } from "@tanstack/react-query";
 
 const estadosBrasileiros = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", 
@@ -105,6 +107,57 @@ const CadastrarCliente = () => {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Set up react-query mutation for adding client
+  const addClientMutation = useMutation({
+    mutationFn: async (data: FormValues) => {
+      // Convert string date to Date object for API
+      const dateParts = data.data_nascimento.split('/');
+      const dateObject = new Date(
+        parseInt(dateParts[2]), // year
+        parseInt(dateParts[1]) - 1, // month (0-based)
+        parseInt(dateParts[0]) // day
+      );
+
+      // Insert client into Supabase
+      const { data: client, error } = await supabase
+        .from('clientes')
+        .insert([
+          {
+            nome: data.nome,
+            endereco: data.endereco,
+            numero: data.numero,
+            complemento: data.complemento || null,
+            bairro: data.bairro,
+            telefone: data.telefone,
+            cep: data.cep,
+            cidade: data.cidade,
+            estado: data.estado,
+            cpf: data.cpf,
+            data_nascimento: dateObject.toISOString(),
+            email: data.email,
+            como_conheceu: data.como_conheceu,
+            indicacao_nome: data.indicacao_nome || null,
+            observacoes: data.observacoes || null,
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      return client;
+    },
+    onSuccess: () => {
+      // Send WhatsApp message (in production you'd use a proper API/service)
+      console.log(`Enviando mensagem para ${form.getValues().telefone}: 🎟️ Olá, ${form.getValues().nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
+      
+      // Show success dialog
+      setSuccessDialogOpen(true);
+    },
+    onError: (error) => {
+      console.error("Erro ao cadastrar cliente:", error);
+      toast.error("Erro ao cadastrar cliente. Tente novamente.");
+    }
+  });
+
   // Define form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -162,33 +215,7 @@ const CadastrarCliente = () => {
 
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
-    try {
-      setLoading(true);
-      console.log("Cadastrando cliente:", values);
-      
-      // In a real app, this would be an API call to create the client
-      // Simulate API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Convert string date to Date object for API
-      const dateParts = values.data_nascimento.split('/');
-      const dateObject = new Date(
-        parseInt(dateParts[2]), // year
-        parseInt(dateParts[1]) - 1, // month (0-based)
-        parseInt(dateParts[0]) // day
-      );
-      
-      // Simulate sending WhatsApp message
-      console.log(`Enviando mensagem para ${values.telefone}: 🎟️ Olá, ${values.nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
-      
-      // Show success dialog
-      setSuccessDialogOpen(true);
-    } catch (error) {
-      console.error("Erro ao cadastrar cliente:", error);
-      toast.error("Erro ao cadastrar cliente. Tente novamente.");
-    } finally {
-      setLoading(false);
-    }
+    addClientMutation.mutate(values);
   };
 
   return (
@@ -199,7 +226,7 @@ const CadastrarCliente = () => {
         <CardHeader>
           <CardTitle>Formulário de Cadastro de Cliente</CardTitle>
           <CardDescription>
-            Preencha os dados do cliente para cadastro nas caravanas da Neto Tours
+            Preencha os dados do cliente para cadastro nas caravanas do Flamengo
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -532,9 +559,9 @@ const CadastrarCliente = () => {
                 <Button 
                   type="submit" 
                   className="bg-[#e40016] hover:bg-[#c20012]"
-                  disabled={loading}
+                  disabled={addClientMutation.isPending}
                 >
-                  {loading ? (
+                  {addClientMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                       Cadastrando...
