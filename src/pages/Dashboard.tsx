@@ -178,6 +178,15 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Flamengo Logo Section */}
+      <div className="flex justify-center items-center my-8">
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
+          alt="Logo do Flamengo"
+          className="h-40 w-auto"
+        />
+      </div>
     </div>
   );
 };
