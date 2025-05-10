@@ -1,12 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bus, CalendarCheck, CreditCard, User, Users } from "lucide-react";
+import { Bus, CalendarCheck, CreditCard, User, Users, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
 
 interface Viagem {
   id: string;
@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
   const [busCount, setBusCount] = useState<number>(3); // We have 3 types of buses
   const [mostUsedBus, setMostUsedBus] = useState<OnibusCount | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -119,6 +120,30 @@ const Dashboard = () => {
           console.error('Erro ao buscar dados de ônibus:', busError);
         }
         
+        // Fetch current month's revenue
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+        
+        const { data: revenueData, error: revenueError } = await supabase
+          .from('viagem_passageiros')
+          .select('valor, desconto')
+          .gte('created_at', firstDayOfMonth)
+          .lte('created_at', lastDayOfMonth)
+          .eq('status_pagamento', 'Pago');
+        
+        if (!revenueError && revenueData) {
+          const totalRevenue = revenueData.reduce((sum, item) => {
+            const valor = item.valor || 0;
+            const desconto = item.desconto || 0;
+            return sum + (valor - desconto);
+          }, 0);
+          
+          setMonthlyRevenue(totalRevenue);
+        } else {
+          console.error('Erro ao buscar dados de receita:', revenueError);
+        }
+        
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
       } finally {
@@ -144,6 +169,9 @@ const Dashboard = () => {
     }
   };
 
+  // Get current month name
+  const currentMonthName = format(new Date(), "MMMM", { locale: ptBR });
+
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
@@ -158,7 +186,7 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
@@ -237,6 +265,23 @@ const Dashboard = () => {
                 <CardDescription>Sem dados de utilização</CardDescription>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-lg">Receita {currentMonthName}</CardTitle>
+              <div className="bg-green-100 text-green-500 p-2 rounded-full">
+                <DollarSign className="h-5 w-5" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{isLoading ? '...' : formatCurrency(monthlyRevenue)}</p>
+            <CardDescription>
+              Total do mês atual
+            </CardDescription>
           </CardContent>
         </Card>
       </div>
