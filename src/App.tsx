@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import CadastrarPassageiro from "./pages/CadastrarPassageiro";
 import Passageiros from "./pages/Passageiros";
 import CadastrarCliente from "./pages/CadastrarCliente";
+import EditarCliente from "./pages/EditarCliente";
 import Clientes from "./pages/Clientes";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/cadastrar-passageiro" element={<CadastrarPassageiro />} />
               <Route path="/cadastrar-cliente" element={<CadastrarCliente />} />
+              <Route path="/editar-cliente/:id" element={<EditarCliente />} />
               <Route path="/viagens" element={<div className="container py-6"><h1 className="text-3xl font-bold">Viagens</h1></div>} />
               <Route path="/passageiros" element={<Passageiros />} />
               <Route path="/clientes" element={<Clientes />} />
