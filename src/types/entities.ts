@@ -1,3 +1,4 @@
+
 export type StatusPagamento = 'Pendente' | 'Pago' | 'Cancelado';
 export type StatusViagem = 'Aberta' | 'Em Andamento' | 'Finalizada';
 export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto' | 'Paypal' | 'Outro';
@@ -17,6 +18,7 @@ export interface Passageiro {
   numero_onibus: string;
   valor?: number;
   forma_pagamento?: FormaPagamento;
+  desconto?: number;
 }
 
 export interface Cliente {
@@ -65,6 +67,7 @@ export interface Pagamento {
   forma_pagamento: FormaPagamento;
   status: StatusPagamento;
   comprovante?: File;
+  desconto?: number;
 }
 
 export interface Onibus {
