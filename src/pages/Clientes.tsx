@@ -262,7 +262,7 @@ const Clientes = () => {
                       <TableCell>{cliente.email}</TableCell>
                       <TableCell>{cliente.cidade}/{cliente.estado}</TableCell>
                       <TableCell>{formatCPF(cliente.cpf)}</TableCell>
-                      <TableCell>{formatDate(cliente.data_nascimento)}</TableCell>
+                      <TableCell>{formatDate(cliente.data_nascimento as string)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           <Button size="sm" variant="outline">
