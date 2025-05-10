@@ -152,12 +152,6 @@ const MainLayout = () => {
             to="/pagamentos"
             onClick={closeMenu}
           />
-          <NavItem
-            icon={<Settings className="h-5 w-5" />}
-            title="Configurações"
-            to="/configuracoes"
-            onClick={closeMenu}
-          />
         </div>
       </ScrollArea>
 
