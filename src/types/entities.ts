@@ -21,6 +21,7 @@ export interface Cliente {
   endereco: string;
   numero: string;
   complemento?: string;
+  bairro: string;
   telefone: string;
   cep: string;
   cidade: string;

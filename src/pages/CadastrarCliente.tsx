@@ -61,6 +61,7 @@ const formSchema = z.object({
   endereco: z.string().min(5, { message: "Endereço é obrigatório" }),
   numero: z.string().min(1, { message: "Número é obrigatório" }),
   complemento: z.string().optional(),
+  bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
   telefone: z
     .string()
     .min(14, { message: "O telefone deve estar completo" })
@@ -83,13 +84,17 @@ const formSchema = z.object({
   como_conheceu: z.enum(["Instagram", "Indicação", "Facebook", "Google", "Outro"], {
     message: "Por favor selecione como conheceu a Neto Tours"
   }),
-  indicacao_nome: z.string().optional().refine((val, ctx) => {
-    if (ctx.parent.como_conheceu === "Indicação" && (!val || val.length < 2)) {
-      return false;
-    }
-    return true;
-  }, { message: "Nome de quem indicou é obrigatório" }),
+  indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),
+}).refine((data) => {
+  // If como_conheceu is "Indicação", indicacao_nome is required
+  if (data.como_conheceu === "Indicação" && (!data.indicacao_nome || data.indicacao_nome.length < 2)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Nome de quem indicou é obrigatório",
+  path: ["indicacao_nome"]
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -110,6 +115,7 @@ const CadastrarCliente = () => {
       endereco: "",
       numero: "",
       complemento: "",
+      bairro: "",
       telefone: "",
       cidade: "",
       estado: "RJ",
@@ -132,6 +138,7 @@ const CadastrarCliente = () => {
         form.setValue("endereco", addressData.logradouro);
         form.setValue("cidade", addressData.localidade);
         form.setValue("estado", addressData.uf);
+        form.setValue("bairro", addressData.bairro || "");
         
         // Se tiver complemento, adiciona ao campo complemento
         if (addressData.complemento) {
@@ -370,6 +377,36 @@ const CadastrarCliente = () => {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="cidade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cidade*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Cidade" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bairro"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bairro*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Bairro" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="complemento"
@@ -378,20 +415,6 @@ const CadastrarCliente = () => {
                       <FormLabel>Complemento</FormLabel>
                       <FormControl>
                         <Input placeholder="Apto, bloco, etc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cidade"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cidade" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
