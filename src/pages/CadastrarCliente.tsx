@@ -46,7 +46,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { formatCEP, formatTelefone, formatCPF, fetchAddressByCEP } from "@/utils/cepUtils";
 import { FonteConhecimento } from "@/types/entities";
-import { supabase } from "@/integrations/supabase/client"; // Updated import to use the correct client
+import { supabase } from "@/lib/supabase"; // Using this import to match the types
 import { useMutation } from "@tanstack/react-query";
 
 const estadosBrasileiros = [
