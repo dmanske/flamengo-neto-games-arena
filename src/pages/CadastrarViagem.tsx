@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -43,7 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { OnibusForm } from "@/components/viagem/OnibusForm";
-import { ViagemOnibus } from "@/types/entities";
+import { ViagemOnibus, TipoOnibus, EmpresaOnibus } from "@/types/entities";
 
 // Schema para validação do formulário
 const viagemFormSchema = z.object({
