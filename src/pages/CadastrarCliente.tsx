@@ -49,12 +49,6 @@ import { FonteConhecimento } from "@/types/entities";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
 
-const estadosBrasileiros = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", 
-  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", 
-  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
-];
-
 // Define the form validation schema
 const formSchema = z.object({
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
