@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -49,7 +48,7 @@ import { formatCEP, formatTelefone, formatCPF, fetchAddressByCEP } from "@/utils
 import { FonteConhecimento } from "@/types/entities";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
-import { FileUpload } from "@/components/FileUpload";
+import { FileUpload } from "@/components/ui/file-upload";
 
 // Define the form validation schema
 const formSchema = z.object({

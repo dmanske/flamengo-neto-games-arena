@@ -14,6 +14,7 @@ const initStorage = async () => {
         public: true,
         fileSizeLimit: 10485760, // 10MB
       });
+      console.log('Onibus bucket created successfully');
     }
     
     // Check and create logos bucket
@@ -24,6 +25,7 @@ const initStorage = async () => {
         public: true,
         fileSizeLimit: 5242880, // 5MB
       });
+      console.log('Logos bucket created successfully');
     }
     
     // Check and create client-photos bucket
@@ -34,6 +36,18 @@ const initStorage = async () => {
         public: true,
         fileSizeLimit: 5242880, // 5MB
       });
+      console.log('Client-photos bucket created successfully');
+    }
+
+    // Additional error handling for debug purposes
+    if (onibusError && !onibusError.message.includes('not found')) {
+      console.error('Error checking onibus bucket:', onibusError);
+    }
+    if (logosError && !logosError.message.includes('not found')) {
+      console.error('Error checking logos bucket:', logosError);
+    }
+    if (clientPhotosError && !clientPhotosError.message.includes('not found')) {
+      console.error('Error checking client-photos bucket:', clientPhotosError);
     }
   } catch (error) {
     console.error('Error initializing storage buckets:', error);
@@ -42,7 +56,9 @@ const initStorage = async () => {
 
 // Initialize storage buckets when in browser environment
 if (typeof window !== 'undefined') {
-  initStorage();
+  initStorage().catch(err => {
+    console.error('Failed to initialize storage buckets:', err);
+  });
 }
 
 export { supabase };
