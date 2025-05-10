@@ -22,7 +22,7 @@ const Onibus = () => {
     },
     {
       type: "52 Leitos Master",
-      companies: ["HG TUR"],
+      companies: ["Majetur"],
       imageUrl: null
     },
     {
@@ -88,7 +88,8 @@ const Onibus = () => {
       // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `tipos/${busType.toLowerCase().replace(/\s+/g, '-')}/${fileName}`;
+      // Remove the nested folder structure to avoid bucket errors
+      const filePath = `${busType.toLowerCase().replace(/\s+/g, '-')}-${fileName}`;
       
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -175,13 +176,11 @@ const Onibus = () => {
       // Extract file path from URL
       const urlParts = currentUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
-      const folderPath = `tipos/${busType.toLowerCase().replace(/\s+/g, '-')}`;
-      const filePath = `${folderPath}/${fileName}`;
       
-      // Delete from storage
+      // Delete from storage - simplified path construction
       const { error: storageError } = await supabase.storage
         .from("onibus")
-        .remove([filePath]);
+        .remove([fileName]);
       
       if (storageError) {
         console.warn("Erro ao remover arquivo do storage:", storageError);
