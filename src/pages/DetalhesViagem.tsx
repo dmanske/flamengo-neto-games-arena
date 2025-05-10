@@ -105,6 +105,8 @@ interface PassageiroDisplay {
   viagem_passageiro_id: string;
   valor: number | null;
   desconto: number | null;
+  onibus_id?: string | null;
+  viagem_id: string; // Added the missing property
 }
 
 const DetalhesViagem = () => {

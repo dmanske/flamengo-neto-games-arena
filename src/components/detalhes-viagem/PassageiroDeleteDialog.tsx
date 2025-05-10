@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +18,7 @@ interface PassageiroDisplay {
   id: string;
   nome: string;
   viagem_passageiro_id: string;
+  viagem_id?: string; // Added as optional to maintain compatibility
   [key: string]: any;
 }
 

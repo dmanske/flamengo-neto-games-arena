@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -40,7 +39,7 @@ interface PassageiroDisplay {
   onibus_id?: string | null;
   valor?: number | null;
   desconto?: number | null;
-  viagem_id: string;
+  viagem_id: string; // Added the missing property
 }
 
 interface PassageiroEditDialogProps {
