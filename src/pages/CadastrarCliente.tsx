@@ -46,7 +46,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { formatCEP, formatTelefone, formatCPF, fetchAddressByCEP } from "@/utils/cepUtils";
 import { FonteConhecimento } from "@/types/entities";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client"; // Updated import to use the correct client
 import { useMutation } from "@tanstack/react-query";
 
 const estadosBrasileiros = [
@@ -118,6 +118,24 @@ const CadastrarCliente = () => {
         parseInt(dateParts[0]) // day
       );
 
+      console.log("Inserting client data:", {
+        nome: data.nome,
+        endereco: data.endereco,
+        numero: data.numero,
+        complemento: data.complemento || null,
+        bairro: data.bairro,
+        telefone: data.telefone,
+        cep: data.cep,
+        cidade: data.cidade,
+        estado: data.estado,
+        cpf: data.cpf,
+        data_nascimento: dateObject.toISOString(),
+        email: data.email,
+        como_conheceu: data.como_conheceu,
+        indicacao_nome: data.indicacao_nome || null,
+        observacoes: data.observacoes || null,
+      });
+
       // Insert client into Supabase
       const { data: client, error } = await supabase
         .from('clientes')
@@ -141,8 +159,13 @@ const CadastrarCliente = () => {
           }
         ])
         .select();
+        
+      console.log("Supabase response:", { client, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
       return client;
     },
     onSuccess: () => {
