@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -137,8 +136,13 @@ const CadastrarCliente = () => {
       if (addressData) {
         form.setValue("endereco", addressData.logradouro);
         form.setValue("cidade", addressData.localidade);
+        
+        // Set the state correctly by directly using setValue with the state from the API
         form.setValue("estado", addressData.uf);
         form.setValue("bairro", addressData.bairro || "");
+        
+        // Trigger a re-render of the form
+        form.trigger();
         
         // Se tiver complemento, adiciona ao campo complemento
         if (addressData.complemento) {
@@ -429,6 +433,7 @@ const CadastrarCliente = () => {
                       <FormLabel>Estado*</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
+                        value={field.value}
                         defaultValue={field.value}
                       >
                         <FormControl>
