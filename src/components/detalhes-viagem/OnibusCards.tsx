@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/lib/supabase';
 
 interface Onibus {
   id: string;
@@ -30,12 +31,43 @@ export function OnibusCards({
   passageirosCount = {},
   passageirosNaoAlocados = 0
 }: OnibusCardsProps) {
+  const [busImages, setBusImages] = useState<Record<string, string>>({});
+  
+  // Buscar imagens dos ônibus
+  useEffect(() => {
+    const fetchBusImages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("onibus_images")
+          .select("tipo_onibus, image_url");
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const images: Record<string, string> = {};
+          data.forEach(item => {
+            if (item.image_url) {
+              images[item.tipo_onibus] = item.image_url;
+            }
+          });
+          
+          setBusImages(images);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar imagens dos ônibus:", error);
+      }
+    };
+    
+    fetchBusImages();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {onibusList.map((onibus) => {
         const passageirosNoOnibus = passageirosCount[onibus.id] || onibus.passageiros_count || 0;
         const percentualOcupacao = Math.round((passageirosNoOnibus / onibus.capacidade_onibus) * 100);
         const isSelected = selectedOnibusId === onibus.id;
+        const busImage = busImages[onibus.tipo_onibus];
         
         return (
           <Card 
@@ -43,6 +75,15 @@ export function OnibusCards({
             className={`relative cursor-pointer hover:border-primary transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
             onClick={() => onSelectOnibus(onibus.id)}
           >
+            {busImage && (
+              <div className="w-full h-32 overflow-hidden">
+                <img 
+                  src={busImage}
+                  alt={`Ônibus ${onibus.tipo_onibus}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg flex items-center gap-2">

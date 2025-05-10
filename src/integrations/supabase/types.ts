@@ -72,6 +72,30 @@ export type Database = {
         }
         Relationships: []
       }
+      onibus_images: {
+        Row: {
+          created_at: string | null
+          empresa: string
+          id: string
+          image_url: string | null
+          tipo_onibus: string
+        }
+        Insert: {
+          created_at?: string | null
+          empresa: string
+          id?: string
+          image_url?: string | null
+          tipo_onibus: string
+        }
+        Update: {
+          created_at?: string | null
+          empresa?: string
+          id?: string
+          image_url?: string | null
+          tipo_onibus?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
