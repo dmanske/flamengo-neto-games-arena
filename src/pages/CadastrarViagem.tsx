@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Image as ImageIcon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -32,6 +32,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +60,7 @@ const viagemFormSchema = z.object({
   }),
   capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
+  logo_adversario: z.string().optional(),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
@@ -67,11 +75,14 @@ const onibusPorEmpresa: Record<string, string> = {
 const CadastrarViagem = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-
+  const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
     status_viagem: "Aberta",
     capacidade_onibus: 0,
+    logo_adversario: "",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -81,6 +92,7 @@ const CadastrarViagem = () => {
 
   // Atualiza a capacidade do ônibus e empresa com base no tipo selecionado
   const watchTipoOnibus = form.watch("tipo_onibus");
+  const watchAdversario = form.watch("adversario");
   
   useEffect(() => {
     if (watchTipoOnibus === "43 Leitos Totais") {
@@ -110,6 +122,8 @@ const CadastrarViagem = () => {
         rota: data.rota,
         capacidade_onibus: data.capacidade_onibus,
         status_viagem: data.status_viagem,
+        logo_adversario: data.logo_adversario || null,
+        logo_flamengo: "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
       });
 
       if (error) {
@@ -124,6 +138,17 @@ const CadastrarViagem = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogoSelect = (url: string) => {
+    form.setValue("logo_adversario", url);
+    setLogoUrl(url);
+    setLogoDialogOpen(false);
+  };
+
+  const clearLogo = () => {
+    form.setValue("logo_adversario", "");
+    setLogoUrl("");
   };
 
   return (
@@ -147,6 +172,59 @@ const CadastrarViagem = () => {
                       <FormControl>
                         <Input placeholder="Nome do adversário" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="logo_adversario"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Logo do Adversário</FormLabel>
+                      <div className="flex flex-col space-y-2">
+                        {logoUrl && (
+                          <div className="relative w-16 h-16 mb-2">
+                            <img 
+                              src={logoUrl} 
+                              alt="Logo do time" 
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = `https://via.placeholder.com/150?text=${watchAdversario?.substring(0, 3) || 'Time'}`;
+                              }} 
+                            />
+                            <button
+                              type="button"
+                              onClick={clearLogo}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setLogoDialogOpen(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <ImageIcon className="w-4 h-4" />
+                            {logoUrl ? "Alterar Logo" : "Selecionar Logo"}
+                          </Button>
+                          <input 
+                            type="hidden" 
+                            {...field} 
+                            value={logoUrl} 
+                          />
+                        </div>
+                      </div>
+                      <FormDescription>
+                        Selecione um logo para o time adversário
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -343,6 +421,70 @@ const CadastrarViagem = () => {
           </Form>
         </CardContent>
       </Card>
+
+      {/* Dialog para buscar e selecionar logos */}
+      <Dialog open={logoDialogOpen} onOpenChange={setLogoDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Selecionar Logo do Time</DialogTitle>
+            <DialogDescription>
+              Digite o nome do time para buscar ou cole a URL de uma imagem
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input 
+                type="text" 
+                placeholder="Cole a URL da imagem" 
+                value={logoUrl}
+                onChange={e => setLogoUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={() => handleLogoSelect(logoUrl)}
+                disabled={!logoUrl}
+              >
+                Usar URL
+              </Button>
+            </div>
+            
+            <div className="border-t pt-4">
+              <div className="mb-4">
+                <h3 className="text-sm font-medium mb-2">Ou navegue para escolher um logo:</h3>
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.open('https://logodetimes.com/', '_blank')}
+                    className="w-full"
+                  >
+                    Abrir LogoDeTimes.com em nova janela
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Navegue até o logo desejado, clique com o botão direito na imagem e selecione "Copiar endereço da imagem".
+                    Depois, cole o endereço no campo URL acima.
+                  </p>
+                </div>
+              </div>
+              
+              {watchAdversario && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">Sugestão de busca:</h4>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.open(`https://logodetimes.com/?s=${encodeURIComponent(watchAdversario)}`, '_blank')}
+                      className="w-full"
+                    >
+                      Buscar "{watchAdversario}" no LogoDeTimes.com
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

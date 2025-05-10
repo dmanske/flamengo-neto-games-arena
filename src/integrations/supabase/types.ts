@@ -80,6 +80,8 @@ export type Database = {
           data_jogo: string
           empresa: string
           id: string
+          logo_adversario: string | null
+          logo_flamengo: string | null
           rota: string
           status_viagem: string
           tipo_onibus: string
@@ -91,6 +93,8 @@ export type Database = {
           data_jogo: string
           empresa: string
           id?: string
+          logo_adversario?: string | null
+          logo_flamengo?: string | null
           rota: string
           status_viagem?: string
           tipo_onibus: string
@@ -102,6 +106,8 @@ export type Database = {
           data_jogo?: string
           empresa?: string
           id?: string
+          logo_adversario?: string | null
+          logo_flamengo?: string | null
           rota?: string
           status_viagem?: string
           tipo_onibus?: string

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -21,6 +20,8 @@ interface Viagem {
   capacidade_onibus: number;
   status_viagem: string;
   created_at: string;
+  logo_adversario: string | null;
+  logo_flamengo: string | null;
 }
 
 const statusColors = {
@@ -78,7 +79,6 @@ const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
-  const [timeLogos, setTimeLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchViagens = async () => {
@@ -94,14 +94,6 @@ const Viagens = () => {
         }
         
         setViagens(data || []);
-        
-        // Buscar logos para todos os times adversários
-        const logos: Record<string, string> = {};
-        data?.forEach(viagem => {
-          logos[viagem.adversario] = getLogoTime(viagem.adversario);
-        });
-        
-        setTimeLogos(logos);
         
         // Fetch passenger counts for each trip
         if (data?.length) {
@@ -176,18 +168,21 @@ const Viagens = () => {
                     <div className="flex items-center gap-2">
                       <div className="flex -space-x-4">
                         <Avatar className="h-10 w-10 border-2 border-white">
-                          <AvatarImage src={logosTimesConhecidos["Flamengo"]} alt="Flamengo" />
+                          <AvatarImage 
+                            src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                            alt="Flamengo" 
+                          />
                           <AvatarFallback>FLA</AvatarFallback>
                         </Avatar>
                         <Avatar className="h-10 w-10 border-2 border-white">
                           <AvatarImage 
-                            src={timeLogos[viagem.adversario] || getLogoTime(viagem.adversario)} 
+                            src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`} 
                             alt={viagem.adversario}
                             onError={(e) => {
                               // Se a imagem falhar, use um fallback
                               const target = e.target as HTMLImageElement;
                               target.onerror = null; // Previne loops infinitos
-                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`;
+                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
                             }}
                           />
                           <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
