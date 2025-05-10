@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -371,20 +370,13 @@ const Dashboard = () => {
         </Card>
       </div>
       
-      {/* Flamengo Logo Section */}
+      {/* Single Image Section */}
       <div className="flex justify-center items-center my-8">
-        <div className="flex flex-col items-center">
-          <img 
-            src={flamengoLogo}
-            alt="Logo do Flamengo"
-            className="h-40 w-auto mb-2"
-          />
-          <Button variant="link" asChild>
-            <Link to="/configuracoes" className="text-sm">
-              Personalizar logo nas configurações
-            </Link>
-          </Button>
-        </div>
+        <img 
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" 
+          alt="Flamengo Image" 
+          className="h-auto max-w-full"
+        />
       </div>
     </div>
   );
