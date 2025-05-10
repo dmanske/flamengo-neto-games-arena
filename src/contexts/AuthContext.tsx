@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast.success("Login realizado com sucesso!");
-      navigate("/viagens");
+      navigate("/"); // Changed from "/viagens" to "/" which is the dashboard
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
       toast.error(error.message || "Erro ao fazer login. Verifique suas credenciais.");
