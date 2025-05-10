@@ -94,6 +94,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Lista de estados brasileiros para o dropdown
+const estadosBrasileiros = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", 
+  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", 
+  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
 const CadastrarCliente = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
