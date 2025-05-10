@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -206,7 +205,7 @@ const Onibus = () => {
                   folderPath=""
                   allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
                   maxSizeInMB={5}
-                  hidePreview={true}
+                  showPreview={false}
                 />
               </div>
             </CardContent>
