@@ -1,11 +1,39 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bus, CalendarCheck, CreditCard, User, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
+  const [clientCount, setClientCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  useEffect(() => {
+    const fetchClientCount = async () => {
+      try {
+        setIsLoading(true);
+        const { count, error } = await supabase
+          .from('clientes')
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          console.error('Erro ao buscar contagem de clientes:', error);
+          return;
+        }
+        
+        setClientCount(count || 0);
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchClientCount();
+  }, []);
+
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
@@ -37,15 +65,21 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
-              <CardTitle className="text-lg">Passageiros</CardTitle>
+              <CardTitle className="text-lg">Clientes</CardTitle>
               <div className="bg-green-100 text-green-500 p-2 rounded-full">
                 <Users className="h-5 w-5" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">0</p>
-            <CardDescription>Nenhum passageiro cadastrado</CardDescription>
+            <p className="text-2xl font-bold">{isLoading ? '...' : clientCount}</p>
+            <CardDescription>
+              {clientCount === 0
+                ? 'Nenhum cliente cadastrado'
+                : clientCount === 1
+                  ? '1 cliente cadastrado'
+                  : `${clientCount} clientes cadastrados`}
+            </CardDescription>
           </CardContent>
         </Card>
         
