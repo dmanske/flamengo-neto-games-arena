@@ -11,8 +11,6 @@ import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
-import CadastrarPassageiro from "./pages/CadastrarPassageiro";
-import Passageiros from "./pages/Passageiros";
 import CadastrarCliente from "./pages/CadastrarCliente";
 import EditarCliente from "./pages/EditarCliente";
 import Clientes from "./pages/Clientes";
@@ -50,14 +48,12 @@ const App = () => (
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="/cadastrar-cliente" element={<CadastrarCliente />} />
                   <Route path="/editar-cliente/:id" element={<EditarCliente />} />
                   <Route path="/viagens" element={<Viagens />} />
                   <Route path="/cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="/viagem/:id" element={<DetalhesViagem />} />
                   <Route path="/editar-viagem/:id" element={<EditarViagem />} />
-                  <Route path="/passageiros" element={<Passageiros />} />
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
                   <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />

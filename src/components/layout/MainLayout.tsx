@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -25,7 +26,7 @@ interface NavItemProps {
   to: string;
   isActive?: boolean;
   onClick?: () => void;
-  exact?: boolean; // Change 'end' to 'exact' which we'll handle manually
+  exact?: boolean; // Changed from 'end' to 'exact'
 }
 
 const NavItem = ({
@@ -127,12 +128,6 @@ const MainLayout = () => {
             icon={<Users className="h-5 w-5" />}
             title="Clientes"
             to="/clientes"
-            onClick={closeMenu}
-          />
-          <NavItem
-            icon={<Users className="h-5 w-5" />}
-            title="Passageiros"
-            to="/passageiros"
             onClick={closeMenu}
           />
           <NavItem
