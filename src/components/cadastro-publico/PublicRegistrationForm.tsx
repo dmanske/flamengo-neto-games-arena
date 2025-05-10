@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { supabase } from "@/lib/supabase";
 import { fetchAddressByCEP } from "@/utils/cepUtils";
 import { PersonalInfoFields } from "./PersonalInfoFields";
@@ -216,13 +216,13 @@ export function PublicRegistrationForm() {
 
             {/* Photo Upload Field */}
             <div className="md:col-span-2">
-              <Form.Field
+              <FormField
                 control={form.control}
                 name="foto"
                 render={({ field }) => (
-                  <Form.Item>
-                    <Form.Label>Foto (opcional)</Form.Label>
-                    <Form.Control>
+                  <FormItem>
+                    <FormLabel>Foto (opcional)</FormLabel>
+                    <FormControl>
                       <FileUpload
                         value={field.value}
                         onChange={field.onChange}
@@ -232,9 +232,9 @@ export function PublicRegistrationForm() {
                         showPreview={true}
                         previewClassName="h-40 w-40 mx-auto"
                       />
-                    </Form.Control>
-                    <Form.Message />
-                  </Form.Item>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
             </div>

@@ -5,7 +5,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Control } from "react-hook-form";
-import { FonteConhecimento } from "@/types/entities";
 
 interface ReferralFieldsProps {
   control: Control<any>;
@@ -20,7 +19,7 @@ export function ReferralFields({ control, watchComoConheceu }: ReferralFieldsPro
         name="como_conheceu"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Como conheceu a Neto Tours?*</FormLabel>
+            <FormLabel>Como conheceu a FlaViagens?*</FormLabel>
             <FormControl>
               <RadioGroup
                 onValueChange={field.onChange}

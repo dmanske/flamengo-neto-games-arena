@@ -1,6 +1,5 @@
 
 import { z } from "zod";
-import { FonteConhecimento } from "@/types/entities";
 
 export const formSchema = z.object({
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
