@@ -13,7 +13,7 @@ const Dashboard = () => {
         <div className="flex gap-3">
           <Button className="bg-primary hover:bg-primary/90">Nova Viagem</Button>
           <Button asChild className="bg-green-600 hover:bg-green-700">
-            <Link to="/cadastrar-passageiro">Cadastrar Passageiro</Link>
+            <Link to="/cadastrar-cliente">Cadastrar Cliente</Link>
           </Button>
         </div>
       </div>

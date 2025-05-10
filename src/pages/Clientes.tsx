@@ -1,8 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
-import { Plus, Search, Users, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -13,14 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,110 +20,122 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Cliente } from "@/types/entities";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Loader2, Search, Trash2, Pencil } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { Link } from "react-router-dom";
+
+// Type for the cliente object
+interface Cliente {
+  id: number;
+  nome: string;
+  email: string;
+  telefone: string;
+  cpf: string;
+  data_nascimento: string | null;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  created_at: string;
+}
 
 const Clientes = () => {
-  // States for filtering and the delete dialog
-  const [filterNome, setFilterNome] = useState("");
-  const [filterCidade, setFilterCidade] = useState("");
-  const [filterDocumento, setFilterDocumento] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<Cliente | null>(null);
-  
-  // States for client data
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchField, setSearchField] = useState<"nome" | "cidade" | "cpf">("nome");
+  const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // States for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10;
-
-  // Fetch clients from database
-  useEffect(() => {
-    fetchClientes();
-  }, [currentPage, filterNome, filterCidade, filterDocumento]);
-
+  // Fetch clientes from Supabase
   const fetchClientes = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Build query with filters
-      let query = supabase
-        .from('clientes')
-        .select('*', { count: 'exact' });
-
-      // Apply filters if they exist
-      if (filterNome) {
-        query = query.ilike('nome', `%${filterNome}%`);
-      }
-      if (filterCidade) {
-        query = query.ilike('cidade', `%${filterCidade}%`);
-      }
-      if (filterDocumento) {
-        query = query.ilike('cpf', `%${filterDocumento}%`);
-      }
-
-      // Add pagination
-      const from = (currentPage - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-      query = query.range(from, to).order('created_at', { ascending: false });
-
-      // Execute query
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      setClientes(data || []);
       
-      // Update total pages
-      if (count !== null) {
-        setTotalPages(Math.ceil(count / itemsPerPage));
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
       }
-    } catch (err) {
-      console.error('Error fetching clients:', err);
-      setError('Erro ao carregar clientes. Tente novamente.');
-      toast.error('Erro ao carregar clientes');
+      
+      setClientes(data || []);
+    } catch (err: any) {
+      console.error('Erro ao buscar clientes:', err);
+      setError(err.message || 'Erro ao carregar os clientes');
+      toast.error('Erro ao carregar dados de clientes');
     } finally {
       setLoading(false);
     }
   };
+  
+  // Load clientes on component mount
+  useEffect(() => {
+    fetchClientes();
+  }, []);
+  
+  // Search functionality
+  const filteredClientes = clientes.filter((cliente) => {
+    if (!searchTerm) return true;
+    
+    const term = searchTerm.toLowerCase();
+    
+    switch (searchField) {
+      case "nome":
+        return cliente.nome.toLowerCase().includes(term);
+      case "cidade":
+        return cliente.cidade.toLowerCase().includes(term);
+      case "cpf":
+        return cliente.cpf.replace(/[^\d]/g, '').includes(term.replace(/[^\d]/g, ''));
+      default:
+        return true;
+    }
+  });
 
-  // Handle client deletion
-  const handleDeleteClick = (client: Cliente) => {
-    setClientToDelete(client);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!clientToDelete) return;
-
+  // Handle delete cliente
+  const handleDeleteCliente = async () => {
+    if (!clienteToDelete) return;
+    
     try {
+      setIsDeleting(true);
+      
       const { error } = await supabase
         .from('clientes')
         .delete()
-        .eq('id', clientToDelete.id);
-
-      if (error) throw error;
-
-      toast.success('Cliente excluído com sucesso');
+        .eq('id', clienteToDelete.id);
       
-      // Refetch clients after deletion
-      fetchClientes();
-    } catch (err) {
-      console.error('Error deleting client:', err);
-      toast.error('Erro ao excluir cliente');
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      setClientes(clientes.filter(c => c.id !== clienteToDelete.id));
+      toast.success(`Cliente ${clienteToDelete.nome} removido com sucesso`);
+      setClienteToDelete(null);
+    } catch (err: any) {
+      console.error('Erro ao excluir cliente:', err);
+      toast.error(`Erro ao excluir cliente: ${err.message}`);
     } finally {
-      setDeleteDialogOpen(false);
-      setClientToDelete(null);
+      setIsDeleting(false);
     }
+  };
+
+  // Format CPF
+  const formatCPF = (cpf: string) => {
+    if (!cpf) return 'N/A';
+    cpf = cpf.replace(/[^\d]/g, '');
+    
+    if (cpf.length !== 11) return cpf;
+    
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
 
   // Format date for display
@@ -146,117 +149,94 @@ const Clientes = () => {
     }
   };
 
-  // Format CPF for display (000.000.000-00)
-  const formatCPF = (cpf: string) => {
-    // Remove any non-digit character
-    const cleanCPF = cpf.replace(/\D/g, '');
-    
-    // Return formatted or original if not matching pattern
-    if (cleanCPF.length !== 11) return cpf;
-    
-    return cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
-
   return (
     <div className="container py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Clientes Cadastrados</h1>
-        <Button asChild className="bg-green-600 hover:bg-green-700">
+      <h1 className="text-3xl font-bold mb-6">Clientes Cadastrados</h1>
+      
+      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder={`Buscar por ${searchField === "nome" ? "nome" : searchField === "cidade" ? "cidade" : "CPF"}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant={searchField === "nome" ? "default" : "outline"} 
+              onClick={() => setSearchField("nome")}
+              size="sm"
+            >
+              Nome
+            </Button>
+            <Button 
+              variant={searchField === "cidade" ? "default" : "outline"} 
+              onClick={() => setSearchField("cidade")}
+              size="sm"
+            >
+              Cidade
+            </Button>
+            <Button 
+              variant={searchField === "cpf" ? "default" : "outline"} 
+              onClick={() => setSearchField("cpf")}
+              size="sm"
+            >
+              CPF
+            </Button>
+          </div>
+        </div>
+        <Button 
+          className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+          asChild
+        >
           <Link to="/cadastrar-cliente">
-            <Plus className="mr-2 h-4 w-4" /> Novo Cliente
+            Cadastrar Novo Cliente
           </Link>
         </Button>
       </div>
       
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filtrar Clientes</CardTitle>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Lista de Clientes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Buscar por nome..." 
-                className="w-full pl-9" 
-                value={filterNome}
-                onChange={(e) => setFilterNome(e.target.value)}
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2">Carregando clientes...</span>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Buscar por cidade..." 
-                className="w-full pl-9" 
-                value={filterCidade}
-                onChange={(e) => setFilterCidade(e.target.value)}
-              />
+          ) : error ? (
+            <div className="py-8 text-center">
+              <p className="text-red-500">{error}</p>
+              <Button onClick={fetchClientes} className="mt-4">Tentar Novamente</Button>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Buscar por CPF..." 
-                className="w-full pl-9" 
-                value={filterDocumento}
-                onChange={(e) => setFilterDocumento(e.target.value)}
-              />
+          ) : filteredClientes.length === 0 ? (
+            <div className="py-8 text-center">
+              {searchTerm ? (
+                <p className="text-gray-500">Nenhum cliente encontrado com esses critérios de busca.</p>
+              ) : (
+                <p className="text-gray-500">Nenhum cliente cadastrado ainda.</p>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Cidade</TableHead>
-                  <TableHead>Documento</TableHead>
-                  <TableHead>Data de Nascimento</TableHead>
-                  <TableHead className="text-center">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                        <p className="mt-2 text-sm text-muted-foreground">Carregando clientes...</p>
-                      </div>
-                    </TableCell>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Cidade/Estado</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead>Data Nasc.</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
-                ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      <div className="flex flex-col items-center justify-center">
-                        <p className="text-red-500">{error}</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-2"
-                          onClick={() => fetchClientes()}
-                        >
-                          Tentar novamente
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : clientes.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      <div className="flex flex-col items-center justify-center">
-                        <Users className="h-12 w-12 mb-2 text-muted-foreground/50" />
-                        <p className="text-muted-foreground">Nenhum cliente encontrado</p>
-                        <p className="text-sm text-muted-foreground">Clique em "Novo Cliente" para cadastrar</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  clientes.map((cliente) => (
+                </TableHeader>
+                <TableBody>
+                  {filteredClientes.map((cliente) => (
                     <TableRow key={cliente.id}>
                       <TableCell className="font-medium">{cliente.nome}</TableCell>
                       <TableCell>{cliente.telefone}</TableCell>
@@ -276,115 +256,54 @@ const Clientes = () => {
                               <span className="sr-only">Editar</span>
                             </Link>
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-500"
-                            onClick={() => handleDeleteClick(cliente)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Excluir</span>
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setClienteToDelete(cliente)}
+                                className="text-red-500 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Excluir</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o cliente {clienteToDelete?.nome}? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={handleDeleteCliente}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Excluindo...
+                                    </>
+                                  ) : (
+                                    'Excluir'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {!loading && !error && clientes.length > 0 && (
-            <div className="flex justify-between items-center p-4 border-t">
-              <div>Mostrando {clientes.length} de {totalPages * itemsPerPage} resultados</div>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
-                    // Calculate page number to display, handling when current page is near the end
-                    let pageNum = currentPage <= 3 
-                      ? index + 1 
-                      : currentPage + index - 2;
-                    
-                    // Adjust for edge cases
-                    if (pageNum > totalPages) return null;
-                    if (currentPage > 3 && index === 0) pageNum = 1;
-                    if (currentPage > 3 && index === 1 && currentPage > 4) 
-                      return (
-                        <PaginationItem key="ellipsis-start">
-                          <span className="px-2">...</span>
-                        </PaginationItem>
-                      );
-                    
-                    return (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink 
-                          isActive={currentPage === pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                        >
-                          {pageNum}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  
-                  {totalPages > 5 && currentPage < totalPages - 2 && (
-                    <PaginationItem>
-                      <span className="px-2">...</span>
-                    </PaginationItem>
-                  )}
-                  
-                  {totalPages > 5 && currentPage < totalPages - 1 && (
-                    <PaginationItem>
-                      <PaginationLink onClick={() => setCurrentPage(totalPages)}>
-                        {totalPages}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este cliente?
-              {clientToDelete && (
-                <div className="mt-2 font-medium">{clientToDelete.nome}</div>
-              )}
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-red-600 hover:bg-red-700"
-              onClick={handleDeleteConfirm}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
