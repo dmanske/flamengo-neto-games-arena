@@ -12,6 +12,16 @@ const MainLayout = () => {
       path: "/"
     },
     {
+      title: "Cadastrar Cliente",
+      icon: User,
+      path: "/cadastrar-cliente"
+    },
+    {
+      title: "Clientes Cadastrados",
+      icon: Users,
+      path: "/clientes"
+    },
+    {
       title: "Viagens",
       icon: Calendar,
       path: "/viagens"
@@ -20,16 +30,6 @@ const MainLayout = () => {
       title: "Passageiros",
       icon: Users,
       path: "/passageiros"
-    },
-    {
-      title: "Clientes Cadastrados",
-      icon: Users,
-      path: "/clientes"
-    },
-    {
-      title: "Cadastrar Cliente",
-      icon: User,
-      path: "/cadastrar-cliente"
     },
     {
       title: "Ônibus",

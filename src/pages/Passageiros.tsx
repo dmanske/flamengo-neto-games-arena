@@ -1,21 +1,12 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const Passageiros = () => {
-  // Mock data for passengers
-  const passageiros = [
-    { id: 1, nome: "João Silva", telefone: "(21) 99999-1111", cidade: "Rio de Janeiro", setor: "Norte", status: "Pago", onibus: "01" },
-    { id: 2, nome: "Maria Santos", telefone: "(21) 99999-2222", cidade: "Niterói", setor: "Sul", status: "Pendente", onibus: "02" },
-    { id: 3, nome: "Carlos Oliveira", telefone: "(21) 99999-3333", cidade: "Duque de Caxias", setor: "Leste", status: "Pago", onibus: "01" },
-    { id: 4, nome: "Ana Costa", telefone: "(21) 99999-4444", cidade: "Nova Iguaçu", setor: "Oeste", status: "Cancelado", onibus: "03" },
-    { id: 5, nome: "Roberto Almeida", telefone: "(21) 99999-5555", cidade: "Rio de Janeiro", setor: "Norte", status: "Pago", onibus: "02" },
-  ];
-
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
@@ -39,10 +30,6 @@ const Passageiros = () => {
             </div>
             <select className="bg-white border border-gray-300 rounded-md px-3 py-2">
               <option value="">Todas as cidades</option>
-              <option value="Rio de Janeiro">Rio de Janeiro</option>
-              <option value="Niterói">Niterói</option>
-              <option value="Duque de Caxias">Duque de Caxias</option>
-              <option value="Nova Iguaçu">Nova Iguaçu</option>
             </select>
             <select className="bg-white border border-gray-300 rounded-md px-3 py-2">
               <option value="">Todos os status</option>
@@ -70,35 +57,20 @@ const Passageiros = () => {
                 </tr>
               </thead>
               <tbody>
-                {passageiros.map((passageiro) => (
-                  <tr key={passageiro.id} className="border-t border-gray-200">
-                    <td className="px-4 py-3">{passageiro.nome}</td>
-                    <td className="px-4 py-3">{passageiro.telefone}</td>
-                    <td className="px-4 py-3">{passageiro.cidade}</td>
-                    <td className="px-4 py-3">{passageiro.setor}</td>
-                    <td className="px-4 py-3">{passageiro.onibus}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        passageiro.status === "Pago" ? "bg-green-100 text-green-700" :
-                        passageiro.status === "Pendente" ? "bg-yellow-100 text-yellow-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>
-                        {passageiro.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center space-x-2">
-                        <Button variant="outline" size="sm">Editar</Button>
-                        <Button variant="outline" size="sm" className="text-red-500 border-red-500 hover:bg-red-50">Excluir</Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center">
+                      <Users className="h-12 w-12 mb-2 text-muted-foreground/50" />
+                      <p>Nenhum passageiro cadastrado</p>
+                      <p className="text-sm">Clique em "Novo Passageiro" para cadastrar</p>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
           <div className="flex justify-between items-center p-4 border-t">
-            <div>Mostrando 1-5 de 5 resultados</div>
+            <div>Mostrando 0 resultados</div>
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" disabled>Anterior</Button>
               <Button variant="outline" size="sm" disabled>Próximo</Button>
