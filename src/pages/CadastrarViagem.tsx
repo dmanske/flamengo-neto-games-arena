@@ -123,7 +123,7 @@ const CadastrarViagem = () => {
         capacidade_onibus: data.capacidade_onibus,
         status_viagem: data.status_viagem,
         logo_adversario: data.logo_adversario || null,
-        logo_flamengo: "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+        logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
       });
 
       if (error) {

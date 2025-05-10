@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Bus, Calendar, CreditCard, Map, User, Users } from "lucide-react";
+import { Bus, Calendar, CreditCard, Map, Settings, User, Users } from "lucide-react";
 import { Link, Outlet } from "react-router-dom";
 
 const MainLayout = () => {
@@ -35,6 +35,11 @@ const MainLayout = () => {
       title: "Pagamentos",
       icon: CreditCard,
       path: "/pagamentos"
+    },
+    {
+      title: "Configurações",
+      icon: Settings,
+      path: "/configuracoes"
     }
   ];
 
