@@ -141,8 +141,9 @@ const Configuracoes = () => {
                       value={flamengoLogo}
                       onChange={setFlamengoLogo}
                       bucketName="logos"
-                      folderPath="flamengo"
+                      folderPath=""
                       allowedFileTypes={["image/jpeg", "image/png", "image/jpg", "image/webp"]}
+                      maxSizeInMB={2}
                     />
                   </div>
                   {flamengoLogo && (
