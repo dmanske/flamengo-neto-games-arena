@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -269,7 +268,7 @@ const CadastrarViagem = () => {
                   name="rota"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rota</FormLabel>
+                      <FormLabel>Rota da Viagem</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -280,11 +279,16 @@ const CadastrarViagem = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Cidade A">Cidade A</SelectItem>
-                          <SelectItem value="Cidade B">Cidade B</SelectItem>
-                          <SelectItem value="Cidade C">Cidade C</SelectItem>
+                          <SelectItem value="Rio de Janeiro - Maracanã">Rio de Janeiro - Maracanã</SelectItem>
+                          <SelectItem value="São Paulo - Morumbi">São Paulo - Morumbi</SelectItem>
+                          <SelectItem value="Belo Horizonte - Mineirão">Belo Horizonte - Mineirão</SelectItem>
+                          <SelectItem value="Porto Alegre - Beira-Rio">Porto Alegre - Beira-Rio</SelectItem>
+                          <SelectItem value="Brasília - Mané Garrincha">Brasília - Mané Garrincha</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        Trajeto que o ônibus irá percorrer para o estádio do jogo
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
