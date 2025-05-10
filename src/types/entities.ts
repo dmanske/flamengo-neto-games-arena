@@ -1,11 +1,10 @@
-
 export type StatusPagamento = 'Pendente' | 'Pago' | 'Cancelado';
 export type StatusViagem = 'Aberta' | 'Em Andamento' | 'Finalizada';
-export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto';
+export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto' | 'Paypal' | 'Outro';
 export type FonteConhecimento = 'Instagram' | 'Indicação' | 'Facebook' | 'Google' | 'Outro';
 export type TipoOnibus = '43 Leitos Totais' | '52 Leitos Master' | '56 Leitos Master';
 export type EmpresaOnibus = 'Bertoldo' | 'Majetur' | 'Sarcella' | 'HG TUR';
-export type SetorMaracana = 'Norte' | 'Sul' | 'Leste' | 'Oeste' | 'Maracanã Mais';
+export type SetorMaracana = 'Norte' | 'Sul' | 'Leste' | 'Oeste' | 'Maracanã Mais' | 'Sem ingresso';
 
 export interface Passageiro {
   id?: string;
@@ -17,6 +16,7 @@ export interface Passageiro {
   status_pagamento: StatusPagamento;
   numero_onibus: string;
   valor?: number;
+  forma_pagamento?: FormaPagamento;
 }
 
 export interface Cliente {

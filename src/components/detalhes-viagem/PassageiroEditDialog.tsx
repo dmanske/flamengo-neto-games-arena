@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { FormaPagamento } from "@/types/entities";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface PassageiroDisplay {
   cidade: string;
   setor_maracana: string;
   status_pagamento: string;
+  forma_pagamento: FormaPagamento;
   cpf: string;
   cliente_id: string;
   viagem_passageiro_id: string;
@@ -43,8 +45,9 @@ export function PassageiroEditDialog({
   passageiro,
   onSuccess,
 }: PassageiroEditDialogProps) {
-  const [setor, setSetor] = useState<string>(passageiro?.setor_maracana || "Norte");
+  const [setor, setSetor] = useState<string>(passageiro?.setor_maracana || "Sem ingresso");
   const [statusPagamento, setStatusPagamento] = useState<string>(passageiro?.status_pagamento || "Pendente");
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(passageiro?.forma_pagamento || "Pix");
   const [valor, setValor] = useState<number>(passageiro?.valor || 0);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,6 +56,7 @@ export function PassageiroEditDialog({
     if (passageiro) {
       setSetor(passageiro.setor_maracana);
       setStatusPagamento(passageiro.status_pagamento);
+      setFormaPagamento(passageiro.forma_pagamento || "Pix");
       setValor(passageiro.valor || 0);
     }
   }, [passageiro]);
@@ -68,6 +72,7 @@ export function PassageiroEditDialog({
         .update({
           setor_maracana: setor,
           status_pagamento: statusPagamento,
+          forma_pagamento: formaPagamento,
           valor: valor
         })
         .eq("id", passageiro.viagem_passageiro_id);
@@ -121,6 +126,7 @@ export function PassageiroEditDialog({
                   <SelectValue placeholder="Selecione o setor" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
                   <SelectItem value="Norte">Norte</SelectItem>
                   <SelectItem value="Sul">Sul</SelectItem>
                   <SelectItem value="Leste">Leste</SelectItem>
@@ -144,19 +150,40 @@ export function PassageiroEditDialog({
               </RadioGroup>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="edit-valor">Valor</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                <Input 
-                  id="edit-valor" 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  value={valor} 
-                  onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
-                  className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-valor">Valor</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                  <Input 
+                    id="edit-valor" 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    value={valor} 
+                    onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
+                    className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-forma-pagamento">Forma de Pagamento</Label>
+                <Select 
+                  value={formaPagamento} 
+                  onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}
+                >
+                  <SelectTrigger id="edit-forma-pagamento">
+                    <SelectValue placeholder="Selecione a forma de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pix">Pix</SelectItem>
+                    <SelectItem value="Cartão">Cartão</SelectItem>
+                    <SelectItem value="Boleto">Boleto</SelectItem>
+                    <SelectItem value="Paypal">Paypal</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

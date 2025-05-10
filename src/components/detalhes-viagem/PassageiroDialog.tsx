@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FormaPagamento } from "@/types/entities";
 
 interface Cliente {
   id: string;
@@ -50,14 +51,15 @@ export function PassageiroDialog({
   viagemId,
   onSuccess,
   valorPadrao = 0,
-  setorPadrao = "Norte"
+  setorPadrao = "Sem ingresso"
 }: PassageiroDialogProps) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClienteId, setSelectedClienteId] = useState<string>("");
-  const [setor, setSetor] = useState<string>(setorPadrao || "Norte");
+  const [setor, setSetor] = useState<string>(setorPadrao || "Sem ingresso");
   const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("Pix");
   const [valor, setValor] = useState<number>(valorPadrao || 0);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,8 +88,9 @@ export function PassageiroDialog({
     if (open) {
       setSearchTerm("");
       setSelectedClienteId("");
-      setSetor(setorPadrao || "Norte");
+      setSetor(setorPadrao || "Sem ingresso");
       setStatusPagamento("Pendente");
+      setFormaPagamento("Pix");
       setValor(valorPadrao || 0);
     }
   }, [open, setorPadrao, valorPadrao]);
@@ -136,6 +139,7 @@ export function PassageiroDialog({
           cliente_id: selectedClienteId,
           setor_maracana: setor,
           status_pagamento: statusPagamento,
+          forma_pagamento: formaPagamento,
           valor: valor
         });
       
@@ -246,6 +250,7 @@ export function PassageiroDialog({
                   <SelectValue placeholder="Selecione o setor" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
                   <SelectItem value="Norte">Norte</SelectItem>
                   <SelectItem value="Sul">Sul</SelectItem>
                   <SelectItem value="Leste">Leste</SelectItem>
@@ -270,23 +275,38 @@ export function PassageiroDialog({
             </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="valor">Valor</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-              <Input 
-                id="valor" 
-                type="number" 
-                min="0" 
-                step="0.01" 
-                value={valor} 
-                onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
-                className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valor">Valor</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                <Input 
+                  id="valor" 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  value={valor} 
+                  onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
+                  className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Valor a ser cobrado deste passageiro
-            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+              <Select value={formaPagamento} onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}>
+                <SelectTrigger id="forma-pagamento">
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pix">Pix</SelectItem>
+                  <SelectItem value="Cartão">Cartão</SelectItem>
+                  <SelectItem value="Boleto">Boleto</SelectItem>
+                  <SelectItem value="Paypal">Paypal</SelectItem>
+                  <SelectItem value="Outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         

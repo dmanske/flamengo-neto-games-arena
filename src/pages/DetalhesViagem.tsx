@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -45,6 +46,8 @@ import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog"
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
 import { PassageiroDeleteDialog } from "@/components/detalhes-viagem/PassageiroDeleteDialog";
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
+import { filterPassageiros } from "@/utils/search";
+import { FormaPagamento } from "@/types/entities";
 
 const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
@@ -83,6 +86,7 @@ interface ViagemPassageiro {
   cliente_id: string;
   setor_maracana: string;
   status_pagamento: string;
+  forma_pagamento: string;
   created_at: string;
   valor: number | null;
   cliente?: Cliente;
@@ -95,6 +99,7 @@ interface PassageiroDisplay {
   cidade: string;
   setor_maracana: string;
   status_pagamento: string;
+  forma_pagamento: FormaPagamento;
   cpf: string;
   cliente_id: string;
   viagem_passageiro_id: string;
@@ -106,6 +111,8 @@ const DetalhesViagem = () => {
   const navigate = useNavigate();
   const [viagem, setViagem] = useState<Viagem | null>(null);
   const [passageiros, setPassageiros] = useState<PassageiroDisplay[]>([]);
+  const [filteredPassageiros, setFilteredPassageiros] = useState<PassageiroDisplay[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
@@ -149,6 +156,13 @@ const DetalhesViagem = () => {
     fetchViagem();
   }, [id]);
 
+  // Efeito para filtrar passageiros quando o termo de busca muda
+  useEffect(() => {
+    if (passageiros.length > 0) {
+      setFilteredPassageiros(filterPassageiros(passageiros, searchTerm));
+    }
+  }, [searchTerm, passageiros]);
+
   const fetchPassageiros = async (viagemId: string) => {
     try {
       // Buscar passageiros da viagem com dados do cliente
@@ -160,6 +174,7 @@ const DetalhesViagem = () => {
           cliente_id,
           setor_maracana,
           status_pagamento,
+          forma_pagamento,
           valor,
           created_at,
           clientes:cliente_id (id, nome, telefone, cidade, cpf)
@@ -177,12 +192,14 @@ const DetalhesViagem = () => {
         cpf: item.clientes.cpf,
         setor_maracana: item.setor_maracana,
         status_pagamento: item.status_pagamento,
+        forma_pagamento: item.forma_pagamento || "Pix",
         cliente_id: item.cliente_id,
         viagem_passageiro_id: item.id,
         valor: item.valor || 0,
       }));
       
       setPassageiros(formattedPassageiros);
+      setFilteredPassageiros(formattedPassageiros);
       
       // Calcular resumo financeiro
       let arrecadado = 0;
@@ -267,6 +284,10 @@ const DetalhesViagem = () => {
   const calcularPercentualPagamento = () => {
     if (totalArrecadado === 0) return 0;
     return Math.round((totalPago / totalArrecadado) * 100);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   if (isLoading) {
@@ -456,65 +477,95 @@ const DetalhesViagem = () => {
         </CardHeader>
         <CardContent>
           {passageiros.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Cidade</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Setor Maracanã</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {passageiros.map((passageiro) => (
-                    <TableRow key={passageiro.viagem_passageiro_id}>
-                      <TableCell>{passageiro.nome}</TableCell>
-                      <TableCell>{passageiro.telefone}</TableCell>
-                      <TableCell>{passageiro.cidade}</TableCell>
-                      <TableCell>{passageiro.cpf}</TableCell>
-                      <TableCell>{passageiro.setor_maracana}</TableCell>
-                      <TableCell>{formatCurrency(passageiro.valor)}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={
-                            passageiro.status_pagamento === "Pago" 
-                              ? "bg-green-100 text-green-800" 
-                              : "bg-amber-100 text-amber-800"
-                          }
-                        >
-                          {passageiro.status_pagamento}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => openEditPassageiroDialog(passageiro)}
-                          >
-                            <Pencil className="h-3 w-3 mr-1" />
-                            Editar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-destructive" 
-                            onClick={() => openDeletePassageiroDialog(passageiro)}
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Remover
-                          </Button>
-                        </div>
-                      </TableCell>
+            <div>
+              <div className="mb-4 relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar passageiro por nome, CPF, telefone..."
+                  className="pl-8 pr-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button 
+                    className="absolute right-2 top-1/2 -translate-y-1/2" 
+                    onClick={clearSearch}
+                    type="button"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Telefone</TableHead>
+                      <TableHead>Cidade</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>Setor</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Pgto.</TableHead>
+                      <TableHead>Forma</TableHead>
+                      <TableHead className="text-center">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPassageiros.length > 0 ? (
+                      filteredPassageiros.map((passageiro) => (
+                        <TableRow key={passageiro.viagem_passageiro_id}>
+                          <TableCell>{passageiro.nome}</TableCell>
+                          <TableCell>{passageiro.telefone}</TableCell>
+                          <TableCell>{passageiro.cidade}</TableCell>
+                          <TableCell>{passageiro.cpf}</TableCell>
+                          <TableCell>{passageiro.setor_maracana}</TableCell>
+                          <TableCell>{formatCurrency(passageiro.valor)}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              className={
+                                passageiro.status_pagamento === "Pago" 
+                                  ? "bg-green-100 text-green-800" 
+                                  : "bg-amber-100 text-amber-800"
+                              }
+                            >
+                              {passageiro.status_pagamento}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{passageiro.forma_pagamento}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex justify-center gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => openEditPassageiroDialog(passageiro)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-destructive" 
+                                onClick={() => openDeletePassageiroDialog(passageiro)}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Remover
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-4">
+                          {searchTerm ? "Nenhum passageiro encontrado com esse termo." : "Nenhum passageiro encontrado."}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
