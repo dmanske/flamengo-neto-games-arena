@@ -29,7 +29,7 @@ const statusColors = {
   "Finalizada": "bg-gray-100 text-gray-800",
 };
 
-// Mapa com logos de times conhecidos
+// Mapa com logos de times conhecidos brasileiros
 const logosTimesConhecidos: Record<string, string> = {
   "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
   "Fluminense": "https://upload.wikimedia.org/wikipedia/commons/a/a3/FFC_escudo.svg",
@@ -43,17 +43,42 @@ const logosTimesConhecidos: Record<string, string> = {
   "Atlético Mineiro": "https://upload.wikimedia.org/wikipedia/commons/2/27/Clube_Atl%C3%A9tico_Mineiro_logo.svg",
   "Internacional": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Sport_Club_Internacional.svg",
   "Grêmio": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Gremio.svg",
+  "Bahia": "https://upload.wikimedia.org/wikipedia/commons/a/ac/ECBahia.svg",
+  "Sport": "https://upload.wikimedia.org/wikipedia/commons/4/45/Sport_Club_do_Recife.svg",
+  "Fortaleza": "https://upload.wikimedia.org/wikipedia/commons/4/40/FortalezaEsporteClube.svg",
+  "Ceará": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Ceara_logo.svg",
+  "Athletico Paranaense": "https://upload.wikimedia.org/wikipedia/commons/b/b3/CA_Paranaense.svg",
+  "Coritiba": "https://upload.wikimedia.org/wikipedia/commons/9/9a/Coritiba_FBC_%282011%29_-_PR.svg",
+  "Goiás": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Logo_of_Goias_Esporte_Clube.svg",
+  "Vitória": "https://upload.wikimedia.org/wikipedia/commons/0/0c/EC_Vit%C3%B3ria.svg",
+  "Ponte Preta": "https://upload.wikimedia.org/wikipedia/commons/0/03/Associa%C3%A7%C3%A3o_Atl%C3%A9tica_Ponte_Preta.svg",
+  "Chapecoense": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Associa%C3%A7%C3%A3o_Chapecoense_de_Futebol.svg",
+  "América Mineiro": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Escudo_do_Am%C3%A9rica_Futebol_Clube.svg",
+  "Cuiabá": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Cuiab%C3%A1_Esporte_Clube_logo.svg",
+  "Juventude": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Esporte_Clube_Juventude.svg",
+  "Bragantino": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Red_Bull_Bragantino_logo.svg",
 };
 
 // Função para obter o logo do time
 const getLogoTime = (time: string): string => {
-  return logosTimesConhecidos[time] || `https://via.placeholder.com/150?text=${time}`;
+  // Se o time estiver no nosso mapa de logos conhecidos, retorne o logo
+  if (logosTimesConhecidos[time]) {
+    return logosTimesConhecidos[time];
+  }
+  
+  // Para times desconhecidos, tentamos escapar o nome para uso em uma URL
+  const nomeTimeEscapado = encodeURIComponent(time);
+  
+  // Usamos uma estratégia de fallback para buscar logos:
+  // 1. Tentamos uma imagem genérica baseada no nome do time
+  return `https://www.thesportsdb.com/images/media/team/badge/small/${nomeTimeEscapado.toLowerCase().replace(/\s/g, '')}.png`;
 };
 
 const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
+  const [timeLogos, setTimeLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchViagens = async () => {
@@ -69,6 +94,14 @@ const Viagens = () => {
         }
         
         setViagens(data || []);
+        
+        // Buscar logos para todos os times adversários
+        const logos: Record<string, string> = {};
+        data?.forEach(viagem => {
+          logos[viagem.adversario] = getLogoTime(viagem.adversario);
+        });
+        
+        setTimeLogos(logos);
         
         // Fetch passenger counts for each trip
         if (data?.length) {
@@ -147,7 +180,16 @@ const Viagens = () => {
                           <AvatarFallback>FLA</AvatarFallback>
                         </Avatar>
                         <Avatar className="h-10 w-10 border-2 border-white">
-                          <AvatarImage src={getLogoTime(viagem.adversario)} alt={viagem.adversario} />
+                          <AvatarImage 
+                            src={timeLogos[viagem.adversario] || getLogoTime(viagem.adversario)} 
+                            alt={viagem.adversario}
+                            onError={(e) => {
+                              // Se a imagem falhar, use um fallback
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null; // Previne loops infinitos
+                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`;
+                            }}
+                          />
                           <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
                         </Avatar>
                       </div>
