@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -47,6 +48,8 @@ import { PassageiroDeleteDialog } from "@/components/detalhes-viagem/PassageiroD
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
 import { filterPassageiros } from "@/utils/search";
 import { FormaPagamento } from "@/types/entities";
+import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
@@ -109,6 +112,16 @@ interface PassageiroDisplay {
   viagem_id: string;
 }
 
+interface Onibus {
+  id: string;
+  viagem_id: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_onibus: number;
+  numero_identificacao: string | null;
+  passageiros_count?: number;
+}
+
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -128,6 +141,13 @@ const DetalhesViagem = () => {
   const [totalPago, setTotalPago] = useState<number>(0);
   const [totalPendente, setTotalPendente] = useState<number>(0);
   const [valorPotencialTotal, setValorPotencialTotal] = useState<number>(0);
+
+  // Ônibus
+  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
+  const [selectedOnibusId, setSelectedOnibusId] = useState<string | null>(null);
+  const [passageiroPorOnibus, setPassageiroPorOnibus] = useState<Record<string, PassageiroDisplay[]>>({
+    semOnibus: []
+  });
 
   useEffect(() => {
     const fetchViagem = async () => {
@@ -152,6 +172,9 @@ const DetalhesViagem = () => {
           setValorPotencialTotal(valorTotal);
         }
         
+        // Carregar ônibus da viagem
+        await fetchOnibus(id);
+
         // Carregar passageiros da viagem
         await fetchPassageiros(id);
         
@@ -166,12 +189,69 @@ const DetalhesViagem = () => {
     fetchViagem();
   }, [id]);
 
+  const fetchOnibus = async (viagemId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("viagem_onibus")
+        .select("*")
+        .eq("viagem_id", viagemId);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setOnibusList(data as Onibus[]);
+        // Seleciona o primeiro ônibus por padrão
+        setSelectedOnibusId(data[0].id);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar ônibus:", err);
+      toast.error("Erro ao carregar dados dos ônibus");
+    }
+  };
+
   // Efeito para filtrar passageiros quando o termo de busca muda
   useEffect(() => {
     if (passageiros.length > 0) {
-      setFilteredPassageiros(filterPassageiros(passageiros, searchTerm));
+      // Filtrar todos os passageiros primeiro
+      const passageirosFiltrados = filterPassageiros(passageiros, searchTerm);
+      setFilteredPassageiros(passageirosFiltrados);
+      
+      // Agrupar os passageiros filtrados por ônibus
+      agruparPassageirosPorOnibus(passageirosFiltrados);
     }
   }, [searchTerm, passageiros]);
+
+  // Função para agrupar passageiros por ônibus
+  const agruparPassageirosPorOnibus = (passageiros: PassageiroDisplay[]) => {
+    const agrupados: Record<string, PassageiroDisplay[]> = {
+      semOnibus: []
+    };
+    
+    passageiros.forEach(passageiro => {
+      const onibusId = passageiro.onibus_id;
+      
+      if (onibusId) {
+        if (!agrupados[onibusId]) {
+          agrupados[onibusId] = [];
+        }
+        agrupados[onibusId].push(passageiro);
+      } else {
+        agrupados.semOnibus.push(passageiro);
+      }
+    });
+    
+    setPassageiroPorOnibus(agrupados);
+    
+    // Atualizar as contagens de passageiros para cada ônibus
+    const onibusAtualizado = onibusList.map(onibus => {
+      return {
+        ...onibus,
+        passageiros_count: agrupados[onibus.id]?.length || 0
+      };
+    });
+    
+    setOnibusList(onibusAtualizado);
+  };
 
   const fetchPassageiros = async (viagemId: string) => {
     try {
@@ -216,6 +296,9 @@ const DetalhesViagem = () => {
       setPassageiros(formattedPassageiros);
       setFilteredPassageiros(formattedPassageiros);
       
+      // Agrupar passageiros por ônibus
+      agruparPassageirosPorOnibus(formattedPassageiros);
+      
       // Calcular resumo financeiro
       let arrecadado = 0;
       let pago = 0;
@@ -240,6 +323,11 @@ const DetalhesViagem = () => {
       console.error("Erro ao buscar passageiros:", err);
       toast.error("Erro ao carregar passageiros");
     }
+  };
+
+  // Quando o usuário seleciona um ônibus
+  const handleSelectOnibus = (onibusId: string | null) => {
+    setSelectedOnibusId(onibusId);
   };
 
   const handleDelete = async () => {
@@ -305,6 +393,14 @@ const DetalhesViagem = () => {
     setSearchTerm("");
   };
 
+  // Obter passageiros para o ônibus selecionado
+  const getPassageirosDoOnibusAtual = () => {
+    if (selectedOnibusId === null) {
+      return passageiroPorOnibus.semOnibus || [];
+    }
+    return passageiroPorOnibus[selectedOnibusId] || [];
+  };
+
   if (isLoading) {
     return (
       <div className="container py-6">
@@ -335,6 +431,10 @@ const DetalhesViagem = () => {
   const calculatedValorPotencialTotal = valorPotencialTotal > 0 ? 
     valorPotencialTotal : 
     ((viagem.valor_padrao || 0) * viagem.capacidade_onibus);
+
+  // Contar total de passageiros no ônibus atual
+  const passageirosAtuais = getPassageirosDoOnibusAtual();
+  const onibusAtual = onibusList.find(o => o.id === selectedOnibusId);
 
   return (
     <div className="container py-6">
@@ -482,14 +582,33 @@ const DetalhesViagem = () => {
         </div>
       )}
 
+      {onibusList.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-lg font-medium mb-3">Ônibus da Viagem</h2>
+          <OnibusCards
+            onibusList={onibusList}
+            selectedOnibusId={selectedOnibusId}
+            onSelectOnibus={handleSelectOnibus}
+          />
+        </div>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Lista de Passageiros</CardTitle>
+            <CardTitle>
+              {onibusList.length > 1 ? (
+                selectedOnibusId === null ?
+                "Passageiros Não Alocados" :
+                `Passageiros do ${onibusAtual?.numero_identificacao || "Ônibus"}`
+              ) : "Lista de Passageiros"}
+            </CardTitle>
             <CardDescription>
-              {passageiros.length > 0 
-                ? `${passageiros.length}/${viagem.capacidade_onibus} passageiros confirmados` 
-                : "Nenhum passageiro confirmado"}
+              {onibusList.length > 1 && selectedOnibusId !== null ? (
+                `${passageirosAtuais.length}/${onibusAtual?.capacidade_onibus || 0} passageiros neste ônibus`
+              ) : (
+                `${passageiros.length}/${viagem.capacidade_onibus} passageiros confirmados`
+              )}
             </CardDescription>
           </div>
           <Button onClick={() => setAddPassageiroOpen(true)}>
@@ -536,8 +655,8 @@ const DetalhesViagem = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPassageiros.length > 0 ? (
-                      filteredPassageiros.map((passageiro) => (
+                    {passageirosAtuais.length > 0 ? (
+                      passageirosAtuais.map((passageiro) => (
                         <TableRow key={passageiro.viagem_passageiro_id}>
                           <TableCell>{passageiro.nome}</TableCell>
                           <TableCell>{passageiro.telefone}</TableCell>
@@ -595,7 +714,12 @@ const DetalhesViagem = () => {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={11} className="text-center py-4">
-                          {searchTerm ? "Nenhum passageiro encontrado com esse termo." : "Nenhum passageiro encontrado."}
+                          {searchTerm ? 
+                            "Nenhum passageiro encontrado com esse termo neste ônibus." : 
+                            onibusList.length > 1 ? 
+                              `Nenhum passageiro ${selectedOnibusId === null ? "não alocado" : "neste ônibus"}.` : 
+                              "Nenhum passageiro encontrado."
+                          }
                         </TableCell>
                       </TableRow>
                     )}
@@ -618,7 +742,9 @@ const DetalhesViagem = () => {
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground">
             {passageiros.length > 0 && (
-              `Ocupação: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round(passageiros.length / viagem.capacidade_onibus * 100)}%)`
+              onibusList.length > 1 && selectedOnibusId !== null ?
+                `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)` :
+                `Ocupação: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round(passageiros.length / viagem.capacidade_onibus * 100)}%)`
             )}
           </div>
           <Button variant="outline">Exportar Lista</Button>

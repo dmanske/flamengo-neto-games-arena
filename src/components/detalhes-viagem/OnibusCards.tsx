@@ -17,17 +17,24 @@ interface Onibus {
 
 interface OnibusCardsProps {
   onibusList: Onibus[];
+  selectedOnibusId: string | null;
+  onSelectOnibus: (id: string | null) => void;
 }
 
-export function OnibusCards({ onibusList }: OnibusCardsProps) {
+export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus }: OnibusCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {onibusList.map((onibus) => {
         const passageirosCount = onibus.passageiros_count || 0;
         const percentualOcupacao = Math.round((passageirosCount / onibus.capacidade_onibus) * 100);
+        const isSelected = selectedOnibusId === onibus.id;
         
         return (
-          <Card key={onibus.id} className="relative">
+          <Card 
+            key={onibus.id} 
+            className={`relative cursor-pointer hover:border-primary transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
+            onClick={() => onSelectOnibus(onibus.id)}
+          >
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">
@@ -65,6 +72,26 @@ export function OnibusCards({ onibusList }: OnibusCardsProps) {
           </Card>
         );
       })}
+      <Card 
+        className={`relative cursor-pointer hover:border-gray-300 transition-colors border-dashed ${selectedOnibusId === null ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
+        onClick={() => onSelectOnibus(null)}
+      >
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-lg">
+              Não Alocados
+            </CardTitle>
+            <Badge variant="outline">
+              Sem ônibus
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-16 text-muted-foreground">
+            <p>Passageiros sem alocação de ônibus</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
