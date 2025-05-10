@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, UploadCloud, X } from "lucide-react";
@@ -44,10 +43,16 @@ export const FileUpload = ({
     try {
       const url = await uploadFile(file, bucketName, folderPath);
       onChange(url);
-      toast.success("Arquivo enviado com sucesso!");
+      toast.success("Arquivo enviado com sucesso!", { 
+        duration: 2000,
+        position: "top-right" 
+      });
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
-      toast.error(`Erro ao enviar arquivo: ${error.message}`);
+      toast.error(`Erro ao enviar arquivo: ${error.message}`, {
+        duration: 3000,
+        position: "top-right"
+      });
     } finally {
       setIsUploading(false);
       // Clear input value to allow uploading the same file again
@@ -72,10 +77,10 @@ export const FileUpload = ({
       .then(({ error }) => {
         if (error) {
           console.error("Erro ao remover arquivo:", error);
-          toast.error("Erro ao remover arquivo");
+          toast.error("Erro ao remover arquivo", { duration: 2000 });
         } else {
           onChange(null);
-          toast.success("Arquivo removido com sucesso!");
+          toast.success("Arquivo removido com sucesso!", { duration: 2000 });
         }
       });
   };
@@ -187,14 +192,18 @@ function validateFile(
 ): boolean {
   // Check file type
   if (!allowedFileTypes.includes(file.type)) {
-    toast.error(`Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`);
+    toast.error(`Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`, {
+      duration: 3000
+    });
     return false;
   }
   
   // Check file size
   const fileSizeInMB = file.size / (1024 * 1024);
   if (fileSizeInMB > maxSizeInMB) {
-    toast.error(`Arquivo muito grande. Máximo: ${maxSizeInMB}MB`);
+    toast.error(`Arquivo muito grande. Máximo: ${maxSizeInMB}MB`, {
+      duration: 3000
+    });
     return false;
   }
   

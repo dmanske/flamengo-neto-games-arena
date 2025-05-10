@@ -14,7 +14,6 @@ import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
 import { formSchema, FormValues, estadosBrasileiros } from "./FormSchema";
-import { FileUpload } from "@/components/ui/file-upload";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -154,23 +153,24 @@ export function PublicRegistrationForm() {
       if (addressData) {
         form.setValue("endereco", addressData.logradouro);
         form.setValue("cidade", addressData.localidade);
-        
-        // Set the state correctly by directly using setValue with the state from the API
         form.setValue("estado", addressData.uf);
         form.setValue("bairro", addressData.bairro || "");
-        
-        // Trigger a re-render of the form
         form.trigger();
         
-        // Se tiver complemento, adiciona ao campo complemento
         if (addressData.complemento) {
           form.setValue("complemento", addressData.complemento);
         }
         
-        toast.success("Endereço encontrado com sucesso!");
+        toast.success("Endereço encontrado com sucesso!", {
+          duration: 2000,
+          position: "top-right"
+        });
       }
     } catch (error) {
-      toast.error("Erro ao buscar endereço. Verifique o CEP informado.");
+      toast.error("Erro ao buscar endereço. Verifique o CEP informado.", {
+        duration: 3000,
+        position: "top-right"
+      });
     } finally {
       setLoadingCep(false);
     }
