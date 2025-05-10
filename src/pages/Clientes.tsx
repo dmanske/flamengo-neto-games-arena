@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -137,7 +136,9 @@ const Clientes = () => {
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Data não informada';
+    
     try {
       return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
@@ -262,12 +263,18 @@ const Clientes = () => {
                       <TableCell>{cliente.email}</TableCell>
                       <TableCell>{cliente.cidade}/{cliente.estado}</TableCell>
                       <TableCell>{formatCPF(cliente.cpf)}</TableCell>
-                      <TableCell>{formatDate(cliente.data_nascimento as string)}</TableCell>
+                      <TableCell>{formatDate(cliente.data_nascimento)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
-                          <Button size="sm" variant="outline">
-                            <Pencil className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            asChild
+                          >
+                            <Link to={`/editar-cliente/${cliente.id}`}>
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">Editar</span>
+                            </Link>
                           </Button>
                           <Button 
                             size="sm" 
