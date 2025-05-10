@@ -26,6 +26,9 @@ export function LogoSettings() {
     const fetchLogoSettings = async () => {
       try {
         setIsLoading(true);
+        // First ensure the logos bucket exists
+        await initOrCheckLogoBucket();
+        
         const { data, error } = await supabase
           .from("system_config")
           .select("value")
@@ -48,10 +51,32 @@ export function LogoSettings() {
     fetchLogoSettings();
   }, []);
 
+  // Make sure the logos bucket exists
+  const initOrCheckLogoBucket = async () => {
+    try {
+      const { error: bucketError } = await supabase.storage.getBucket('logos');
+      if (bucketError && bucketError.message.includes('not found')) {
+        console.log('Creating logos storage bucket...');
+        await supabase.storage.createBucket('logos', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+        });
+        
+        // Add public policies to the bucket
+        // Note: This would need to be done via SQL migrations in a production environment
+        console.log('Bucket created successfully');
+      }
+    } catch (error) {
+      console.error('Error checking/creating logos bucket:', error);
+    }
+  };
+
   // Save logo settings
   const saveLogo = async () => {
     try {
       setIsSaving(true);
+      await initOrCheckLogoBucket();
+      
       const { error } = await supabase
         .from("system_config")
         .update({ value: flamengoLogo, updated_at: new Date().toISOString() })

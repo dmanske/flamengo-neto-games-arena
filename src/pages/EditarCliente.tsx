@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft, User } from "lucide-react";
 import { FonteConhecimento } from "@/types/entities";
-import { FileUpload } from "@/components/FileUpload";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import {

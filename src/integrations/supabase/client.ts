@@ -25,6 +25,16 @@ const initStorage = async () => {
         fileSizeLimit: 5242880, // 5MB
       });
     }
+    
+    // Check and create client-photos bucket
+    const { error: clientPhotosError } = await supabase.storage.getBucket('client-photos');
+    if (clientPhotosError && clientPhotosError.message.includes('not found')) {
+      console.log('Creating client-photos storage bucket...');
+      await supabase.storage.createBucket('client-photos', {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB
+      });
+    }
   } catch (error) {
     console.error('Error initializing storage buckets:', error);
   }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BusType {
@@ -34,10 +34,32 @@ const Onibus = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   
+  // Check if the onibus bucket exists and create if necessary
+  const initOrCheckOnibusBucket = async () => {
+    try {
+      const { error: bucketError } = await supabase.storage.getBucket('onibus');
+      if (bucketError && bucketError.message.includes('not found')) {
+        console.log('Creating onibus storage bucket...');
+        await supabase.storage.createBucket('onibus', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+        console.log('Bucket created successfully');
+      }
+    } catch (error) {
+      console.error('Error checking/creating onibus bucket:', error);
+    }
+  };
+  
   // Carregar imagens do banco de dados
   useEffect(() => {
     const fetchImages = async () => {
       try {
+        setIsLoading(true);
+        
+        // First ensure the onibus bucket exists
+        await initOrCheckOnibusBucket();
+        
         const { data, error } = await supabase
           .from("onibus_images")
           .select("*");
@@ -73,6 +95,9 @@ const Onibus = () => {
     
     try {
       setIsLoading(true);
+      
+      // Ensure bucket exists before attempting operations
+      await initOrCheckOnibusBucket();
       
       if (imageUrl) {
         // Check if record exists

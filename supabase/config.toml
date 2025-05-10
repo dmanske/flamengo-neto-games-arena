@@ -33,6 +33,16 @@ name = "logos"
 public = true
 file_size_limit = "10MB"
 
+[[storage.buckets]]
+name = "onibus"
+public = true
+file_size_limit = "10MB" 
+
+[[storage.buckets]]
+name = "client-photos"
+public = true
+file_size_limit = "5MB"
+
 [[storage.policies]]
 name = "Public Access"
 bucket = "logos"
@@ -63,4 +73,68 @@ bucket = "logos"
 policy = "DELETE"
 definition = """\
 (bucket_id, name) => bucket_id = 'logos'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "onibus"
+policy = "CREATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'onibus'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "onibus"
+policy = "SELECT"
+definition = """\
+(bucket_id, name) => bucket_id = 'onibus'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "onibus"
+policy = "UPDATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'onibus'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "onibus"
+policy = "DELETE"
+definition = """\
+(bucket_id, name) => bucket_id = 'onibus'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "client-photos"
+policy = "CREATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'client-photos'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "client-photos"
+policy = "SELECT"
+definition = """\
+(bucket_id, name) => bucket_id = 'client-photos'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "client-photos"
+policy = "UPDATE"
+definition = """\
+(bucket_id, name) => bucket_id = 'client-photos'\
+"""
+
+[[storage.policies]]
+name = "Public Access"
+bucket = "client-photos"
+policy = "DELETE"
+definition = """\
+(bucket_id, name) => bucket_id = 'client-photos'\
 """
