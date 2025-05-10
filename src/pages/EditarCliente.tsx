@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -72,6 +71,9 @@ const EditarCliente = () => {
       indicacao_nome: "",
     },
   });
+
+  // Obter o valor atual do campo "como_conheceu"
+  const comoConheceu = form.watch("como_conheceu");
 
   // Carregar dados do cliente
   useEffect(() => {
@@ -346,19 +348,22 @@ const EditarCliente = () => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="indicacao_nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome da indicação</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome de quem indicou" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Campo de nome da indicação condicionalmente */}
+                  {comoConheceu === "Indicação" && (
+                    <FormField
+                      control={form.control}
+                      name="indicacao_nome"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da indicação</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Nome de quem indicou" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <FormField
