@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -56,6 +57,13 @@ const viagemFormSchema = z.object({
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
 
+// Mapeamento entre tipos de ônibus e empresas
+const onibusPorEmpresa: Record<string, string> = {
+  "43 Leitos Totais": "Bertoldo",
+  "52 Leitos Master": "Majetur",
+  "56 Leitos Master": "Sarcella",
+};
+
 const CadastrarViagem = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -71,16 +79,19 @@ const CadastrarViagem = () => {
     defaultValues,
   });
 
-  // Atualiza a capacidade do ônibus com base no tipo selecionado
+  // Atualiza a capacidade do ônibus e empresa com base no tipo selecionado
   const watchTipoOnibus = form.watch("tipo_onibus");
   
   useEffect(() => {
     if (watchTipoOnibus === "43 Leitos Totais") {
       form.setValue("capacidade_onibus", 43);
+      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
     } else if (watchTipoOnibus === "52 Leitos Master") {
       form.setValue("capacidade_onibus", 52);
+      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
     } else if (watchTipoOnibus === "56 Leitos Master") {
       form.setValue("capacidade_onibus", 56);
+      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
     }
   }, [watchTipoOnibus, form]);
 
@@ -179,6 +190,7 @@ const CadastrarViagem = () => {
                             }}
                             disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                             initialFocus
+                            locale={ptBR}
                           />
                         </PopoverContent>
                       </Popover>
@@ -242,22 +254,16 @@ const CadastrarViagem = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Empresa</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a empresa" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Bertoldo">Bertoldo</SelectItem>
-                          <SelectItem value="Majetur">Majetur</SelectItem>
-                          <SelectItem value="Sarcella">Sarcella</SelectItem>
-                          <SelectItem value="HG TUR">HG TUR</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          readOnly
+                          className="bg-gray-100"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Definido automaticamente com base no tipo de ônibus
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

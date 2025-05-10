@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Viagem {
   id: string;
@@ -27,6 +27,27 @@ const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
   "Em Andamento": "bg-blue-100 text-blue-800",
   "Finalizada": "bg-gray-100 text-gray-800",
+};
+
+// Mapa com logos de times conhecidos
+const logosTimesConhecidos: Record<string, string> = {
+  "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+  "Fluminense": "https://upload.wikimedia.org/wikipedia/commons/a/a3/FFC_escudo.svg",
+  "Vasco": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Club_de_Regatas_Vasco_da_Gama.svg",
+  "Botafogo": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Escudo_Botafogo.png",
+  "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg",
+  "Corinthians": "https://upload.wikimedia.org/wikipedia/commons/5/51/Corinthians_logo.png",
+  "São Paulo": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg",
+  "Santos": "https://upload.wikimedia.org/wikipedia/commons/5/58/Santos_logo.svg",
+  "Cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/9/90/Cruzeiro_Esporte_Clube_%28logo%29.svg",
+  "Atlético Mineiro": "https://upload.wikimedia.org/wikipedia/commons/2/27/Clube_Atl%C3%A9tico_Mineiro_logo.svg",
+  "Internacional": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Escudo_do_Sport_Club_Internacional.svg",
+  "Grêmio": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Gremio.svg",
+};
+
+// Função para obter o logo do time
+const getLogoTime = (time: string): string => {
+  return logosTimesConhecidos[time] || `https://via.placeholder.com/150?text=${time}`;
 };
 
 const Viagens = () => {
@@ -118,7 +139,21 @@ const Viagens = () => {
                       {viagem.status_viagem}
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl mt-2">Flamengo x {viagem.adversario}</CardTitle>
+                  <CardTitle className="text-xl mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-4">
+                        <Avatar className="h-10 w-10 border-2 border-white">
+                          <AvatarImage src={logosTimesConhecidos["Flamengo"]} alt="Flamengo" />
+                          <AvatarFallback>FLA</AvatarFallback>
+                        </Avatar>
+                        <Avatar className="h-10 w-10 border-2 border-white">
+                          <AvatarImage src={getLogoTime(viagem.adversario)} alt={viagem.adversario} />
+                          <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <span>Flamengo x {viagem.adversario}</span>
+                    </div>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
