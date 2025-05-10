@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -10,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -128,6 +130,12 @@ const MainLayout = () => {
             icon={<Users className="h-5 w-5" />}
             title="Clientes"
             to="/clientes"
+            onClick={closeMenu}
+          />
+          <NavItem
+            icon={<UserPlus className="h-5 w-5" />}
+            title="Cadastrar Cliente"
+            to="/cadastrar-cliente"
             onClick={closeMenu}
           />
           <NavItem
