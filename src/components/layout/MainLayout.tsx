@@ -22,6 +22,11 @@ const MainLayout = () => {
       path: "/passageiros"
     },
     {
+      title: "Clientes Cadastrados",
+      icon: Users,
+      path: "/clientes"
+    },
+    {
       title: "Cadastrar Cliente",
       icon: User,
       path: "/cadastrar-cliente"

@@ -153,7 +153,7 @@ const Clientes = () => {
   return (
     <div className="container py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Lista de Clientes</h1>
+        <h1 className="text-3xl font-bold">Clientes Cadastrados</h1>
         <Button asChild className="bg-green-600 hover:bg-green-700">
           <Link to="/cadastrar-cliente">
             <Plus className="mr-2 h-4 w-4" /> Novo Cliente
