@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -14,6 +13,7 @@ import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
 import { formSchema, FormValues, estadosBrasileiros } from "./FormSchema";
+import { FileUpload } from "@/components/ui/file-upload";
 import { 
   AlertDialog,
   AlertDialogAction,
