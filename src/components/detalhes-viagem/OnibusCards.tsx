@@ -20,14 +20,21 @@ interface OnibusCardsProps {
   selectedOnibusId: string | null;
   onSelectOnibus: (id: string | null) => void;
   onibusSelecionados?: number;
+  passageirosCount?: Record<string, number>;
 }
 
-export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus, onibusSelecionados = 0 }: OnibusCardsProps) {
+export function OnibusCards({ 
+  onibusList, 
+  selectedOnibusId, 
+  onSelectOnibus, 
+  onibusSelecionados = 0,
+  passageirosCount = {}
+}: OnibusCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {onibusList.map((onibus) => {
-        const passageirosCount = onibus.passageiros_count || 0;
-        const percentualOcupacao = Math.round((passageirosCount / onibus.capacidade_onibus) * 100);
+        const passageirosNoOnibus = passageirosCount[onibus.id] || onibus.passageiros_count || 0;
+        const percentualOcupacao = Math.round((passageirosNoOnibus / onibus.capacidade_onibus) * 100);
         const isSelected = selectedOnibusId === onibus.id;
         
         return (
@@ -64,7 +71,7 @@ export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus, onib
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span>Ocupação</span>
-                        <span>{passageirosCount} de {onibus.capacidade_onibus}</span>
+                        <span>{passageirosNoOnibus} de {onibus.capacidade_onibus}</span>
                       </div>
                       <Progress 
                         value={percentualOcupacao} 

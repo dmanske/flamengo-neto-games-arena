@@ -148,6 +148,7 @@ const DetalhesViagem = () => {
   const [passageiroPorOnibus, setPassageiroPorOnibus] = useState<Record<string, PassageiroDisplay[]>>({
     semOnibus: []
   });
+  const [contadorPassageiros, setContadorPassageiros] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const fetchViagem = async () => {
@@ -227,6 +228,8 @@ const DetalhesViagem = () => {
       semOnibus: []
     };
     
+    const contador: Record<string, number> = {};
+    
     passageiros.forEach(passageiro => {
       const onibusId = passageiro.onibus_id;
       
@@ -235,18 +238,22 @@ const DetalhesViagem = () => {
           agrupados[onibusId] = [];
         }
         agrupados[onibusId].push(passageiro);
+        
+        // Incrementar contador
+        contador[onibusId] = (contador[onibusId] || 0) + 1;
       } else {
         agrupados.semOnibus.push(passageiro);
       }
     });
     
     setPassageiroPorOnibus(agrupados);
+    setContadorPassageiros(contador);
     
     // Atualizar as contagens de passageiros para cada ônibus
     const onibusAtualizado = onibusList.map(onibus => {
       return {
         ...onibus,
-        passageiros_count: agrupados[onibus.id]?.length || 0
+        passageiros_count: contador[onibus.id] || 0
       };
     });
     
@@ -401,6 +408,12 @@ const DetalhesViagem = () => {
     return passageiroPorOnibus[selectedOnibusId] || [];
   };
 
+  // Obter informações do ônibus selecionado
+  const getOnibusAtual = () => {
+    if (selectedOnibusId === null) return null;
+    return onibusList.find(o => o.id === selectedOnibusId);
+  };
+
   if (isLoading) {
     return (
       <div className="container py-6">
@@ -427,14 +440,15 @@ const DetalhesViagem = () => {
     );
   }
 
+  // Passageiros do ônibus atual
+  const passageirosAtuais = getPassageirosDoOnibusAtual();
+  const onibusAtual = getOnibusAtual();
+  const totalPassageirosNaoAlocados = passageiroPorOnibus.semOnibus?.length || 0;
+
   // Calcular valor potencial total (caso não tenha sido calculado no useEffect)
   const calculatedValorPotencialTotal = valorPotencialTotal > 0 ? 
     valorPotencialTotal : 
     ((viagem.valor_padrao || 0) * viagem.capacidade_onibus);
-
-  // Contar total de passageiros no ônibus atual
-  const passageirosAtuais = getPassageirosDoOnibusAtual();
-  const onibusAtual = onibusList.find(o => o.id === selectedOnibusId);
 
   return (
     <div className="container py-6">
@@ -562,6 +576,12 @@ const DetalhesViagem = () => {
                   <span className="font-medium">Capacidade:</span>
                   <span>{viagem.capacidade_onibus} passageiros</span>
                 </div>
+                {onibusList.length > 1 && (
+                  <div className="flex items-start gap-2 text-blue-600">
+                    <Bus className="h-4 w-4" />
+                    <span className="font-medium">Múltiplos ônibus configurados: {onibusList.length}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -589,6 +609,7 @@ const DetalhesViagem = () => {
             onibusList={onibusList}
             selectedOnibusId={selectedOnibusId}
             onSelectOnibus={handleSelectOnibus}
+            passageirosCount={contadorPassageiros}
           />
         </div>
       )}
@@ -597,17 +618,20 @@ const DetalhesViagem = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>
-              {onibusList.length > 1 ? (
-                selectedOnibusId === null ?
-                "Passageiros Não Alocados" :
-                `Passageiros do ${onibusAtual?.numero_identificacao || "Ônibus"}`
-              ) : "Lista de Passageiros"}
+              {selectedOnibusId === null ? (
+                <>Passageiros Não Alocados <Badge variant="outline" className="ml-2">{totalPassageirosNaoAlocados}</Badge></>
+              ) : (
+                <>
+                  Passageiros do {onibusAtual?.numero_identificacao || `Ônibus ${onibusAtual?.tipo_onibus}`}
+                  <Badge variant="outline" className="ml-2">{passageirosAtuais.length}</Badge>
+                </>
+              )}
             </CardTitle>
             <CardDescription>
-              {onibusList.length > 1 && selectedOnibusId !== null ? (
-                `${passageirosAtuais.length}/${onibusAtual?.capacidade_onibus || 0} passageiros neste ônibus`
+              {selectedOnibusId !== null ? (
+                `${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares ocupados (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
               ) : (
-                `${passageiros.length}/${viagem.capacidade_onibus} passageiros confirmados`
+                `${totalPassageirosNaoAlocados} passageiros sem alocação de ônibus`
               )}
             </CardDescription>
           </div>
@@ -714,12 +738,13 @@ const DetalhesViagem = () => {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={11} className="text-center py-4">
-                          {searchTerm ? 
-                            "Nenhum passageiro encontrado com esse termo neste ônibus." : 
-                            onibusList.length > 1 ? 
-                              `Nenhum passageiro ${selectedOnibusId === null ? "não alocado" : "neste ônibus"}.` : 
-                              "Nenhum passageiro encontrado."
-                          }
+                          {searchTerm ? (
+                            "Nenhum passageiro encontrado com esse termo de busca."
+                          ) : selectedOnibusId === null ? (
+                            "Não há passageiros sem alocação de ônibus."
+                          ) : (
+                            "Não há passageiros alocados neste ônibus."
+                          )}
                         </TableCell>
                       </TableRow>
                     )}
@@ -742,9 +767,19 @@ const DetalhesViagem = () => {
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground">
             {passageiros.length > 0 && (
-              onibusList.length > 1 && selectedOnibusId !== null ?
-                `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)` :
-                `Ocupação: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round(passageiros.length / viagem.capacidade_onibus * 100)}%)`
+              <>
+                {onibusList.length > 1 ? (
+                  <>
+                    {selectedOnibusId !== null ? (
+                      `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
+                    ) : (
+                      `${totalPassageirosNaoAlocados} passageiros não alocados`
+                    )}
+                  </>
+                ) : (
+                  `Ocupação total: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round((passageiros.length / viagem.capacidade_onibus) * 100)}%)`
+                )}
+              </>
             )}
           </div>
           <Button variant="outline">Exportar Lista</Button>
