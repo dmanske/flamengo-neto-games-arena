@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { createContext, useContext, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -19,6 +20,79 @@ import { Button } from "@/components/ui/button";
 import { Home, Users, Calendar, Package, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
+// Create context for sidebar state
+type SidebarContextType = {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+
+// Provider component
+export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <SidebarContext.Provider value={{ isOpen, setIsOpen }}>
+      {children}
+    </SidebarContext.Provider>
+  );
+};
+
+// Hook to use sidebar context
+export const useSidebar = () => {
+  const context = useContext(SidebarContext);
+  if (context === undefined) {
+    throw new Error("useSidebar must be used within a SidebarProvider");
+  }
+  return context;
+};
+
+// Sidebar components
+export const Sidebar = ({ children }: { children: React.ReactNode }) => {
+  return <aside className="w-64 min-h-screen border-r">{children}</aside>;
+};
+
+export const SidebarContent = ({ children }: { children: React.ReactNode }) => {
+  return <div className="py-4">{children}</div>;
+};
+
+export const SidebarGroup = ({ children }: { children: React.ReactNode }) => {
+  return <div className="px-3 py-2">{children}</div>;
+};
+
+export const SidebarGroupLabel = ({ children }: { children: React.ReactNode }) => {
+  return <h3 className="mb-2 px-4 text-sm font-semibold tracking-tight">{children}</h3>;
+};
+
+export const SidebarGroupContent = ({ children }: { children: React.ReactNode }) => {
+  return <div className="space-y-1">{children}</div>;
+};
+
+export const SidebarMenu = ({ children }: { children: React.ReactNode }) => {
+  return <nav className="flex flex-col gap-1">{children}</nav>;
+};
+
+export const SidebarMenuItem = ({ children }: { children: React.ReactNode }) => {
+  return <div>{children}</div>;
+};
+
+export const SidebarMenuButton = ({ 
+  children,
+  asChild = false,
+  ...props
+}: { 
+  children: React.ReactNode;
+  asChild?: boolean;
+} & React.HTMLAttributes<HTMLDivElement>) => {
+  const Comp = asChild ? React.Fragment : 'div';
+  return (
+    <Comp {...props} className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground ${props.className || ''}`}>
+      {children}
+    </Comp>
+  );
+};
+
+// Original Sidebar implementation
 interface NavItem {
   name: string;
   href: string;
@@ -53,7 +127,7 @@ const navigationItems: NavItem[] = [
   },
 ];
 
-const Sidebar = () => {
+const SidebarComponent = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -88,4 +162,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default SidebarComponent;
