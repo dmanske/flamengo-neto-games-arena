@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Menu,
   UserPlus,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,12 @@ const MainLayout = () => {
             icon={<CreditCard className="h-5 w-5" />}
             title="Pagamentos"
             to="/pagamentos"
+            onClick={closeMenu}
+          />
+          <NavItem
+            icon={<MessageSquare className="h-5 w-5" />}
+            title="WhatsApp"
+            to="/whatsapp"
             onClick={closeMenu}
           />
         </div>

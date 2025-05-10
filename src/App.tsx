@@ -20,6 +20,8 @@ import DetalhesViagem from "./pages/DetalhesViagem";
 import EditarViagem from "./pages/EditarViagem";
 import NotFound from "./pages/NotFound";
 import Onibus from "./pages/Onibus";
+import CadastroPublico from "./pages/CadastroPublico";
+import GerenciadorWhatsApp from "./pages/GerenciadorWhatsApp";
 
 // Configurar o QueryClient com opções mais robustas
 const queryClient = new QueryClient({
@@ -43,6 +45,7 @@ const App = () => (
               {/* Rotas públicas */}
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/cadastro-publico" element={<CadastroPublico />} />
               
               {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
@@ -57,6 +60,7 @@ const App = () => (
                   <Route path="/clientes" element={<Clientes />} />
                   <Route path="/onibus" element={<Onibus />} />
                   <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
+                  <Route path="/whatsapp" element={<GerenciadorWhatsApp />} />
                 </Route>
               </Route>
               
