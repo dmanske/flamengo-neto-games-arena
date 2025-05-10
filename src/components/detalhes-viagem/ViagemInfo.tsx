@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, MapPin, CreditCard, Bus, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface ViagemInfoProps {
   data_jogo: string;
@@ -91,9 +92,22 @@ export function ViagemInfo({
                 <span>{capacidade_onibus} passageiros</span>
               </div>
               {onibusList.length > 1 && (
-                <div className="flex items-start gap-2 text-blue-600">
-                  <Bus className="h-4 w-4" />
-                  <span className="font-medium">Múltiplos ônibus configurados: {onibusList.length}</span>
+                <div className="flex items-start gap-2">
+                  <Bus className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <span className="font-medium text-blue-600">Múltiplos ônibus configurados: {onibusList.length}</span>
+                    <div className="mt-2 space-y-1 text-sm">
+                      {onibusList.map((onibus, index) => (
+                        <div key={onibus.id} className="flex items-center gap-1">
+                          <Badge variant="outline" className="bg-blue-50 border-blue-200">
+                            Ônibus {index + 1}
+                          </Badge>
+                          <span>{onibus.numero_identificacao || onibus.tipo_onibus}</span>
+                          <span className="text-muted-foreground">({onibus.capacidade_onibus} lugares)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

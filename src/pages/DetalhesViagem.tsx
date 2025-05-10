@@ -14,7 +14,7 @@ import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { ViagemHeader } from "@/components/detalhes-viagem/ViagemHeader";
 import { ViagemInfo } from "@/components/detalhes-viagem/ViagemInfo";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
-import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
+import { useViagemDetails } from "@/hooks/useViagemDetails";
 
 const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
@@ -27,7 +27,7 @@ const DetalhesViagem = () => {
   const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
   const [editPassageiroOpen, setEditPassageiroOpen] = useState(false);
   const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
-  const [selectedPassageiro, setSelectedPassageiro] = useState<PassageiroDisplay | null>(null);
+  const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
   
   const {
     viagem,
@@ -49,12 +49,12 @@ const DetalhesViagem = () => {
     fetchPassageiros
   } = useViagemDetails(id);
 
-  const openEditPassageiroDialog = (passageiro: PassageiroDisplay) => {
+  const openEditPassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);
     setEditPassageiroOpen(true);
   };
 
-  const openDeletePassageiroDialog = (passageiro: PassageiroDisplay) => {
+  const openDeletePassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);
     setDeletePassageiroOpen(true);
   };
@@ -134,7 +134,7 @@ const DetalhesViagem = () => {
             selectedOnibusId={selectedOnibusId}
             onSelectOnibus={handleSelectOnibus}
             passageirosCount={contadorPassageiros}
-            onibusSelecionados={totalPassageirosNaoAlocados}
+            passageirosNaoAlocados={totalPassageirosNaoAlocados}
           />
         </div>
       )}

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PassageirosList } from "./PassageirosList";
+import { FormaPagamento } from "@/types/entities";
 
 interface PassageiroDisplay {
   id: string;

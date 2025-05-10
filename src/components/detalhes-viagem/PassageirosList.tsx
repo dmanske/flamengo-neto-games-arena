@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
-import { FormaPagamento } from "@/types/entities";
 
 interface PassageiroDisplay {
   id: string;
@@ -23,7 +22,7 @@ interface PassageiroDisplay {
   cpf: string;
   setor_maracana: string;
   status_pagamento: string;
-  forma_pagamento: FormaPagamento;
+  forma_pagamento: string;
   cliente_id: string;
   viagem_passageiro_id: string;
   valor: number | null;
