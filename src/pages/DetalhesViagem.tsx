@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
   ArrowLeft, CalendarIcon, Bus, MapPin, 
-  Users, Pencil, Trash2, AlertTriangle
+  Users, Pencil, Trash2, PlusCircle, Search, X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +33,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
@@ -54,22 +74,54 @@ interface Viagem {
   logo_flamengo: string | null;
 }
 
-interface Passageiro {
+interface Cliente {
   id: string;
   nome: string;
   telefone: string;
-  cidade_embarque: string;
+  cidade: string;
+  cpf: string;
+  email: string;
+}
+
+interface ViagemPassageiro {
+  id: string;
+  viagem_id: string;
+  cliente_id: string;
   setor_maracana: string;
   status_pagamento: string;
+  created_at: string;
+  cliente?: Cliente;
+}
+
+interface PassageiroDisplay {
+  id: string;
+  nome: string;
+  telefone: string;
+  cidade: string;
+  setor_maracana: string;
+  status_pagamento: string;
+  cpf: string;
+  cliente_id: string;
+  viagem_passageiro_id: string;
 }
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [passageiros, setPassageiros] = useState<Passageiro[]>([]);
+  const [passageiros, setPassageiros] = useState<PassageiroDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
+  const [editPassageiroOpen, setEditPassageiroOpen] = useState(false);
+  const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClienteId, setSelectedClienteId] = useState<string>("");
+  const [selectedPassageiro, setSelectedPassageiro] = useState<PassageiroDisplay | null>(null);
+  const [setor, setSetor] = useState<string>("Norte");
+  const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
 
   useEffect(() => {
     const fetchViagem = async () => {
@@ -77,38 +129,29 @@ const DetalhesViagem = () => {
       
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
+        
+        // Carregar dados da viagem
+        const { data: viagemData, error: viagemError } = await supabase
           .from("viagens")
           .select("*")
           .eq("id", id)
           .single();
         
-        if (error) {
-          throw error;
-        }
+        if (viagemError) throw viagemError;
+        setViagem(viagemData);
         
-        setViagem(data);
+        // Carregar passageiros da viagem
+        await fetchPassageiros(id);
         
-        // Simulated passageiros data - in a real app we would fetch this from a database
-        // This is just for demonstration purposes
-        setPassageiros([
-          {
-            id: "1",
-            nome: "João Silva",
-            telefone: "(21) 99999-9999",
-            cidade_embarque: "Rio de Janeiro",
-            setor_maracana: "Norte",
-            status_pagamento: "Pago"
-          },
-          {
-            id: "2",
-            nome: "Maria Santos",
-            telefone: "(21) 98888-8888",
-            cidade_embarque: "Niterói",
-            setor_maracana: "Sul",
-            status_pagamento: "Pendente"
-          }
-        ]);
+        // Carregar todos os clientes para o modal
+        const { data: clientesData, error: clientesError } = await supabase
+          .from("clientes")
+          .select("id, nome, telefone, cidade, cpf, email");
+          
+        if (clientesError) throw clientesError;
+        setClientes(clientesData || []);
+        setFilteredClientes(clientesData || []);
+        
       } catch (err) {
         console.error("Erro ao buscar detalhes da viagem:", err);
         toast.error("Erro ao carregar detalhes da viagem");
@@ -120,13 +163,68 @@ const DetalhesViagem = () => {
     fetchViagem();
   }, [id]);
 
+  const fetchPassageiros = async (viagemId: string) => {
+    try {
+      // Buscar passageiros da viagem com dados do cliente
+      const { data, error } = await supabase
+        .from("viagem_passageiros")
+        .select(`
+          id,
+          viagem_id,
+          cliente_id,
+          setor_maracana,
+          status_pagamento,
+          created_at,
+          clientes:cliente_id (id, nome, telefone, cidade, cpf)
+        `)
+        .eq("viagem_id", viagemId);
+      
+      if (error) throw error;
+      
+      // Formatar os dados para exibição
+      const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => ({
+        id: item.clientes.id,
+        nome: item.clientes.nome,
+        telefone: item.clientes.telefone,
+        cidade: item.clientes.cidade,
+        cpf: item.clientes.cpf,
+        setor_maracana: item.setor_maracana,
+        status_pagamento: item.status_pagamento,
+        cliente_id: item.cliente_id,
+        viagem_passageiro_id: item.id,
+      }));
+      
+      setPassageiros(formattedPassageiros);
+    } catch (err) {
+      console.error("Erro ao buscar passageiros:", err);
+      toast.error("Erro ao carregar passageiros");
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toLowerCase();
+    setSearchTerm(value);
+    
+    if (value.trim() === "") {
+      setFilteredClientes(clientes);
+    } else {
+      const filtered = clientes.filter(
+        cliente => 
+          cliente.nome.toLowerCase().includes(value) ||
+          cliente.cpf.toLowerCase().includes(value) ||
+          cliente.telefone.toLowerCase().includes(value)
+      );
+      setFilteredClientes(filtered);
+    }
+  };
+
   const handleDelete = async () => {
     if (!id) return;
     
     try {
       setIsLoading(true);
       
-      // Call the delete_viagem function we created
+      // Chamar a função delete_viagem que criamos
       const { error } = await supabase
         .rpc('delete_viagem', { viagem_id: id });
       
@@ -145,6 +243,117 @@ const DetalhesViagem = () => {
     }
   };
 
+  const handleAddPassageiro = async () => {
+    if (!id || !selectedClienteId) return;
+    
+    try {
+      // Verificar se já existe este passageiro na viagem
+      const { data: existingPassageiro } = await supabase
+        .from("viagem_passageiros")
+        .select("*")
+        .eq("viagem_id", id)
+        .eq("cliente_id", selectedClienteId)
+        .single();
+      
+      if (existingPassageiro) {
+        toast.error("Este cliente já está adicionado como passageiro nesta viagem");
+        return;
+      }
+      
+      // Verificar se atingiu a capacidade máxima do ônibus
+      if (viagem && passageiros.length >= viagem.capacidade_onibus) {
+        toast.error(`A capacidade máxima do ônibus (${viagem.capacidade_onibus}) foi atingida`);
+        return;
+      }
+      
+      // Adicionar o passageiro
+      const { error } = await supabase
+        .from("viagem_passageiros")
+        .insert({
+          viagem_id: id,
+          cliente_id: selectedClienteId,
+          setor_maracana: setor,
+          status_pagamento: statusPagamento
+        });
+      
+      if (error) throw error;
+      
+      toast.success("Passageiro adicionado com sucesso");
+      setAddPassageiroOpen(false);
+      setSelectedClienteId("");
+      setSetor("Norte");
+      setStatusPagamento("Pendente");
+      
+      // Recarregar a lista de passageiros
+      await fetchPassageiros(id);
+      
+    } catch (err) {
+      console.error("Erro ao adicionar passageiro:", err);
+      toast.error("Erro ao adicionar passageiro");
+    }
+  };
+
+  const handleEditPassageiro = async () => {
+    if (!selectedPassageiro) return;
+    
+    try {
+      const { error } = await supabase
+        .from("viagem_passageiros")
+        .update({
+          setor_maracana: setor,
+          status_pagamento: statusPagamento
+        })
+        .eq("id", selectedPassageiro.viagem_passageiro_id);
+      
+      if (error) throw error;
+      
+      toast.success("Dados do passageiro atualizados com sucesso");
+      setEditPassageiroOpen(false);
+      
+      // Recarregar a lista de passageiros
+      if (id) await fetchPassageiros(id);
+      
+    } catch (err) {
+      console.error("Erro ao atualizar dados do passageiro:", err);
+      toast.error("Erro ao atualizar dados do passageiro");
+    }
+  };
+
+  const handleDeletePassageiro = async () => {
+    if (!selectedPassageiro) return;
+    
+    try {
+      const { error } = await supabase
+        .from("viagem_passageiros")
+        .delete()
+        .eq("id", selectedPassageiro.viagem_passageiro_id);
+      
+      if (error) throw error;
+      
+      toast.success("Passageiro removido com sucesso");
+      setDeletePassageiroOpen(false);
+      
+      // Recarregar a lista de passageiros
+      if (id) await fetchPassageiros(id);
+      
+    } catch (err) {
+      console.error("Erro ao remover passageiro:", err);
+      toast.error("Erro ao remover passageiro");
+    }
+  };
+
+  const openEditPassageiroDialog = (passageiro: PassageiroDisplay) => {
+    setSelectedPassageiro(passageiro);
+    setSetor(passageiro.setor_maracana);
+    setStatusPagamento(passageiro.status_pagamento);
+    setEditPassageiroOpen(true);
+  };
+
+  const openDeletePassageiroDialog = (passageiro: PassageiroDisplay) => {
+    setSelectedPassageiro(passageiro);
+    setDeletePassageiroOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -152,6 +361,11 @@ const DetalhesViagem = () => {
     } catch (error) {
       return dateString;
     }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setFilteredClientes(clientes);
   };
 
   if (isLoading) {
@@ -299,36 +513,44 @@ const DetalhesViagem = () => {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Passageiros</CardTitle>
-          <CardDescription>
-            {passageiros.length > 0 
-              ? `${passageiros.length} passageiros confirmados` 
-              : "Nenhum passageiro confirmado"}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Lista de Passageiros</CardTitle>
+            <CardDescription>
+              {passageiros.length > 0 
+                ? `${passageiros.length}/${viagem.capacidade_onibus} passageiros confirmados` 
+                : "Nenhum passageiro confirmado"}
+            </CardDescription>
+          </div>
+          <Button onClick={() => setAddPassageiroOpen(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Adicionar Passageiro
+          </Button>
         </CardHeader>
         <CardContent>
           {passageiros.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Nome</th>
-                    <th className="text-left p-2">Telefone</th>
-                    <th className="text-left p-2">Cidade</th>
-                    <th className="text-left p-2">Setor Maracanã</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-right p-2">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Cidade</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead>Setor Maracanã</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {passageiros.map((passageiro) => (
-                    <tr key={passageiro.id} className="border-b hover:bg-muted/50">
-                      <td className="p-2">{passageiro.nome}</td>
-                      <td className="p-2">{passageiro.telefone}</td>
-                      <td className="p-2">{passageiro.cidade_embarque}</td>
-                      <td className="p-2">{passageiro.setor_maracana}</td>
-                      <td className="p-2">
+                    <TableRow key={passageiro.viagem_passageiro_id}>
+                      <TableCell>{passageiro.nome}</TableCell>
+                      <TableCell>{passageiro.telefone}</TableCell>
+                      <TableCell>{passageiro.cidade}</TableCell>
+                      <TableCell>{passageiro.cpf}</TableCell>
+                      <TableCell>{passageiro.setor_maracana}</TableCell>
+                      <TableCell>
                         <Badge 
                           className={
                             passageiro.status_pagamento === "Pago" 
@@ -338,44 +560,263 @@ const DetalhesViagem = () => {
                         >
                           {passageiro.status_pagamento}
                         </Badge>
-                      </td>
-                      <td className="p-2 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline">
-                            Remover
-                          </Button>
-                          <Button size="sm" variant="outline">
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => openEditPassageiroDialog(passageiro)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
                             Editar
                           </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-destructive" 
+                            onClick={() => openDeletePassageiroDialog(passageiro)}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Remover
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
               <Users className="h-12 w-12 mb-2 text-muted-foreground/50" />
               <p>Nenhum passageiro cadastrado para esta viagem</p>
               <p className="text-sm">Cadastre passageiros para esta viagem</p>
-              <Button className="mt-4">Adicionar Passageiro</Button>
+              <Button className="mt-4" onClick={() => setAddPassageiroOpen(true)}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Adicionar Passageiro
+              </Button>
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end">
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            {passageiros.length > 0 && (
+              `Ocupação: ${passageiros.length} de ${viagem.capacidade_onibus} lugares (${Math.round(passageiros.length / viagem.capacidade_onibus * 100)}%)`
+            )}
+          </div>
           <Button variant="outline">Exportar Lista</Button>
         </CardFooter>
       </Card>
 
-      {/* Flamengo Logo Section */}
-      <div className="flex justify-center items-center my-8">
-        <img 
-          src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"}
-          alt="Logo do Flamengo"
-          className="h-32 w-auto"
-        />
-      </div>
+      {/* Modal para adicionar passageiro */}
+      <Dialog open={addPassageiroOpen} onOpenChange={setAddPassageiroOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Passageiro</DialogTitle>
+            <DialogDescription>
+              Selecione um cliente cadastrado para adicionar como passageiro nesta viagem.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="relative mb-4">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, CPF ou telefone..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            {searchTerm && (
+              <button 
+                className="absolute right-2 top-2.5" 
+                onClick={clearSearch}
+                type="button"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+          
+          <div className="max-h-[300px] overflow-y-auto border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[30px]"></TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Telefone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClientes.length > 0 ? (
+                  filteredClientes.map((cliente) => (
+                    <TableRow 
+                      key={cliente.id} 
+                      className={selectedClienteId === cliente.id ? "bg-muted" : ""}
+                      onClick={() => setSelectedClienteId(cliente.id)}
+                    >
+                      <TableCell>
+                        <input 
+                          type="radio" 
+                          checked={selectedClienteId === cliente.id}
+                          onChange={() => setSelectedClienteId(cliente.id)}
+                          className="rounded-full"
+                        />
+                      </TableCell>
+                      <TableCell>{cliente.nome}</TableCell>
+                      <TableCell>{cliente.cpf}</TableCell>
+                      <TableCell>{cliente.telefone}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4">
+                      {searchTerm ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <div className="grid gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="setor">Setor do Maracanã</Label>
+                <Select value={setor} onValueChange={setSetor}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o setor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Norte">Norte</SelectItem>
+                    <SelectItem value="Sul">Sul</SelectItem>
+                    <SelectItem value="Leste">Leste</SelectItem>
+                    <SelectItem value="Oeste">Oeste</SelectItem>
+                    <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Status do Pagamento</Label>
+                <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Pendente" id="pendente" />
+                    <Label htmlFor="pendente">Pendente</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Pago" id="pago" />
+                    <Label htmlFor="pago">Pago</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setAddPassageiroOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAddPassageiro}
+              disabled={!selectedClienteId}
+            >
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para editar passageiro */}
+      <Dialog open={editPassageiroOpen} onOpenChange={setEditPassageiroOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Passageiro</DialogTitle>
+            <DialogDescription>
+              Edite as informações do passageiro para esta viagem.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPassageiro && (
+            <div className="py-2">
+              <div className="mb-4">
+                <p className="text-lg font-medium">{selectedPassageiro.nome}</p>
+                <p className="text-sm text-muted-foreground">CPF: {selectedPassageiro.cpf}</p>
+                <p className="text-sm text-muted-foreground">Telefone: {selectedPassageiro.telefone}</p>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-setor">Setor do Maracanã</Label>
+                  <Select value={setor} onValueChange={setSetor}>
+                    <SelectTrigger id="edit-setor">
+                      <SelectValue placeholder="Selecione o setor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Norte">Norte</SelectItem>
+                      <SelectItem value="Sul">Sul</SelectItem>
+                      <SelectItem value="Leste">Leste</SelectItem>
+                      <SelectItem value="Oeste">Oeste</SelectItem>
+                      <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Status do Pagamento</Label>
+                  <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Pendente" id="edit-pendente" />
+                      <Label htmlFor="edit-pendente">Pendente</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Pago" id="edit-pago" />
+                      <Label htmlFor="edit-pago">Pago</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPassageiroOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditPassageiro}>
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para remover passageiro */}
+      <AlertDialog open={deletePassageiroOpen} onOpenChange={setDeletePassageiroOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover passageiro</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este passageiro da viagem?
+              {selectedPassageiro && (
+                <p className="font-medium mt-2">{selectedPassageiro.nome}</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePassageiro}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

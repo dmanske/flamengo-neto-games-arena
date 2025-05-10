@@ -72,6 +72,48 @@ export type Database = {
         }
         Relationships: []
       }
+      viagem_passageiros: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          setor_maracana: string
+          status_pagamento: string
+          viagem_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          setor_maracana: string
+          status_pagamento?: string
+          viagem_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          setor_maracana?: string
+          status_pagamento?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_passageiros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_passageiros_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagens: {
         Row: {
           adversario: string

@@ -48,7 +48,6 @@ const App = () => (
               <Route path="/passageiros" element={<Passageiros />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
-              <Route path="/embarques" element={<div className="container py-6"><h1 className="text-3xl font-bold">Embarques</h1></div>} />
               <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
             </Route>
             <Route path="*" element={<NotFound />} />

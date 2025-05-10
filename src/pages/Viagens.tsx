@@ -99,13 +99,20 @@ const Viagens = () => {
         if (data?.length) {
           const passageirosData: Record<string, number> = {};
           
-          // In a real implementation, this would fetch actual passenger counts
-          // For now, we'll simulate random counts
-          data.forEach(viagem => {
-            // This is a placeholder. In a real implementation, you would query the 
-            // database for the actual count of passengers for each trip
-            passageirosData[viagem.id] = Math.floor(Math.random() * viagem.capacidade_onibus);
-          });
+          // Buscar contagem real de passageiros para cada viagem
+          for (const viagem of data) {
+            const { count, error: countError } = await supabase
+              .from('viagem_passageiros')
+              .select('*', { count: 'exact', head: true })
+              .eq('viagem_id', viagem.id);
+            
+            if (countError) {
+              console.error("Erro ao buscar quantidade de passageiros:", countError);
+              passageirosData[viagem.id] = 0;
+            } else {
+              passageirosData[viagem.id] = count || 0;
+            }
+          }
           
           setPassageirosCount(passageirosData);
         }
@@ -276,15 +283,6 @@ const Viagens = () => {
           ))}
         </div>
       )}
-
-      {/* Flamengo Logo Section */}
-      <div className="flex justify-center items-center my-8">
-        <img 
-          src="https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
-          alt="Logo do Flamengo"
-          className="h-40 w-auto"
-        />
-      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

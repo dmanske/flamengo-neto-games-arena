@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Bus, Calendar, CreditCard, Map, Route, User, Users } from "lucide-react";
+import { Bus, Calendar, CreditCard, Map, User, Users } from "lucide-react";
 import { Link, Outlet } from "react-router-dom";
 
 const MainLayout = () => {
@@ -27,19 +27,9 @@ const MainLayout = () => {
       path: "/viagens"
     },
     {
-      title: "Passageiros",
-      icon: Users,
-      path: "/passageiros"
-    },
-    {
       title: "Ônibus",
       icon: Bus,
       path: "/onibus"
-    },
-    {
-      title: "Embarques",
-      icon: Route,
-      path: "/embarques"
     },
     {
       title: "Pagamentos",
