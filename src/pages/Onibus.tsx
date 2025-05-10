@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { X, Upload, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface BusType {
   type: string;
@@ -161,18 +161,26 @@ const Onibus = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {busList.map((bus, index) => (
           <Card key={index} className="overflow-hidden">
-            <div className="aspect-video w-full overflow-hidden bg-gray-100 flex items-center justify-center">
-              {bus.imageUrl ? (
-                <img 
-                  src={bus.imageUrl} 
-                  alt={`Imagem do ônibus ${bus.type}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="text-gray-400 text-center p-4">
-                  {isLoading ? "Carregando..." : "Clique abaixo para carregar uma imagem"}
-                </div>
-              )}
+            <div className="w-full">
+              <AspectRatio ratio={16/9} className="bg-gray-100">
+                {bus.imageUrl ? (
+                  <img 
+                    src={bus.imageUrl} 
+                    alt={`Imagem do ônibus ${bus.type}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full w-full">
+                    {isLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    ) : (
+                      <div className="text-gray-400 text-center p-4">
+                        Clique abaixo para carregar uma imagem
+                      </div>
+                    )}
+                  </div>
+                )}
+              </AspectRatio>
             </div>
             <CardHeader>
               <CardTitle>{bus.type}</CardTitle>
@@ -198,6 +206,7 @@ const Onibus = () => {
                   folderPath=""
                   allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
                   maxSizeInMB={5}
+                  hidePreview={true}
                 />
               </div>
             </CardContent>

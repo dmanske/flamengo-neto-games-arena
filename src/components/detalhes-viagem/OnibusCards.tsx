@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface Onibus {
   id: string;
@@ -76,12 +77,14 @@ export function OnibusCards({
             onClick={() => onSelectOnibus(onibus.id)}
           >
             {busImage && (
-              <div className="w-full h-32 overflow-hidden">
-                <img 
-                  src={busImage}
-                  alt={`Ônibus ${onibus.tipo_onibus}`}
-                  className="w-full h-full object-cover"
-                />
+              <div className="overflow-hidden">
+                <AspectRatio ratio={16/9}>
+                  <img 
+                    src={busImage}
+                    alt={`Ônibus ${onibus.tipo_onibus}`}
+                    className="w-full h-full object-cover"
+                  />
+                </AspectRatio>
               </div>
             )}
             <CardHeader className="pb-2">
