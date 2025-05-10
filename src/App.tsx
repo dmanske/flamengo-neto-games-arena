@@ -41,6 +41,7 @@ const App = () => (
               <Route path="/editar-cliente/:id" element={<EditarCliente />} />
               <Route path="/viagens" element={<Viagens />} />
               <Route path="/cadastrar-viagem" element={<CadastrarViagem />} />
+              <Route path="/viagem/:id" element={<div className="container py-6"><h1 className="text-3xl font-bold">Detalhes da Viagem</h1></div>} />
               <Route path="/passageiros" element={<Passageiros />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/onibus" element={<div className="container py-6"><h1 className="text-3xl font-bold">Ônibus</h1></div>} />
