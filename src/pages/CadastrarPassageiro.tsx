@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPagamento } from "@/types/entities";
+import { supabase } from "@/lib/supabase";
 
 // Define the form validation schema
 const formSchema = z.object({
@@ -41,6 +42,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CadastrarPassageiro = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   // Define form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -58,11 +61,34 @@ const CadastrarPassageiro = () => {
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
     try {
+      setIsSubmitting(true);
       console.log("Cadastrando passageiro:", values);
       
-      // In a real app, this would be an API call to create the passenger
-      // Simulate API call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create the client first
+      const { data: clienteData, error: clienteError } = await supabase
+        .from("clientes")
+        .insert({
+          nome: values.nome,
+          telefone: values.telefone,
+          email: values.email,
+          cidade: values.cidade_embarque,
+          cpf: "", // We should add this to the form in a future update
+          data_nascimento: new Date().toISOString(), // Placeholder for now
+          cep: "",
+          bairro: "",
+          endereco: "",
+          estado: "",
+          como_conheceu: "Cadastro pelo app"
+        })
+        .select('id')
+        .single();
+      
+      if (clienteError) {
+        throw clienteError;
+      }
+      
+      // For a real app, we would also create a viagem_passageiros entry
+      // linking the passenger to a specific trip
       
       // Simulate sending WhatsApp message
       console.log(`Enviando mensagem para ${values.telefone}: 🎟️ Você foi cadastrado com sucesso para a caravana do Flamengo! 🚍 Embarque: ${values.cidade_embarque} | Setor: ${values.setor_maracana}. Nos vemos lá! 🔴⚫`);
@@ -75,6 +101,8 @@ const CadastrarPassageiro = () => {
     } catch (error) {
       console.error("Erro ao cadastrar passageiro:", error);
       toast.error("Erro ao cadastrar passageiro. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -211,9 +239,9 @@ const CadastrarPassageiro = () => {
                 <Button 
                   type="submit" 
                   className="bg-primary hover:bg-primary/90"
-                  disabled={form.formState.isSubmitting}
+                  disabled={isSubmitting}
                 >
-                  {form.formState.isSubmitting ? "Cadastrando..." : "Cadastrar Passageiro"}
+                  {isSubmitting ? "Cadastrando..." : "Cadastrar Passageiro"}
                 </Button>
               </div>
             </form>

@@ -151,7 +151,8 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   const fetchPassageiros = async (viagemId: string) => {
     try {
-      // Buscar passageiros da viagem com dados do cliente
+      // Buscar passageiros da viagem com dados do cliente usando a relação específica
+      // Adicionamos '!viagem_passageiros_cliente_id_fkey' para especificar exatamente qual relação usar
       const { data, error } = await supabase
         .from("viagem_passageiros")
         .select(`
@@ -165,7 +166,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           desconto,
           created_at,
           onibus_id,
-          clientes:cliente_id (id, nome, telefone, cidade, cpf)
+          clientes!viagem_passageiros_cliente_id_fkey (id, nome, telefone, cidade, cpf)
         `)
         .eq("viagem_id", viagemId);
       
