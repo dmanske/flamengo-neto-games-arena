@@ -62,7 +62,7 @@ const viagemFormSchema = z.object({
   capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
-  logo_flamengo: z.string().default("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"),
+  logo_flamengo: z.string().default("https://logodetimes.com/wp-content/uploads/flamengo.png"),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;

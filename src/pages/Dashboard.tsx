@@ -10,7 +10,7 @@ const Dashboard = () => {
   const [clientCount, setClientCount] = useState<number>(0);
   const [viagemCount, setViagemCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [flamengoLogo, setFlamengoLogo] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
+  const [flamengoLogo, setFlamengoLogo] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
   
   useEffect(() => {
     const fetchCounts = async () => {

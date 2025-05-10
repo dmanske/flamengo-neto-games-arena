@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Configuracoes = () => {
   const [logoFlamengo, setLogoFlamengo] = useState<string | null>(
-    "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"
+    "https://logodetimes.com/wp-content/uploads/flamengo.png"
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [uploadError, setUploadError] = useState<string | null>(null);
