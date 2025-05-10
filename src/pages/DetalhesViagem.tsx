@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +48,16 @@ const DetalhesViagem = () => {
     getOnibusAtual,
     fetchPassageiros
   } = useViagemDetails(id);
+
+  // Efeito que verifica se não há passageiros não alocados e seleciona um ônibus
+  useEffect(() => {
+    const totalNaoAlocados = passageiros.filter(p => !p.onibus_id).length;
+    // Se não temos passageiros não alocados e a seleção atual é "não alocados"
+    if (totalNaoAlocados === 0 && selectedOnibusId === null && onibusList.length > 0) {
+      // Seleciona automaticamente o primeiro ônibus
+      handleSelectOnibus(onibusList[0].id);
+    }
+  }, [passageiros, selectedOnibusId, onibusList]);
 
   const openEditPassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);

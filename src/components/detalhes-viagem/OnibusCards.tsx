@@ -85,40 +85,44 @@ export function OnibusCards({
           </Card>
         );
       })}
-      <Card 
-        className={`relative cursor-pointer hover:border-gray-300 transition-colors border-dashed ${selectedOnibusId === null ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
-        onClick={() => onSelectOnibus(null)}
-      >
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-lg flex items-center gap-2">
-              Não Alocados
-              {selectedOnibusId === null && (
-                <Badge variant="secondary" className="ml-2">
-                  Selecionado
-                </Badge>
-              )}
-            </CardTitle>
-            <Badge variant="outline">
-              Sem ônibus
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span>Passageiros não alocados: {passageirosNaoAlocados}</span>
+      
+      {/* Só exibe o card de "Não Alocados" se houver passageiros sem alocação */}
+      {passageirosNaoAlocados > 0 && (
+        <Card 
+          className={`relative cursor-pointer hover:border-gray-300 transition-colors border-dashed ${selectedOnibusId === null ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
+          onClick={() => onSelectOnibus(null)}
+        >
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-lg flex items-center gap-2">
+                Não Alocados
+                {selectedOnibusId === null && (
+                  <Badge variant="secondary" className="ml-2">
+                    Selecionado
+                  </Badge>
+                )}
+              </CardTitle>
+              <Badge variant="outline">
+                Sem ônibus
+              </Badge>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-center h-8">
-                <span className="text-muted-foreground">Passageiros sem alocação de ônibus</span>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>Passageiros não alocados: {passageirosNaoAlocados}</span>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-center h-8">
+                  <span className="text-muted-foreground">Passageiros sem alocação de ônibus</span>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
