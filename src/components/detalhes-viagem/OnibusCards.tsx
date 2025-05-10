@@ -19,9 +19,10 @@ interface OnibusCardsProps {
   onibusList: Onibus[];
   selectedOnibusId: string | null;
   onSelectOnibus: (id: string | null) => void;
+  onibusSelecionados?: number;
 }
 
-export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus }: OnibusCardsProps) {
+export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus, onibusSelecionados = 0 }: OnibusCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {onibusList.map((onibus) => {
@@ -37,8 +38,13 @@ export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus }: On
           >
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">
+                <CardTitle className="text-lg flex items-center gap-2">
                   {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`}
+                  {isSelected && (
+                    <Badge variant="secondary" className="ml-2">
+                      Selecionado
+                    </Badge>
+                  )}
                 </CardTitle>
                 <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
                   {onibus.tipo_onibus}
@@ -62,7 +68,7 @@ export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus }: On
                       </div>
                       <Progress 
                         value={percentualOcupacao} 
-                        className="h-2"
+                        className={`h-2 ${percentualOcupacao > 90 ? 'bg-red-200' : percentualOcupacao > 70 ? 'bg-yellow-200' : ''}`}
                       />
                     </div>
                   </div>
@@ -78,8 +84,13 @@ export function OnibusCards({ onibusList, selectedOnibusId, onSelectOnibus }: On
       >
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
               Não Alocados
+              {selectedOnibusId === null && (
+                <Badge variant="secondary" className="ml-2">
+                  Selecionado
+                </Badge>
+              )}
             </CardTitle>
             <Badge variant="outline">
               Sem ônibus
