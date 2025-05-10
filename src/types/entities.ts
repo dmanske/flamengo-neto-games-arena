@@ -3,6 +3,8 @@ export type StatusPagamento = 'Pendente' | 'Pago' | 'Cancelado';
 export type StatusViagem = 'Aberta' | 'Em Andamento' | 'Finalizada';
 export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto';
 export type FonteConhecimento = 'Instagram' | 'Indicação' | 'Facebook' | 'Google' | 'Outro';
+export type TipoOnibus = '43 Leitos Totais' | '52 Leitos Master' | '56 Leitos Master';
+export type EmpresaOnibus = 'Bertoldo' | 'Majetur' | 'Sarcella' | 'HG TUR';
 
 export interface Passageiro {
   id?: string;
@@ -36,10 +38,14 @@ export interface Cliente {
 
 export interface Viagem {
   id?: string;
-  data_viagem: Date;
-  rota: string[];
+  adversario: string;
+  data_jogo: Date;
+  tipo_onibus: TipoOnibus;
+  empresa: EmpresaOnibus;
+  rota: string;
   capacidade_onibus: number;
   status_viagem: StatusViagem;
+  created_at?: Date;
 }
 
 export interface Embarque {

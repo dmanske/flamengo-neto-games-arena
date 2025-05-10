@@ -72,6 +72,42 @@ export type Database = {
         }
         Relationships: []
       }
+      viagens: {
+        Row: {
+          adversario: string
+          capacidade_onibus: number
+          created_at: string
+          data_jogo: string
+          empresa: string
+          id: string
+          rota: string
+          status_viagem: string
+          tipo_onibus: string
+        }
+        Insert: {
+          adversario: string
+          capacidade_onibus: number
+          created_at?: string
+          data_jogo: string
+          empresa: string
+          id?: string
+          rota: string
+          status_viagem?: string
+          tipo_onibus: string
+        }
+        Update: {
+          adversario?: string
+          capacidade_onibus?: number
+          created_at?: string
+          data_jogo?: string
+          empresa?: string
+          id?: string
+          rota?: string
+          status_viagem?: string
+          tipo_onibus?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
