@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,12 +22,19 @@ interface Viagem {
   logo_flamengo: string | null;
 }
 
+interface OnibusCount {
+  tipo: string;
+  count: number;
+}
+
 const Dashboard = () => {
   const [clientCount, setClientCount] = useState<number>(0);
   const [viagemCount, setViagemCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [flamengoLogo, setFlamengoLogo] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
   const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
+  const [busCount, setBusCount] = useState<number>(3); // We have 3 types of buses
+  const [mostUsedBus, setMostUsedBus] = useState<OnibusCount | null>(null);
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -80,6 +88,35 @@ const Dashboard = () => {
         
         if (!logoError && recentTrip && recentTrip.logo_flamengo) {
           setFlamengoLogo(recentTrip.logo_flamengo);
+        }
+
+        // Fetch most used bus type
+        const { data: busData, error: busError } = await supabase
+          .from('viagens')
+          .select('tipo_onibus')
+          
+        if (!busError && busData) {
+          const busCounts: Record<string, number> = {};
+          busData.forEach(trip => {
+            if (trip.tipo_onibus) {
+              busCounts[trip.tipo_onibus] = (busCounts[trip.tipo_onibus] || 0) + 1;
+            }
+          });
+          
+          let maxCount = 0;
+          let maxType = '';
+          Object.entries(busCounts).forEach(([tipo, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              maxType = tipo;
+            }
+          });
+          
+          if (maxType) {
+            setMostUsedBus({ tipo: maxType, count: maxCount });
+          }
+        } else {
+          console.error('Erro ao buscar dados de ônibus:', busError);
         }
         
       } catch (err) {
@@ -168,23 +205,38 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">0</p>
-            <CardDescription>Nenhum ônibus cadastrado</CardDescription>
+            <p className="text-2xl font-bold">{busCount}</p>
+            <CardDescription>
+              {busCount === 0
+                ? 'Nenhum ônibus cadastrado'
+                : busCount === 1
+                  ? '1 tipo de ônibus'
+                  : `${busCount} tipos de ônibus`}
+            </CardDescription>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
-              <CardTitle className="text-lg">Receita Total</CardTitle>
+              <CardTitle className="text-lg">Ônibus Mais Usado</CardTitle>
               <div className="bg-purple-100 text-purple-500 p-2 rounded-full">
-                <CreditCard className="h-5 w-5" />
+                <Bus className="h-5 w-5" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">R$ 0,00</p>
-            <CardDescription>Sem transações registradas</CardDescription>
+            {mostUsedBus ? (
+              <>
+                <p className="text-xl font-bold">{mostUsedBus.tipo}</p>
+                <CardDescription>Usado em {mostUsedBus.count} {mostUsedBus.count === 1 ? 'viagem' : 'viagens'}</CardDescription>
+              </>
+            ) : (
+              <>
+                <p className="text-xl font-bold">Nenhum</p>
+                <CardDescription>Sem dados de utilização</CardDescription>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
