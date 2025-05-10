@@ -20,6 +20,23 @@ export const formatCEP = (cep: string): string => {
   return `${cepClean.slice(0, 5)}-${cepClean.slice(5, 8)}`;
 };
 
+export const formatCPF = (cpf: string): string => {
+  // Remove any non-digit characters
+  const cpfClean = cpf.replace(/\D/g, '');
+  
+  // Format as 000.000.000-00
+  if (cpfClean.length <= 3) {
+    return cpfClean;
+  }
+  if (cpfClean.length <= 6) {
+    return `${cpfClean.slice(0, 3)}.${cpfClean.slice(3)}`;
+  }
+  if (cpfClean.length <= 9) {
+    return `${cpfClean.slice(0, 3)}.${cpfClean.slice(3, 6)}.${cpfClean.slice(6)}`;
+  }
+  return `${cpfClean.slice(0, 3)}.${cpfClean.slice(3, 6)}.${cpfClean.slice(6, 9)}-${cpfClean.slice(9, 11)}`;
+};
+
 export const formatTelefone = (telefone: string): string => {
   // Remove any non-digit characters
   const telClean = telefone.replace(/\D/g, '');

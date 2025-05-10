@@ -2,6 +2,7 @@
 export type StatusPagamento = 'Pendente' | 'Pago' | 'Cancelado';
 export type StatusViagem = 'Aberta' | 'Em Andamento' | 'Finalizada';
 export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto';
+export type FonteConhecimento = 'Instagram' | 'Indicação' | 'Facebook' | 'Google' | 'Outro';
 
 export interface Passageiro {
   id?: string;
@@ -18,6 +19,7 @@ export interface Cliente {
   id?: string;
   nome: string;
   endereco: string;
+  numero: string;
   complemento?: string;
   telefone: string;
   cep: string;
@@ -26,6 +28,8 @@ export interface Cliente {
   cpf: string;
   data_nascimento: Date;
   email: string;
+  como_conheceu: FonteConhecimento;
+  indicacao_nome?: string;
   observacoes?: string;
 }
 
