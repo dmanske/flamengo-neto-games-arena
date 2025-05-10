@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -102,7 +103,9 @@ const EditarCliente = () => {
           // Formatar a data para o formato do input date
           let formattedData = { ...data };
           if (formattedData.data_nascimento) {
+            // Fix timezone issues by parsing with UTC and formatting for local display
             const dateObj = new Date(formattedData.data_nascimento);
+            dateObj.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
             formattedData.data_nascimento = format(dateObj, "yyyy-MM-dd");
           }
           
@@ -133,7 +136,10 @@ const EditarCliente = () => {
       // Formatar a data de nascimento para o formato do banco de dados
       let formattedValues = { ...values };
       if (formattedValues.data_nascimento) {
-        formattedValues.data_nascimento = new Date(formattedValues.data_nascimento).toISOString();
+        // Set to noon of the selected date to avoid timezone issues
+        const dateObj = new Date(formattedValues.data_nascimento);
+        dateObj.setHours(12, 0, 0, 0);
+        formattedValues.data_nascimento = dateObj.toISOString();
       }
       
       // Garantir que observacoes e indicacao_nome sejam strings vazias e não null
@@ -480,3 +486,4 @@ const EditarCliente = () => {
 };
 
 export default EditarCliente;
+
