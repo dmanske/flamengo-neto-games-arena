@@ -22,6 +22,7 @@ export type Database = {
           email: string
           endereco: string
           estado: string
+          fonte_cadastro: string | null
           foto: string | null
           id: string
           indicacao_nome: string | null
@@ -42,6 +43,7 @@ export type Database = {
           email: string
           endereco: string
           estado: string
+          fonte_cadastro?: string | null
           foto?: string | null
           id?: string
           indicacao_nome?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           email?: string
           endereco?: string
           estado?: string
+          fonte_cadastro?: string | null
           foto?: string | null
           id?: string
           indicacao_nome?: string | null
@@ -120,6 +123,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sistema_parametros: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: []
+      }
       system_config: {
         Row: {
           created_at: string
@@ -174,6 +204,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_viagem_onibus_viagem_id"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "viagem_onibus_viagem_id_fkey"
             columns: ["viagem_id"]
             isOneToOne: false
@@ -220,6 +257,27 @@ export type Database = {
           viagem_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_viagem_passageiros_cliente_id"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_viagem_passageiros_onibus_id"
+            columns: ["onibus_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_onibus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_viagem_passageiros_viagem_id"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "viagem_passageiros_cliente_id_fkey"
             columns: ["cliente_id"]
@@ -302,7 +360,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      fonte_conhecimento:
+        | "Instagram"
+        | "Indicação"
+        | "Facebook"
+        | "Google"
+        | "WhatsApp"
+        | "Outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -417,6 +481,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      fonte_conhecimento: [
+        "Instagram",
+        "Indicação",
+        "Facebook",
+        "Google",
+        "WhatsApp",
+        "Outro",
+      ],
+    },
   },
 } as const
