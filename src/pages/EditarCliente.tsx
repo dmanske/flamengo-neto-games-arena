@@ -7,9 +7,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, User } from "lucide-react";
 import { FonteConhecimento } from "@/types/entities";
 import { FileUpload } from "@/components/FileUpload";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import {
   Form,
@@ -78,6 +79,7 @@ const EditarCliente = () => {
 
   // Obter o valor atual do campo "como_conheceu"
   const comoConheceu = form.watch("como_conheceu");
+  const clienteFoto = form.watch("foto");
 
   // Carregar dados do cliente
   useEffect(() => {
@@ -179,8 +181,17 @@ const EditarCliente = () => {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Informações do Cliente</CardTitle>
+          <Avatar className="h-16 w-16 border-2 border-primary">
+            {clienteFoto ? (
+              <AvatarImage src={clienteFoto} alt="Foto do cliente" />
+            ) : (
+              <AvatarFallback>
+                <User className="h-8 w-8 text-muted-foreground" />
+              </AvatarFallback>
+            )}
+          </Avatar>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -191,28 +202,27 @@ const EditarCliente = () => {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Campo de Upload de Foto */}
-                  <FormField
-                    control={form.control}
-                    name="foto"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Foto do Cliente (opcional)</FormLabel>
-                        <FormControl>
-                          <FileUpload
-                            value={field.value}
-                            onChange={field.onChange}
-                            bucketName="client-photos"
-                            allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
-                            maxSizeInMB={5}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="foto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Foto do Cliente (opcional)</FormLabel>
+                      <FormControl>
+                        <FileUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          bucketName="client-photos"
+                          allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                          maxSizeInMB={5}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="nome"
