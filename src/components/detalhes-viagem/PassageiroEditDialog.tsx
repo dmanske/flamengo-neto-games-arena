@@ -1,0 +1,176 @@
+
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface PassageiroDisplay {
+  id: string;
+  nome: string;
+  telefone: string;
+  cidade: string;
+  setor_maracana: string;
+  status_pagamento: string;
+  cpf: string;
+  cliente_id: string;
+  viagem_passageiro_id: string;
+  valor?: number | null;
+}
+
+interface PassageiroEditDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  passageiro: PassageiroDisplay | null;
+  onSuccess: () => void;
+}
+
+export function PassageiroEditDialog({
+  open,
+  onOpenChange,
+  passageiro,
+  onSuccess,
+}: PassageiroEditDialogProps) {
+  const [setor, setSetor] = useState<string>(passageiro?.setor_maracana || "Norte");
+  const [statusPagamento, setStatusPagamento] = useState<string>(passageiro?.status_pagamento || "Pendente");
+  const [valor, setValor] = useState<number>(passageiro?.valor || 0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Atualizar os valores quando o passageiro é selecionado
+  React.useEffect(() => {
+    if (passageiro) {
+      setSetor(passageiro.setor_maracana);
+      setStatusPagamento(passageiro.status_pagamento);
+      setValor(passageiro.valor || 0);
+    }
+  }, [passageiro]);
+
+  const handleEditPassageiro = async () => {
+    if (!passageiro) return;
+    
+    try {
+      setIsLoading(true);
+      
+      const { error } = await supabase
+        .from("viagem_passageiros")
+        .update({
+          setor_maracana: setor,
+          status_pagamento: statusPagamento,
+          valor: valor
+        })
+        .eq("id", passageiro.viagem_passageiro_id);
+      
+      if (error) throw error;
+      
+      toast.success("Dados do passageiro atualizados com sucesso");
+      onOpenChange(false);
+      onSuccess();
+      
+    } catch (err) {
+      console.error("Erro ao atualizar dados do passageiro:", err);
+      toast.error("Erro ao atualizar dados do passageiro");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Formatar valor para exibição em reais
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (!passageiro) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Passageiro</DialogTitle>
+          <DialogDescription>
+            Edite as informações do passageiro para esta viagem.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-2">
+          <div className="mb-4">
+            <p className="text-lg font-medium">{passageiro.nome}</p>
+            <p className="text-sm text-muted-foreground">CPF: {passageiro.cpf}</p>
+            <p className="text-sm text-muted-foreground">Telefone: {passageiro.telefone}</p>
+          </div>
+          
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-setor">Setor do Maracanã</Label>
+              <Select value={setor} onValueChange={setSetor}>
+                <SelectTrigger id="edit-setor">
+                  <SelectValue placeholder="Selecione o setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Norte">Norte</SelectItem>
+                  <SelectItem value="Sul">Sul</SelectItem>
+                  <SelectItem value="Leste">Leste</SelectItem>
+                  <SelectItem value="Oeste">Oeste</SelectItem>
+                  <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Status do Pagamento</Label>
+              <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Pendente" id="edit-pendente" />
+                  <Label htmlFor="edit-pendente">Pendente</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Pago" id="edit-pago" />
+                  <Label htmlFor="edit-pago">Pago</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-valor">Valor</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
+                <Input 
+                  id="edit-valor" 
+                  type="number" 
+                  min="0" 
+                  step="0.01" 
+                  value={valor} 
+                  onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
+                  className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleEditPassageiro} disabled={isLoading}>
+            {isLoading ? "Salvando..." : "Salvar Alterações"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

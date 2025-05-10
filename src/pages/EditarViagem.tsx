@@ -63,6 +63,8 @@ const viagemFormSchema = z.object({
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default("https://logodetimes.com/wp-content/uploads/flamengo.png"),
+  valor_padrao: z.number().min(0, "O valor não pode ser negativo").optional(),
+  setor_padrao: z.string().optional(),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
@@ -80,7 +82,7 @@ const EditarViagem = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
-  const [logoFlamengoUrl, setLogoFlamengoUrl] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
+  const [logoFlamengoUrl, setLogoFlamengoUrl] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
   const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
   
   // Valores padrão para o formulário
@@ -88,7 +90,9 @@ const EditarViagem = () => {
     status_viagem: "Aberta",
     capacidade_onibus: 0,
     logo_adversario: "",
-    logo_flamengo: "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+    logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
+    valor_padrao: 0,
+    setor_padrao: "Norte",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -143,11 +147,13 @@ const EditarViagem = () => {
             capacidade_onibus: data.capacidade_onibus,
             status_viagem: data.status_viagem,
             logo_adversario: data.logo_adversario || "",
-            logo_flamengo: data.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+            logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
+            valor_padrao: data.valor_padrao || 0,
+            setor_padrao: data.setor_padrao || "Norte",
           });
           
           setLogoUrl(data.logo_adversario || "");
-          setLogoFlamengoUrl(data.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
+          setLogoFlamengoUrl(data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png");
         }
       } catch (err) {
         console.error("Erro ao buscar dados da viagem:", err);
@@ -180,7 +186,9 @@ const EditarViagem = () => {
           capacidade_onibus: data.capacidade_onibus,
           status_viagem: data.status_viagem,
           logo_adversario: data.logo_adversario || null,
-          logo_flamengo: data.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png",
+          logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
+          valor_padrao: data.valor_padrao || null,
+          setor_padrao: data.setor_padrao || null,
         })
         .eq("id", id);
 
@@ -217,9 +225,17 @@ const EditarViagem = () => {
 
   const clearLogoFlamengo = () => {
     // Reset to default Flamengo logo
-    const defaultLogo = "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png";
+    const defaultLogo = "https://logodetimes.com/wp-content/uploads/flamengo.png";
     form.setValue("logo_flamengo", defaultLogo);
     setLogoFlamengoUrl(defaultLogo);
+  };
+
+  // Formatar valor para exibição em reais
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   if (isLoading) {
@@ -337,7 +353,7 @@ const EditarViagem = () => {
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null;
-                                target.src = "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png";
+                                target.src = "https://logodetimes.com/wp-content/uploads/flamengo.png";
                               }} 
                             />
                             <button
@@ -548,6 +564,62 @@ const EditarViagem = () => {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="valor_padrao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Padrão da Viagem</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Este valor será aplicado como padrão para todos os novos passageiros
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="setor_padrao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Setor Padrão do Maracanã</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        value={field.value || "Norte"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o setor padrão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Norte">Norte</SelectItem>
+                          <SelectItem value="Sul">Sul</SelectItem>
+                          <SelectItem value="Leste">Leste</SelectItem>
+                          <SelectItem value="Oeste">Oeste</SelectItem>
+                          <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Este setor será aplicado como padrão para todos os novos passageiros
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="flex justify-end gap-4">
@@ -663,12 +735,12 @@ const EditarViagem = () => {
                 <h3 className="text-sm font-medium mb-2">Logo Padrão:</h3>
                 <div className="flex items-center gap-4 p-4 border rounded-md">
                   <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png" 
+                    src="https://logodetimes.com/wp-content/uploads/flamengo.png" 
                     alt="Logo do Flamengo" 
                     className="h-16 w-auto" 
                   />
                   <Button
-                    onClick={() => handleLogoFlamengoSelect("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png")}
+                    onClick={() => handleLogoFlamengoSelect("https://logodetimes.com/wp-content/uploads/flamengo.png")}
                   >
                     Usar Logo Padrão
                   </Button>

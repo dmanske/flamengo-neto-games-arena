@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
   ArrowLeft, CalendarIcon, Bus, MapPin, 
-  Users, Pencil, Trash2, PlusCircle, Search, X
+  Users, Pencil, Trash2, PlusCircle, Search, X, CreditCard
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,18 +34,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -53,6 +41,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
+import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
+import { PassageiroDeleteDialog } from "@/components/detalhes-viagem/PassageiroDeleteDialog";
+import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
 
 const statusColors = {
   "Aberta": "bg-green-100 text-green-800",
@@ -72,6 +64,8 @@ interface Viagem {
   created_at: string;
   logo_adversario: string | null;
   logo_flamengo: string | null;
+  valor_padrao: number | null;
+  setor_padrao: string | null;
 }
 
 interface Cliente {
@@ -90,6 +84,7 @@ interface ViagemPassageiro {
   setor_maracana: string;
   status_pagamento: string;
   created_at: string;
+  valor: number | null;
   cliente?: Cliente;
 }
 
@@ -103,6 +98,7 @@ interface PassageiroDisplay {
   cpf: string;
   cliente_id: string;
   viagem_passageiro_id: string;
+  valor: number | null;
 }
 
 const DetalhesViagem = () => {
@@ -115,13 +111,12 @@ const DetalhesViagem = () => {
   const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
   const [editPassageiroOpen, setEditPassageiroOpen] = useState(false);
   const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClienteId, setSelectedClienteId] = useState<string>("");
   const [selectedPassageiro, setSelectedPassageiro] = useState<PassageiroDisplay | null>(null);
-  const [setor, setSetor] = useState<string>("Norte");
-  const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
+  
+  // Financeiro
+  const [totalArrecadado, setTotalArrecadado] = useState<number>(0);
+  const [totalPago, setTotalPago] = useState<number>(0);
+  const [totalPendente, setTotalPendente] = useState<number>(0);
 
   useEffect(() => {
     const fetchViagem = async () => {
@@ -142,15 +137,6 @@ const DetalhesViagem = () => {
         
         // Carregar passageiros da viagem
         await fetchPassageiros(id);
-        
-        // Carregar todos os clientes para o modal
-        const { data: clientesData, error: clientesError } = await supabase
-          .from("clientes")
-          .select("id, nome, telefone, cidade, cpf, email");
-          
-        if (clientesError) throw clientesError;
-        setClientes(clientesData || []);
-        setFilteredClientes(clientesData || []);
         
       } catch (err) {
         console.error("Erro ao buscar detalhes da viagem:", err);
@@ -174,6 +160,7 @@ const DetalhesViagem = () => {
           cliente_id,
           setor_maracana,
           status_pagamento,
+          valor,
           created_at,
           clientes:cliente_id (id, nome, telefone, cidade, cpf)
         `)
@@ -192,29 +179,34 @@ const DetalhesViagem = () => {
         status_pagamento: item.status_pagamento,
         cliente_id: item.cliente_id,
         viagem_passageiro_id: item.id,
+        valor: item.valor || 0,
       }));
       
       setPassageiros(formattedPassageiros);
+      
+      // Calcular resumo financeiro
+      let arrecadado = 0;
+      let pago = 0;
+      let pendente = 0;
+      
+      formattedPassageiros.forEach(passageiro => {
+        const valor = passageiro.valor || 0;
+        arrecadado += valor;
+        
+        if (passageiro.status_pagamento === "Pago") {
+          pago += valor;
+        } else {
+          pendente += valor;
+        }
+      });
+      
+      setTotalArrecadado(arrecadado);
+      setTotalPago(pago);
+      setTotalPendente(pendente);
+      
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
       toast.error("Erro ao carregar passageiros");
-    }
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toLowerCase();
-    setSearchTerm(value);
-    
-    if (value.trim() === "") {
-      setFilteredClientes(clientes);
-    } else {
-      const filtered = clientes.filter(
-        cliente => 
-          cliente.nome.toLowerCase().includes(value) ||
-          cliente.cpf.toLowerCase().includes(value) ||
-          cliente.telefone.toLowerCase().includes(value)
-      );
-      setFilteredClientes(filtered);
     }
   };
 
@@ -243,109 +235,8 @@ const DetalhesViagem = () => {
     }
   };
 
-  const handleAddPassageiro = async () => {
-    if (!id || !selectedClienteId) return;
-    
-    try {
-      // Verificar se já existe este passageiro na viagem
-      const { data: existingPassageiro } = await supabase
-        .from("viagem_passageiros")
-        .select("*")
-        .eq("viagem_id", id)
-        .eq("cliente_id", selectedClienteId)
-        .single();
-      
-      if (existingPassageiro) {
-        toast.error("Este cliente já está adicionado como passageiro nesta viagem");
-        return;
-      }
-      
-      // Verificar se atingiu a capacidade máxima do ônibus
-      if (viagem && passageiros.length >= viagem.capacidade_onibus) {
-        toast.error(`A capacidade máxima do ônibus (${viagem.capacidade_onibus}) foi atingida`);
-        return;
-      }
-      
-      // Adicionar o passageiro
-      const { error } = await supabase
-        .from("viagem_passageiros")
-        .insert({
-          viagem_id: id,
-          cliente_id: selectedClienteId,
-          setor_maracana: setor,
-          status_pagamento: statusPagamento
-        });
-      
-      if (error) throw error;
-      
-      toast.success("Passageiro adicionado com sucesso");
-      setAddPassageiroOpen(false);
-      setSelectedClienteId("");
-      setSetor("Norte");
-      setStatusPagamento("Pendente");
-      
-      // Recarregar a lista de passageiros
-      await fetchPassageiros(id);
-      
-    } catch (err) {
-      console.error("Erro ao adicionar passageiro:", err);
-      toast.error("Erro ao adicionar passageiro");
-    }
-  };
-
-  const handleEditPassageiro = async () => {
-    if (!selectedPassageiro) return;
-    
-    try {
-      const { error } = await supabase
-        .from("viagem_passageiros")
-        .update({
-          setor_maracana: setor,
-          status_pagamento: statusPagamento
-        })
-        .eq("id", selectedPassageiro.viagem_passageiro_id);
-      
-      if (error) throw error;
-      
-      toast.success("Dados do passageiro atualizados com sucesso");
-      setEditPassageiroOpen(false);
-      
-      // Recarregar a lista de passageiros
-      if (id) await fetchPassageiros(id);
-      
-    } catch (err) {
-      console.error("Erro ao atualizar dados do passageiro:", err);
-      toast.error("Erro ao atualizar dados do passageiro");
-    }
-  };
-
-  const handleDeletePassageiro = async () => {
-    if (!selectedPassageiro) return;
-    
-    try {
-      const { error } = await supabase
-        .from("viagem_passageiros")
-        .delete()
-        .eq("id", selectedPassageiro.viagem_passageiro_id);
-      
-      if (error) throw error;
-      
-      toast.success("Passageiro removido com sucesso");
-      setDeletePassageiroOpen(false);
-      
-      // Recarregar a lista de passageiros
-      if (id) await fetchPassageiros(id);
-      
-    } catch (err) {
-      console.error("Erro ao remover passageiro:", err);
-      toast.error("Erro ao remover passageiro");
-    }
-  };
-
   const openEditPassageiroDialog = (passageiro: PassageiroDisplay) => {
     setSelectedPassageiro(passageiro);
-    setSetor(passageiro.setor_maracana);
-    setStatusPagamento(passageiro.status_pagamento);
     setEditPassageiroOpen(true);
   };
 
@@ -363,9 +254,19 @@ const DetalhesViagem = () => {
     }
   };
 
-  const clearSearch = () => {
-    setSearchTerm("");
-    setFilteredClientes(clientes);
+  // Formatar valor para exibição em reais
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return "R$ 0,00";
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  // Calcular percentual de pagamentos
+  const calcularPercentualPagamento = () => {
+    if (totalArrecadado === 0) return 0;
+    return Math.round((totalPago / totalArrecadado) * 100);
   };
 
   if (isLoading) {
@@ -417,7 +318,7 @@ const DetalhesViagem = () => {
                   <div className="flex -space-x-4">
                     <Avatar className="h-12 w-12 border-2 border-white">
                       <AvatarImage 
-                        src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                        src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
                         alt="Flamengo" 
                       />
                       <AvatarFallback>FLA</AvatarFallback>
@@ -486,6 +387,20 @@ const DetalhesViagem = () => {
                   <span className="font-medium">Rota:</span>
                   <span>{viagem.rota}</span>
                 </div>
+                {viagem.setor_padrao && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Setor Padrão:</span>
+                    <span>{viagem.setor_padrao}</span>
+                  </div>
+                )}
+                {viagem.valor_padrao !== null && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Valor Padrão:</span>
+                    <span>{formatCurrency(viagem.valor_padrao)}</span>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -511,6 +426,18 @@ const DetalhesViagem = () => {
           </div>
         </CardContent>
       </Card>
+
+      {passageiros.length > 0 && (
+        <div className="mb-6">
+          <FinancialSummary
+            totalArrecadado={totalArrecadado}
+            totalPago={totalPago}
+            totalPendente={totalPendente}
+            percentualPagamento={calcularPercentualPagamento()}
+            totalPassageiros={passageiros.length}
+          />
+        </div>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -538,6 +465,7 @@ const DetalhesViagem = () => {
                     <TableHead>Cidade</TableHead>
                     <TableHead>CPF</TableHead>
                     <TableHead>Setor Maracanã</TableHead>
+                    <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
@@ -550,6 +478,7 @@ const DetalhesViagem = () => {
                       <TableCell>{passageiro.cidade}</TableCell>
                       <TableCell>{passageiro.cpf}</TableCell>
                       <TableCell>{passageiro.setor_maracana}</TableCell>
+                      <TableCell>{formatCurrency(passageiro.valor)}</TableCell>
                       <TableCell>
                         <Badge 
                           className={
@@ -609,214 +538,29 @@ const DetalhesViagem = () => {
         </CardFooter>
       </Card>
 
-      {/* Modal para adicionar passageiro */}
-      <Dialog open={addPassageiroOpen} onOpenChange={setAddPassageiroOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Adicionar Passageiro</DialogTitle>
-            <DialogDescription>
-              Selecione um cliente cadastrado para adicionar como passageiro nesta viagem.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="relative mb-4">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, CPF ou telefone..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={handleSearchChange}
-            />
-            {searchTerm && (
-              <button 
-                className="absolute right-2 top-2.5" 
-                onClick={clearSearch}
-                type="button"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-          
-          <div className="max-h-[300px] overflow-y-auto border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[30px]"></TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>CPF</TableHead>
-                  <TableHead>Telefone</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClientes.length > 0 ? (
-                  filteredClientes.map((cliente) => (
-                    <TableRow 
-                      key={cliente.id} 
-                      className={selectedClienteId === cliente.id ? "bg-muted" : ""}
-                      onClick={() => setSelectedClienteId(cliente.id)}
-                    >
-                      <TableCell>
-                        <input 
-                          type="radio" 
-                          checked={selectedClienteId === cliente.id}
-                          onChange={() => setSelectedClienteId(cliente.id)}
-                          className="rounded-full"
-                        />
-                      </TableCell>
-                      <TableCell>{cliente.nome}</TableCell>
-                      <TableCell>{cliente.cpf}</TableCell>
-                      <TableCell>{cliente.telefone}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4">
-                      {searchTerm ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          <div className="grid gap-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="setor">Setor do Maracanã</Label>
-                <Select value={setor} onValueChange={setSetor}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o setor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Norte">Norte</SelectItem>
-                    <SelectItem value="Sul">Sul</SelectItem>
-                    <SelectItem value="Leste">Leste</SelectItem>
-                    <SelectItem value="Oeste">Oeste</SelectItem>
-                    <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Status do Pagamento</Label>
-                <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Pendente" id="pendente" />
-                    <Label htmlFor="pendente">Pendente</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Pago" id="pago" />
-                    <Label htmlFor="pago">Pago</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setAddPassageiroOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleAddPassageiro}
-              disabled={!selectedClienteId}
-            >
-              Adicionar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Modais para gerenciar passageiros */}
+      <PassageiroDialog 
+        open={addPassageiroOpen} 
+        onOpenChange={setAddPassageiroOpen} 
+        viagemId={id || ""} 
+        onSuccess={() => id && fetchPassageiros(id)}
+        valorPadrao={viagem.valor_padrao}
+        setorPadrao={viagem.setor_padrao}
+      />
+      
+      <PassageiroEditDialog
+        open={editPassageiroOpen}
+        onOpenChange={setEditPassageiroOpen}
+        passageiro={selectedPassageiro}
+        onSuccess={() => id && fetchPassageiros(id)}
+      />
 
-      {/* Modal para editar passageiro */}
-      <Dialog open={editPassageiroOpen} onOpenChange={setEditPassageiroOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Passageiro</DialogTitle>
-            <DialogDescription>
-              Edite as informações do passageiro para esta viagem.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedPassageiro && (
-            <div className="py-2">
-              <div className="mb-4">
-                <p className="text-lg font-medium">{selectedPassageiro.nome}</p>
-                <p className="text-sm text-muted-foreground">CPF: {selectedPassageiro.cpf}</p>
-                <p className="text-sm text-muted-foreground">Telefone: {selectedPassageiro.telefone}</p>
-              </div>
-              
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-setor">Setor do Maracanã</Label>
-                  <Select value={setor} onValueChange={setSetor}>
-                    <SelectTrigger id="edit-setor">
-                      <SelectValue placeholder="Selecione o setor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Norte">Norte</SelectItem>
-                      <SelectItem value="Sul">Sul</SelectItem>
-                      <SelectItem value="Leste">Leste</SelectItem>
-                      <SelectItem value="Oeste">Oeste</SelectItem>
-                      <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Status do Pagamento</Label>
-                  <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Pendente" id="edit-pendente" />
-                      <Label htmlFor="edit-pendente">Pendente</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Pago" id="edit-pago" />
-                      <Label htmlFor="edit-pago">Pago</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPassageiroOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleEditPassageiro}>
-              Salvar Alterações
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para remover passageiro */}
-      <AlertDialog open={deletePassageiroOpen} onOpenChange={setDeletePassageiroOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover passageiro</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja remover este passageiro da viagem?
-              {selectedPassageiro && (
-                <p className="font-medium mt-2">{selectedPassageiro.nome}</p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeletePassageiro}
-              className="bg-destructive text-destructive-foreground"
-            >
-              Remover
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <PassageiroDeleteDialog
+        open={deletePassageiroOpen}
+        onOpenChange={setDeletePassageiroOpen}
+        passageiro={selectedPassageiro}
+        onSuccess={() => id && fetchPassageiros(id)}
+      />
     </div>
   );
 };

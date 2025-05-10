@@ -61,6 +61,8 @@ const viagemFormSchema = z.object({
   capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
+  valor_padrao: z.number().min(0, "O valor não pode ser negativo").optional(),
+  setor_padrao: z.string().optional(),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
@@ -83,6 +85,8 @@ const CadastrarViagem = () => {
     status_viagem: "Aberta",
     capacidade_onibus: 0,
     logo_adversario: "",
+    valor_padrao: 0,
+    setor_padrao: "Norte",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -124,6 +128,8 @@ const CadastrarViagem = () => {
         status_viagem: data.status_viagem,
         logo_adversario: data.logo_adversario || null,
         logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
+        valor_padrao: data.valor_padrao || null,
+        setor_padrao: data.setor_padrao || null,
       });
 
       if (error) {
@@ -149,6 +155,14 @@ const CadastrarViagem = () => {
   const clearLogo = () => {
     form.setValue("logo_adversario", "");
     setLogoUrl("");
+  };
+
+  // Formatar valor para exibição em reais
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   return (
@@ -399,6 +413,62 @@ const CadastrarViagem = () => {
                           <SelectItem value="Finalizada">Finalizada</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="valor_padrao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Padrão da Viagem</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Este valor será aplicado como padrão para todos os passageiros
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="setor_padrao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Setor Padrão do Maracanã</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o setor padrão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Norte">Norte</SelectItem>
+                          <SelectItem value="Sul">Sul</SelectItem>
+                          <SelectItem value="Leste">Leste</SelectItem>
+                          <SelectItem value="Oeste">Oeste</SelectItem>
+                          <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Este setor será aplicado como padrão para todos os passageiros
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

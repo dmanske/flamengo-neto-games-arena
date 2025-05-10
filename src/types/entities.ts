@@ -5,6 +5,7 @@ export type FormaPagamento = 'Pix' | 'Cartão' | 'Boleto';
 export type FonteConhecimento = 'Instagram' | 'Indicação' | 'Facebook' | 'Google' | 'Outro';
 export type TipoOnibus = '43 Leitos Totais' | '52 Leitos Master' | '56 Leitos Master';
 export type EmpresaOnibus = 'Bertoldo' | 'Majetur' | 'Sarcella' | 'HG TUR';
+export type SetorMaracana = 'Norte' | 'Sul' | 'Leste' | 'Oeste' | 'Maracanã Mais';
 
 export interface Passageiro {
   id?: string;
@@ -15,6 +16,7 @@ export interface Passageiro {
   setor_maracana: string;
   status_pagamento: StatusPagamento;
   numero_onibus: string;
+  valor?: number;
 }
 
 export interface Cliente {
@@ -46,6 +48,8 @@ export interface Viagem {
   capacidade_onibus: number;
   status_viagem: StatusViagem;
   created_at?: Date;
+  valor_padrao?: number;
+  setor_padrao?: SetorMaracana;
 }
 
 export interface Embarque {

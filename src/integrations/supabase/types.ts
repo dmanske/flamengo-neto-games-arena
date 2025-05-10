@@ -79,6 +79,7 @@ export type Database = {
           id: string
           setor_maracana: string
           status_pagamento: string
+          valor: number | null
           viagem_id: string
         }
         Insert: {
@@ -87,6 +88,7 @@ export type Database = {
           id?: string
           setor_maracana: string
           status_pagamento?: string
+          valor?: number | null
           viagem_id: string
         }
         Update: {
@@ -95,6 +97,7 @@ export type Database = {
           id?: string
           setor_maracana?: string
           status_pagamento?: string
+          valor?: number | null
           viagem_id?: string
         }
         Relationships: [
@@ -125,8 +128,10 @@ export type Database = {
           logo_adversario: string | null
           logo_flamengo: string | null
           rota: string
+          setor_padrao: string | null
           status_viagem: string
           tipo_onibus: string
+          valor_padrao: number | null
         }
         Insert: {
           adversario: string
@@ -138,8 +143,10 @@ export type Database = {
           logo_adversario?: string | null
           logo_flamengo?: string | null
           rota: string
+          setor_padrao?: string | null
           status_viagem?: string
           tipo_onibus: string
+          valor_padrao?: number | null
         }
         Update: {
           adversario?: string
@@ -151,8 +158,10 @@ export type Database = {
           logo_adversario?: string | null
           logo_flamengo?: string | null
           rota?: string
+          setor_padrao?: string | null
           status_viagem?: string
           tipo_onibus?: string
+          valor_padrao?: number | null
         }
         Relationships: []
       }
