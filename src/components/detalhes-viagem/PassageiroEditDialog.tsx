@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { FormaPagamento } from "@/types/entities";
@@ -18,6 +18,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface Onibus {
+  id: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_onibus: number;
+  numero_identificacao: string | null;
+}
+
 interface PassageiroDisplay {
   id: string;
   nome: string;
@@ -29,8 +37,10 @@ interface PassageiroDisplay {
   cpf: string;
   cliente_id: string;
   viagem_passageiro_id: string;
+  onibus_id?: string | null;
   valor?: number | null;
   desconto?: number | null;
+  viagem_id: string;
 }
 
 interface PassageiroEditDialogProps {
@@ -51,21 +61,53 @@ export function PassageiroEditDialog({
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(passageiro?.forma_pagamento || "Pix");
   const [valor, setValor] = useState<number>(passageiro?.valor || 0);
   const [desconto, setDesconto] = useState<number>(passageiro?.desconto || 0);
+  const [onibusId, setOnibusId] = useState<string>(passageiro?.onibus_id || "");
+  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Carregar ônibus da viagem
+  useEffect(() => {
+    const fetchOnibus = async () => {
+      if (passageiro) {
+        try {
+          const { data, error } = await supabase
+            .from("viagem_onibus")
+            .select("*")
+            .eq("viagem_id", passageiro.viagem_id);
+            
+          if (error) throw error;
+          setOnibusList(data || []);
+        } catch (err) {
+          console.error("Erro ao buscar ônibus:", err);
+          toast.error("Erro ao carregar informações dos ônibus");
+        }
+      }
+    };
+    
+    if (open && passageiro) {
+      fetchOnibus();
+    }
+  }, [open, passageiro]);
+
   // Atualizar os valores quando o passageiro é selecionado
-  React.useEffect(() => {
+  useEffect(() => {
     if (passageiro) {
       setSetor(passageiro.setor_maracana);
       setStatusPagamento(passageiro.status_pagamento);
       setFormaPagamento(passageiro.forma_pagamento || "Pix");
       setValor(passageiro.valor || 0);
       setDesconto(passageiro.desconto || 0);
+      setOnibusId(passageiro.onibus_id || "");
     }
   }, [passageiro]);
 
   const handleEditPassageiro = async () => {
-    if (!passageiro) return;
+    if (!passageiro || !onibusId) {
+      if (!onibusId) {
+        toast.error("Selecione um ônibus para o passageiro");
+      }
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -77,7 +119,8 @@ export function PassageiroEditDialog({
           status_pagamento: statusPagamento,
           forma_pagamento: formaPagamento,
           valor: valor,
-          desconto: desconto
+          desconto: desconto,
+          onibus_id: onibusId
         })
         .eq("id", passageiro.viagem_passageiro_id);
       
@@ -103,6 +146,11 @@ export function PassageiroEditDialog({
     }).format(value);
   };
 
+  // Formatar identificação do ônibus
+  const formatOnibusLabel = (onibus: Onibus) => {
+    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${onibus.empresa})`;
+  };
+
   // Calcular valor final após descontos
   const valorFinal = valor - desconto;
 
@@ -126,6 +174,22 @@ export function PassageiroEditDialog({
           </div>
           
           <div className="grid gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-onibus">Ônibus</Label>
+              <Select value={onibusId} onValueChange={setOnibusId}>
+                <SelectTrigger id="edit-onibus">
+                  <SelectValue placeholder="Selecione o ônibus" />
+                </SelectTrigger>
+                <SelectContent>
+                  {onibusList.map((onibus) => (
+                    <SelectItem key={onibus.id} value={onibus.id}>
+                      {formatOnibusLabel(onibus)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="edit-setor">Setor do Maracanã</Label>
               <Select value={setor} onValueChange={setSetor}>
@@ -236,7 +300,7 @@ export function PassageiroEditDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleEditPassageiro} disabled={isLoading}>
+          <Button onClick={handleEditPassageiro} disabled={isLoading || !onibusId}>
             {isLoading ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </DialogFooter>

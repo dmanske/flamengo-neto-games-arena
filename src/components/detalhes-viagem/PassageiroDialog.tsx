@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { X, Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -36,6 +36,14 @@ interface Cliente {
   email: string;
 }
 
+interface Onibus {
+  id: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_onibus: number;
+  numero_identificacao: string | null;
+}
+
 interface PassageiroDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,8 +63,10 @@ export function PassageiroDialog({
 }: PassageiroDialogProps) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<Cliente[]>([]);
+  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClienteId, setSelectedClienteId] = useState<string>("");
+  const [selectedOnibusId, setSelectedOnibusId] = useState<string>("");
   const [setor, setSetor] = useState<string>(setorPadrao || "Sem ingresso");
   const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("Pix");
@@ -64,11 +74,12 @@ export function PassageiroDialog({
   const [desconto, setDesconto] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carregar clientes ao abrir o modal
-  React.useEffect(() => {
-    const fetchClientes = async () => {
+  // Carregar clientes e ônibus ao abrir o modal
+  useEffect(() => {
+    const fetchData = async () => {
       if (open) {
         try {
+          // Carregar clientes
           const { data: clientesData, error: clientesError } = await supabase
             .from("clientes")
             .select("id, nome, telefone, cidade, cpf, email");
@@ -76,14 +87,29 @@ export function PassageiroDialog({
           if (clientesError) throw clientesError;
           setClientes(clientesData || []);
           setFilteredClientes(clientesData || []);
+
+          // Carregar ônibus da viagem
+          const { data: onibusData, error: onibusError } = await supabase
+            .from("viagem_onibus")
+            .select("*")
+            .eq("viagem_id", viagemId);
+
+          if (onibusError) throw onibusError;
+          setOnibusList(onibusData || []);
+          
+          // Selecionar o primeiro ônibus como padrão
+          if (onibusData && onibusData.length > 0) {
+            setSelectedOnibusId(onibusData[0].id);
+          }
+          
         } catch (err) {
-          console.error("Erro ao buscar clientes:", err);
-          toast.error("Erro ao carregar clientes");
+          console.error("Erro ao buscar dados:", err);
+          toast.error("Erro ao carregar dados");
         }
       }
     };
     
-    fetchClientes();
+    fetchData();
     
     // Reset form state when dialog opens
     if (open) {
@@ -95,7 +121,7 @@ export function PassageiroDialog({
       setValor(valorPadrao || 0);
       setDesconto(0);
     }
-  }, [open, setorPadrao, valorPadrao]);
+  }, [open, setorPadrao, valorPadrao, viagemId]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
@@ -115,7 +141,12 @@ export function PassageiroDialog({
   };
 
   const handleAddPassageiro = async () => {
-    if (!viagemId || !selectedClienteId) return;
+    if (!viagemId || !selectedClienteId || !selectedOnibusId) {
+      if (!selectedOnibusId) {
+        toast.error("Selecione um ônibus para o passageiro");
+      }
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -139,6 +170,7 @@ export function PassageiroDialog({
         .insert({
           viagem_id: viagemId,
           cliente_id: selectedClienteId,
+          onibus_id: selectedOnibusId,
           setor_maracana: setor,
           status_pagamento: statusPagamento,
           forma_pagamento: formaPagamento,
@@ -175,6 +207,11 @@ export function PassageiroDialog({
 
   // Calcular valor final após descontos
   const valorFinal = valor - desconto;
+
+  // Formatar identificação do ônibus
+  const formatOnibusLabel = (onibus: Onibus) => {
+    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${onibus.empresa})`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -250,9 +287,34 @@ export function PassageiroDialog({
         <div className="grid gap-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="onibus">Ônibus</Label>
+              <Select 
+                value={selectedOnibusId} 
+                onValueChange={setSelectedOnibusId}
+                disabled={onibusList.length <= 1}
+              >
+                <SelectTrigger id="onibus">
+                  <SelectValue placeholder="Selecione o ônibus" />
+                </SelectTrigger>
+                <SelectContent>
+                  {onibusList.map((onibus) => (
+                    <SelectItem key={onibus.id} value={onibus.id}>
+                      {formatOnibusLabel(onibus)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {onibusList.length <= 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Esta viagem possui apenas um ônibus
+                </p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
               <Label htmlFor="setor">Setor do Maracanã</Label>
               <Select value={setor} onValueChange={setSetor}>
-                <SelectTrigger>
+                <SelectTrigger id="setor">
                   <SelectValue placeholder="Selecione o setor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -278,6 +340,22 @@ export function PassageiroDialog({
                   <Label htmlFor="pago">Pago</Label>
                 </div>
               </RadioGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+              <Select value={formaPagamento} onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}>
+                <SelectTrigger id="forma-pagamento">
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pix">Pix</SelectItem>
+                  <SelectItem value="Cartão">Cartão</SelectItem>
+                  <SelectItem value="Boleto">Boleto</SelectItem>
+                  <SelectItem value="Paypal">Paypal</SelectItem>
+                  <SelectItem value="Outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -316,37 +394,19 @@ export function PassageiroDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
-              <Select value={formaPagamento} onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}>
-                <SelectTrigger id="forma-pagamento">
-                  <SelectValue placeholder="Selecione a forma de pagamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pix">Pix</SelectItem>
-                  <SelectItem value="Cartão">Cartão</SelectItem>
-                  <SelectItem value="Boleto">Boleto</SelectItem>
-                  <SelectItem value="Paypal">Paypal</SelectItem>
-                  <SelectItem value="Outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2 border rounded-md p-3 bg-gray-50">
-              <div className="text-sm">
-                <div className="flex justify-between">
-                  <span>Valor:</span>
-                  <span>{formatCurrency(valor)}</span>
-                </div>
-                <div className="flex justify-between text-red-600">
-                  <span>Desconto:</span>
-                  <span>-{formatCurrency(desconto)}</span>
-                </div>
-                <div className="flex justify-between font-bold pt-1 border-t mt-1">
-                  <span>Total:</span>
-                  <span>{formatCurrency(valorFinal)}</span>
-                </div>
+          <div className="space-y-2 border rounded-md p-3 bg-gray-50">
+            <div className="text-sm">
+              <div className="flex justify-between">
+                <span>Valor:</span>
+                <span>{formatCurrency(valor)}</span>
+              </div>
+              <div className="flex justify-between text-red-600">
+                <span>Desconto:</span>
+                <span>-{formatCurrency(desconto)}</span>
+              </div>
+              <div className="flex justify-between font-bold pt-1 border-t mt-1">
+                <span>Total:</span>
+                <span>{formatCurrency(valorFinal)}</span>
               </div>
             </div>
           </div>
@@ -361,7 +421,7 @@ export function PassageiroDialog({
           </Button>
           <Button 
             onClick={handleAddPassageiro}
-            disabled={!selectedClienteId || isLoading}
+            disabled={!selectedClienteId || !selectedOnibusId || isLoading}
           >
             {isLoading ? "Adicionando..." : "Adicionar"}
           </Button>

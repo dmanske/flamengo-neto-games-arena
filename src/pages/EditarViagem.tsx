@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -42,6 +43,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
+import { OnibusForm } from "@/components/viagem/OnibusForm";
+import { ViagemOnibus } from "@/types/entities";
 
 // Schema para validação do formulário
 const viagemFormSchema = z.object({
@@ -49,16 +52,9 @@ const viagemFormSchema = z.object({
   data_jogo: z.date({
     required_error: "Data do jogo é obrigatória",
   }),
-  tipo_onibus: z.string({
-    required_error: "Tipo do ônibus é obrigatório",
-  }),
-  empresa: z.string({
-    required_error: "Empresa é obrigatória",
-  }),
   rota: z.string({
     required_error: "Rota é obrigatória",
   }),
-  capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default("https://logodetimes.com/wp-content/uploads/flamengo.png"),
@@ -68,13 +64,6 @@ const viagemFormSchema = z.object({
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
 
-// Mapeamento entre tipos de ônibus e empresas
-const onibusPorEmpresa: Record<string, string> = {
-  "43 Leitos Totais": "Bertoldo",
-  "52 Leitos Master": "Majetur",
-  "56 Leitos Master": "Sarcella",
-};
-
 const EditarViagem = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -83,11 +72,11 @@ const EditarViagem = () => {
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [logoFlamengoUrl, setLogoFlamengoUrl] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
   const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
+  const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
     status_viagem: "Aberta",
-    capacidade_onibus: 0,
     logo_adversario: "",
     logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
     valor_padrao: 0,
@@ -99,23 +88,8 @@ const EditarViagem = () => {
     defaultValues,
   });
 
-  // Atualiza a capacidade do ônibus e empresa com base no tipo selecionado
-  const watchTipoOnibus = form.watch("tipo_onibus");
   const watchAdversario = form.watch("adversario");
   
-  useEffect(() => {
-    if (watchTipoOnibus === "43 Leitos Totais") {
-      form.setValue("capacidade_onibus", 43);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    } else if (watchTipoOnibus === "52 Leitos Master") {
-      form.setValue("capacidade_onibus", 52);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    } else if (watchTipoOnibus === "56 Leitos Master") {
-      form.setValue("capacidade_onibus", 56);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    }
-  }, [watchTipoOnibus, form]);
-
   // Carrega dados da viagem quando o componente é montado
   useEffect(() => {
     const fetchViagem = async () => {
@@ -123,36 +97,58 @@ const EditarViagem = () => {
       
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
+        
+        // Buscar dados da viagem
+        const { data: viagemData, error: viagemError } = await supabase
           .from("viagens")
           .select("*")
           .eq("id", id)
           .single();
         
-        if (error) {
-          throw error;
+        if (viagemError) {
+          throw viagemError;
+        }
+        
+        // Buscar ônibus relacionados à viagem
+        const { data: onibusData, error: onibusError } = await supabase
+          .from("viagem_onibus")
+          .select("*")
+          .eq("viagem_id", id);
+        
+        if (onibusError) {
+          throw onibusError;
+        }
+        
+        setOnibusArray(onibusData || []);
+        
+        // Se não houver ônibus, criar um padrão
+        if (!onibusData || onibusData.length === 0) {
+          setOnibusArray([{
+            viagem_id: id,
+            tipo_onibus: "43 Leitos Totais",
+            empresa: "Bertoldo",
+            capacidade_onibus: 43,
+            numero_identificacao: "Ônibus 1"
+          }]);
         }
         
         // Formatar data e preencher o formulário
-        if (data) {
-          const dataJogo = new Date(data.data_jogo);
+        if (viagemData) {
+          const dataJogo = new Date(viagemData.data_jogo);
           
           form.reset({
-            adversario: data.adversario,
+            adversario: viagemData.adversario,
             data_jogo: dataJogo,
-            tipo_onibus: data.tipo_onibus,
-            empresa: data.empresa,
-            rota: data.rota,
-            capacidade_onibus: data.capacidade_onibus,
-            status_viagem: data.status_viagem,
-            logo_adversario: data.logo_adversario || "",
-            logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
-            valor_padrao: data.valor_padrao || 0,
-            setor_padrao: data.setor_padrao || "Norte",
+            rota: viagemData.rota,
+            status_viagem: viagemData.status_viagem,
+            logo_adversario: viagemData.logo_adversario || "",
+            logo_flamengo: viagemData.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
+            valor_padrao: viagemData.valor_padrao || 0,
+            setor_padrao: viagemData.setor_padrao || "Norte",
           });
           
-          setLogoUrl(data.logo_adversario || "");
-          setLogoFlamengoUrl(data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png");
+          setLogoUrl(viagemData.logo_adversario || "");
+          setLogoFlamengoUrl(viagemData.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png");
         }
       } catch (err) {
         console.error("Erro ao buscar dados da viagem:", err);
@@ -166,7 +162,12 @@ const EditarViagem = () => {
   }, [id, form]);
 
   const onSubmit = async (data: ViagemFormValues) => {
-    if (!id) return;
+    if (!id || onibusArray.length === 0) {
+      if (onibusArray.length === 0) {
+        toast.error("Adicione pelo menos um ônibus para a viagem");
+      }
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -174,25 +175,79 @@ const EditarViagem = () => {
       const dataJogo = new Date(data.data_jogo);
       dataJogo.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
       
-      const { error } = await supabase
+      // Atualizar viagem
+      const { error: viagemError } = await supabase
         .from("viagens")
         .update({
           adversario: data.adversario,
           data_jogo: dataJogo.toISOString(),
-          tipo_onibus: data.tipo_onibus,
-          empresa: data.empresa,
           rota: data.rota,
-          capacidade_onibus: data.capacidade_onibus,
           status_viagem: data.status_viagem,
           logo_adversario: data.logo_adversario || null,
           logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
           valor_padrao: data.valor_padrao || null,
           setor_padrao: data.setor_padrao || null,
+          capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus, 0),
         })
         .eq("id", id);
 
-      if (error) {
-        throw error;
+      if (viagemError) {
+        throw viagemError;
+      }
+      
+      // Primeiro, buscar os IDs atuais para comparar e atualizar
+      const { data: existingOnibusData, error: fetchError } = await supabase
+        .from("viagem_onibus")
+        .select("id")
+        .eq("viagem_id", id);
+        
+      if (fetchError) throw fetchError;
+      
+      const existingIds = new Set((existingOnibusData || []).map(o => o.id));
+      const currentIds = new Set(onibusArray.filter(o => o.id).map(o => o.id));
+      
+      // IDs para excluir (estão no banco mas não no formulário atual)
+      const idsToDelete = [...existingIds].filter(id => !currentIds.has(id));
+      
+      // Excluir ônibus que foram removidos
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from("viagem_onibus")
+          .delete()
+          .in("id", idsToDelete);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      // Atualizar ônibus existentes e adicionar novos
+      for (const onibus of onibusArray) {
+        if (onibus.id) {
+          // Atualizar existente
+          const { error: updateError } = await supabase
+            .from("viagem_onibus")
+            .update({
+              tipo_onibus: onibus.tipo_onibus,
+              empresa: onibus.empresa,
+              capacidade_onibus: onibus.capacidade_onibus,
+              numero_identificacao: onibus.numero_identificacao
+            })
+            .eq("id", onibus.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          // Inserir novo
+          const { error: insertError } = await supabase
+            .from("viagem_onibus")
+            .insert({
+              viagem_id: id,
+              tipo_onibus: onibus.tipo_onibus,
+              empresa: onibus.empresa,
+              capacidade_onibus: onibus.capacidade_onibus,
+              numero_identificacao: onibus.numero_identificacao
+            });
+          
+          if (insertError) throw insertError;
+        }
       }
 
       toast.success("Viagem atualizada com sucesso!");
@@ -227,14 +282,6 @@ const EditarViagem = () => {
     const defaultLogo = "https://logodetimes.com/wp-content/uploads/flamengo.png";
     form.setValue("logo_flamengo", defaultLogo);
     setLogoFlamengoUrl(defaultLogo);
-  };
-
-  // Formatar valor para exibição em reais
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
   };
 
   if (isLoading) {
@@ -437,78 +484,6 @@ const EditarViagem = () => {
 
                 <FormField
                   control={form.control}
-                  name="tipo_onibus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Ônibus</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de ônibus" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="43 Leitos Totais">43 Leitos Totais</SelectItem>
-                          <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
-                          <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="capacidade_onibus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacidade do Ônibus</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          onChange={e => field.onChange(Number(e.target.value))} 
-                          readOnly
-                          className="bg-gray-100"
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Definido automaticamente com base no tipo de ônibus
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="empresa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Empresa</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          readOnly
-                          className="bg-gray-100"
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Definido automaticamente com base no tipo de ônibus
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="rota"
                   render={({ field }) => (
                     <FormItem>
@@ -621,6 +596,12 @@ const EditarViagem = () => {
                   )}
                 />
               </div>
+
+              <OnibusForm 
+                onibusArray={onibusArray} 
+                onChange={setOnibusArray}
+                viagemId={id}
+              />
 
               <div className="flex justify-end gap-4">
                 <Button 

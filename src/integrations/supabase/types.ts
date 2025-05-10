@@ -96,6 +96,44 @@ export type Database = {
         }
         Relationships: []
       }
+      viagem_onibus: {
+        Row: {
+          capacidade_onibus: number
+          created_at: string
+          empresa: string
+          id: string
+          numero_identificacao: string | null
+          tipo_onibus: string
+          viagem_id: string
+        }
+        Insert: {
+          capacidade_onibus: number
+          created_at?: string
+          empresa: string
+          id?: string
+          numero_identificacao?: string | null
+          tipo_onibus: string
+          viagem_id: string
+        }
+        Update: {
+          capacidade_onibus?: number
+          created_at?: string
+          empresa?: string
+          id?: string
+          numero_identificacao?: string | null
+          tipo_onibus?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_onibus_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagem_passageiros: {
         Row: {
           cliente_id: string
@@ -103,6 +141,7 @@ export type Database = {
           desconto: number | null
           forma_pagamento: string
           id: string
+          onibus_id: string | null
           setor_maracana: string
           status_pagamento: string
           valor: number | null
@@ -114,6 +153,7 @@ export type Database = {
           desconto?: number | null
           forma_pagamento?: string
           id?: string
+          onibus_id?: string | null
           setor_maracana?: string
           status_pagamento?: string
           valor?: number | null
@@ -125,6 +165,7 @@ export type Database = {
           desconto?: number | null
           forma_pagamento?: string
           id?: string
+          onibus_id?: string | null
           setor_maracana?: string
           status_pagamento?: string
           valor?: number | null
@@ -136,6 +177,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_passageiros_onibus_id_fkey"
+            columns: ["onibus_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_onibus"
             referencedColumns: ["id"]
           },
           {

@@ -19,6 +19,7 @@ export interface Passageiro {
   valor?: number;
   forma_pagamento?: FormaPagamento;
   desconto?: number;
+  onibus_id?: string;
 }
 
 export interface Cliente {
@@ -44,14 +45,23 @@ export interface Viagem {
   id?: string;
   adversario: string;
   data_jogo: Date;
-  tipo_onibus: TipoOnibus;
-  empresa: EmpresaOnibus;
-  rota: string;
-  capacidade_onibus: number;
   status_viagem: StatusViagem;
   created_at?: Date;
   valor_padrao?: number;
   setor_padrao?: SetorMaracana;
+  rota: string;
+  logo_adversario?: string;
+  logo_flamengo?: string;
+}
+
+export interface ViagemOnibus {
+  id?: string;
+  viagem_id: string;
+  tipo_onibus: TipoOnibus;
+  empresa: EmpresaOnibus;
+  capacidade_onibus: number;
+  numero_identificacao?: string;
+  created_at?: Date;
 }
 
 export interface Embarque {

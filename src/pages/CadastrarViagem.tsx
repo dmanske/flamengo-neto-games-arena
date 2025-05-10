@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,6 +42,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { OnibusForm } from "@/components/viagem/OnibusForm";
+import { ViagemOnibus } from "@/types/entities";
 
 // Schema para validação do formulário
 const viagemFormSchema = z.object({
@@ -48,16 +51,9 @@ const viagemFormSchema = z.object({
   data_jogo: z.date({
     required_error: "Data do jogo é obrigatória",
   }),
-  tipo_onibus: z.string({
-    required_error: "Tipo do ônibus é obrigatório",
-  }),
-  empresa: z.string({
-    required_error: "Empresa é obrigatória",
-  }),
   rota: z.string({
     required_error: "Rota é obrigatória",
   }),
-  capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
   valor_padrao: z.number().min(0, "O valor não pode ser negativo").optional(),
@@ -66,23 +62,16 @@ const viagemFormSchema = z.object({
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
 
-// Mapeamento entre tipos de ônibus e empresas
-const onibusPorEmpresa: Record<string, string> = {
-  "43 Leitos Totais": "Bertoldo",
-  "52 Leitos Master": "Majetur",
-  "56 Leitos Master": "Sarcella",
-};
-
 const CadastrarViagem = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
     status_viagem: "Aberta",
-    capacidade_onibus: 0,
     logo_adversario: "",
     valor_padrao: 0,
     setor_padrao: "Norte",
@@ -93,47 +82,53 @@ const CadastrarViagem = () => {
     defaultValues,
   });
 
-  // Atualiza a capacidade do ônibus e empresa com base no tipo selecionado
-  const watchTipoOnibus = form.watch("tipo_onibus");
   const watchAdversario = form.watch("adversario");
-  
-  useEffect(() => {
-    if (watchTipoOnibus === "43 Leitos Totais") {
-      form.setValue("capacidade_onibus", 43);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    } else if (watchTipoOnibus === "52 Leitos Master") {
-      form.setValue("capacidade_onibus", 52);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    } else if (watchTipoOnibus === "56 Leitos Master") {
-      form.setValue("capacidade_onibus", 56);
-      form.setValue("empresa", onibusPorEmpresa[watchTipoOnibus] || "");
-    }
-  }, [watchTipoOnibus, form]);
 
   const onSubmit = async (data: ViagemFormValues) => {
+    if (onibusArray.length === 0) {
+      toast.error("Adicione pelo menos um ônibus para a viagem");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Ajuste para garantir que a data está no formato correto
       const dataJogo = new Date(data.data_jogo);
       dataJogo.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
       
-      const { error } = await supabase.from("viagens").insert({
-        adversario: data.adversario,
-        data_jogo: dataJogo.toISOString(),
-        tipo_onibus: data.tipo_onibus,
-        empresa: data.empresa,
-        rota: data.rota,
-        capacidade_onibus: data.capacidade_onibus,
-        status_viagem: data.status_viagem,
-        logo_adversario: data.logo_adversario || null,
-        logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
-        valor_padrao: data.valor_padrao || null,
-        setor_padrao: data.setor_padrao || null,
-      });
+      // Primeiro, criamos a viagem
+      const { data: viagemData, error: viagemError } = await supabase
+        .from("viagens")
+        .insert({
+          adversario: data.adversario,
+          data_jogo: dataJogo.toISOString(),
+          rota: data.rota,
+          status_viagem: data.status_viagem,
+          logo_adversario: data.logo_adversario || null,
+          logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
+          valor_padrao: data.valor_padrao || null,
+          setor_padrao: data.setor_padrao || null,
+          // Calculamos a capacidade total somando todos os ônibus
+          capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus, 0),
+        })
+        .select("id")
+        .single();
 
-      if (error) {
-        throw error;
-      }
+      if (viagemError) throw viagemError;
+      
+      // Em seguida, inserimos os ônibus relacionados à viagem
+      const viagemId = viagemData.id;
+      
+      const onibusWithViagemId = onibusArray.map(onibus => ({
+        ...onibus,
+        viagem_id: viagemId
+      }));
+      
+      const { error: onibusError } = await supabase
+        .from("viagem_onibus")
+        .insert(onibusWithViagemId);
+        
+      if (onibusError) throw onibusError;
 
       toast.success("Viagem cadastrada com sucesso!");
       navigate("/viagens"); // Redireciona para a página de listagem de viagens
@@ -154,14 +149,6 @@ const CadastrarViagem = () => {
   const clearLogo = () => {
     form.setValue("logo_adversario", "");
     setLogoUrl("");
-  };
-
-  // Formatar valor para exibição em reais
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
   };
 
   return (
@@ -292,76 +279,6 @@ const CadastrarViagem = () => {
 
                 <FormField
                   control={form.control}
-                  name="tipo_onibus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Ônibus</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de ônibus" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="43 Leitos Totais">43 Leitos Totais</SelectItem>
-                          <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
-                          <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="capacidade_onibus"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacidade do Ônibus</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          onChange={e => field.onChange(Number(e.target.value))} 
-                          readOnly
-                          className="bg-gray-100"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Definido automaticamente com base no tipo de ônibus
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="empresa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Empresa</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          readOnly
-                          className="bg-gray-100"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Definido automaticamente com base no tipo de ônibus
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="rota"
                   render={({ field }) => (
                     <FormItem>
@@ -474,6 +391,11 @@ const CadastrarViagem = () => {
                   )}
                 />
               </div>
+
+              <OnibusForm 
+                onibusArray={onibusArray} 
+                onChange={setOnibusArray}
+              />
 
               <div className="flex justify-end gap-4">
                 <Button 

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { formatCurrency } from '@/lib/utils';
 
 interface FinancialSummaryProps {
   totalArrecadado: number;
@@ -10,7 +11,7 @@ interface FinancialSummaryProps {
   percentualPagamento: number;
   totalPassageiros: number;
   valorPotencialTotal: number;
-  capacidadeOnibus: number;
+  capacidadeTotalOnibus: number;
 }
 
 export function FinancialSummary({ 
@@ -20,18 +21,10 @@ export function FinancialSummary({
   percentualPagamento,
   totalPassageiros,
   valorPotencialTotal,
-  capacidadeOnibus
+  capacidadeTotalOnibus
 }: FinancialSummaryProps) {
-  // Formatar valor para exibição em reais
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   // Calcular percentual de ocupação
-  const percentualOcupacao = Math.round((totalPassageiros / capacidadeOnibus) * 100) || 0;
+  const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100) || 0;
 
   return (
     <Card>
@@ -68,8 +61,8 @@ export function FinancialSummary({
 
         <div className="mt-4">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">Ocupação do Ônibus</span>
-            <span className="text-sm font-bold">{totalPassageiros}/{capacidadeOnibus} ({percentualOcupacao}%)</span>
+            <span className="text-sm font-medium">Ocupação Total</span>
+            <span className="text-sm font-bold">{totalPassageiros}/{capacidadeTotalOnibus} ({percentualOcupacao}%)</span>
           </div>
           <Progress value={percentualOcupacao} className="h-2" />
         </div>
