@@ -132,8 +132,8 @@ export function PassageiroDialog({
       if (error) throw error;
       setOnibusList(data || []);
       
-      // Set the first bus as default if available
-      if (data && data.length > 0) {
+      // Set the first bus as default if it's the only one available
+      if (data && data.length === 1) {
         form.setValue("onibus_id", data[0].id);
       }
     } catch (error) {
@@ -186,7 +186,7 @@ export function PassageiroDialog({
         forma_pagamento: "Pix",
         valor: valorPadrao || 0,
         desconto: 0,
-        onibus_id: onibusList.length > 0 ? onibusList[0].id : "",
+        onibus_id: onibusList.length === 1 ? onibusList[0].id : "",
       });
     } catch (error) {
       console.error("Erro ao adicionar passageiro:", error);
@@ -226,7 +226,7 @@ export function PassageiroDialog({
                     <SelectContent>
                       {clientes.map((cliente) => (
                         <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome} - {cliente.cidade} ({cliente.telefone})
+                          {cliente.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
