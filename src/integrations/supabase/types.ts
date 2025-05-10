@@ -72,6 +72,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string | null
+          perfil: string | null
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          nome?: string | null
+          perfil?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string | null
+          perfil?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
       viagem_passageiros: {
         Row: {
           cliente_id: string
