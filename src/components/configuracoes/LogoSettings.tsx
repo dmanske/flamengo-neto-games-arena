@@ -15,8 +15,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+// Default logo URL
+const DEFAULT_LOGO_URL = "https://logodetimes.com/wp-content/uploads/flamengo.png";
+
 export function LogoSettings() {
-  const [flamengoLogo, setFlamengoLogo] = useState<string | null>(null);
+  const [flamengoLogo, setFlamengoLogo] = useState<string | null>(DEFAULT_LOGO_URL);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState<boolean>(false);
@@ -36,13 +39,24 @@ export function LogoSettings() {
           .single();
 
         if (error) {
-          throw error;
+          if (error.code === 'PGRST116') {
+            // Record not found, use default logo
+            setFlamengoLogo(DEFAULT_LOGO_URL);
+            // Create the record with the default logo
+            await supabase
+              .from("system_config")
+              .insert([{ key: "flamengo_logo", value: DEFAULT_LOGO_URL }]);
+          } else {
+            throw error;
+          }
+        } else if (data) {
+          setFlamengoLogo(data.value || DEFAULT_LOGO_URL);
         }
-
-        setFlamengoLogo(data.value);
       } catch (error) {
         console.error("Error fetching logo settings:", error);
         toast.error("Erro ao carregar configurações do logo");
+        // On error, still set the default logo
+        setFlamengoLogo(DEFAULT_LOGO_URL);
       } finally {
         setIsLoading(false);
       }
@@ -54,20 +68,31 @@ export function LogoSettings() {
   // Make sure the logos bucket exists
   const initOrCheckLogoBucket = async () => {
     try {
-      const { error: bucketError } = await supabase.storage.getBucket('logos');
-      if (bucketError && bucketError.message.includes('not found')) {
+      const { data: buckets, error } = await supabase.storage.listBuckets();
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Check if 'logos' bucket exists
+      const logosBucketExists = buckets.some(bucket => bucket.name === 'logos');
+      
+      if (!logosBucketExists) {
         console.log('Creating logos storage bucket...');
-        await supabase.storage.createBucket('logos', {
+        const { error: createBucketError } = await supabase.storage.createBucket('logos', {
           public: true,
           fileSizeLimit: 5242880, // 5MB
         });
         
-        // Add public policies to the bucket
-        // Note: This would need to be done via SQL migrations in a production environment
+        if (createBucketError) {
+          throw createBucketError;
+        }
+        
         console.log('Bucket created successfully');
       }
     } catch (error) {
       console.error('Error checking/creating logos bucket:', error);
+      toast.error("Erro ao verificar bucket de armazenamento");
     }
   };
 
@@ -107,14 +132,13 @@ export function LogoSettings() {
 
   // Reset to default logo
   const resetLogo = async () => {
-    const defaultLogo = "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png";
-    setFlamengoLogo(defaultLogo);
+    setFlamengoLogo(DEFAULT_LOGO_URL);
     
     try {
       setIsSaving(true);
       const { error } = await supabase
         .from("system_config")
-        .update({ value: defaultLogo, updated_at: new Date().toISOString() })
+        .update({ value: DEFAULT_LOGO_URL, updated_at: new Date().toISOString() })
         .eq("key", "flamengo_logo");
 
       if (error) {
@@ -124,7 +148,7 @@ export function LogoSettings() {
       // Update all viagens with the default logo
       const { error: updateError } = await supabase
         .from("viagens")
-        .update({ logo_flamengo: defaultLogo })
+        .update({ logo_flamengo: DEFAULT_LOGO_URL })
         .not("id", "is", null);
 
       if (updateError) {

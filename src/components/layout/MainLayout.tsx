@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -20,6 +19,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import LogoutButton from "@/components/LogoutButton";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Default logo URL
+const DEFAULT_LOGO_URL = "https://logodetimes.com/wp-content/uploads/flamengo.png";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -81,7 +83,7 @@ const MainLayout = () => {
         {!collapsed && (
           <div className="flex items-center gap-2">
             <img
-              src="https://logodetimes.com/wp-content/uploads/flamengo.png"
+              src={DEFAULT_LOGO_URL}
               alt="Flamengo"
               className="h-8 w-8"
             />
