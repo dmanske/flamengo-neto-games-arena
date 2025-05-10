@@ -20,6 +20,7 @@ export interface Cliente {
   endereco: string;
   complemento?: string;
   telefone: string;
+  cep: string;
   cidade: string;
   estado: string;
   cpf: string;

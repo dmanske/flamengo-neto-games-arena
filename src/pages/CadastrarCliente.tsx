@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { format, parse } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -32,6 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { fetchAddressByCEP, formatCEP, formatTelefone } from "@/utils/cepUtils";
 
 const estadosBrasileiros = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", 
@@ -42,21 +44,27 @@ const estadosBrasileiros = [
 // Define the form validation schema
 const formSchema = z.object({
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
+  cep: z.string().min(8, { message: "CEP é obrigatório" }),
   endereco: z.string().min(5, { message: "Endereço é obrigatório" }),
   complemento: z.string().optional(),
   telefone: z
     .string()
-    .min(10, { message: "O telefone deve ter pelo menos 10 dígitos" })
-    .regex(/^[0-9]+$/, { message: "O telefone deve conter apenas números" }),
+    .min(14, { message: "O telefone deve estar completo" })
+    .regex(/^\(\d{2}\) \d \d{4}-\d{4}$/, { message: "Formato de telefone inválido" }),
   cidade: z.string().min(2, { message: "Cidade é obrigatória" }),
   estado: z.string().min(2, { message: "Estado é obrigatório" }),
   cpf: z
     .string()
     .min(11, { message: "CPF deve ter 11 dígitos" })
     .max(14, { message: "CPF não pode ter mais de 14 caracteres" }),
-  data_nascimento: z.date({
-    required_error: "Data de nascimento é obrigatória",
-  }),
+  data_nascimento: z.string().refine((val) => {
+    try {
+      const date = parse(val, 'dd/MM/yyyy', new Date());
+      return !isNaN(date.getTime());
+    } catch {
+      return false;
+    }
+  }, { message: "Data inválida. Use o formato DD/MM/AAAA" }),
   email: z.string().email({ message: "Email inválido" }),
   observacoes: z.string().optional(),
 });
@@ -64,30 +72,70 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CadastrarCliente = () => {
+  const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
   // Define form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: "",
+      cep: "",
       endereco: "",
       complemento: "",
       telefone: "",
       cidade: "",
       estado: "RJ",
       cpf: "",
+      data_nascimento: "",
       email: "",
       observacoes: "",
     },
   });
 
+  const handleCepBlur = async (cep: string) => {
+    if (cep.length < 8) return;
+    
+    setLoadingCep(true);
+    try {
+      const addressData = await fetchAddressByCEP(cep);
+      if (addressData) {
+        form.setValue("endereco", addressData.logradouro);
+        form.setValue("cidade", addressData.localidade);
+        form.setValue("estado", addressData.uf);
+        
+        // Se tiver complemento, adiciona ao campo complemento
+        if (addressData.complemento) {
+          form.setValue("complemento", addressData.complemento);
+        }
+        
+        toast.success("Endereço encontrado com sucesso!");
+      }
+    } catch (error) {
+      toast.error("Erro ao buscar endereço. Verifique o CEP informado.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
     try {
+      setLoading(true);
       console.log("Cadastrando cliente:", values);
       
       // In a real app, this would be an API call to create the client
       // Simulate API call with a timeout
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Convert string date to Date object for API
+      const dateParts = values.data_nascimento.split('/');
+      const dateObject = new Date(
+        parseInt(dateParts[2]), // year
+        parseInt(dateParts[1]) - 1, // month (0-based)
+        parseInt(dateParts[0]) // day
+      );
       
       // Simulate sending WhatsApp message
       console.log(`Enviando mensagem para ${values.telefone}: 🎟️ Olá, ${values.nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
@@ -100,6 +148,8 @@ const CadastrarCliente = () => {
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
       toast.error("Erro ao cadastrar cliente. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -154,8 +204,11 @@ const CadastrarCliente = () => {
                       <FormLabel>Telefone (WhatsApp)</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="DDD + Número" 
+                          placeholder="(00) 0 0000-0000" 
                           {...field} 
+                          onChange={(e) => {
+                            field.onChange(formatTelefone(e.target.value));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -186,38 +239,72 @@ const CadastrarCliente = () => {
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Data de Nascimento</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
+                      <div className="flex">
+                        <FormControl>
+                          <Input
+                            placeholder="DD/MM/AAAA"
+                            {...field}
                           />
-                        </PopoverContent>
-                      </Popover>
+                        </FormControl>
+                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="ml-2 px-2"
+                              type="button"
+                            >
+                              <CalendarIcon className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value ? parse(field.value, 'dd/MM/yyyy', new Date()) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  field.onChange(format(date, 'dd/MM/yyyy'));
+                                  setCalendarOpen(false);
+                                }
+                              }}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              locale={ptBR}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cep"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <div className="relative">
+                        <FormControl>
+                          <Input 
+                            placeholder="00000-000" 
+                            {...field} 
+                            onChange={(e) => {
+                              const formattedCEP = formatCEP(e.target.value);
+                              field.onChange(formattedCEP);
+                            }}
+                            onBlur={() => handleCepBlur(field.value)}
+                          />
+                        </FormControl>
+                        {loadingCep && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -316,9 +403,14 @@ const CadastrarCliente = () => {
                 <Button 
                   type="submit" 
                   className="bg-[#e40016] hover:bg-[#c20012]"
-                  disabled={form.formState.isSubmitting}
+                  disabled={loading}
                 >
-                  {form.formState.isSubmitting ? "Cadastrando..." : "Cadastrar Cliente"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                      Cadastrando...
+                    </>
+                  ) : "Cadastrar Cliente"}
                 </Button>
               </div>
             </form>
