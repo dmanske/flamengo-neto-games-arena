@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, UploadCloud, X, Image } from "lucide-react";
+import { Loader2, UploadCloud, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ export const FileUpload = ({
         
       if (publicUrl) {
         onChange(publicUrl.publicUrl);
-        toast.success("Foto enviada com sucesso!");
+        toast.success("Arquivo enviado com sucesso!");
       }
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
@@ -94,10 +94,10 @@ export const FileUpload = ({
       .then(({ error }) => {
         if (error) {
           console.error("Erro ao remover arquivo:", error);
-          toast.error("Erro ao remover foto");
+          toast.error("Erro ao remover arquivo");
         } else {
           onChange(null);
-          toast.success("Foto removida com sucesso!");
+          toast.success("Arquivo removido com sucesso!");
         }
       });
   };

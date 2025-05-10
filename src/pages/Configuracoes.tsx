@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/FileUpload";
 import { supabase } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
 const Configuracoes = () => {
   const [logoFlamengo, setLogoFlamengo] = useState<string | null>(
@@ -78,35 +78,41 @@ const Configuracoes = () => {
             <CardTitle>Logo do Flamengo</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                {logoFlamengo && (
-                  <div className="w-32 h-32 border rounded-lg overflow-hidden flex items-center justify-center p-2">
-                    <img
-                      src={logoFlamengo}
-                      alt="Logo do Flamengo"
-                      className="max-w-full max-h-full object-contain"
+            {isLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {logoFlamengo && (
+                    <div className="w-32 h-32 border rounded-lg overflow-hidden flex items-center justify-center p-2">
+                      <img
+                        src={logoFlamengo}
+                        alt="Logo do Flamengo"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Este logo será usado como padrão em todas as viagens. O upload será feito para o banco de dados e usado automaticamente.
+                    </p>
+                    <FileUpload
+                      value={logoFlamengo}
+                      onChange={handleLogoChange}
+                      bucketName="logos"
+                      folderPath="flamengo"
+                      allowedFileTypes={["image/jpeg", "image/png", "image/jpg", "image/svg+xml"]}
                     />
                   </div>
-                )}
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Este logo será usado como padrão em todas as viagens. O upload será feito para o banco de dados e usado automaticamente.
-                  </p>
-                  <FileUpload
-                    value={logoFlamengo}
-                    onChange={handleLogoChange}
-                    bucketName="logos"
-                    folderPath="flamengo"
-                    allowedFileTypes={["image/jpeg", "image/png", "image/jpg", "image/svg+xml"]}
-                  />
+                </div>
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm font-medium mb-2">Logo Atual:</p>
+                  <p className="text-xs text-muted-foreground break-all">{logoFlamengo}</p>
                 </div>
               </div>
-              <div className="border-t pt-4 mt-4">
-                <p className="text-sm font-medium mb-2">Logo Atual:</p>
-                <p className="text-xs text-muted-foreground break-all">{logoFlamengo}</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
