@@ -68,6 +68,8 @@ const CadastrarViagem = () => {
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
+  const [primaryBusType, setPrimaryBusType] = useState<TipoOnibus>("43 Leitos Totais");
+  const [primaryBusCompany, setPrimaryBusCompany] = useState<EmpresaOnibus>("Bertoldo");
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
@@ -83,6 +85,11 @@ const CadastrarViagem = () => {
   });
 
   const watchAdversario = form.watch("adversario");
+
+  const handlePrimaryBusChange = (tipo: TipoOnibus, empresa: EmpresaOnibus) => {
+    setPrimaryBusType(tipo);
+    setPrimaryBusCompany(empresa);
+  };
 
   const onSubmit = async (data: ViagemFormValues) => {
     if (onibusArray.length === 0) {
@@ -104,6 +111,8 @@ const CadastrarViagem = () => {
           data_jogo: dataJogo.toISOString(),
           rota: data.rota,
           status_viagem: data.status_viagem,
+          tipo_onibus: primaryBusType,  // Usando o tipo do primeiro ônibus
+          empresa: primaryBusCompany,   // Usando a empresa do primeiro ônibus
           logo_adversario: data.logo_adversario || null,
           logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
           valor_padrao: data.valor_padrao || null,
@@ -395,6 +404,7 @@ const CadastrarViagem = () => {
               <OnibusForm 
                 onibusArray={onibusArray} 
                 onChange={setOnibusArray}
+                onPrimaryBusChange={handlePrimaryBusChange}
               />
 
               <div className="flex justify-end gap-4">

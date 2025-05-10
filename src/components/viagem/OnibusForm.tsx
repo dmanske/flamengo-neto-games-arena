@@ -20,9 +20,10 @@ interface OnibusFormProps {
   onibusArray: ViagemOnibus[];
   onChange: (onibusArray: ViagemOnibus[]) => void;
   viagemId?: string;
+  onPrimaryBusChange?: (tipo: TipoOnibus, empresa: EmpresaOnibus) => void;
 }
 
-export function OnibusForm({ onibusArray, onChange, viagemId }: OnibusFormProps) {
+export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange }: OnibusFormProps) {
   // Adicionar ônibus inicial se a array estiver vazia
   useEffect(() => {
     if (onibusArray.length === 0) {
@@ -42,7 +43,13 @@ export function OnibusForm({ onibusArray, onChange, viagemId }: OnibusFormProps)
       numero_identificacao: `Ônibus ${onibusArray.length + 1}`
     };
     
-    onChange([...onibusArray, newOnibus]);
+    const newArray = [...onibusArray, newOnibus];
+    onChange(newArray);
+    
+    // Notificar o componente pai sobre o ônibus principal se este for o primeiro
+    if (onibusArray.length === 0 && onPrimaryBusChange) {
+      onPrimaryBusChange(defaultTipo, defaultEmpresa);
+    }
   };
 
   const removeOnibus = (index: number) => {
@@ -70,6 +77,11 @@ export function OnibusForm({ onibusArray, onChange, viagemId }: OnibusFormProps)
         empresa: onibusPorEmpresa[tipoOnibus] as EmpresaOnibus,
         capacidade_onibus: capacidade
       };
+      
+      // Notificar o componente pai sobre a mudança do tipo do ônibus principal (primeiro)
+      if (index === 0 && onPrimaryBusChange) {
+        onPrimaryBusChange(tipoOnibus, onibusPorEmpresa[tipoOnibus] as EmpresaOnibus);
+      }
     } else {
       newArray[index] = {
         ...newArray[index],
