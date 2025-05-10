@@ -1,10 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { FileUpload } from "@/components/FileUpload";
+import { FileUpload } from "@/components/ui/file-upload";
 import { LogoPreview, CurrentLogoDisplay } from "./LogoPreview";
 import { LogoPreviewDialog } from "./LogoPreviewDialog";
 import {
@@ -22,7 +22,7 @@ export function LogoSettings() {
   const [previewDialogOpen, setPreviewDialogOpen] = useState<boolean>(false);
 
   // Fetch current logo settings
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchLogoSettings = async () => {
       try {
         setIsLoading(true);
