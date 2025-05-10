@@ -106,7 +106,7 @@ interface PassageiroDisplay {
   valor: number | null;
   desconto: number | null;
   onibus_id?: string | null;
-  viagem_id: string; // Added the missing property
+  viagem_id: string;
 }
 
 const DetalhesViagem = () => {
@@ -188,6 +188,7 @@ const DetalhesViagem = () => {
           valor,
           desconto,
           created_at,
+          onibus_id,
           clientes:cliente_id (id, nome, telefone, cidade, cpf)
         `)
         .eq("viagem_id", viagemId);
@@ -207,7 +208,9 @@ const DetalhesViagem = () => {
         cliente_id: item.cliente_id,
         viagem_passageiro_id: item.id,
         valor: item.valor || 0,
-        desconto: item.desconto || 0
+        desconto: item.desconto || 0,
+        onibus_id: item.onibus_id,
+        viagem_id: item.viagem_id
       }));
       
       setPassageiros(formattedPassageiros);
