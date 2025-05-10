@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -26,7 +25,7 @@ interface NavItemProps {
   to: string;
   isActive?: boolean;
   onClick?: () => void;
-  end?: boolean;
+  exact?: boolean; // Change 'end' to 'exact' which we'll handle manually
 }
 
 const NavItem = ({
@@ -35,12 +34,11 @@ const NavItem = ({
   to,
   isActive = false,
   onClick,
-  end = false,
+  exact = false, // Changed from 'end' to 'exact'
 }: NavItemProps) => {
   return (
     <Link
       to={to}
-      end={end}
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -56,7 +54,7 @@ const NavItem = ({
 };
 
 const MainLayout = () => {
-  const { collapsed, setCollapsed } = useSidebar();
+  const { isOpen: collapsed, setIsOpen: setCollapsed } = useSidebar(); // Fixed property names
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
