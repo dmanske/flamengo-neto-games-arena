@@ -5,12 +5,22 @@ import { FileUpload } from "@/components/FileUpload";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Upload } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Configuracoes = () => {
   const [flamengoLogo, setFlamengoLogo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState<boolean>(false);
 
   // Fetch current logo settings
   useEffect(() => {
@@ -136,39 +146,73 @@ const Configuracoes = () => {
                     />
                   </div>
                   {flamengoLogo && (
-                    <div className="flex flex-col items-center">
-                      <div className="bg-muted rounded-lg p-4 mb-2">
-                        <p className="text-sm text-muted-foreground mb-2">Pré-visualização:</p>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="bg-muted rounded-lg p-4">
+                        <p className="text-sm text-muted-foreground mb-2 text-center">Pré-visualização:</p>
                         <img 
                           src={flamengoLogo} 
                           alt="Logo do Flamengo" 
                           className="max-h-32 max-w-32 object-contain"
                         />
                       </div>
+                      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Ver em tamanho real
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Logo em tamanho real</DialogTitle>
+                            <DialogDescription>
+                              Visualize como o logo aparecerá nos documentos
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="flex justify-center p-6">
+                            <img 
+                              src={flamengoLogo}
+                              alt="Logo do Flamengo"
+                              className="max-w-full max-h-[60vh]"
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={resetLogo}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                    )}
-                    Restaurar Padrão
-                  </Button>
-                  <Button 
-                    onClick={saveLogo}
-                    disabled={isSaving}
-                  >
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Alterações
-                  </Button>
+                <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={flamengoLogo || undefined} alt="Logo do Flamengo" />
+                      <AvatarFallback>FL</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm text-muted-foreground">
+                      Logo atual utilizado em toda a plataforma
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={resetLogo}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                      )}
+                      Restaurar Padrão
+                    </Button>
+                    <Button 
+                      onClick={saveLogo}
+                      disabled={isSaving}
+                    >
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Salvar Alterações
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
