@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 
 interface Viagem {
   id: string;
@@ -22,7 +21,6 @@ interface Viagem {
   capacidade_onibus: number;
   status_viagem: string;
   created_at: string;
-  logo_adversario?: string;
 }
 
 const statusColors = {
@@ -59,20 +57,10 @@ const logosTimesConhecidos: Record<string, string> = {
   "Cuiabá": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Cuiab%C3%A1_Esporte_Clube_logo.svg",
   "Juventude": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Esporte_Clube_Juventude.svg",
   "Bragantino": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Red_Bull_Bragantino_logo.svg",
-  "LDU": "https://upload.wikimedia.org/wikipedia/commons/8/80/Liga_deportiva_universitaria_de_quito_logo.svg",
-  "Peñarol": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Pe%C3%B1arol_logo_%282022%29.png",
-  "River Plate": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Escudo_del_Club_Atl%C3%A9tico_River_Plate.svg",
-  "Boca Juniors": "https://upload.wikimedia.org/wikipedia/commons/4/41/CABJ70.png",
-  "Independiente": "https://upload.wikimedia.org/wikipedia/commons/d/db/Escudo_del_Club_Atl%C3%A9tico_Independiente.svg"
 };
 
 // Função para obter o logo do time
-const getLogoTime = (time: string, logoSalvo?: string): string => {
-  // Se temos um logo salvo no banco, use-o
-  if (logoSalvo) {
-    return logoSalvo;
-  }
-  
+const getLogoTime = (time: string): string => {
   // Se o time estiver no nosso mapa de logos conhecidos, retorne o logo
   if (logosTimesConhecidos[time]) {
     return logosTimesConhecidos[time];
@@ -81,7 +69,8 @@ const getLogoTime = (time: string, logoSalvo?: string): string => {
   // Para times desconhecidos, tentamos escapar o nome para uso em uma URL
   const nomeTimeEscapado = encodeURIComponent(time);
   
-  // Usamos API externas para encontrar logos de times
+  // Usamos uma estratégia de fallback para buscar logos:
+  // 1. Tentamos uma imagem genérica baseada no nome do time
   return `https://www.thesportsdb.com/images/media/team/badge/small/${nomeTimeEscapado.toLowerCase().replace(/\s/g, '')}.png`;
 };
 
@@ -89,7 +78,7 @@ const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
-  const [logoErrors, setLogoErrors] = useState<Record<string, boolean>>({});
+  const [timeLogos, setTimeLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchViagens = async () => {
@@ -105,6 +94,14 @@ const Viagens = () => {
         }
         
         setViagens(data || []);
+        
+        // Buscar logos para todos os times adversários
+        const logos: Record<string, string> = {};
+        data?.forEach(viagem => {
+          logos[viagem.adversario] = getLogoTime(viagem.adversario);
+        });
+        
+        setTimeLogos(logos);
         
         // Fetch passenger counts for each trip
         if (data?.length) {
@@ -129,30 +126,6 @@ const Viagens = () => {
     
     fetchViagens();
   }, []);
-
-  // Função para lidar com erros de carregamento de imagem
-  const handleImageError = (time: string) => {
-    setLogoErrors(prev => ({
-      ...prev,
-      [time]: true
-    }));
-    console.log(`Erro ao carregar logo do time: ${time}`);
-  };
-
-  // Função para obter o logo com tratamento de erro
-  const getTeamLogo = (viagem: Viagem) => {
-    if (logoErrors[viagem.adversario]) {
-      // Se já tivemos um erro com esse time, use placeholder
-      return `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`;
-    }
-    
-    // Usar o logo salvo no banco, se disponível
-    if (viagem.logo_adversario) {
-      return viagem.logo_adversario;
-    }
-    
-    return getLogoTime(viagem.adversario);
-  };
 
   const formatDate = (dateString: string) => {
     try {
@@ -203,18 +176,19 @@ const Viagens = () => {
                     <div className="flex items-center gap-2">
                       <div className="flex -space-x-4">
                         <Avatar className="h-10 w-10 border-2 border-white">
-                          <AvatarImage 
-                            src={logosTimesConhecidos["Flamengo"]}
-                            alt="Flamengo"
-                            onError={() => console.log("Erro ao carregar logo do Flamengo")}
-                          />
+                          <AvatarImage src={logosTimesConhecidos["Flamengo"]} alt="Flamengo" />
                           <AvatarFallback>FLA</AvatarFallback>
                         </Avatar>
                         <Avatar className="h-10 w-10 border-2 border-white">
                           <AvatarImage 
-                            src={getTeamLogo(viagem)} 
+                            src={timeLogos[viagem.adversario] || getLogoTime(viagem.adversario)} 
                             alt={viagem.adversario}
-                            onError={() => handleImageError(viagem.adversario)}
+                            onError={(e) => {
+                              // Se a imagem falhar, use um fallback
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null; // Previne loops infinitos
+                              target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`;
+                            }}
                           />
                           <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
                         </Avatar>
@@ -244,7 +218,14 @@ const Viagens = () => {
                             <span>Passageiros confirmados</span>
                             <span>{passageirosCount[viagem.id] || 0} de {viagem.capacidade_onibus}</span>
                           </div>
-                          <Progress value={Math.min(100, ((passageirosCount[viagem.id] || 0) / viagem.capacidade_onibus) * 100)} className="h-2" />
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full" 
+                              style={{ 
+                                width: `${Math.min(100, ((passageirosCount[viagem.id] || 0) / viagem.capacidade_onibus) * 100)}%` 
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

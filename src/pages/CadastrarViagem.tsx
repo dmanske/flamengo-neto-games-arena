@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 
 // Schema para validação do formulário
@@ -54,7 +53,6 @@ const viagemFormSchema = z.object({
   }),
   capacidade_onibus: z.number().min(1, "Capacidade deve ser maior que zero"),
   status_viagem: z.string().default("Aberta"),
-  logo_adversario: z.string().optional(),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
@@ -69,8 +67,6 @@ const onibusPorEmpresa: Record<string, string> = {
 const CadastrarViagem = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [logoAdversario, setLogoAdversario] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState(false);
 
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
@@ -85,47 +81,7 @@ const CadastrarViagem = () => {
 
   // Atualiza a capacidade do ônibus e empresa com base no tipo selecionado
   const watchTipoOnibus = form.watch("tipo_onibus");
-  const watchAdversario = form.watch("adversario");
   
-  // Busca o logo do time adversário quando o nome muda
-  useEffect(() => {
-    const fetchLogo = async () => {
-      if (watchAdversario && watchAdversario.length > 2) {
-        try {
-          const response = await fetch(
-            `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(watchAdversario)}`
-          );
-          const data = await response.json();
-          
-          if (data.teams && data.teams.length > 0 && data.teams[0].strTeamBadge) {
-            setLogoAdversario(data.teams[0].strTeamBadge);
-            form.setValue("logo_adversario", data.teams[0].strTeamBadge);
-            setLogoError(false);
-          } else {
-            // Logo não encontrado, usar placeholder
-            setLogoAdversario(`https://via.placeholder.com/150?text=${watchAdversario.substring(0, 3)}`);
-            form.setValue("logo_adversario", `https://via.placeholder.com/150?text=${watchAdversario.substring(0, 3)}`);
-            setLogoError(true);
-          }
-        } catch (error) {
-          console.error("Erro ao buscar logo do time:", error);
-          setLogoAdversario(`https://via.placeholder.com/150?text=${watchAdversario.substring(0, 3)}`);
-          form.setValue("logo_adversario", `https://via.placeholder.com/150?text=${watchAdversario.substring(0, 3)}`);
-          setLogoError(true);
-        }
-      }
-    };
-
-    // Usar um debounce para não fazer muitas requisições enquanto o usuário digita
-    const debounceTimer = setTimeout(() => {
-      if (watchAdversario && watchAdversario.length > 2) {
-        fetchLogo();
-      }
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [watchAdversario, form]);
-
   useEffect(() => {
     if (watchTipoOnibus === "43 Leitos Totais") {
       form.setValue("capacidade_onibus", 43);
@@ -139,23 +95,12 @@ const CadastrarViagem = () => {
     }
   }, [watchTipoOnibus, form]);
 
-  const handleImageError = () => {
-    setLogoError(true);
-    setLogoAdversario(`https://via.placeholder.com/150?text=${watchAdversario?.substring(0, 3) || 'Time'}`);
-    form.setValue("logo_adversario", `https://via.placeholder.com/150?text=${watchAdversario?.substring(0, 3) || 'Time'}`);
-  };
-
   const onSubmit = async (data: ViagemFormValues) => {
     setIsLoading(true);
     try {
       // Ajuste para garantir que a data está no formato correto
       const dataJogo = new Date(data.data_jogo);
       dataJogo.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
-      
-      // Garantir que temos um logo definido
-      if (!data.logo_adversario) {
-        data.logo_adversario = logoAdversario || `https://via.placeholder.com/150?text=${data.adversario.substring(0, 3)}`;
-      }
       
       const { error } = await supabase.from("viagens").insert({
         adversario: data.adversario,
@@ -165,7 +110,6 @@ const CadastrarViagem = () => {
         rota: data.rota,
         capacidade_onibus: data.capacidade_onibus,
         status_viagem: data.status_viagem,
-        logo_adversario: data.logo_adversario,
       });
 
       if (error) {
@@ -194,41 +138,19 @@ const CadastrarViagem = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="adversario"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Adversário</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do adversário" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {logoAdversario && (
-                    <div className="flex flex-col items-center">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {logoError ? "Logo não encontrado, usando placeholder:" : "Logo encontrado:"}
-                      </p>
-                      <div className="rounded-lg border p-2 bg-white shadow-sm">
-                        <Avatar className="h-20 w-20">
-                          <AvatarImage
-                            src={logoAdversario}
-                            alt={watchAdversario || "Time"}
-                            onError={handleImageError}
-                          />
-                          <AvatarFallback>
-                            {watchAdversario?.substring(0, 3) || "TIM"}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </div>
+                <FormField
+                  control={form.control}
+                  name="adversario"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adversário</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do adversário" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
 
                 <FormField
                   control={form.control}
