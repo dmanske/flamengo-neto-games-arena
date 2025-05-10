@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -84,6 +83,7 @@ const formSchema = z.object({
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),
   fonte_cadastro: z.string().optional(),
+  foto: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -132,6 +132,7 @@ const CadastroPublico = () => {
         indicacao_nome: data.indicacao_nome || null,
         observacoes: data.observacoes || null,
         fonte_cadastro: data.fonte_cadastro || fonte,
+        foto: data.foto || null,
       });
 
       // Insert client into Supabase
@@ -155,6 +156,7 @@ const CadastroPublico = () => {
             indicacao_nome: data.indicacao_nome || null,
             observacoes: data.observacoes || null,
             fonte_cadastro: data.fonte_cadastro || fonte,
+            foto: data.foto || null,
           }
         ])
         .select();
@@ -200,6 +202,7 @@ const CadastroPublico = () => {
       indicacao_nome: "",
       observacoes: "",
       fonte_cadastro: fonte,
+      foto: null,
     },
   });
 
@@ -551,6 +554,28 @@ const CadastroPublico = () => {
                             <FormLabel htmlFor="outro" className="font-normal cursor-pointer">Outro</FormLabel>
                           </div>
                         </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="foto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sua foto</FormLabel>
+                      <FormControl>
+                        <FileUpload
+                          value={field.value || null}
+                          onChange={field.onChange}
+                          bucketName="client-photos"
+                          folderPath="cadastro-publico"
+                          allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                          maxSizeInMB={5}
+                          showPreview={true}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
