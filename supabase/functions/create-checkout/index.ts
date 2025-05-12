@@ -46,15 +46,20 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // ID de preço fixo atualizado
-    const priceId = "price_1RNqARHUWkCiHpeepld5uX4c";
-
-    // Criar a sessão de checkout usando o ID de preço em vez de criar um novo preço
+    // Criar a sessão de checkout usando o valor da viagem em vez de um ID de preço fixo
+    // Isso é mais flexível e evita problemas de modo de teste vs produção
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'brl',
+            product_data: {
+              name: `Viagem para ${tripData.adversario || 'jogo do Flamengo'}`,
+              description: `Rota: ${tripData.rota || ''}`,
+            },
+            unit_amount: Math.round(tripData.valor_padrao * 100), // Convertendo para centavos como exigido pelo Stripe
+          },
           quantity: 1,
         },
       ],
