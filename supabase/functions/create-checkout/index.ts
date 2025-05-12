@@ -46,8 +46,8 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // ID de preço fixo fornecido pelo usuário
-    const priceId = "price_1RNq39HUWkCiHpeejKG2VVQW";
+    // ID de preço fixo atualizado
+    const priceId = "price_1RNqARHUWkCiHpeepld5uX4c";
 
     // Criar a sessão de checkout usando o ID de preço em vez de criar um novo preço
     const session = await stripe.checkout.sessions.create({
