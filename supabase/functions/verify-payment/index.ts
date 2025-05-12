@@ -34,6 +34,12 @@ serve(async (req) => {
     // Verificar status do pagamento
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
+    console.log("Verificação de pagamento concluída com sucesso:", {
+      status: session.payment_status,
+      customer: session.customer,
+      amount: session.amount_total,
+    });
+    
     return new Response(
       JSON.stringify({ 
         status: session.payment_status,

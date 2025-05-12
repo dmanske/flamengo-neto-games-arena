@@ -49,7 +49,14 @@ export function CheckoutButton({
       window.location.href = data.url;
     } catch (error) {
       console.error("Erro no processo de checkout:", error);
-      toast.error("Erro ao processar pagamento. Tente novamente mais tarde.");
+      
+      // Verifica se o erro está relacionado à chave do Stripe
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("STRIPE_SECRET_KEY") || errorMessage.includes("Stripe")) {
+        toast.error("Erro de configuração do Stripe. Verifique se a chave API está configurada corretamente.");
+      } else {
+        toast.error("Erro ao processar pagamento. Tente novamente mais tarde.");
+      }
     } finally {
       setIsLoading(false);
     }
