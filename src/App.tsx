@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import Onibus from "./pages/Onibus";
 import CadastroPublico from "./pages/CadastroPublico";
 import GerenciadorWhatsApp from "./pages/GerenciadorWhatsApp";
+import LandingPage from "./pages/LandingPage";
 
 // Configurar o QueryClient com opções mais robustas
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ const App = () => (
           <SidebarProvider>
             <Routes>
               {/* Rotas públicas */}
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
               <Route path="/cadastro-publico" element={<CadastroPublico />} />
@@ -50,7 +52,7 @@ const App = () => (
               {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/cadastrar-cliente" element={<CadastrarCliente />} />
                   <Route path="/editar-cliente/:id" element={<EditarCliente />} />
                   <Route path="/viagens" element={<Viagens />} />
@@ -64,8 +66,8 @@ const App = () => (
                 </Route>
               </Route>
               
-              {/* Redirecionar para Login se nenhuma rota corresponder */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              {/* Redirecionar para 404 se nenhuma rota corresponder */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </SidebarProvider>
         </AuthProvider>
