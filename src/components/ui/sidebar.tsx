@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from "react";
 import {
   Sheet,
@@ -17,10 +18,9 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Calendar, Package, Settings, Bus, Car, UserCheck, MessagesSquare, CreditCard } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/auth";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Create context for sidebar state
 type SidebarContextType = {
@@ -166,7 +166,8 @@ const SidebarComponent = () => {
 
 export default SidebarComponent;
 
-export function Sidebar() {
+// Remove the duplicate Sidebar declaration and replace with SidebarNav
+export function SidebarNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -231,7 +232,7 @@ export function Sidebar() {
               <NavigationMenuItem key={item.title}>
                 <Link to={item.path} className="w-full">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.icon}
                     {item.title}
                   </NavigationMenuLink>
                 </Link>

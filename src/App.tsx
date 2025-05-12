@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BrowserRouter,
@@ -7,25 +8,25 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Auth
-import { Login } from "@/pages/Login";
-import { Cadastro } from "@/pages/Cadastro";
-import { ProtectedRoute } from './ProtectedRoute';
-import { NotFound } from '@/pages/NotFound';
+import Login from "@/pages/Login";
+import Cadastro from "@/pages/Cadastro";
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import NotFound from '@/pages/NotFound';
 
 // Dashboard Layout
-import { MainLayout } from './MainLayout';
-import { Dashboard } from "@/pages/Dashboard";
-import { Clientes } from "@/pages/Clientes";
-import { CadastrarCliente } from "@/pages/CadastrarCliente";
-import { EditarCliente } from "@/pages/EditarCliente";
-import { Viagens } from "@/pages/Viagens";
-import { CadastrarViagem } from "@/pages/CadastrarViagem";
-import { EditarViagem } from "@/pages/EditarViagem";
-import { DetalhesViagem } from '@/pages/DetalhesViagem';
-import { Onibus } from '@/pages/Onibus';
-import { Passageiros } from '@/pages/Passageiros';
-import { CadastrarPassageiro } from '@/pages/CadastrarPassageiro';
-import { GerenciadorWhatsApp } from '@/pages/GerenciadorWhatsApp';
+import MainLayout from './components/layout/MainLayout';
+import Dashboard from "@/pages/Dashboard";
+import Clientes from "@/pages/Clientes";
+import CadastrarCliente from "@/pages/CadastrarCliente";
+import EditarCliente from "@/pages/EditarCliente";
+import Viagens from "@/pages/Viagens";
+import CadastrarViagem from "@/pages/CadastrarViagem";
+import EditarViagem from "@/pages/EditarViagem";
+import DetalhesViagem from '@/pages/DetalhesViagem';
+import Onibus from '@/pages/Onibus';
+import Passageiros from '@/pages/Passageiros';
+import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
+import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
 
 // Landing Page
 import LandingPage from "@/pages/LandingPage";
