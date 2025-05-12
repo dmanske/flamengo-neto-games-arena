@@ -17,8 +17,8 @@ serve(async (req) => {
   try {
     const { tripId, clientId, price, description } = await req.json();
     
-    if (!tripId || !price) {
-      throw new Error("Parâmetros obrigatórios: tripId, price");
+    if (!tripId) {
+      throw new Error("Parâmetros obrigatórios: tripId");
     }
 
     const supabaseUrl = 'https://uroukakmvanyeqxicuzw.supabase.co';
@@ -46,27 +46,40 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Criar a sessão de checkout
+    // ID de preço fixo fornecido pelo usuário
+    const priceId = "price_1RNq39HUWkCiHpeejKG2VVQW";
+
+    // Criar a sessão de checkout usando o ID de preço em vez de criar um novo preço
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `Viagem Flamengo x ${tripData.adversario}`,
-              description: description || `Caravana para o jogo Flamengo x ${tripData.adversario} em ${tripData.rota}`,
-              images: [tripData.logo_flamengo],
-            },
-            unit_amount: Math.round(price * 100), // Valor em centavos
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
       mode: "payment",
       success_url: `${req.headers.get("origin")}/pagamento-sucesso?session_id={CHECKOUT_SESSION_ID}&viagem=${tripId}${clientId ? `&cliente=${clientId}` : ''}`,
       cancel_url: `${req.headers.get("origin")}/cadastro-publico?viagem=${tripId}${clientId ? `&cliente=${clientId}` : ''}&cancel=true`,
+      metadata: {
+        viagem_id: tripId,
+        cliente_id: clientId || '',
+      }
     });
+
+    // Salvar informações do pagamento no banco de dados
+    const { error: paymentError } = await supabaseClient.from('payments').insert({
+      viagem_id: tripId,
+      cliente_id: clientId,
+      amount: tripData.valor_padrao,
+      currency: 'brl',
+      status: 'pending',
+      session_id: session.id
+    });
+
+    if (paymentError) {
+      console.error("Erro ao registrar pagamento:", paymentError);
+    }
 
     // Retornar URL de checkout
     return new Response(

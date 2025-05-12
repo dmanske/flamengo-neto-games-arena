@@ -32,7 +32,7 @@ export function CheckoutButton({
         body: {
           tripId,
           clientId,
-          price,
+          // Não precisamos mais enviar o preço pois estamos usando um preço fixo no Stripe
           description
         }
       });

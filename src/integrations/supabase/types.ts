@@ -99,6 +99,63 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          cliente_id: string | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          id: string
+          payment_method: string | null
+          session_id: string | null
+          status: string
+          updated_at: string
+          viagem_id: string | null
+        }
+        Insert: {
+          amount: number
+          cliente_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          payment_method?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          viagem_id?: string | null
+        }
+        Update: {
+          amount?: number
+          cliente_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          payment_method?: string | null
+          session_id?: string | null
+          status?: string
+          updated_at?: string
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -149,6 +206,38 @@ export type Database = {
           valor?: string | null
         }
         Relationships: []
+      }
+      stripe_customers: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          id: string
+          stripe_customer_id: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_customers_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_config: {
         Row: {
