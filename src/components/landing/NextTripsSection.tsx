@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import LoadingSpinner from "./LoadingSpinner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Trip {
   id: string;
@@ -22,6 +24,7 @@ interface Trip {
 }
 
 const NextTripsSection = () => {
+  const isMobile = useIsMobile();
   const { data: trips, isLoading, error } = useQuery({
     queryKey: ['upcoming-trips'],
     queryFn: async () => {
@@ -76,58 +79,46 @@ const NextTripsSection = () => {
         
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-pulse flex space-x-4">
-              <div className="rounded-full bg-slate-200 h-10 w-10"></div>
-              <div className="flex-1 space-y-6 py-1">
-                <div className="h-2 bg-slate-200 rounded"></div>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="h-2 bg-slate-200 rounded col-span-2"></div>
-                    <div className="h-2 bg-slate-200 rounded col-span-1"></div>
-                  </div>
-                  <div className="h-2 bg-slate-200 rounded"></div>
-                </div>
-              </div>
-            </div>
+            <LoadingSpinner size="lg" />
           </div>
         ) : error ? (
           <div className="text-center text-red-600">
             Erro ao carregar as próximas viagens. Tente novamente mais tarde.
           </div>
         ) : trips && trips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {trips.map((trip) => (
               <Card key={trip.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-40 bg-gray-100 p-4 flex justify-between items-center">
+                <div className="h-44 bg-gray-50 p-4 flex justify-between items-center">
                   <img 
                     src={trip.logo_flamengo} 
                     alt="Flamengo" 
-                    className="h-24"
+                    className="h-20 object-contain"
                   />
                   <div className="font-bold text-xl">VS</div>
                   <img 
                     src={trip.logo_adversario || "https://upload.wikimedia.org/wikipedia/commons/8/89/HD_transparent_picture.png"} 
                     alt={trip.adversario} 
-                    className="h-24"
+                    className="h-20 object-contain"
                   />
                 </div>
                 <CardContent className="p-6">
-                  <h3 className="font-bold text-xl mb-3">Flamengo x {trip.adversario}</h3>
-                  <div className="space-y-2 mb-4">
+                  <h3 className="font-bold text-xl mb-4">Flamengo x {trip.adversario}</h3>
+                  <div className="space-y-3 mb-5">
                     <div className="flex items-center text-gray-700">
-                      <Calendar className="h-5 w-5 mr-2 text-red-600" />
+                      <Calendar className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
                       <span>{format(new Date(trip.data_jogo), "dd 'de' MMMM 'de' yyyy, HH:mm", {locale: ptBR})}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <MapPin className="h-5 w-5 mr-2 text-red-600" />
+                      <MapPin className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
                       <span>{trip.rota}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <DollarSign className="h-5 w-5 mr-2 text-red-600" />
+                      <DollarSign className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
                       <span>{formatCurrency(trip.valor_padrao || 0)}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <Users className="h-5 w-5 mr-2 text-red-600" />
+                      <Users className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
                       <span>{trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis</span>
                     </div>
                   </div>
