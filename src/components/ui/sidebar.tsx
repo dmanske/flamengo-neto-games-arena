@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import {
   Sheet,
@@ -98,7 +97,7 @@ export const SidebarMenuButton = ({
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ComponentType<any>;
+  icon: React.ElementType;  // Changed from ComponentType<any> to ElementType
 }
 
 const navigationItems: NavItem[] = [
@@ -169,9 +168,8 @@ export default SidebarComponent;
 // Remove the duplicate Sidebar declaration and replace with SidebarNav
 export function SidebarNav() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const menuItems = [
     {

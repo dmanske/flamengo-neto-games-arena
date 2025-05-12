@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Toaster } from "sonner";
 import HeroSection from "@/components/landing/HeroSection";
 import NextTripsSection from "@/components/landing/NextTripsSection";
