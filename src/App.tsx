@@ -1,79 +1,79 @@
+import React from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import MainLayout from "./components/layout/MainLayout";
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Cadastro from "./pages/Cadastro";
-import CadastrarCliente from "./pages/CadastrarCliente";
-import EditarCliente from "./pages/EditarCliente";
-import Clientes from "./pages/Clientes";
-import Viagens from "./pages/Viagens";
-import CadastrarViagem from "./pages/CadastrarViagem";
-import DetalhesViagem from "./pages/DetalhesViagem";
-import EditarViagem from "./pages/EditarViagem";
-import NotFound from "./pages/NotFound";
-import Onibus from "./pages/Onibus";
-import CadastroPublico from "./pages/CadastroPublico";
-import GerenciadorWhatsApp from "./pages/GerenciadorWhatsApp";
-import LandingPage from "./pages/LandingPage";
+// Auth
+import { Login } from "@/pages/Login";
+import { Cadastro } from "@/pages/Cadastro";
+import { ProtectedRoute } from './ProtectedRoute';
+import { NotFound } from '@/pages/NotFound';
 
-// Configurar o QueryClient com opções mais robustas
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Dashboard Layout
+import { MainLayout } from './MainLayout';
+import { Dashboard } from "@/pages/Dashboard";
+import { Clientes } from "@/pages/Clientes";
+import { CadastrarCliente } from "@/pages/CadastrarCliente";
+import { EditarCliente } from "@/pages/EditarCliente";
+import { Viagens } from "@/pages/Viagens";
+import { CadastrarViagem } from "@/pages/CadastrarViagem";
+import { EditarViagem } from "@/pages/EditarViagem";
+import { DetalhesViagem } from '@/pages/DetalhesViagem';
+import { Onibus } from '@/pages/Onibus';
+import { Passageiros } from '@/pages/Passageiros';
+import { CadastrarPassageiro } from '@/pages/CadastrarPassageiro';
+import { GerenciadorWhatsApp } from '@/pages/GerenciadorWhatsApp';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+// Landing Page
+import LandingPage from "@/pages/LandingPage";
+import CadastroPublico from "@/pages/CadastroPublico";
+
+const queryClient = new QueryClient()
+
+// Import novas páginas
+import PagamentoSucesso from "@/pages/PagamentoSucesso";
+import Pagamentos from "@/pages/Pagamentos";
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <SidebarProvider>
-            <Routes>
-              {/* Rotas públicas */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/cadastro" element={<Cadastro />} />
-              <Route path="/cadastro-publico" element={<CadastroPublico />} />
-              
-              {/* Rotas protegidas */}
-              <Route element={<ProtectedRoute />}>
-                <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/cadastrar-cliente" element={<CadastrarCliente />} />
-                  <Route path="/editar-cliente/:id" element={<EditarCliente />} />
-                  <Route path="/viagens" element={<Viagens />} />
-                  <Route path="/cadastrar-viagem" element={<CadastrarViagem />} />
-                  <Route path="/viagem/:id" element={<DetalhesViagem />} />
-                  <Route path="/editar-viagem/:id" element={<EditarViagem />} />
-                  <Route path="/clientes" element={<Clientes />} />
-                  <Route path="/onibus" element={<Onibus />} />
-                  <Route path="/pagamentos" element={<div className="container py-6"><h1 className="text-3xl font-bold">Pagamentos</h1></div>} />
-                  <Route path="/whatsapp" element={<GerenciadorWhatsApp />} />
-                </Route>
-              </Route>
-              
-              {/* Redirecionar para 404 se nenhuma rota corresponder */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </SidebarProvider>
-        </AuthProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/cadastro-publico" element={<CadastroPublico />} />
+          
+          {/* Rotas de pagamento */}
+          <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
+
+          {/* Rotas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<MainLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="clientes" element={<Clientes />} />
+              <Route path="clientes/:id/editar" element={<EditarCliente />} />
+              <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
+              <Route path="viagens" element={<Viagens />} />
+              <Route path="viagem/:id" element={<DetalhesViagem />} />
+              <Route path="viagem/:id/editar" element={<EditarViagem />} />
+              <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
+              <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
+              <Route path="onibus" element={<Onibus />} />
+              <Route path="passageiros" element={<Passageiros />} />
+              <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
+              <Route path="pagamentos" element={<Pagamentos />} />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;

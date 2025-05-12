@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from "react";
 import {
   Sheet,
@@ -17,8 +16,11 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Calendar, Package, Settings } from "lucide-react";
+import { Home, Users, Calendar, Package, Settings, Bus, Car, UserCheck, MessagesSquare, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/auth";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 // Create context for sidebar state
 type SidebarContextType = {
@@ -163,3 +165,81 @@ const SidebarComponent = () => {
 };
 
 export default SidebarComponent;
+
+export function Sidebar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
+
+  const menuItems = [
+    {
+      title: "Dashboard",
+      icon: <Home className="h-4 w-4" />,
+      path: "/dashboard",
+    },
+    {
+      title: "Clientes",
+      icon: <Users className="h-4 w-4" />,
+      path: "/dashboard/clientes",
+    },
+    {
+      title: "Viagens",
+      icon: <Bus className="h-4 w-4" />,
+      path: "/dashboard/viagens",
+    },
+    {
+      title: "Ônibus",
+      icon: <Car className="h-4 w-4" />,
+      path: "/dashboard/onibus",
+    },
+    {
+      title: "Passageiros",
+      icon: <UserCheck className="h-4 w-4" />,
+      path: "/dashboard/passageiros",
+    },
+    {
+      title: "WhatsApp",
+      icon: <MessagesSquare className="h-4 w-4" />,
+      path: "/dashboard/whatsapp",
+    },
+    {
+      title: "Pagamentos",
+      icon: <CreditCard className="h-4 w-4" />,
+      path: "/dashboard/pagamentos",
+    },
+  ];
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Home className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-64">
+        <SheetHeader className="text-left">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>
+            Navegue pelas opções do sistema.
+          </SheetDescription>
+        </SheetHeader>
+        <Separator className="my-4" />
+        <NavigationMenu>
+          <NavigationMenuList>
+            {menuItems.map((item) => (
+              <NavigationMenuItem key={item.title}>
+                <Link to={item.path} className="w-full">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
+      </SheetContent>
+    </Sheet>
+  );
+}

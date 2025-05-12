@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import LoadingSpinner from "./LoadingSpinner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CheckoutButton } from "@/components/pagamentos/CheckoutButton";
 
 interface Trip {
   id: string;
@@ -68,7 +69,7 @@ const NextTripsSection = () => {
     }
   });
 
-  const initiateCheckout = async (trip: Trip) => {
+  const initiateReservation = async (trip: Trip) => {
     window.location.href = `/cadastro-publico?viagem=${trip.id}`;
   };
 
@@ -122,12 +123,23 @@ const NextTripsSection = () => {
                       <span>{trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis</span>
                     </div>
                   </div>
-                  <Button 
-                    className="w-full bg-red-600 hover:bg-red-700"
-                    onClick={() => initiateCheckout(trip)}
-                  >
-                    Reservar Agora <Check className="ml-2 h-4 w-4" />
-                  </Button>
+                  <div className="space-y-2">
+                    <Button 
+                      className="w-full bg-red-600 hover:bg-red-700 mb-2"
+                      onClick={() => initiateReservation(trip)}
+                    >
+                      Reservar Vaga <Check className="ml-2 h-4 w-4" />
+                    </Button>
+                    
+                    <CheckoutButton
+                      tripId={trip.id}
+                      price={trip.valor_padrao}
+                      description={`Viagem para Flamengo x ${trip.adversario} - ${trip.rota}`}
+                      className="w-full"
+                    >
+                      Pagar Diretamente
+                    </CheckoutButton>
+                  </div>
                 </CardContent>
               </Card>
             ))}
