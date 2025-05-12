@@ -12,6 +12,7 @@ import Login from "@/pages/Login";
 import Cadastro from "@/pages/Cadastro";
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import NotFound from '@/pages/NotFound';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Dashboard Layout
 import MainLayout from './components/layout/MainLayout';
@@ -42,36 +43,38 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/cadastro-publico" element={<CadastroPublico />} />
-          
-          {/* Rotas de pagamento */}
-          <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/cadastro-publico" element={<CadastroPublico />} />
+            
+            {/* Rotas de pagamento */}
+            <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
 
-          {/* Rotas protegidas */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<MainLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="clientes" element={<Clientes />} />
-              <Route path="clientes/:id/editar" element={<EditarCliente />} />
-              <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
-              <Route path="viagens" element={<Viagens />} />
-              <Route path="viagem/:id" element={<DetalhesViagem />} />
-              <Route path="viagem/:id/editar" element={<EditarViagem />} />
-              <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
-              <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
-              <Route path="onibus" element={<Onibus />} />
-              <Route path="passageiros" element={<Passageiros />} />
-              <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
-              <Route path="pagamentos" element={<Pagamentos />} />
+            {/* Rotas protegidas */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<MainLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="clientes" element={<Clientes />} />
+                <Route path="clientes/:id/editar" element={<EditarCliente />} />
+                <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
+                <Route path="viagens" element={<Viagens />} />
+                <Route path="viagem/:id" element={<DetalhesViagem />} />
+                <Route path="viagem/:id/editar" element={<EditarViagem />} />
+                <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
+                <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
+                <Route path="onibus" element={<Onibus />} />
+                <Route path="passageiros" element={<Passageiros />} />
+                <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
+                <Route path="pagamentos" element={<Pagamentos />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
