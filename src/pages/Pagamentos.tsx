@@ -16,7 +16,7 @@ const Pagamentos = () => {
             <CardDescription>Status das integrações de pagamento</CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert variant="success" className="mb-4 bg-green-50 border-green-500">
+            <Alert variant="default" className="mb-4 bg-green-50 border-green-500">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertTitle>Stripe configurado</AlertTitle>
               <AlertDescription>
