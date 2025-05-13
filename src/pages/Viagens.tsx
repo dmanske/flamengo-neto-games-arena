@@ -32,7 +32,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -85,7 +85,11 @@ const Viagens = () => {
       setViagens(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar viagens:', error);
-      toast.error('Erro ao carregar dados das viagens');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados das viagens",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -122,11 +126,18 @@ const Viagens = () => {
       
       // Update local state
       setViagens(viagens.filter(v => v.id !== viagemToDelete.id));
-      toast.success(`Viagem contra ${viagemToDelete.adversario} removida com sucesso`);
+      toast({
+        title: "Sucesso",
+        description: `Viagem contra ${viagemToDelete.adversario} removida com sucesso`,
+      });
       setViagemToDelete(null);
     } catch (err: any) {
       console.error('Erro ao excluir viagem:', err);
-      toast.error(`Erro ao excluir viagem: ${err.message}`);
+      toast({
+        title: "Erro",
+        description: `Erro ao excluir viagem: ${err.message}`,
+        variant: "destructive"
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -178,7 +189,7 @@ const Viagens = () => {
           </div>
           <Select
             value={filterStatus || ""}
-            onValueChange={(value) => setFilterStatus(value || null)}
+            onValueChange={(value) => setFilterStatus(value === "" ? null : value)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
