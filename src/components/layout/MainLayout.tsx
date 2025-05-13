@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -65,6 +65,7 @@ const MainLayout = () => {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const userProfile = user ? user.email : "Usuário";
   const userInitials = userProfile?.substring(0, 2).toUpperCase();
@@ -77,6 +78,13 @@ const MainLayout = () => {
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+  };
+  
+  // Function to navigate to landing page without going through protected routes
+  const goToLandingPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = '/'; // Use direct browser navigation instead of React Router
+    closeMenu();
   };
 
   const renderSidebarContent = () => (
@@ -124,12 +132,14 @@ const MainLayout = () => {
             to="/dashboard"
             onClick={closeMenu}
           />
-          <NavItem
-            icon={<Home className="h-5 w-5" />}
-            title="Página"
-            to="/"
-            onClick={closeMenu}
-          />
+          <a 
+            href="/"
+            onClick={goToLandingPage}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <Home className="h-5 w-5" />
+            <span>Página</span>
+          </a>
           <NavItem
             icon={<CalendarDays className="h-5 w-5" />}
             title="Viagens"
