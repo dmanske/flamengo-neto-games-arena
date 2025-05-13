@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import {
@@ -59,18 +58,14 @@ const NavItem = ({
   );
 };
 
-// Custom link component for landing page navigation
+// Custom link component for landing page navigation - now opens in a new tab
 const LandingPageLink = ({ onClick }: { onClick?: () => void }) => {
-  const goToLandingPage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.location.href = '/'; // Use direct browser navigation instead of React Router
-    if (onClick) onClick();
-  };
-  
   return (
     <a 
       href="/"
-      onClick={goToLandingPage}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onClick}
       className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
     >
       <Home className="h-5 w-5" />
