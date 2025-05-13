@@ -33,7 +33,7 @@ const NavItem = ({
     </Link>;
 };
 
-// Custom link component for landing page navigation - now opens in a new tab
+// Custom link component for landing page navigation - opens in a new tab with the correct URL
 const LandingPageLink = ({
   onClick
 }: {
@@ -44,6 +44,7 @@ const LandingPageLink = ({
       <span>Site</span>
     </a>;
 };
+
 const MainLayout = () => {
   // Set isOpen to false (meaning not collapsed, sidebar is open)
   const {
