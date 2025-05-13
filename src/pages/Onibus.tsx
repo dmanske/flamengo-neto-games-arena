@@ -136,13 +136,15 @@ const Onibus = () => {
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <Input
-                placeholder="Buscar por tipo ou empresa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-                prefix={<Search className="mr-2 h-4 w-4 text-gray-400" />}
-              />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por tipo ou empresa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10"
+                />
+              </div>
             </div>
             <div className="w-full md:w-[200px]">
               <Select
