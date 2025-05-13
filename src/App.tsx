@@ -27,6 +27,8 @@ import CadastrarViagem from "@/pages/CadastrarViagem";
 import EditarViagem from "@/pages/EditarViagem";
 import DetalhesViagem from '@/pages/DetalhesViagem';
 import Onibus from '@/pages/Onibus';
+import CadastrarOnibus from '@/pages/CadastrarOnibus';
+import EditarOnibus from '@/pages/EditarOnibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
@@ -77,6 +79,8 @@ function App() {
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="onibus" element={<Onibus />} />
+                  <Route path="onibus/:id/editar" element={<EditarOnibus />} />
+                  <Route path="cadastrar-onibus" element={<CadastrarOnibus />} />
                   <Route path="passageiros" element={<Passageiros />} />
                   <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
                   <Route path="pagamentos" element={<Pagamentos />} />

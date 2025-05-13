@@ -332,13 +332,13 @@ const Dashboard = () => {
                         <p className="text-sm text-muted-foreground">{formatDate(viagem.data_jogo)}</p>
                       </div>
                     </div>
-                    <Link to={`/viagem/${viagem.id}`} className="text-sm text-primary hover:underline">
+                    <Link to={`/dashboard/viagem/${viagem.id}`} className="text-sm text-primary hover:underline">
                       Detalhes
                     </Link>
                   </div>
                 ))}
                 <Button asChild variant="outline" className="w-full">
-                  <Link to="/viagens">Ver todas as viagens</Link>
+                  <Link to="/dashboard/viagens">Ver todas as viagens</Link>
                 </Button>
               </div>
             ) : (
