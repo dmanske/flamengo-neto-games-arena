@@ -59,6 +59,26 @@ const NavItem = ({
   );
 };
 
+// Custom link component for landing page navigation
+const LandingPageLink = ({ onClick }: { onClick?: () => void }) => {
+  const goToLandingPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = '/'; // Use direct browser navigation instead of React Router
+    if (onClick) onClick();
+  };
+  
+  return (
+    <a 
+      href="/"
+      onClick={goToLandingPage}
+      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
+      <Home className="h-5 w-5" />
+      <span>Página</span>
+    </a>
+  );
+};
+
 const MainLayout = () => {
   // Set isOpen to false (meaning not collapsed, sidebar is open)
   const { isOpen: collapsed, setIsOpen: setCollapsed } = useSidebar(); 
@@ -78,13 +98,6 @@ const MainLayout = () => {
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
-  };
-  
-  // Function to navigate to landing page without going through protected routes
-  const goToLandingPage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    window.location.href = '/'; // Use direct browser navigation instead of React Router
-    closeMenu();
   };
 
   const renderSidebarContent = () => (
@@ -132,14 +145,7 @@ const MainLayout = () => {
             to="/dashboard"
             onClick={closeMenu}
           />
-          <a 
-            href="/"
-            onClick={goToLandingPage}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <Home className="h-5 w-5" />
-            <span>Página</span>
-          </a>
+          <LandingPageLink onClick={closeMenu} />
           <NavItem
             icon={<CalendarDays className="h-5 w-5" />}
             title="Viagens"
