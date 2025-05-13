@@ -130,6 +130,9 @@ const EditarOnibus = () => {
     );
   }
 
+  // Get current form values using watch
+  const currentImageUrl = form.watch("image_url");
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center gap-2 mb-6">
@@ -216,11 +219,11 @@ const EditarOnibus = () => {
                 )}
               />
 
-              {form.formState.values?.image_url && (
+              {currentImageUrl && (
                 <div className="mt-2">
                   <p className="text-sm font-medium mb-1">Prévia da imagem:</p>
                   <img 
-                    src={form.formState.values.image_url} 
+                    src={currentImageUrl} 
                     alt="Prévia" 
                     className="max-w-full h-auto max-h-48 object-contain border rounded"
                     onError={(e) => {
