@@ -73,7 +73,7 @@ const CadastrarOnibus = () => {
 
       if (onibusError) throw onibusError;
       
-      // Now create the image record linked to the onibus
+      // Now create the image record linked to the onibus if an image URL was provided
       if (data.image_url) {
         const { error: imageError } = await supabase.from("onibus_images").insert({
           tipo_onibus: data.tipo_onibus,
@@ -82,7 +82,15 @@ const CadastrarOnibus = () => {
           onibus_id: onibusData.id
         });
         
-        if (imageError) throw imageError;
+        if (imageError) {
+          console.error("Erro ao salvar imagem:", imageError);
+          // Continue even if image fails, but notify user
+          toast({
+            title: "Alerta",
+            description: "Ônibus cadastrado, mas houve um erro ao salvar a imagem",
+            variant: "destructive",
+          });
+        }
       }
 
       toast({
@@ -142,6 +150,8 @@ const CadastrarOnibus = () => {
                         <SelectItem value="43 Leitos Totais">43 Leitos Totais</SelectItem>
                         <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
                         <SelectItem value="50 Convencional">50 Convencional</SelectItem>
+                        <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
+                        <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -165,6 +175,8 @@ const CadastrarOnibus = () => {
                         <SelectItem value="Bertoldo">Bertoldo</SelectItem>
                         <SelectItem value="Viação 1001">Viação 1001</SelectItem>
                         <SelectItem value="Kaissara">Kaissara</SelectItem>
+                        <SelectItem value="Majetur">Majetur</SelectItem>
+                        <SelectItem value="Sarcella">Sarcella</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

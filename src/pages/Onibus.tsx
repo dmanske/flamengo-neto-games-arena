@@ -30,7 +30,6 @@ import { Loader2, Search, PlusCircle, Trash2, Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { TipoOnibus, EmpresaOnibus } from "@/types/entities";
 
 interface OnibusImage {
   id: string;
@@ -38,34 +37,60 @@ interface OnibusImage {
   empresa: string;
   image_url: string | null;
   created_at: string | null;
+  onibus_id: string | null;
+}
+
+interface Onibus {
+  id: string;
+  tipo_onibus: string;
+  empresa: string;
+  numero_identificacao: string | null;
+  capacidade: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const Onibus = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [onibusImages, setOnibusImages] = useState<OnibusImage[]>([]);
+  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState<string | null>(null);
   const [filterTipo, setFilterTipo] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOnibusImages();
+    fetchOnibusData();
   }, []);
 
-  const fetchOnibusImages = async () => {
+  const fetchOnibusData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch both onibus records and images
+      const { data: onibusData, error: onibusError } = await supabase
+        .from("onibus")
+        .select("*");
+        
+      const { data: imagesData, error: imagesError } = await supabase
         .from("onibus_images")
         .select("*");
 
-      if (error) throw error;
-      setOnibusImages(data || []);
+      if (onibusError) throw onibusError;
+      if (imagesError) throw imagesError;
+      
+      setOnibusList(onibusData || []);
+      setOnibusImages(imagesData || []);
+
+      // Log the data for debugging
+      console.log("Ônibus data:", onibusData);
+      console.log("Imagens data:", imagesData);
+      
     } catch (error: any) {
-      console.error("Erro ao buscar imagens de ônibus:", error);
+      console.error("Erro ao buscar dados de ônibus:", error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados das imagens de ônibus",
+        description: "Erro ao carregar dados dos ônibus",
         variant: "destructive",
       });
     } finally {
@@ -73,38 +98,83 @@ const Onibus = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, isImage: boolean = false) => {
     try {
-      const { error } = await supabase
-        .from("onibus_images")
-        .delete()
-        .eq("id", id);
+      let success = false;
+      
+      if (isImage) {
+        // Delete just the image
+        const { error } = await supabase
+          .from("onibus_images")
+          .delete()
+          .eq("id", id);
 
-      if (error) throw error;
+        if (error) throw error;
+        setOnibusImages(onibusImages.filter(item => item.id !== id));
+        success = true;
+      } else {
+        // Delete the onibus record and its associated images
+        const onibusToDelete = onibusList.find(o => o.id === id);
+        
+        // First delete related images
+        const { error: imgError } = await supabase
+          .from("onibus_images")
+          .delete()
+          .eq("onibus_id", id);
+          
+        if (imgError) {
+          console.warn("Erro ao excluir imagens associadas:", imgError);
+        }
+        
+        // Then delete the onibus record
+        const { error } = await supabase
+          .from("onibus")
+          .delete()
+          .eq("id", id);
+
+        if (error) throw error;
+        
+        // Update local state
+        setOnibusList(onibusList.filter(item => item.id !== id));
+        setOnibusImages(onibusImages.filter(item => item.onibus_id !== id));
+        success = true;
+      }
       
-      // Update local state
-      setOnibusImages(onibusImages.filter(item => item.id !== id));
-      
-      toast({
-        title: "Sucesso",
-        description: "Imagem removida com sucesso",
-      });
+      if (success) {
+        toast({
+          title: "Sucesso",
+          description: isImage ? "Imagem removida com sucesso" : "Ônibus removido com sucesso",
+        });
+      }
     } catch (error: any) {
-      console.error("Erro ao excluir imagem:", error);
+      console.error("Erro ao excluir:", error);
       toast({
         title: "Erro",
-        description: `Erro ao excluir imagem: ${error.message}`,
+        description: `Erro ao excluir: ${error.message}`,
         variant: "destructive",
       });
     }
   };
 
+  // Preparar dados para exibição combinando ônibus e imagens
+  const onibusDisplayData = onibusList.map(onibus => {
+    // Encontrar imagem associada (se existir)
+    const image = onibusImages.find(img => img.onibus_id === onibus.id);
+    
+    return {
+      ...onibus,
+      image_url: image?.image_url || null,
+      image_id: image?.id || null
+    };
+  });
+  
   // Filtrar onibus
-  const filteredOnibus = onibusImages.filter((onibus) => {
+  const filteredOnibus = onibusDisplayData.filter((onibus) => {
     const matchesTerm =
       !searchTerm ||
       onibus.tipo_onibus.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      onibus.empresa.toLowerCase().includes(searchTerm.toLowerCase());
+      onibus.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (onibus.numero_identificacao && onibus.numero_identificacao.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesEmpresa = !filterEmpresa || onibus.empresa === filterEmpresa;
     const matchesTipo = !filterTipo || onibus.tipo_onibus === filterTipo;
@@ -113,8 +183,8 @@ const Onibus = () => {
   });
 
   // Extrair valores únicos para filtros
-  const empresas = [...new Set(onibusImages.map((o) => o.empresa))];
-  const tipos = [...new Set(onibusImages.map((o) => o.tipo_onibus))];
+  const empresas = [...new Set(onibusList.map((o) => o.empresa))];
+  const tipos = [...new Set(onibusList.map((o) => o.tipo_onibus))];
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -139,7 +209,7 @@ const Onibus = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar por tipo ou empresa..."
+                  placeholder="Buscar por tipo, empresa ou identificação..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10"
@@ -212,12 +282,22 @@ const Onibus = () => {
                         src={onibus.image_url}
                         alt={`${onibus.empresa} ${onibus.tipo_onibus}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://via.placeholder.com/400x225?text=Imagem+indisponível';
+                        }}
                       />
                     </AspectRatio>
                   )}
                   <CardHeader className="pb-2">
                     <CardTitle>{onibus.tipo_onibus}</CardTitle>
-                    <CardDescription>{onibus.empresa}</CardDescription>
+                    <CardDescription>
+                      {onibus.empresa}
+                      {onibus.numero_identificacao && (
+                        <span className="block mt-1">ID: {onibus.numero_identificacao}</span>
+                      )}
+                      <span className="block mt-1">Capacidade: {onibus.capacidade} lugares</span>
+                    </CardDescription>
                   </CardHeader>
                   <CardFooter className="flex justify-end gap-2">
                     <Button
