@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import {
@@ -6,12 +7,12 @@ import {
   CalendarDays,
   Bus,
   CreditCard,
-  Settings,
   ChevronLeft,
   ChevronRight,
   Menu,
   UserPlus,
   MessageSquare,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ interface NavItemProps {
   to: string;
   isActive?: boolean;
   onClick?: () => void;
-  exact?: boolean; // Changed from 'end' to 'exact'
+  exact?: boolean;
 }
 
 const NavItem = ({
@@ -39,7 +40,7 @@ const NavItem = ({
   to,
   isActive = false,
   onClick,
-  exact = false, // Changed from 'end' to 'exact'
+  exact = false,
 }: NavItemProps) => {
   return (
     <Link
@@ -120,43 +121,49 @@ const MainLayout = () => {
           <NavItem
             icon={<LayoutDashboard className="h-5 w-5" />}
             title="Dashboard"
+            to="/dashboard"
+            onClick={closeMenu}
+          />
+          <NavItem
+            icon={<Home className="h-5 w-5" />}
+            title="Página"
             to="/"
             onClick={closeMenu}
           />
           <NavItem
             icon={<CalendarDays className="h-5 w-5" />}
             title="Viagens"
-            to="/viagens"
+            to="/dashboard/viagens"
             onClick={closeMenu}
           />
           <NavItem
             icon={<Users className="h-5 w-5" />}
             title="Clientes"
-            to="/clientes"
+            to="/dashboard/clientes"
             onClick={closeMenu}
           />
           <NavItem
             icon={<UserPlus className="h-5 w-5" />}
             title="Cadastrar Cliente"
-            to="/cadastrar-cliente"
+            to="/dashboard/cadastrar-cliente"
             onClick={closeMenu}
           />
           <NavItem
             icon={<Bus className="h-5 w-5" />}
             title="Ônibus"
-            to="/onibus"
+            to="/dashboard/onibus"
             onClick={closeMenu}
           />
           <NavItem
             icon={<CreditCard className="h-5 w-5" />}
             title="Pagamentos"
-            to="/pagamentos"
+            to="/dashboard/pagamentos"
             onClick={closeMenu}
           />
           <NavItem
             icon={<MessageSquare className="h-5 w-5" />}
             title="WhatsApp"
-            to="/whatsapp"
+            to="/dashboard/whatsapp"
             onClick={closeMenu}
           />
         </div>
