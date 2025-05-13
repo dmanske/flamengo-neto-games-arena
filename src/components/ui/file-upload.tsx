@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, UploadCloud, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export interface FileUploadProps {
@@ -43,15 +44,17 @@ export const FileUpload = ({
     try {
       const url = await uploadFile(file, bucketName, folderPath);
       onChange(url);
-      toast.success("Arquivo enviado com sucesso!", { 
-        duration: 2000,
-        position: "top-right" 
+      toast({
+        title: "Sucesso",
+        description: "Arquivo enviado com sucesso!",
+        variant: "default",
       });
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
-      toast.error(`Erro ao enviar arquivo: ${error.message}`, {
-        duration: 3000,
-        position: "top-right"
+      toast({
+        title: "Erro",
+        description: `Erro ao enviar arquivo: ${error.message}`,
+        variant: "destructive",
       });
     } finally {
       setIsUploading(false);
@@ -77,10 +80,18 @@ export const FileUpload = ({
       .then(({ error }) => {
         if (error) {
           console.error("Erro ao remover arquivo:", error);
-          toast.error("Erro ao remover arquivo", { duration: 2000 });
+          toast({
+            title: "Erro",
+            description: "Erro ao remover arquivo",
+            variant: "destructive",
+          });
         } else {
           onChange(null);
-          toast.success("Arquivo removido com sucesso!", { duration: 2000 });
+          toast({
+            title: "Sucesso",
+            description: "Arquivo removido com sucesso!",
+            variant: "default",
+          });
         }
       });
   };
@@ -192,8 +203,10 @@ function validateFile(
 ): boolean {
   // Check file type
   if (!allowedFileTypes.includes(file.type)) {
-    toast.error(`Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`, {
-      duration: 3000
+    toast({
+      title: "Erro",
+      description: `Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`,
+      variant: "destructive",
     });
     return false;
   }
@@ -201,8 +214,10 @@ function validateFile(
   // Check file size
   const fileSizeInMB = file.size / (1024 * 1024);
   if (fileSizeInMB > maxSizeInMB) {
-    toast.error(`Arquivo muito grande. Máximo: ${maxSizeInMB}MB`, {
-      duration: 3000
+    toast({
+      title: "Erro",
+      description: `Arquivo muito grande. Máximo: ${maxSizeInMB}MB`,
+      variant: "destructive",
     });
     return false;
   }

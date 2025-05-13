@@ -18,24 +18,30 @@ import {
   FormField, 
   FormItem, 
   FormLabel, 
-  FormMessage 
+  FormMessage, 
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { TipoOnibus, EmpresaOnibus } from "@/types/entities";
+import { FileUpload } from "@/components/ui/file-upload";
 
 const onibusFormSchema = z.object({
   tipo_onibus: z.string().min(1, "Tipo de ônibus é obrigatório"),
   empresa: z.string().min(1, "Empresa é obrigatória"),
-  image_url: z.string().url("URL de imagem inválida").optional().or(z.literal("")),
   numero_identificacao: z.string().optional().or(z.literal("")),
   capacidade: z.number().int().min(1, "Capacidade deve ser pelo menos 1").or(
     z.string().regex(/^\d+$/).transform(Number)
-  )
+  ),
+  description: z.string().optional().or(z.literal("")),
+  year: z.number().int().min(1980).max(new Date().getFullYear() + 1).optional()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .or(z.literal("").transform(() => null))
 });
 
 type OnibusFormValues = z.infer<typeof onibusFormSchema>;
@@ -43,15 +49,17 @@ type OnibusFormValues = z.infer<typeof onibusFormSchema>;
 const CadastrarOnibus = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePath, setImagePath] = useState<string | null>(null);
 
   const form = useForm<OnibusFormValues>({
     resolver: zodResolver(onibusFormSchema),
     defaultValues: {
       tipo_onibus: "",
       empresa: "",
-      image_url: "",
       numero_identificacao: "",
-      capacidade: 40
+      capacidade: 40,
+      description: "",
+      year: new Date().getFullYear()
     },
   });
 
@@ -59,26 +67,29 @@ const CadastrarOnibus = () => {
     try {
       setIsLoading(true);
       
-      // First create the main onibus record
+      // Create the main onibus record
       const { data: onibusData, error: onibusError } = await supabase
         .from("onibus")
         .insert({
           tipo_onibus: data.tipo_onibus,
           empresa: data.empresa,
           numero_identificacao: data.numero_identificacao || null,
-          capacidade: data.capacidade
+          capacidade: data.capacidade,
+          description: data.description || null,
+          year: data.year || null,
+          image_path: imagePath
         })
         .select("id")
         .single();
 
       if (onibusError) throw onibusError;
       
-      // Now create the image record linked to the onibus if an image URL was provided
-      if (data.image_url) {
+      // Create the image record linked to the onibus if an image was uploaded
+      if (imagePath) {
         const { error: imageError } = await supabase.from("onibus_images").insert({
           tipo_onibus: data.tipo_onibus,
           empresa: data.empresa,
-          image_url: data.image_url,
+          image_url: imagePath,
           onibus_id: onibusData.id
         });
         
@@ -222,20 +233,59 @@ const CadastrarOnibus = () => {
 
               <FormField
                 control={form.control}
-                name="image_url"
+                name="year"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL da Imagem</FormLabel>
+                    <FormLabel>Ano do Ônibus</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="https://exemplo.com/imagem.jpg" 
+                        type="number" 
+                        placeholder="Ano do ônibus"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? "" : parseInt(value));
+                        }}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Ano de fabricação do veículo
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Informações adicionais sobre o ônibus" 
                         {...field} 
+                        className="min-h-[100px]"
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-2">
+                <FormLabel>Imagem do Ônibus</FormLabel>
+                <FileUpload 
+                  value={imagePath}
+                  onChange={setImagePath}
+                  bucketName="bus-images"
+                  folderPath="buses"
+                  allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                  maxSizeInMB={5}
+                />
+              </div>
 
               <div className="flex gap-4 justify-end">
                 <Button 

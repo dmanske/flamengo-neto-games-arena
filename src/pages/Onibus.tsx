@@ -11,14 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, PlusCircle, Trash2, Pencil } from "lucide-react";
+import { Loader2, Search, PlusCircle, Trash2, Pencil, CalendarIcon, InfoIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -48,6 +40,9 @@ interface Onibus {
   capacidade: number;
   created_at: string;
   updated_at: string;
+  image_path: string | null;
+  description: string | null;
+  year: number | null;
 }
 
 const Onibus = () => {
@@ -163,7 +158,7 @@ const Onibus = () => {
     
     return {
       ...onibus,
-      image_url: image?.image_url || null,
+      image_url: image?.image_url || onibus.image_path || null,
       image_id: image?.id || null
     };
   });
@@ -291,12 +286,24 @@ const Onibus = () => {
                   )}
                   <CardHeader className="pb-2">
                     <CardTitle>{onibus.tipo_onibus}</CardTitle>
-                    <CardDescription>
-                      {onibus.empresa}
+                    <CardDescription className="space-y-1">
+                      <p>{onibus.empresa}</p>
                       {onibus.numero_identificacao && (
-                        <span className="block mt-1">ID: {onibus.numero_identificacao}</span>
+                        <p>ID: {onibus.numero_identificacao}</p>
                       )}
-                      <span className="block mt-1">Capacidade: {onibus.capacidade} lugares</span>
+                      <p>Capacidade: {onibus.capacidade} lugares</p>
+                      {onibus.year && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <CalendarIcon className="h-3 w-3" />
+                          <span>Ano: {onibus.year}</span>
+                        </div>
+                      )}
+                      {onibus.description && (
+                        <div className="flex items-start gap-1 text-sm mt-1">
+                          <InfoIcon className="h-3 w-3 mt-1 flex-shrink-0" />
+                          <span className="line-clamp-2">{onibus.description}</span>
+                        </div>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="flex justify-end gap-2">
