@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store } from "lucide-react";
@@ -36,31 +35,21 @@ const NavItem = ({
     </Link>;
 };
 
-// LandingPageLink now uses window.location to force a full page navigation to the root URL
+// LandingPageLink agora usa o componente Link do React Router em vez de anchor tag
 const LandingPageLink = ({
   onClick
 }: {
   onClick?: () => void;
 }) => {
-  const navigate = useNavigate();
-  
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onClick) onClick();
-    
-    // Force a full page navigation to the landing page
-    window.location.href = '/';
-  };
-  
   return (
-    <a 
-      href="/" 
-      onClick={handleClick} 
+    <Link 
+      to="/site" 
+      onClick={onClick} 
       className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
     >
       <Home className="h-5 w-5" />
       <span>Site</span>
-    </a>
+    </Link>
   );
 };
 
