@@ -35,12 +35,13 @@ import Loja from '@/pages/Loja';
 // Landing Page
 import LandingPage from "@/pages/LandingPage";
 import CadastroPublico from "@/pages/CadastroPublico";
-
-const queryClient = new QueryClient()
+import Index from "@/pages/Index";
 
 // Import novas páginas
 import PagamentoSucesso from "@/pages/PagamentoSucesso";
 import Pagamentos from "@/pages/Pagamentos";
+
+const queryClient = new QueryClient()
 
 function App() {
   return (
@@ -50,7 +51,7 @@ function App() {
           <SidebarProvider>
             <Routes>
               {/* Landing Page route outside of protected routes */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<Index />} />
               
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />

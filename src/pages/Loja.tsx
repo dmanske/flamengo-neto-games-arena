@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Store, ShoppingCart, Tag, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,10 +41,10 @@ const products: Product[] = [{
   price: 249.90,
   image: "https://logodetimes.com/wp-content/uploads/flamengo.png"
 }];
+
 const Loja = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const handleAddToCart = (product: Product) => {
     toast({
       title: "Produto adicionado!",
@@ -58,6 +59,7 @@ const Loja = () => {
       currency: 'BRL'
     }).format(price);
   };
+
   return <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -101,4 +103,5 @@ const Loja = () => {
       </div>
     </div>;
 };
+
 export default Loja;
