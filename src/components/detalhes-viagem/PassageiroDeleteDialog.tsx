@@ -2,64 +2,54 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-
-import { Button } from "@/components/ui/button";
-import {
+import { useViagemDetails } from "@/hooks/useViagemDetails";
+import { 
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-
-interface PassageiroDisplay {
-  id: string;
-  nome: string;
-  viagem_passageiro_id: string;
-  viagem_id?: string; // Added as optional to maintain compatibility
-  [key: string]: any;
-}
+import { Loader2 } from "lucide-react";
 
 interface PassageiroDeleteDialogProps {
+  passageiroId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  passageiro: PassageiroDisplay | null;
-  onSuccess: () => void;
+  passageiroNome: string;
 }
 
-export function PassageiroDeleteDialog({
+export default function PassageiroDeleteDialog({
+  passageiroId,
   open,
   onOpenChange,
-  passageiro,
-  onSuccess,
+  passageiroNome,
 }: PassageiroDeleteDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { refreshData } = useViagemDetails();
 
-  const handleDeletePassageiro = async () => {
-    if (!passageiro) return;
-    
+  const handleDelete = async () => {
     try {
-      setIsLoading(true);
-      
+      setIsDeleting(true);
+
       const { error } = await supabase
         .from("viagem_passageiros")
         .delete()
-        .eq("id", passageiro.viagem_passageiro_id);
-      
+        .eq("id", passageiroId);
+
       if (error) throw error;
-      
-      toast.success("Passageiro removido com sucesso");
+
+      toast.success(`Passageiro ${passageiroNome} removido com sucesso.`);
+      refreshData();
       onOpenChange(false);
-      onSuccess();
-      
-    } catch (err) {
-      console.error("Erro ao remover passageiro:", err);
-      toast.error("Erro ao remover passageiro");
+    } catch (error: any) {
+      console.error("Erro ao excluir passageiro:", error);
+      toast.error(`Erro ao excluir passageiro: ${error.message}`);
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
   };
 
@@ -67,22 +57,26 @@ export function PassageiroDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remover passageiro</AlertDialogTitle>
+          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja remover este passageiro da viagem?
-            {passageiro && (
-              <p className="font-medium mt-2">{passageiro.nome}</p>
-            )}
+            Tem certeza que deseja excluir o passageiro {passageiroNome}? Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleDeletePassageiro}
-            className="bg-destructive text-destructive-foreground"
-            disabled={isLoading}
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-red-600 hover:bg-red-700"
+            disabled={isDeleting}
           >
-            {isLoading ? "Removendo..." : "Remover"}
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Excluindo...
+              </>
+            ) : (
+              "Excluir"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
