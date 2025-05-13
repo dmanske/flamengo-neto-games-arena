@@ -67,8 +67,10 @@ export function useBusStats() {
       const revenueByType: Record<string, number> = {};
       
       revenueData?.forEach(item => {
-        // Fix the type issue - properly access the tipo_onibus through viagens property
-        const tipoOnibus = item.viagens?.tipo_onibus;
+        // Fix the type issue by correctly accessing the tipo_onibus 
+        // viagens is an object with the tipo_onibus property
+        const viagensObj = item.viagens as any; // First cast to any
+        const tipoOnibus = viagensObj ? viagensObj.tipo_onibus : null;
         
         if (tipoOnibus) {
           const valor = item.valor || 0;
