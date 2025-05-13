@@ -67,12 +67,16 @@ export function useBusStats() {
       const revenueByType: Record<string, number> = {};
       
       revenueData?.forEach(item => {
-        const tipoOnibus = item.viagens.tipo_onibus;
-        const valor = item.valor || 0;
-        const desconto = item.desconto || 0;
-        const revenue = valor - desconto;
+        // Fix the type issue - properly access the tipo_onibus through viagens property
+        const tipoOnibus = item.viagens?.tipo_onibus;
         
-        revenueByType[tipoOnibus] = (revenueByType[tipoOnibus] || 0) + revenue;
+        if (tipoOnibus) {
+          const valor = item.valor || 0;
+          const desconto = item.desconto || 0;
+          const revenue = valor - desconto;
+          
+          revenueByType[tipoOnibus] = (revenueByType[tipoOnibus] || 0) + revenue;
+        }
       });
       
       setStats({
