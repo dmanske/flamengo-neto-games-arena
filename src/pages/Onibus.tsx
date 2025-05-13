@@ -1,218 +1,246 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileUpload } from "@/components/ui/file-upload";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, PlusCircle, Trash2, Pencil } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { TipoOnibus, EmpresaOnibus } from "@/types/entities";
 
-interface BusType {
-  type: string;
-  companies: string[];
-  imageUrl: string | null;
+interface OnibusImage {
+  id: string;
+  tipo_onibus: string;
+  empresa: string;
+  image_url: string | null;
+  created_at: string | null;
 }
 
 const Onibus = () => {
-  const [busList, setBusList] = useState<BusType[]>([
-    {
-      type: "43 Leitos Totais",
-      companies: ["Bertoldo"],
-      imageUrl: null
-    },
-    {
-      type: "52 Leitos Master",
-      companies: ["Majetur"],
-      imageUrl: null
-    },
-    {
-      type: "56 Leitos Master",
-      companies: ["Sarcella"],
-      imageUrl: null
-    }
-  ]);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Check if the onibus bucket exists and create if necessary
-  const initOrCheckOnibusBucket = async () => {
-    try {
-      const { error: bucketError } = await supabase.storage.getBucket('onibus');
-      if (bucketError && bucketError.message.includes('not found')) {
-        console.log('Creating onibus storage bucket...');
-        await supabase.storage.createBucket('onibus', {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-        });
-        console.log('Bucket created successfully');
-      }
-    } catch (error) {
-      console.error('Error checking/creating onibus bucket:', error);
-    }
-  };
-  
-  // Carregar imagens do banco de dados
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [onibusImages, setOnibusImages] = useState<OnibusImage[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEmpresa, setFilterEmpresa] = useState<string | null>(null);
+  const [filterTipo, setFilterTipo] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        setIsLoading(true);
-        
-        // First ensure the onibus bucket exists
-        await initOrCheckOnibusBucket();
-        
-        const { data, error } = await supabase
-          .from("onibus_images")
-          .select("*");
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const updatedBusList = [...busList];
-          
-          data.forEach((item) => {
-            const index = updatedBusList.findIndex(bus => bus.type === item.tipo_onibus);
-            if (index !== -1) {
-              updatedBusList[index].imageUrl = item.image_url;
-            }
-          });
-          
-          setBusList(updatedBusList);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar imagens:", error);
-        toast.error("Não foi possível carregar as imagens dos ônibus");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchImages();
+    fetchOnibusImages();
   }, []);
-  
-  const handleImageChange = async (imageUrl: string | null, index: number) => {
+
+  const fetchOnibusImages = async () => {
     try {
-      setIsLoading(true);
-      
-      const busType = busList[index].type;
-      const company = busList[index].companies[0];
-      
-      // Ensure bucket exists before attempting operations
-      await initOrCheckOnibusBucket();
-      
-      if (imageUrl) {
-        // Check if record exists
-        const { data: existingData } = await supabase
-          .from("onibus_images")
-          .select("id")
-          .eq("tipo_onibus", busType)
-          .single();
-        
-        if (existingData) {
-          // Update existing record
-          const { error: updateError } = await supabase
-            .from("onibus_images")
-            .update({
-              image_url: imageUrl,
-              empresa: company
-            })
-            .eq("tipo_onibus", busType);
-          
-          if (updateError) throw updateError;
-        } else {
-          // Create new record
-          const { error: insertError } = await supabase
-            .from("onibus_images")
-            .insert({
-              tipo_onibus: busType,
-              empresa: company,
-              image_url: imageUrl
-            });
-          
-          if (insertError) throw insertError;
-        }
-      } else {
-        // Delete record if imageUrl is null
-        const { error: deleteError } = await supabase
-          .from("onibus_images")
-          .delete()
-          .eq("tipo_onibus", busType);
-        
-        if (deleteError) throw deleteError;
-      }
-      
-      // Update local state
-      const updatedBusList = [...busList];
-      updatedBusList[index].imageUrl = imageUrl;
-      setBusList(updatedBusList);
-      
-      toast.success(imageUrl ? "Imagem salva com sucesso!" : "Imagem removida com sucesso!");
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("onibus_images")
+        .select("*");
+
+      if (error) throw error;
+      setOnibusImages(data || []);
     } catch (error: any) {
-      console.error("Erro ao atualizar imagem:", error);
-      toast.error(`Erro ao atualizar imagem: ${error.message}`);
+      console.error("Erro ao buscar imagens de ônibus:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados das imagens de ônibus",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="container py-6">
-      <h1 className="text-3xl font-bold text-secondary mb-6">Ônibus</h1>
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("onibus_images")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {busList.map((bus, index) => (
-          <Card key={index} className="overflow-hidden">
-            <div className="w-full">
-              <AspectRatio ratio={16/9} className="bg-gray-100">
-                {bus.imageUrl ? (
-                  <img 
-                    src={bus.imageUrl} 
-                    alt={`Imagem do ônibus ${bus.type}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full w-full">
-                    {isLoading ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                    ) : (
-                      <div className="text-gray-400 text-center p-4">
-                        Clique abaixo para carregar uma imagem
-                      </div>
-                    )}
-                  </div>
-                )}
-              </AspectRatio>
-            </div>
-            <CardHeader>
-              <CardTitle>{bus.type}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <h3 className="text-sm font-semibold mb-2">Empresas:</h3>
-              <div className="space-y-1 mb-6">
-                {bus.companies.map((company, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-red-500 mr-2"></div>
-                    <span>{company}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold mb-2">Imagem do ônibus:</h3>
-                
-                <FileUpload
-                  value={bus.imageUrl}
-                  onChange={(url) => handleImageChange(url, index)}
-                  bucketName="onibus"
-                  folderPath=""
-                  allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
-                  maxSizeInMB={5}
-                  showPreview={false}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      // Update local state
+      setOnibusImages(onibusImages.filter(item => item.id !== id));
+      
+      toast({
+        title: "Sucesso",
+        description: "Imagem removida com sucesso",
+      });
+    } catch (error: any) {
+      console.error("Erro ao excluir imagem:", error);
+      toast({
+        title: "Erro",
+        description: `Erro ao excluir imagem: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filtrar onibus
+  const filteredOnibus = onibusImages.filter((onibus) => {
+    const matchesTerm =
+      !searchTerm ||
+      onibus.tipo_onibus.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      onibus.empresa.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesEmpresa = !filterEmpresa || onibus.empresa === filterEmpresa;
+    const matchesTipo = !filterTipo || onibus.tipo_onibus === filterTipo;
+
+    return matchesTerm && matchesEmpresa && matchesTipo;
+  });
+
+  // Extrair valores únicos para filtros
+  const empresas = [...new Set(onibusImages.map((o) => o.empresa))];
+  const tipos = [...new Set(onibusImages.map((o) => o.tipo_onibus))];
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Catálogo de Ônibus</h1>
+        <Button onClick={() => navigate("/dashboard/cadastrar-onibus")}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Cadastrar Ônibus
+        </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>
+            Utilize os filtros abaixo para encontrar ônibus específicos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar por tipo ou empresa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+                prefix={<Search className="mr-2 h-4 w-4 text-gray-400" />}
+              />
+            </div>
+            <div className="w-full md:w-[200px]">
+              <Select
+                value={filterEmpresa || ""}
+                onValueChange={(value) => setFilterEmpresa(value === "" ? null : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas empresas</SelectItem>
+                  {empresas.map((empresa) => (
+                    <SelectItem key={empresa} value={empresa}>
+                      {empresa}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:w-[200px]">
+              <Select
+                value={filterTipo || ""}
+                onValueChange={(value) => setFilterTipo(value === "" ? null : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos tipos</SelectItem>
+                  {tipos.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Catálogo de Ônibus</CardTitle>
+          <CardDescription>
+            Lista de todos os modelos de ônibus cadastrados
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredOnibus.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhum ônibus encontrado com os filtros selecionados.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOnibus.map((onibus) => (
+                <Card key={onibus.id} className="overflow-hidden">
+                  {onibus.image_url && (
+                    <AspectRatio ratio={16 / 9}>
+                      <img
+                        src={onibus.image_url}
+                        alt={`${onibus.empresa} ${onibus.tipo_onibus}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </AspectRatio>
+                  )}
+                  <CardHeader className="pb-2">
+                    <CardTitle>{onibus.tipo_onibus}</CardTitle>
+                    <CardDescription>{onibus.empresa}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(onibus.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remover
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/dashboard/onibus/${onibus.id}/editar`)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

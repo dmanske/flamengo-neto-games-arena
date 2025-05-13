@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -123,7 +123,11 @@ export function useViagemDetails(viagemId: string | undefined) {
       
     } catch (err) {
       console.error("Erro ao buscar detalhes da viagem:", err);
-      toast.error("Erro ao carregar detalhes da viagem");
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar detalhes da viagem",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +149,11 @@ export function useViagemDetails(viagemId: string | undefined) {
       }
     } catch (err) {
       console.error("Erro ao buscar ônibus:", err);
-      toast.error("Erro ao carregar dados dos ônibus");
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados dos ônibus",
+        variant: "destructive"
+      });
     }
   };
 
@@ -218,7 +226,11 @@ export function useViagemDetails(viagemId: string | undefined) {
       
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
-      toast.error("Erro ao carregar passageiros");
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar passageiros",
+        variant: "destructive"
+      });
     }
   };
 
@@ -269,11 +281,18 @@ export function useViagemDetails(viagemId: string | undefined) {
         throw error;
       }
       
-      toast.success("Viagem excluída com sucesso!");
+      toast({
+        title: "Sucesso",
+        description: "Viagem excluída com sucesso!"
+      });
       navigate("/viagens");
     } catch (err) {
       console.error("Erro ao excluir viagem:", err);
-      toast.error("Erro ao excluir viagem");
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir viagem",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
