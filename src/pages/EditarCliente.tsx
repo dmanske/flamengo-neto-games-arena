@@ -156,7 +156,8 @@ const EditarCliente = () => {
       }
 
       toast.success("Cliente atualizado com sucesso");
-      navigate("/clientes");
+      // Correção: Navegação para a rota correta
+      navigate("/dashboard/clientes");
     } catch (error: any) {
       console.error("Erro ao atualizar cliente:", error);
       toast.error(`Erro ao atualizar cliente: ${error.message}`);
@@ -178,7 +179,7 @@ const EditarCliente = () => {
       <div className="flex items-center gap-2 mb-6">
         <Button 
           variant="ghost"
-          onClick={() => navigate("/clientes")}
+          onClick={() => navigate("/dashboard/clientes")} // Correção: Navegação para a rota correta
           className="p-0 h-auto"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -457,7 +458,7 @@ const EditarCliente = () => {
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => navigate("/clientes")}
+                    onClick={() => navigate("/dashboard/clientes")} // Correção: Navegação para a rota correta
                   >
                     Cancelar
                   </Button>
@@ -486,4 +487,3 @@ const EditarCliente = () => {
 };
 
 export default EditarCliente;
-
