@@ -32,7 +32,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -188,14 +188,14 @@ const Viagens = () => {
             />
           </div>
           <Select
-            value={filterStatus || ""}
-            onValueChange={(value) => setFilterStatus(value === "" ? null : value)}
+            value={filterStatus || "todos"}
+            onValueChange={(value) => setFilterStatus(value === "todos" ? null : value)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
               <SelectItem value="Aberta">Aberta</SelectItem>
               <SelectItem value="Fechada">Fechada</SelectItem>
               <SelectItem value="Concluída">Concluída</SelectItem>
