@@ -4,6 +4,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -29,7 +30,7 @@ import Onibus from '@/pages/Onibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
-import Loja from '@/pages/Loja'; // Import the new Loja page
+import Loja from '@/pages/Loja';
 
 // Landing Page
 import LandingPage from "@/pages/LandingPage";
@@ -48,7 +49,10 @@ function App() {
         <AuthProvider>
           <SidebarProvider>
             <Routes>
+              {/* Landing Page route outside of protected routes */}
               <Route path="/" element={<LandingPage />} />
+              
+              {/* Auth routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
               <Route path="/cadastro-publico" element={<CadastroPublico />} />
@@ -72,7 +76,7 @@ function App() {
                   <Route path="passageiros" element={<Passageiros />} />
                   <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
                   <Route path="pagamentos" element={<Pagamentos />} />
-                  <Route path="loja" element={<Loja />} /> {/* Add the new Loja route */}
+                  <Route path="loja" element={<Loja />} />
                 </Route>
               </Route>
 

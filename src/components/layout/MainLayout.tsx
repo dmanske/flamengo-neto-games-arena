@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // Default logo URL
 const DEFAULT_LOGO_URL = "https://logodetimes.com/wp-content/uploads/flamengo.png";
+
 interface NavItemProps {
   icon: React.ReactNode;
   title: string;
@@ -19,6 +20,7 @@ interface NavItemProps {
   onClick?: () => void;
   exact?: boolean;
 }
+
 const NavItem = ({
   icon,
   title,
@@ -33,16 +35,32 @@ const NavItem = ({
     </Link>;
 };
 
-// Updated LandingPageLink to use internal navigation instead of opening in a new tab
+// LandingPageLink now uses window.location to force a full page navigation to the root URL
 const LandingPageLink = ({
   onClick
 }: {
   onClick?: () => void;
 }) => {
-  return <Link to="/" onClick={onClick} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+  const navigate = useNavigate();
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onClick) onClick();
+    
+    // Force a full page navigation to the landing page
+    window.location.href = '/';
+  };
+  
+  return (
+    <a 
+      href="/" 
+      onClick={handleClick} 
+      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
       <Home className="h-5 w-5" />
       <span>Site</span>
-    </Link>;
+    </a>
+  );
 };
 
 const MainLayout = () => {
