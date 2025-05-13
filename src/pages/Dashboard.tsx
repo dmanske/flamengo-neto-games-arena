@@ -179,10 +179,10 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold text-secondary">Dashboard</h1>
         <div className="flex gap-3">
           <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link to="/cadastrar-viagem">Nova Viagem</Link>
+            <Link to="/dashboard/cadastrar-viagem">Nova Viagem</Link>
           </Button>
           <Button asChild className="bg-green-600 hover:bg-green-700">
-            <Link to="/cadastrar-cliente">Cadastrar Cliente</Link>
+            <Link to="/dashboard/cadastrar-cliente">Cadastrar Cliente</Link>
           </Button>
         </div>
       </div>
@@ -347,7 +347,7 @@ const Dashboard = () => {
                 <p>Nenhuma viagem programada</p>
                 <p className="text-sm">Clique em "Nova Viagem" para cadastrar</p>
                 <Button asChild variant="outline" className="w-full mt-4">
-                  <Link to="/cadastrar-viagem">Cadastrar Viagem</Link>
+                  <Link to="/dashboard/cadastrar-viagem">Cadastrar Viagem</Link>
                 </Button>
               </div>
             )}

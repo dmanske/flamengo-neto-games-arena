@@ -139,7 +139,7 @@ const CadastrarViagem = () => {
       if (onibusError) throw onibusError;
 
       toast.success("Viagem cadastrada com sucesso!");
-      navigate("/viagens"); // Redireciona para a página de listagem de viagens
+      navigate("/dashboard/viagens"); // Update this path to match our route structure
     } catch (error) {
       console.error("Erro ao cadastrar viagem:", error);
       toast.error("Erro ao cadastrar viagem. Tente novamente.");
@@ -409,7 +409,7 @@ const CadastrarViagem = () => {
               <div className="flex justify-end gap-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate("/viagens")} 
+                  onClick={() => navigate("/dashboard/viagens")} 
                   type="button"
                 >
                   Cancelar

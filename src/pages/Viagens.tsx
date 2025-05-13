@@ -174,7 +174,7 @@ const Viagens = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Viagens</h1>
         <Button asChild className="bg-primary hover:bg-primary/90">
-          <Link to="/cadastrar-viagem">
+          <Link to="/dashboard/cadastrar-viagem">
             <Plus className="mr-2 h-4 w-4" /> Nova Viagem
           </Link>
         </Button>
