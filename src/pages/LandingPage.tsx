@@ -1,20 +1,26 @@
 
 import React from "react";
 import { Toaster } from "sonner";
-import HeaderSection from "@/components/landing/HeaderSection";
 import HeroSection from "@/components/landing/HeroSection";
 import NextTripsSection from "@/components/landing/NextTripsSection";
-import ProductsSection from "@/components/landing/ProductsSection";
+import BusGallerySection from "@/components/landing/BusGallerySection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import WhatsappBotSection from "@/components/landing/WhatsappBotSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import ContactSection from "@/components/landing/ContactSection";
 import FooterSection from "@/components/landing/FooterSection";
 
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="top-center" />
-      <HeaderSection />
       <HeroSection />
       <NextTripsSection />
-      <ProductsSection />
+      <BusGallerySection />
+      <HowItWorksSection />
+      <WhatsappBotSection />
+      <TestimonialsSection />
+      <ContactSection />
       <FooterSection />
     </div>
   );
