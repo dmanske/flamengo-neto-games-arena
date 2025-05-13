@@ -31,7 +31,6 @@ export default function PassageiroDeleteDialog({
   onSuccess,
 }: PassageiroDeleteDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { fetchPassageiros } = useViagemDetails();
 
   const handleDelete = async () => {
     try {
