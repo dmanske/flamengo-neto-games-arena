@@ -61,7 +61,7 @@ const Loja = () => {
   return <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Loja Oficial da NetoTours Viagens</h1>
+          <h1 className="text-3xl font-bold">Loja Oficial do NetoTours Viagens</h1>
           <p className="text-muted-foreground">Os melhores produtos do Mengão para você!</p>
         </div>
         <Button variant="outline" size="sm">
