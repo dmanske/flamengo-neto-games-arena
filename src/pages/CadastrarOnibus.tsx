@@ -32,6 +32,10 @@ const onibusFormSchema = z.object({
   tipo_onibus: z.string().min(1, "Tipo de ônibus é obrigatório"),
   empresa: z.string().min(1, "Empresa é obrigatória"),
   image_url: z.string().url("URL de imagem inválida").optional().or(z.literal("")),
+  numero_identificacao: z.string().optional().or(z.literal("")),
+  capacidade: z.number().int().min(1, "Capacidade deve ser pelo menos 1").or(
+    z.string().regex(/^\d+$/).transform(Number)
+  )
 });
 
 type OnibusFormValues = z.infer<typeof onibusFormSchema>;
@@ -46,6 +50,8 @@ const CadastrarOnibus = () => {
       tipo_onibus: "",
       empresa: "",
       image_url: "",
+      numero_identificacao: "",
+      capacidade: 40
     },
   });
 
@@ -53,13 +59,31 @@ const CadastrarOnibus = () => {
     try {
       setIsLoading(true);
       
-      const { error } = await supabase.from("onibus_images").insert({
-        tipo_onibus: data.tipo_onibus,
-        empresa: data.empresa,
-        image_url: data.image_url || null,
-      });
+      // First create the main onibus record
+      const { data: onibusData, error: onibusError } = await supabase
+        .from("onibus")
+        .insert({
+          tipo_onibus: data.tipo_onibus,
+          empresa: data.empresa,
+          numero_identificacao: data.numero_identificacao || null,
+          capacidade: data.capacidade
+        })
+        .select("id")
+        .single();
 
-      if (error) throw error;
+      if (onibusError) throw onibusError;
+      
+      // Now create the image record linked to the onibus
+      if (data.image_url) {
+        const { error: imageError } = await supabase.from("onibus_images").insert({
+          tipo_onibus: data.tipo_onibus,
+          empresa: data.empresa,
+          image_url: data.image_url,
+          onibus_id: onibusData.id
+        });
+        
+        if (imageError) throw imageError;
+      }
 
       toast({
         title: "Sucesso",
@@ -143,6 +167,42 @@ const CadastrarOnibus = () => {
                         <SelectItem value="Kaissara">Kaissara</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="numero_identificacao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Identificação</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Número de identificação do ônibus" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="capacidade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacidade</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Capacidade do ônibus"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} 
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

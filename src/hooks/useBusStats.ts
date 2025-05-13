@@ -1,0 +1,97 @@
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
+
+export interface BusStats {
+  mostUsedBus: {
+    tipo: string;
+    count: number;
+  } | null;
+  totalBuses: number;
+  revenueByBusType: Record<string, number>;
+  isLoading: boolean;
+}
+
+export function useBusStats() {
+  const [stats, setStats] = useState<BusStats>({
+    mostUsedBus: null,
+    totalBuses: 0,
+    revenueByBusType: {},
+    isLoading: true
+  });
+
+  useEffect(() => {
+    fetchBusStats();
+  }, []);
+
+  const fetchBusStats = async () => {
+    try {
+      // 1. Get count of all buses by type from the new onibus table
+      const { data: busesData, error: busesError } = await supabase
+        .from("onibus")
+        .select("tipo_onibus, id");
+      
+      if (busesError) throw busesError;
+
+      // Count by type
+      const busTypes: Record<string, number> = {};
+      busesData?.forEach(bus => {
+        busTypes[bus.tipo_onibus] = (busTypes[bus.tipo_onibus] || 0) + 1;
+      });
+      
+      // Find most used bus type
+      let maxCount = 0;
+      let mostUsedType = null;
+      
+      Object.entries(busTypes).forEach(([tipo, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          mostUsedType = tipo;
+        }
+      });
+
+      // 2. Get revenue data by bus type
+      const { data: revenueData, error: revenueError } = await supabase
+        .from("viagem_passageiros")
+        .select(`
+          valor, 
+          desconto,
+          viagens!inner(tipo_onibus)
+        `)
+        .eq("status_pagamento", "Pago");
+      
+      if (revenueError) throw revenueError;
+      
+      // Calculate revenue by bus type
+      const revenueByType: Record<string, number> = {};
+      
+      revenueData?.forEach(item => {
+        const tipoOnibus = item.viagens.tipo_onibus;
+        const valor = item.valor || 0;
+        const desconto = item.desconto || 0;
+        const revenue = valor - desconto;
+        
+        revenueByType[tipoOnibus] = (revenueByType[tipoOnibus] || 0) + revenue;
+      });
+      
+      setStats({
+        mostUsedBus: mostUsedType ? { tipo: mostUsedType, count: maxCount } : null,
+        totalBuses: busesData?.length || 0,
+        revenueByBusType: revenueByType,
+        isLoading: false
+      });
+      
+    } catch (err) {
+      console.error("Erro ao buscar estatísticas de ônibus:", err);
+      toast({
+        title: "Erro", 
+        description: "Não foi possível carregar estatísticas dos ônibus",
+        variant: "destructive"
+      });
+      setStats(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  return stats;
+}

@@ -75,12 +75,43 @@ export type Database = {
         }
         Relationships: []
       }
+      onibus: {
+        Row: {
+          capacidade: number
+          created_at: string
+          empresa: string
+          id: string
+          numero_identificacao: string | null
+          tipo_onibus: string
+          updated_at: string
+        }
+        Insert: {
+          capacidade: number
+          created_at?: string
+          empresa: string
+          id?: string
+          numero_identificacao?: string | null
+          tipo_onibus: string
+          updated_at?: string
+        }
+        Update: {
+          capacidade?: number
+          created_at?: string
+          empresa?: string
+          id?: string
+          numero_identificacao?: string | null
+          tipo_onibus?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onibus_images: {
         Row: {
           created_at: string | null
           empresa: string
           id: string
           image_url: string | null
+          onibus_id: string | null
           tipo_onibus: string
         }
         Insert: {
@@ -88,6 +119,7 @@ export type Database = {
           empresa: string
           id?: string
           image_url?: string | null
+          onibus_id?: string | null
           tipo_onibus: string
         }
         Update: {
@@ -95,9 +127,18 @@ export type Database = {
           empresa?: string
           id?: string
           image_url?: string | null
+          onibus_id?: string | null
           tipo_onibus?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "onibus_images_onibus_id_fkey"
+            columns: ["onibus_id"]
+            isOneToOne: false
+            referencedRelation: "onibus"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {

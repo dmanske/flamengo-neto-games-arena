@@ -72,6 +72,35 @@ export interface Database {
           foto?: string | null
         }
       }
+      onibus: {
+        Row: {
+          id: string
+          tipo_onibus: string
+          empresa: string
+          numero_identificacao: string | null
+          capacidade: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tipo_onibus: string
+          empresa: string
+          numero_identificacao?: string | null
+          capacidade: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tipo_onibus?: string
+          empresa?: string
+          numero_identificacao?: string | null
+          capacidade?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
