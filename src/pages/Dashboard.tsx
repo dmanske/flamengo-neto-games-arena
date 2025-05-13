@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
+import { useBusStats } from "@/hooks/useBusStats";
 
 interface Viagem {
   id: string;
@@ -33,9 +34,10 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [flamengoLogo, setFlamengoLogo] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
   const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
-  const [busCount, setBusCount] = useState<number>(3); // We have 3 types of buses
-  const [mostUsedBus, setMostUsedBus] = useState<OnibusCount | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
+  
+  // Use the BusStats hook to get bus data
+  const busStats = useBusStats();
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -91,35 +93,6 @@ const Dashboard = () => {
         } else {
           console.error('Erro ao buscar logo do Flamengo:', logoError);
         }
-
-        // Fetch most used bus type
-        const { data: busData, error: busError } = await supabase
-          .from('viagens')
-          .select('tipo_onibus')
-          
-        if (!busError && busData) {
-          const busCounts: Record<string, number> = {};
-          busData.forEach(trip => {
-            if (trip.tipo_onibus) {
-              busCounts[trip.tipo_onibus] = (busCounts[trip.tipo_onibus] || 0) + 1;
-            }
-          });
-          
-          let maxCount = 0;
-          let maxType = '';
-          Object.entries(busCounts).forEach(([tipo, count]) => {
-            if (count > maxCount) {
-              maxCount = count;
-              maxType = tipo;
-            }
-          });
-          
-          if (maxType) {
-            setMostUsedBus({ tipo: maxType, count: maxCount });
-          }
-        } else {
-          console.error('Erro ao buscar dados de ônibus:', busError);
-        }
         
         // Fetch current month's revenue
         const now = new Date();
@@ -172,6 +145,9 @@ const Dashboard = () => {
 
   // Get current month name
   const currentMonthName = format(new Date(), "MMMM", { locale: ptBR });
+
+  // Get the actual count of buses from the database
+  const busCount = busStats.totalBuses;
 
   return (
     <div className="container py-6">
@@ -234,13 +210,15 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{busCount}</p>
+            <p className="text-2xl font-bold">{busStats.isLoading ? '...' : busCount}</p>
             <CardDescription>
-              {busCount === 0
-                ? 'Nenhum ônibus cadastrado'
-                : busCount === 1
-                  ? '1 tipo de ônibus'
-                  : `${busCount} tipos de ônibus`}
+              {busStats.isLoading
+                ? 'Carregando...'
+                : busCount === 0
+                  ? 'Nenhum ônibus cadastrado'
+                  : busCount === 1
+                    ? '1 ônibus cadastrado'
+                    : `${busCount} ônibus cadastrados`}
             </CardDescription>
           </CardContent>
         </Card>
@@ -255,10 +233,12 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {mostUsedBus ? (
+            {busStats.isLoading ? (
+              <p className="text-muted-foreground">Carregando...</p>
+            ) : busStats.mostUsedBus ? (
               <>
-                <p className="text-xl font-bold">{mostUsedBus.tipo}</p>
-                <CardDescription>Usado em {mostUsedBus.count} {mostUsedBus.count === 1 ? 'viagem' : 'viagens'}</CardDescription>
+                <p className="text-xl font-bold">{busStats.mostUsedBus.tipo}</p>
+                <CardDescription>Usado em {busStats.mostUsedBus.count} {busStats.mostUsedBus.count === 1 ? 'viagem' : 'viagens'}</CardDescription>
               </>
             ) : (
               <>
