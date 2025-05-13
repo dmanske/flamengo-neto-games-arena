@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { User, Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Configura o listener para mudanças de estado de autenticação
@@ -29,10 +30,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Se o usuário fez logout, redireciona para a página de login
+        // Redireciona apenas quando há um evento de login/logout explícito
+        // e não quando a página apenas ganha ou perde foco
         if (event === 'SIGNED_OUT') {
-          navigate("/login");
-        } else if (event === 'SIGNED_IN') {
+          // Só redireciona se estiver numa rota protegida
+          if (location.pathname.startsWith('/dashboard')) {
+            navigate("/login");
+          }
+        } else if (event === 'SIGNED_IN' && location.pathname === '/login') {
           navigate("/dashboard");
         }
       }
@@ -44,8 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       setIsLoading(false);
       
-      // Se existir uma sessão ativa e o usuário estiver na página de login ou raiz, redireciona para o dashboard
-      if (session && ['/login', '/'].includes(window.location.pathname)) {
+      // Se existir uma sessão ativa e o usuário estiver na página de login,
+      // redireciona para o dashboard
+      if (session && location.pathname === '/login') {
         navigate("/dashboard");
       }
     });
@@ -53,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
     try {
