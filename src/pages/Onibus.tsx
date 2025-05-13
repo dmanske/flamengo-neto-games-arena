@@ -148,14 +148,14 @@ const Onibus = () => {
             </div>
             <div className="w-full md:w-[200px]">
               <Select
-                value={filterEmpresa || ""}
-                onValueChange={(value) => setFilterEmpresa(value === "" ? null : value)}
+                value={filterEmpresa || "todos"}
+                onValueChange={(value) => setFilterEmpresa(value === "todos" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas empresas</SelectItem>
+                  <SelectItem value="todos">Todas empresas</SelectItem>
                   {empresas.map((empresa) => (
                     <SelectItem key={empresa} value={empresa}>
                       {empresa}
@@ -166,14 +166,14 @@ const Onibus = () => {
             </div>
             <div className="w-full md:w-[200px]">
               <Select
-                value={filterTipo || ""}
-                onValueChange={(value) => setFilterTipo(value === "" ? null : value)}
+                value={filterTipo || "todos"}
+                onValueChange={(value) => setFilterTipo(value === "todos" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos tipos</SelectItem>
+                  <SelectItem value="todos">Todos tipos</SelectItem>
                   {tipos.map((tipo) => (
                     <SelectItem key={tipo} value={tipo}>
                       {tipo}
