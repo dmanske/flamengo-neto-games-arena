@@ -33,16 +33,16 @@ const NavItem = ({
     </Link>;
 };
 
-// Custom link component for landing page navigation - opens in a new tab with the correct URL
+// Updated LandingPageLink to use internal navigation instead of opening in a new tab
 const LandingPageLink = ({
   onClick
 }: {
   onClick?: () => void;
 }) => {
-  return <a href="/" target="_blank" rel="noopener noreferrer" onClick={onClick} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+  return <Link to="/" onClick={onClick} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground">
       <Home className="h-5 w-5" />
       <span>Site</span>
-    </a>;
+    </Link>;
 };
 
 const MainLayout = () => {
