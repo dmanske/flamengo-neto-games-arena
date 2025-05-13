@@ -29,6 +29,7 @@ import Onibus from '@/pages/Onibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
+import Loja from '@/pages/Loja'; // Import the new Loja page
 
 // Landing Page
 import LandingPage from "@/pages/LandingPage";
@@ -71,6 +72,7 @@ function App() {
                   <Route path="passageiros" element={<Passageiros />} />
                   <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
                   <Route path="pagamentos" element={<Pagamentos />} />
+                  <Route path="loja" element={<Loja />} /> {/* Add the new Loja route */}
                 </Route>
               </Route>
 

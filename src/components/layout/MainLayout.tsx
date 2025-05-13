@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -97,6 +97,7 @@ const MainLayout = () => {
           <NavItem icon={<Users className="h-5 w-5" />} title="Clientes" to="/dashboard/clientes" onClick={closeMenu} />
           <NavItem icon={<UserPlus className="h-5 w-5" />} title="Cadastrar Cliente" to="/dashboard/cadastrar-cliente" onClick={closeMenu} />
           <NavItem icon={<Bus className="h-5 w-5" />} title="Ônibus" to="/dashboard/onibus" onClick={closeMenu} />
+          <NavItem icon={<Store className="h-5 w-5" />} title="Loja" to="/dashboard/loja" onClick={closeMenu} />
           <NavItem icon={<CreditCard className="h-5 w-5" />} title="Pagamentos" to="/dashboard/pagamentos" onClick={closeMenu} />
           <NavItem icon={<MessageSquare className="h-5 w-5" />} title="WhatsApp" to="/dashboard/whatsapp" onClick={closeMenu} />
         </div>
