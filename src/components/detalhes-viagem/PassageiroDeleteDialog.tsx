@@ -20,6 +20,7 @@ interface PassageiroDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   passageiroNome: string;
+  onSuccess?: () => void;
 }
 
 export default function PassageiroDeleteDialog({
@@ -27,9 +28,10 @@ export default function PassageiroDeleteDialog({
   open,
   onOpenChange,
   passageiroNome,
+  onSuccess,
 }: PassageiroDeleteDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { refreshData } = useViagemDetails();
+  const { fetchPassageiros } = useViagemDetails();
 
   const handleDelete = async () => {
     try {
@@ -43,7 +45,12 @@ export default function PassageiroDeleteDialog({
       if (error) throw error;
 
       toast.success(`Passageiro ${passageiroNome} removido com sucesso.`);
-      refreshData();
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       onOpenChange(false);
     } catch (error: any) {
       console.error("Erro ao excluir passageiro:", error);
@@ -83,3 +90,5 @@ export default function PassageiroDeleteDialog({
     </AlertDialog>
   );
 }
+
+export { PassageiroDeleteDialog };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
-import { PassageiroDeleteDialog } from "@/components/detalhes-viagem/PassageiroDeleteDialog";
+import PassageiroDeleteDialog from "@/components/detalhes-viagem/PassageiroDeleteDialog";
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { ViagemHeader } from "@/components/detalhes-viagem/ViagemHeader";
@@ -178,12 +179,15 @@ const DetalhesViagem = () => {
         onSuccess={() => id && fetchPassageiros(id)}
       />
 
-      <PassageiroDeleteDialog
-        open={deletePassageiroOpen}
-        onOpenChange={setDeletePassageiroOpen}
-        passageiro={selectedPassageiro}
-        onSuccess={() => id && fetchPassageiros(id)}
-      />
+      {selectedPassageiro && (
+        <PassageiroDeleteDialog
+          open={deletePassageiroOpen}
+          onOpenChange={setDeletePassageiroOpen}
+          passageiroId={selectedPassageiro.viagem_passageiro_id}
+          passageiroNome={selectedPassageiro.nome}
+          onSuccess={() => id && fetchPassageiros(id)}
+        />
+      )}
     </div>
   );
 };
