@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
   const scrollToTrips = () => {
@@ -12,24 +11,31 @@ const HeroSection = () => {
   };
 
   return (
-    <div className="relative bg-gradient-to-r from-black to-[#990000] text-white">
-      <div className="absolute inset-0 bg-[url('https://logodetimes.com/wp-content/uploads/flamengo.png')] bg-no-repeat bg-center opacity-10 bg-contain"></div>
-      <div className="container mx-auto px-4 py-28 md:py-40 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
-            Viva a Experiência de Torcer pelo Flamengo ao Vivo com a NetoTours!
+    <div className="relative bg-black text-white">
+      {/* Background image with overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50"
+        style={{ 
+          backgroundImage: "url('https://logodetimes.com/times/flamengo/flamengo-torcida.jpg')", 
+          backgroundPosition: "center 25%" 
+        }}
+      ></div>
+      
+      <div className="container mx-auto px-4 py-28 md:py-32 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 uppercase leading-tight">
+            Viva a emoção do Mengão ao vivo!
           </h1>
-          <p className="text-lg md:text-xl mb-8 text-gray-200 animate-fade-in">
-            Organizamos tudo para você: transporte, camisas e muita emoção! 
-            Partida um dia antes do jogo e retorno logo após a partida.
-          </p>
-          <Button 
-            size="lg" 
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-6 text-lg animate-fade-in"
-            onClick={scrollToTrips}
-          >
-            Ver Próximas Viagens <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          
+          <div className="mt-10">
+            <Button 
+              size="lg" 
+              className="bg-red-700 hover:bg-red-800 text-white px-12 py-6 text-xl uppercase font-bold"
+              onClick={scrollToTrips}
+            >
+              Ver Pacotes
+            </Button>
+          </div>
         </div>
       </div>
     </div>
