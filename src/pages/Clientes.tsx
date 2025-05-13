@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -207,7 +206,7 @@ const Clientes = () => {
             className="bg-primary hover:bg-primary/90 w-full md:w-auto"
             asChild
           >
-            <Link to="/cadastrar-cliente">
+            <Link to="/dashboard/cadastrar-cliente">
               Cadastrar Novo Cliente
             </Link>
           </Button>
@@ -282,7 +281,7 @@ const Clientes = () => {
                             variant="outline"
                             asChild
                           >
-                            <Link to={`/editar-cliente/${cliente.id}`}>
+                            <Link to={`/dashboard/clientes/${cliente.id}/editar`}>
                               <Pencil className="h-4 w-4" />
                               <span className="sr-only">Editar</span>
                             </Link>

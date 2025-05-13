@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -251,7 +250,7 @@ const EditarViagem = () => {
       }
 
       toast.success("Viagem atualizada com sucesso!");
-      navigate(`/viagem/${id}`); // Redireciona para a página de detalhes da viagem
+      navigate(`/dashboard/viagem/${id}`); // Redireciona para a página de detalhes da viagem
     } catch (error) {
       console.error("Erro ao atualizar viagem:", error);
       toast.error("Erro ao atualizar viagem. Tente novamente.");
@@ -301,7 +300,7 @@ const EditarViagem = () => {
     <div className="container py-6">
       <div className="mb-6 flex items-center gap-2">
         <Button variant="outline" size="icon" asChild>
-          <Link to={`/viagem/${id}`}>
+          <Link to={`/dashboard/viagem/${id}`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -606,7 +605,7 @@ const EditarViagem = () => {
               <div className="flex justify-end gap-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate(`/viagem/${id}`)} 
+                  onClick={() => navigate(`/dashboard/viagem/${id}`)} 
                   type="button"
                 >
                   Cancelar
