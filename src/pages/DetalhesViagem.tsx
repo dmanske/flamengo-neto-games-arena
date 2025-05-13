@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
@@ -89,7 +87,7 @@ const DetalhesViagem = () => {
         <h1 className="text-3xl font-bold mb-6">Viagem não encontrada</h1>
         <p>A viagem que você está procurando não existe ou foi removida.</p>
         <Button asChild className="mt-4">
-          <Link to="/viagens">Voltar para Viagens</Link>
+          <Link to="/dashboard/viagens">Voltar para Viagens</Link>
         </Button>
       </div>
     );

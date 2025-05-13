@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -276,7 +275,7 @@ const Viagens = () => {
               </CardContent>
               <CardFooter className="pt-0">
                 <Button variant="secondary" className="w-full" asChild>
-                  <Link to={`/viagem/${viagem.id}`}>Ver Detalhes</Link>
+                  <Link to={`/dashboard/viagem/${viagem.id}`}>Ver Detalhes</Link>
                 </Button>
               </CardFooter>
             </Card>

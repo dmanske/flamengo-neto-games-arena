@@ -38,7 +38,7 @@ export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderPro
     <div className="mb-6">
       <div className="mb-6 flex items-center gap-2">
         <Button variant="outline" size="icon" asChild>
-          <Link to="/viagens">
+          <Link to="/dashboard/viagens">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
@@ -79,7 +79,7 @@ export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderPro
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link to={`/editar-viagem/${viagem.id}`}>
+            <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
               <Pencil className="h-4 w-4 mr-2" />
               Editar
             </Link>
