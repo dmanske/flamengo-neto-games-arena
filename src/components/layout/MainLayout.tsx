@@ -74,7 +74,7 @@ const LandingPageLink = ({ onClick }: { onClick?: () => void }) => {
       className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
     >
       <Home className="h-5 w-5" />
-      <span>Página</span>
+      <span>Página Inicial</span>
     </a>
   );
 };
