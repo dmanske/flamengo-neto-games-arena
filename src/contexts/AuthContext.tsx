@@ -32,6 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Se o usuário fez logout, redireciona para a página de login
         if (event === 'SIGNED_OUT') {
           navigate("/login");
+        } else if (event === 'SIGNED_IN') {
+          navigate("/dashboard");
         }
       }
     );
@@ -41,6 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      
+      // Se existir uma sessão ativa e o usuário estiver na página de login ou raiz, redireciona para o dashboard
+      if (session && ['/login', '/'].includes(window.location.pathname)) {
+        navigate("/dashboard");
+      }
     });
 
     return () => {
@@ -58,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast.success("Login realizado com sucesso!");
-      navigate("/"); // Changed from "/viagens" to "/" which is the dashboard
+      navigate("/dashboard"); // Ensure we navigate to dashboard after login
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
       toast.error(error.message || "Erro ao fazer login. Verifique suas credenciais.");
