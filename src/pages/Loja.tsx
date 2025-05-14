@@ -4,7 +4,7 @@ import { Store, ShoppingCart, Tag, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Define product interface
 interface Product {
@@ -44,9 +44,7 @@ const products: Product[] = [{
 
 const Loja = () => {
   const handleAddToCart = (product: Product) => {
-    toast({
-      description: `${product.name} foi adicionado ao seu carrinho.`
-    });
+    toast(`${product.name} foi adicionado ao seu carrinho.`);
   };
 
   // Format price in Brazilian Real
