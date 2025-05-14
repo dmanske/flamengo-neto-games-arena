@@ -1,27 +1,28 @@
+export type TipoOnibus =
+  | "46 Semi-Leito"
+  | "50 Convencional"
+  | "54 Convencional"
+  | "42 Leito";
 
-export type FonteConhecimento = 
-  | "Instagram" 
-  | "Indicação" 
-  | "Facebook" 
-  | "Google" 
-  | "WhatsApp" 
-  | "Outro";
-
-export type StatusPagamento = "Pendente" | "Pago" | "Cancelado";
-
-export type FormaPagamento = "Pix" | "Cartão" | "Boleto" | "Paypal" | "Outro";
-
-export type SetorMaracana = "Norte" | "Sul" | "Leste" | "Oeste" | "Maracanã Mais" | "Sem ingresso";
-
-// Now using string type instead of enum for flexibility
-export type TipoOnibus = string;
-export type EmpresaOnibus = string;
+export type EmpresaOnibus =
+  | "Viação 1001"
+  | "Kaissara"
+  | "Cometa"
+  | "Itapemirim";
 
 export interface ViagemOnibus {
-  viagem_id: string;
-  tipo_onibus: TipoOnibus;
-  empresa: EmpresaOnibus;
-  capacidade_onibus: number;
-  numero_identificacao: string;
   id?: string;
+  viagem_id: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_onibus: number;
+  numero_identificacao: string | null;
+  lugares_extras?: number | null;
 }
+
+export type FormaPagamento =
+  | "Dinheiro"
+  | "Cartão de Crédito"
+  | "Cartão de Débito"
+  | "Pix"
+  | "Transferência Bancária";

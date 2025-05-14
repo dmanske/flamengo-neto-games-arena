@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PassageirosList } from "./PassageirosList";
 import { FormaPagamento } from "@/types/entities";
+import { toast } from "@/hooks/use-toast";
 
 interface PassageiroDisplay {
   id: string;
@@ -37,6 +38,7 @@ interface Onibus {
   empresa: string;
   capacidade_onibus: number;
   numero_identificacao: string | null;
+  lugares_extras?: number | null;
 }
 
 interface PassageirosCardProps {
@@ -64,6 +66,27 @@ export function PassageirosCard({
   onEditPassageiro,
   onDeletePassageiro
 }: PassageirosCardProps) {
+  // Check if the bus is at full capacity
+  const isOnibusAtFullCapacity = () => {
+    if (!onibusAtual) return false;
+    
+    const totalCapacidade = onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0);
+    return passageirosAtuais.length >= totalCapacidade;
+  };
+
+  // Function to handle add passenger button click
+  const handleAddPassageiro = () => {
+    if (selectedOnibusId !== null && isOnibusAtFullCapacity()) {
+      toast({
+        description: "Este ônibus está com capacidade máxima. Não é possível adicionar mais passageiros.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setAddPassageiroOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -80,16 +103,28 @@ export function PassageirosCard({
           </CardTitle>
           <CardDescription>
             {selectedOnibusId !== null ? (
-              `${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares ocupados (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
+              `${passageirosAtuais.length} de ${(onibusAtual?.capacidade_onibus || 0) + (onibusAtual?.lugares_extras || 0)} lugares ocupados (${Math.round((passageirosAtuais.length / ((onibusAtual?.capacidade_onibus || 1) + (onibusAtual?.lugares_extras || 0))) * 100)}%)`
             ) : (
               `${totalPassageirosNaoAlocados} passageiros sem alocação de ônibus`
             )}
           </CardDescription>
         </div>
-        <Button onClick={() => setAddPassageiroOpen(true)}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Adicionar Passageiro
-        </Button>
+        
+        {/* Only show the Add button if not at full capacity or if no bus is selected */}
+        {(!selectedOnibusId || !isOnibusAtFullCapacity()) && (
+          <Button onClick={handleAddPassageiro}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Adicionar Passageiro
+          </Button>
+        )}
+        
+        {/* Show disabled button with message when at capacity */}
+        {selectedOnibusId && isOnibusAtFullCapacity() && (
+          <Button disabled title="Ônibus com capacidade máxima">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Capacidade Máxima
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {passageiros.length > 0 ? (
@@ -119,7 +154,7 @@ export function PassageirosCard({
           {passageiros.length > 0 && (
             <>
               {selectedOnibusId !== null ? (
-                `Ocupação: ${passageirosAtuais.length} de ${onibusAtual?.capacidade_onibus || 0} lugares (${Math.round((passageirosAtuais.length / (onibusAtual?.capacidade_onibus || 1)) * 100)}%)`
+                `Ocupação: ${passageirosAtuais.length} de ${(onibusAtual?.capacidade_onibus || 0) + (onibusAtual?.lugares_extras || 0)} lugares (${Math.round((passageirosAtuais.length / ((onibusAtual?.capacidade_onibus || 1) + (onibusAtual?.lugares_extras || 0))) * 100)}%)`
               ) : (
                 `${totalPassageirosNaoAlocados} passageiros não alocados`
               )}

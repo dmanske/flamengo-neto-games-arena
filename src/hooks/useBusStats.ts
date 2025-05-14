@@ -34,18 +34,21 @@ export function useBusStats() {
       
       if (busesError) throw busesError;
       
-      // 2. Get most used bus type from viagens table
-      const { data: viagensData, error: viagensError } = await supabase
-        .from("viagens")
+      // Count total unique buses
+      const totalBuses = busesData?.length || 0;
+      
+      // 2. Get most used bus type from viagem_onibus table (more accurate than viagens)
+      const { data: viagemOnibusData, error: viagemOnibusError } = await supabase
+        .from("viagem_onibus")
         .select("tipo_onibus");
         
-      if (viagensError) throw viagensError;
+      if (viagemOnibusError) throw viagemOnibusError;
       
-      // Count buses by type in viagens
+      // Count buses by type in viagem_onibus
       const busTypeCount: Record<string, number> = {};
       
-      viagensData?.forEach(viagem => {
-        busTypeCount[viagem.tipo_onibus] = (busTypeCount[viagem.tipo_onibus] || 0) + 1;
+      viagemOnibusData?.forEach(onibus => {
+        busTypeCount[onibus.tipo_onibus] = (busTypeCount[onibus.tipo_onibus] || 0) + 1;
       });
       
       // Find most used bus type
@@ -91,7 +94,7 @@ export function useBusStats() {
       
       setStats({
         mostUsedBus: mostUsedType ? { tipo: mostUsedType, count: busTypeCount[mostUsedType] } : null,
-        totalBuses: busesData?.length || 0,
+        totalBuses: totalBuses,
         revenueByBusType: revenueByType,
         isLoading: false
       });

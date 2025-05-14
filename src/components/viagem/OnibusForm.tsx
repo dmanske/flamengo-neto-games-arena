@@ -82,6 +82,7 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
       tipo_onibus: defaultBus.tipo_onibus,
       empresa: defaultBus.empresa,
       capacidade_onibus: defaultBus.capacidade,
+      lugares_extras: 0,
       numero_identificacao: defaultBus.numero_identificacao || `Ônibus ${onibusArray.length + 1}`
     };
     
@@ -112,7 +113,8 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
       tipo_onibus: selectedBus.tipo_onibus,
       empresa: selectedBus.empresa,
       capacidade_onibus: selectedBus.capacidade,
-      numero_identificacao: selectedBus.numero_identificacao || `Ônibus ${index + 1}`
+      numero_identificacao: selectedBus.numero_identificacao || `Ônibus ${index + 1}`,
+      lugares_extras: newArray[index].lugares_extras || 0
     };
     
     // Notificar o componente pai sobre a mudança do tipo do ônibus principal (primeiro)
@@ -120,6 +122,13 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
       onPrimaryBusChange(selectedBus.tipo_onibus, selectedBus.empresa);
     }
     
+    onChange(newArray);
+  };
+
+  // Update lugares_extras for a specific bus
+  const updateLugaresExtras = (index: number, lugares: number) => {
+    const newArray = [...onibusArray];
+    newArray[index].lugares_extras = lugares;
     onChange(newArray);
   };
 
@@ -247,6 +256,30 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                 </FormDescription>
               </div>
               
+              {/* Novo campo para lugares extras */}
+              <div>
+                <Label htmlFor={`onibus-lugares-extras-${index}`} className="flex items-center">
+                  Lugares Extras
+                  <span className="ml-2 inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                    Novo
+                  </span>
+                </Label>
+                <Input
+                  id={`onibus-lugares-extras-${index}`}
+                  type="number"
+                  min="0"
+                  value={onibus.lugares_extras || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    updateLugaresExtras(index, isNaN(value) ? 0 : value);
+                  }}
+                  placeholder="0"
+                />
+                <FormDescription>
+                  Lugares extras além da capacidade padrão do ônibus (opcional)
+                </FormDescription>
+              </div>
+              
               <div>
                 <Label htmlFor={`onibus-empresa-${index}`}>Empresa</Label>
                 <Input
@@ -257,6 +290,17 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                 />
                 <FormDescription>
                   Definida pelo ônibus selecionado
+                </FormDescription>
+              </div>
+              
+              {/* Display total capacity (standard + extra seats) */}
+              <div>
+                <Label>Capacidade Total</Label>
+                <div className="px-4 py-2 border border-gray-200 rounded bg-gray-50 text-gray-800">
+                  {onibus.capacidade_onibus + (onibus.lugares_extras || 0)} lugares
+                </div>
+                <FormDescription>
+                  Capacidade padrão + lugares extras
                 </FormDescription>
               </div>
             </div>

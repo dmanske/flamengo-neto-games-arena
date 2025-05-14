@@ -53,6 +53,7 @@ export interface Onibus {
   empresa: string;
   capacidade_onibus: number;
   numero_identificacao: string | null;
+  lugares_extras?: number | null;
   passageiros_count?: number;
 }
 
