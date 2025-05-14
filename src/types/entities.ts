@@ -1,14 +1,17 @@
+
 export type TipoOnibus =
   | "46 Semi-Leito"
   | "50 Convencional"
   | "54 Convencional"
-  | "42 Leito";
+  | "42 Leito"
+  | string; // Added string to make it more flexible
 
 export type EmpresaOnibus =
   | "Viação 1001"
   | "Kaissara"
   | "Cometa"
-  | "Itapemirim";
+  | "Itapemirim"
+  | string; // Added string to make it more flexible
 
 export interface ViagemOnibus {
   id?: string;
@@ -26,3 +29,21 @@ export type FormaPagamento =
   | "Cartão de Débito"
   | "Pix"
   | "Transferência Bancária";
+
+// Adding missing types
+export type StatusPagamento = "Pendente" | "Pago" | "Cancelado";
+
+export type SetorMaracana = 
+  | "Norte" 
+  | "Sul" 
+  | "Leste" 
+  | "Oeste" 
+  | "Maracanã Mais" 
+  | "Sem ingresso";
+
+export type FonteConhecimento = 
+  | "Instagram" 
+  | "Indicação" 
+  | "Facebook" 
+  | "Google" 
+  | "Outro";
