@@ -9,12 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormDescription } from '@/components/ui/form';
 import { TipoOnibus, EmpresaOnibus, ViagemOnibus } from '@/types/entities';
 import { toast } from '@/hooks/use-toast';
-
-// Mapeamento entre tipos de ônibus e empresas
-const onibusPorEmpresa: Record<string, string> = {
-  "46 Semi-Leito": "Viação 1001",
-  "50 Convencional": "Kaissara",
-};
+import { supabase } from '@/lib/supabase';
 
 interface OnibusFormProps {
   onibusArray: ViagemOnibus[];
@@ -23,24 +18,73 @@ interface OnibusFormProps {
   onPrimaryBusChange?: (tipo: TipoOnibus, empresa: EmpresaOnibus) => void;
 }
 
+interface RegisteredBus {
+  id: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade: number;
+  numero_identificacao: string | null;
+}
+
 export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange }: OnibusFormProps) {
-  // Adicionar ônibus inicial se a array estiver vazia
+  const [registeredBuses, setRegisteredBuses] = useState<RegisteredBus[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch registered buses
   useEffect(() => {
-    if (onibusArray.length === 0) {
-      addOnibus();
-    }
+    const fetchBuses = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("onibus")
+          .select("id, tipo_onibus, empresa, capacidade, numero_identificacao");
+          
+        if (error) {
+          console.error("Erro ao carregar ônibus:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar a lista de ônibus cadastrados",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        setRegisteredBuses(data || []);
+      } catch (err) {
+        console.error("Erro ao buscar ônibus:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBuses();
   }, []);
 
+  // Adicionar ônibus inicial se a array estiver vazia
+  useEffect(() => {
+    if (onibusArray.length === 0 && registeredBuses.length > 0) {
+      addOnibus();
+    }
+  }, [registeredBuses]);
+
   const addOnibus = () => {
-    const defaultTipo = "46 Semi-Leito" as TipoOnibus;
-    const defaultEmpresa = onibusPorEmpresa[defaultTipo] as EmpresaOnibus;
+    if (registeredBuses.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Não há ônibus cadastrados. Cadastre pelo menos um ônibus primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const defaultBus = registeredBuses[0];
     
     const newOnibus: ViagemOnibus = {
       viagem_id: viagemId || '',
-      tipo_onibus: defaultTipo,
-      empresa: defaultEmpresa,
-      capacidade_onibus: 46,
-      numero_identificacao: `Ônibus ${onibusArray.length + 1}`
+      tipo_onibus: defaultBus.tipo_onibus,
+      empresa: defaultBus.empresa,
+      capacidade_onibus: defaultBus.capacidade,
+      numero_identificacao: defaultBus.numero_identificacao || `Ônibus ${onibusArray.length + 1}`
     };
     
     const newArray = [...onibusArray, newOnibus];
@@ -48,7 +92,7 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
     
     // Notificar o componente pai sobre o ônibus principal se este for o primeiro
     if (onibusArray.length === 0 && onPrimaryBusChange) {
-      onPrimaryBusChange(defaultTipo, defaultEmpresa);
+      onPrimaryBusChange(defaultBus.tipo_onibus, defaultBus.empresa);
     }
   };
 
@@ -60,37 +104,46 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
     onChange(newArray);
   };
 
-  const updateOnibus = (index: number, field: keyof ViagemOnibus, value: any) => {
-    const newArray = [...onibusArray];
+  const updateOnibus = (index: number, busId: string) => {
+    const selectedBus = registeredBuses.find(bus => bus.id === busId);
+    if (!selectedBus) return;
     
-    if (field === 'tipo_onibus') {
-      // Atualizar capacidade e empresa com base no tipo
-      const tipoOnibus = value as TipoOnibus;
-      let capacidade = 46;
-      
-      if (tipoOnibus === '46 Semi-Leito') capacidade = 46;
-      else if (tipoOnibus === '50 Convencional') capacidade = 50;
-      
-      newArray[index] = {
-        ...newArray[index],
-        tipo_onibus: tipoOnibus,
-        empresa: onibusPorEmpresa[tipoOnibus] as EmpresaOnibus,
-        capacidade_onibus: capacidade
-      };
-      
-      // Notificar o componente pai sobre a mudança do tipo do ônibus principal (primeiro)
-      if (index === 0 && onPrimaryBusChange) {
-        onPrimaryBusChange(tipoOnibus, onibusPorEmpresa[tipoOnibus] as EmpresaOnibus);
-      }
-    } else {
-      newArray[index] = {
-        ...newArray[index],
-        [field]: value
-      };
+    const newArray = [...onibusArray];
+    newArray[index] = {
+      ...newArray[index],
+      tipo_onibus: selectedBus.tipo_onibus,
+      empresa: selectedBus.empresa,
+      capacidade_onibus: selectedBus.capacidade,
+      numero_identificacao: selectedBus.numero_identificacao || `Ônibus ${index + 1}`
+    };
+    
+    // Notificar o componente pai sobre a mudança do tipo do ônibus principal (primeiro)
+    if (index === 0 && onPrimaryBusChange) {
+      onPrimaryBusChange(selectedBus.tipo_onibus, selectedBus.empresa);
     }
     
     onChange(newArray);
   };
+
+  // Se estiver carregando, mostrar indicador de carregamento
+  if (isLoading) {
+    return <div className="flex justify-center py-4">Carregando ônibus...</div>;
+  }
+
+  // Se não houver ônibus cadastrados, mostrar mensagem
+  if (registeredBuses.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Ônibus da Viagem</h3>
+        <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md">
+          <p className="text-yellow-800">
+            Não há ônibus cadastrados no sistema. 
+            Por favor, <a href="/dashboard/cadastrar-onibus" className="underline font-medium">cadastre pelo menos um ônibus</a> antes de criar uma viagem.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -128,11 +181,40 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <Label htmlFor={`onibus-select-${index}`}>Selecionar Ônibus</Label>
+                <Select
+                  onValueChange={(value) => updateOnibus(index, value)}
+                  value={registeredBuses.find(bus => 
+                    bus.tipo_onibus === onibus.tipo_onibus && 
+                    bus.empresa === onibus.empresa
+                  )?.id || ""}
+                >
+                  <SelectTrigger id={`onibus-select-${index}`}>
+                    <SelectValue placeholder="Selecione um ônibus cadastrado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {registeredBuses.map((bus) => (
+                      <SelectItem key={bus.id} value={bus.id}>
+                        {bus.tipo_onibus} - {bus.empresa} ({bus.capacidade} lugares)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Selecione um ônibus cadastrado
+                </FormDescription>
+              </div>
+              
+              <div>
                 <Label htmlFor={`onibus-id-${index}`}>Identificação</Label>
                 <Input
                   id={`onibus-id-${index}`}
                   value={onibus.numero_identificacao || ''}
-                  onChange={(e) => updateOnibus(index, 'numero_identificacao', e.target.value)}
+                  onChange={(e) => {
+                    const newArray = [...onibusArray];
+                    newArray[index].numero_identificacao = e.target.value;
+                    onChange(newArray);
+                  }}
                   placeholder="Ex: Ônibus 1"
                 />
                 <FormDescription>
@@ -142,18 +224,15 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
               
               <div>
                 <Label htmlFor={`onibus-tipo-${index}`}>Tipo de Ônibus</Label>
-                <Select
+                <Input
+                  id={`onibus-tipo-${index}`}
                   value={onibus.tipo_onibus}
-                  onValueChange={(value) => updateOnibus(index, 'tipo_onibus', value)}
-                >
-                  <SelectTrigger id={`onibus-tipo-${index}`}>
-                    <SelectValue placeholder="Selecione o tipo de ônibus" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
-                    <SelectItem value="50 Convencional">50 Convencional</SelectItem>
-                  </SelectContent>
-                </Select>
+                  readOnly
+                  className="bg-gray-100"
+                />
+                <FormDescription>
+                  Definido pelo ônibus selecionado
+                </FormDescription>
               </div>
               
               <div>
@@ -166,7 +245,7 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                   className="bg-gray-100"
                 />
                 <FormDescription>
-                  Definido automaticamente pelo tipo
+                  Definida pelo tipo de ônibus selecionado
                 </FormDescription>
               </div>
               
@@ -179,7 +258,7 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                   className="bg-gray-100"
                 />
                 <FormDescription>
-                  Definido automaticamente pelo tipo
+                  Definida pelo ônibus selecionado
                 </FormDescription>
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -16,20 +17,24 @@ import {
   FormField, 
   FormItem, 
   FormLabel, 
-  FormMessage 
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { TipoOnibus, EmpresaOnibus } from "@/types/entities";
 
 const onibusFormSchema = z.object({
   tipo_onibus: z.string().min(1, "Tipo de ônibus é obrigatório"),
   empresa: z.string().min(1, "Empresa é obrigatória"),
   image_url: z.string().url("URL de imagem inválida").optional().or(z.literal("")),
+  numero_identificacao: z.string().optional().or(z.literal("")),
+  capacidade: z.number().int().min(1, "Capacidade deve ser pelo menos 1").or(
+    z.string().regex(/^\d+$/).transform(Number)
+  ),
+  description: z.string().optional().or(z.literal("")),
 });
 
 type OnibusFormValues = z.infer<typeof onibusFormSchema>;
@@ -46,6 +51,9 @@ const EditarOnibus = () => {
       tipo_onibus: "",
       empresa: "",
       image_url: "",
+      numero_identificacao: "",
+      capacidade: 40,
+      description: "",
     },
   });
 
@@ -56,7 +64,7 @@ const EditarOnibus = () => {
       try {
         setIsLoading(true);
         const { data, error } = await supabase
-          .from("onibus_images")
+          .from("onibus")
           .select("*")
           .eq("id", id)
           .single();
@@ -64,10 +72,20 @@ const EditarOnibus = () => {
         if (error) throw error;
         
         if (data) {
+          // Get related image if exists
+          const { data: imageData } = await supabase
+            .from("onibus_images")
+            .select("image_url")
+            .eq("onibus_id", id)
+            .single();
+
           form.reset({
             tipo_onibus: data.tipo_onibus,
             empresa: data.empresa,
-            image_url: data.image_url || "",
+            numero_identificacao: data.numero_identificacao || "",
+            capacidade: data.capacidade || 0,
+            description: data.description || "",
+            image_url: imageData?.image_url || data.image_path || "",
           });
         }
       } catch (error: any) {
@@ -91,16 +109,53 @@ const EditarOnibus = () => {
     try {
       setIsSaving(true);
       
-      const { error } = await supabase
-        .from("onibus_images")
+      // Update main onibus record
+      const { error: onibusError } = await supabase
+        .from("onibus")
         .update({
           tipo_onibus: data.tipo_onibus,
           empresa: data.empresa,
-          image_url: data.image_url || null,
+          numero_identificacao: data.numero_identificacao || null,
+          capacidade: data.capacidade || 0,
+          description: data.description || null,
+          image_path: data.image_url || null,
         })
         .eq("id", id);
 
-      if (error) throw error;
+      if (onibusError) throw onibusError;
+
+      // Check if image record exists
+      const { data: existingImage } = await supabase
+        .from("onibus_images")
+        .select("id")
+        .eq("onibus_id", id)
+        .single();
+
+      if (existingImage) {
+        // Update existing image
+        const { error: imageError } = await supabase
+          .from("onibus_images")
+          .update({
+            tipo_onibus: data.tipo_onibus,
+            empresa: data.empresa,
+            image_url: data.image_url || null
+          })
+          .eq("id", existingImage.id);
+
+        if (imageError) throw imageError;
+      } else if (data.image_url) {
+        // Create new image record if there's a URL
+        const { error: createImageError } = await supabase
+          .from("onibus_images")
+          .insert({
+            tipo_onibus: data.tipo_onibus,
+            empresa: data.empresa,
+            image_url: data.image_url,
+            onibus_id: id
+          });
+
+        if (createImageError) throw createImageError;
+      }
 
       toast({
         title: "Sucesso",
@@ -161,17 +216,12 @@ const EditarOnibus = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Ônibus</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo de ônibus" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
-                        <SelectItem value="50 Convencional">50 Convencional</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Ex: Semi-Leito, Convencional" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Digite o tipo ou modelo do ônibus
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -183,17 +233,66 @@ const EditarOnibus = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Empresa</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a empresa" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Viação 1001">Viação 1001</SelectItem>
-                        <SelectItem value="Kaissara">Kaissara</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Ex: Viação 1001, Kaissara" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Digite o nome da empresa locadora
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="numero_identificacao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Identificação (Opcional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Número de identificação do ônibus (opcional)" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="capacidade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacidade</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Capacidade do ônibus"
+                        {...field}
+                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                        value={field.value || 0}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Informações adicionais sobre o ônibus" 
+                        {...field} 
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

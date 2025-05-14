@@ -13,7 +13,6 @@ import {
   FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 
@@ -24,10 +23,7 @@ export const onibusFormSchema = z.object({
   capacidade: z.number().int().min(1, "Capacidade deve ser pelo menos 1").or(
     z.string().regex(/^\d+$/).transform(Number)
   ),
-  description: z.string().optional().or(z.literal("")),
-  year: z.number().int().min(1980).max(new Date().getFullYear() + 1).optional()
-    .or(z.string().regex(/^\d+$/).transform(Number))
-    .or(z.literal("").transform(() => null))
+  description: z.string().optional().or(z.literal(""))
 });
 
 export type OnibusFormValues = z.infer<typeof onibusFormSchema>;
@@ -63,17 +59,12 @@ export function OnibusForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de Ônibus</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de ônibus" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
-                  <SelectItem value="50 Convencional">50 Convencional</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input placeholder="Ex: Semi-Leito, Convencional" {...field} />
+              </FormControl>
+              <FormDescription>
+                Digite o tipo ou modelo do ônibus
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -85,17 +76,12 @@ export function OnibusForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Empresa</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a empresa" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Viação 1001">Viação 1001</SelectItem>
-                  <SelectItem value="Kaissara">Kaissara</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input placeholder="Ex: Viação 1001, Kaissara" {...field} />
+              </FormControl>
+              <FormDescription>
+                Digite o nome da empresa locadora
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -106,10 +92,10 @@ export function OnibusForm({
           name="numero_identificacao"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Identificação</FormLabel>
+              <FormLabel>Número de Identificação (Opcional)</FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="Número de identificação do ônibus" 
+                  placeholder="Número de identificação do ônibus (opcional)" 
                   {...field} 
                 />
               </FormControl>
@@ -132,32 +118,6 @@ export function OnibusForm({
                   onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} 
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="year"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ano do Ônibus</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  placeholder="Ano do ônibus"
-                  {...field}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    field.onChange(value === "" ? "" : parseInt(value));
-                  }}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormDescription>
-                Ano de fabricação do veículo
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

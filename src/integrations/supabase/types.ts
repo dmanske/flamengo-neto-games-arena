@@ -86,7 +86,6 @@ export type Database = {
           numero_identificacao: string | null
           tipo_onibus: string
           updated_at: string
-          year: number | null
         }
         Insert: {
           capacidade: number
@@ -98,7 +97,6 @@ export type Database = {
           numero_identificacao?: string | null
           tipo_onibus: string
           updated_at?: string
-          year?: number | null
         }
         Update: {
           capacidade?: number
@@ -110,7 +108,6 @@ export type Database = {
           numero_identificacao?: string | null
           tipo_onibus?: string
           updated_at?: string
-          year?: number | null
         }
         Relationships: []
       }

@@ -24,8 +24,7 @@ const CadastrarOnibus = () => {
     empresa: "",
     numero_identificacao: "",
     capacidade: 40,
-    description: "",
-    year: new Date().getFullYear()
+    description: ""
   };
 
   const onSubmit = async (data: OnibusFormValues) => {
@@ -41,7 +40,6 @@ const CadastrarOnibus = () => {
           numero_identificacao: data.numero_identificacao || null,
           capacidade: data.capacidade,
           description: data.description || null,
-          year: data.year || null,
           image_path: imagePath
         })
         .select("id")

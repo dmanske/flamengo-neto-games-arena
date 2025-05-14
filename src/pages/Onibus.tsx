@@ -13,6 +13,16 @@ import { Loader2, PlusCircle } from "lucide-react";
 import { OnibusFilters } from "@/components/onibus/OnibusFilters";
 import { OnibusCard } from "@/components/onibus/OnibusCard";
 import { useOnibusData } from "@/hooks/useOnibusData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Onibus = () => {
   const navigate = useNavigate();
@@ -27,7 +37,10 @@ const Onibus = () => {
     setFilterTipo,
     empresas,
     tipos,
-    handleDelete
+    handleDelete,
+    confirmDelete,
+    cancelDelete,
+    deleteDialogOpen
   } = useOnibusData();
 
   return (
@@ -77,7 +90,6 @@ const Onibus = () => {
                   empresa={onibus.empresa}
                   numero_identificacao={onibus.numero_identificacao}
                   capacidade={onibus.capacidade}
-                  year={onibus.year}
                   description={onibus.description}
                   image_url={onibus.image_url}
                   onDelete={handleDelete}
@@ -87,6 +99,23 @@ const Onibus = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={cancelDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este ônibus? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Sim, remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

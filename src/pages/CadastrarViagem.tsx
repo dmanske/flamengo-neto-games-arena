@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -6,7 +7,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Image as ImageIcon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,11 +51,13 @@ const viagemFormSchema = z.object({
   data_jogo: z.date({
     required_error: "Data do jogo é obrigatória",
   }),
+  data_jogo_manual: z.string().optional(),
   rota: z.string({
     required_error: "Rota é obrigatória",
   }),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
+  logo_flamengo: z.string().default("https://logodetimes.com/wp-content/uploads/flamengo.png"),
   valor_padrao: z.number().min(0, "O valor não pode ser negativo").optional(),
   setor_padrao: z.string().optional(),
 });
@@ -72,8 +75,10 @@ const CadastrarViagem = () => {
   const defaultValues: Partial<ViagemFormValues> = {
     status_viagem: "Aberta",
     logo_adversario: "",
+    logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
     valor_padrao: 0,
     setor_padrao: "Norte",
+    data_jogo_manual: "",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -82,14 +87,42 @@ const CadastrarViagem = () => {
   });
 
   const watchAdversario = form.watch("adversario");
+  const watchDataManual = form.watch("data_jogo_manual");
+  
+  // Controla a sincronização entre a data manual e o calendário
+  React.useEffect(() => {
+    if (watchDataManual) {
+      try {
+        // Tenta converter a data digitada para um objeto Date
+        const parts = watchDataManual.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Meses em JS são 0-indexed
+          const year = parseInt(parts[2], 10);
+          
+          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            const date = new Date(year, month, day);
+            date.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
+            form.setValue('data_jogo', date);
+          }
+        }
+      } catch (err) {
+        // Se a data não for válida, não faz nada
+      }
+    }
+  }, [watchDataManual, form]);
 
   const handlePrimaryBusChange = (tipo: TipoOnibus, empresa: EmpresaOnibus) => {
-    // This function is no longer used in the new code
+    // Esta função é passada para o OnibusForm para informar a mudança no ônibus principal
   };
 
   const onSubmit = async (data: ViagemFormValues) => {
     if (onibusArray.length === 0) {
-      toast.error("Adicione pelo menos um ônibus para a viagem");
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos um ônibus para a viagem",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -98,6 +131,9 @@ const CadastrarViagem = () => {
       // Ajuste para garantir que a data está no formato correto
       const dataJogo = new Date(data.data_jogo);
       dataJogo.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
+      
+      // Obter o tipo e empresa do primeiro ônibus para a viagem
+      const primaryBus = onibusArray[0];
       
       // Primeiro, criamos a viagem
       const { data: viagemData, error: viagemError } = await supabase
@@ -108,9 +144,12 @@ const CadastrarViagem = () => {
           rota: data.rota,
           status_viagem: data.status_viagem,
           logo_adversario: data.logo_adversario || null,
-          logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
+          logo_flamengo: data.logo_flamengo,
           valor_padrao: data.valor_padrao || null,
           setor_padrao: data.setor_padrao || null,
+          // Preenchendo os campos obrigatórios com os dados do primeiro ônibus
+          tipo_onibus: primaryBus.tipo_onibus,
+          empresa: primaryBus.empresa,
           // Calculamos a capacidade total somando todos os ônibus
           capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus, 0),
         })
@@ -133,11 +172,19 @@ const CadastrarViagem = () => {
         
       if (onibusError) throw onibusError;
 
-      toast.success("Viagem cadastrada com sucesso!");
-      navigate("/dashboard/viagens"); // Update this path to match our route structure
-    } catch (error) {
+      toast({
+        title: "Sucesso",
+        description: "Viagem cadastrada com sucesso!",
+      });
+      
+      navigate("/dashboard/viagens"); // Redireciona para a lista de viagens
+    } catch (error: any) {
       console.error("Erro ao cadastrar viagem:", error);
-      toast.error("Erro ao cadastrar viagem. Tente novamente.");
+      toast({
+        title: "Erro",
+        description: `Erro ao cadastrar viagem: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -233,52 +280,77 @@ const CadastrarViagem = () => {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="data_jogo"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Data do Jogo</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={`w-full pl-3 text-left font-normal ${
-                                !field.value ? "text-muted-foreground" : ""
-                              }`}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Ajustar para meio-dia para evitar problemas de fuso horário
-                                const adjustedDate = new Date(date);
-                                adjustedDate.setHours(12, 0, 0, 0);
-                                field.onChange(adjustedDate);
-                              }
-                            }}
-                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                            initialFocus
-                            locale={ptBR}
+                <div className="grid grid-cols-1 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="data_jogo"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Data do Jogo (Calendário)</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={`w-full pl-3 text-left font-normal ${
+                                  !field.value ? "text-muted-foreground" : ""
+                                }`}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP", { locale: ptBR })
+                                ) : (
+                                  <span>Selecione uma data</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={(date) => {
+                                if (date) {
+                                  // Ajustar para meio-dia para evitar problemas de fuso horário
+                                  const adjustedDate = new Date(date);
+                                  adjustedDate.setHours(12, 0, 0, 0);
+                                  field.onChange(adjustedDate);
+                                  
+                                  // Atualizar também o campo de data manual
+                                  form.setValue("data_jogo_manual", format(adjustedDate, "dd/MM/yyyy", { locale: ptBR }));
+                                }
+                              }}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                              locale={ptBR}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="data_jogo_manual"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data do Jogo (Manual)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="DD/MM/AAAA" 
+                            {...field} 
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormDescription>
+                          Digite a data no formato DD/MM/AAAA
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

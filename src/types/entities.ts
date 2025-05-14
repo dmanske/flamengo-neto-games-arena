@@ -1,3 +1,4 @@
+
 export type FonteConhecimento = 
   | "Instagram" 
   | "Indicação" 
@@ -12,9 +13,9 @@ export type FormaPagamento = "Pix" | "Cartão" | "Boleto" | "Paypal" | "Outro";
 
 export type SetorMaracana = "Norte" | "Sul" | "Leste" | "Oeste" | "Maracanã Mais" | "Sem ingresso";
 
-export type TipoOnibus = "46 Semi-Leito" | "50 Convencional";
-
-export type EmpresaOnibus = "Viação 1001" | "Kaissara";
+// Now using string type instead of enum for flexibility
+export type TipoOnibus = string;
+export type EmpresaOnibus = string;
 
 export interface ViagemOnibus {
   viagem_id: string;

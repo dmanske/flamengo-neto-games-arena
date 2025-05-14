@@ -2,6 +2,16 @@
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 
 interface OnibusImage {
   id: string;
@@ -22,7 +32,6 @@ export interface Onibus {
   updated_at: string;
   image_path: string | null;
   description: string | null;
-  year: number | null;
 }
 
 export interface OnibusDisplay extends Onibus {
@@ -37,6 +46,8 @@ export function useOnibusData() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState<string | null>(null);
   const [filterTipo, setFilterTipo] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [onibusToDelete, setOnibusToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOnibusData();
@@ -75,52 +86,59 @@ export function useOnibusData() {
     }
   };
 
-  const handleDelete = async (id: string, isImage: boolean = false) => {
+  const confirmDelete = async () => {
+    if (!onibusToDelete) return;
+    
     try {
       let success = false;
       
-      if (isImage) {
-        // Delete just the image
-        const { error } = await supabase
-          .from("onibus_images")
-          .delete()
-          .eq("id", id);
-
-        if (error) throw error;
-        setOnibusImages(onibusImages.filter(item => item.id !== id));
-        success = true;
-      } else {
-        // Delete the onibus record and its associated images
-        const onibusToDelete = onibusList.find(o => o.id === id);
+      // Primeiro, verifica se o ônibus é utilizado em alguma viagem
+      const { data: viagemOnibus, error: viagemCheckError } = await supabase
+        .from("viagem_onibus")
+        .select("id")
+        .eq("onibus_id", onibusToDelete)
+        .limit(1);
         
-        // First delete related images
-        const { error: imgError } = await supabase
-          .from("onibus_images")
-          .delete()
-          .eq("onibus_id", id);
-          
-        if (imgError) {
-          console.warn("Erro ao excluir imagens associadas:", imgError);
-        }
-        
-        // Then delete the onibus record
-        const { error } = await supabase
-          .from("onibus")
-          .delete()
-          .eq("id", id);
-
-        if (error) throw error;
-        
-        // Update local state
-        setOnibusList(onibusList.filter(item => item.id !== id));
-        setOnibusImages(onibusImages.filter(item => item.onibus_id !== id));
-        success = true;
+      if (viagemCheckError) throw viagemCheckError;
+      
+      if (viagemOnibus && viagemOnibus.length > 0) {
+        toast({
+          title: "Erro",
+          description: "Este ônibus está associado a viagens e não pode ser excluído",
+          variant: "destructive",
+        });
+        setOnibusToDelete(null);
+        setDeleteDialogOpen(false);
+        return;
       }
+      
+      // First delete related images
+      const { error: imgError } = await supabase
+        .from("onibus_images")
+        .delete()
+        .eq("onibus_id", onibusToDelete);
+        
+      if (imgError) {
+        console.warn("Erro ao excluir imagens associadas:", imgError);
+      }
+      
+      // Then delete the onibus record
+      const { error } = await supabase
+        .from("onibus")
+        .delete()
+        .eq("id", onibusToDelete);
+
+      if (error) throw error;
+      
+      // Update local state
+      setOnibusList(prevState => prevState.filter(item => item.id !== onibusToDelete));
+      setOnibusImages(prevState => prevState.filter(item => item.onibus_id !== onibusToDelete));
+      success = true;
       
       if (success) {
         toast({
           title: "Sucesso",
-          description: isImage ? "Imagem removida com sucesso" : "Ônibus removido com sucesso",
+          description: "Ônibus removido com sucesso",
         });
       }
     } catch (error: any) {
@@ -130,7 +148,20 @@ export function useOnibusData() {
         description: `Erro ao excluir: ${error.message}`,
         variant: "destructive",
       });
+    } finally {
+      setOnibusToDelete(null);
+      setDeleteDialogOpen(false);
     }
+  };
+
+  const handleDelete = (id: string) => {
+    setOnibusToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const cancelDelete = () => {
+    setOnibusToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   // Preparar dados para exibição combinando ônibus e imagens
@@ -176,6 +207,10 @@ export function useOnibusData() {
     tipos,
     handleDelete,
     fetchOnibusData,
-    onibusList
+    onibusList,
+    deleteDialogOpen,
+    onibusToDelete,
+    confirmDelete,
+    cancelDelete,
   };
 }
