@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, UploadCloud, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export interface FileUploadProps {
@@ -44,15 +44,10 @@ export const FileUpload = ({
     try {
       const url = await uploadFile(file, bucketName, folderPath);
       onChange(url);
-      toast({
-        description: "Arquivo enviado com sucesso!",
-      });
+      toast("Arquivo enviado com sucesso!");
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
-      toast({
-        description: `Erro ao enviar arquivo: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error(`Erro ao enviar arquivo: ${error.message}`);
     } finally {
       setIsUploading(false);
       // Clear input value to allow uploading the same file again
@@ -77,15 +72,10 @@ export const FileUpload = ({
       .then(({ error }) => {
         if (error) {
           console.error("Erro ao remover arquivo:", error);
-          toast({
-            description: "Erro ao remover arquivo",
-            variant: "destructive",
-          });
+          toast.error("Erro ao remover arquivo");
         } else {
           onChange(null);
-          toast({
-            description: "Arquivo removido com sucesso!",
-          });
+          toast("Arquivo removido com sucesso!");
         }
       });
   };
@@ -197,20 +187,14 @@ function validateFile(
 ): boolean {
   // Check file type
   if (!allowedFileTypes.includes(file.type)) {
-    toast({
-      description: `Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`,
-      variant: "destructive",
-    });
+    toast.error(`Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`);
     return false;
   }
   
   // Check file size
   const fileSizeInMB = file.size / (1024 * 1024);
   if (fileSizeInMB > maxSizeInMB) {
-    toast({
-      description: `Arquivo muito grande. Máximo: ${maxSizeInMB}MB`,
-      variant: "destructive",
-    });
+    toast.error(`Arquivo muito grande. Máximo: ${maxSizeInMB}MB`);
     return false;
   }
   
