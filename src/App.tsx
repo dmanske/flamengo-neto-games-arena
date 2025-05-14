@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BrowserRouter,
@@ -78,7 +79,7 @@ function App() {
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="onibus" element={<Onibus />} />
-                  <Route path="onibus/:id/editar" element={<EditarOnibus />} />
+                  <Route path="editar-onibus/:id" element={<EditarOnibus />} />
                   <Route path="cadastrar-onibus" element={<CadastrarOnibus />} />
                   <Route path="passageiros" element={<Passageiros />} />
                   <Route path="whatsapp" element={<GerenciadorWhatsApp />} />

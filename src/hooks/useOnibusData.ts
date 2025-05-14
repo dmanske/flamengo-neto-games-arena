@@ -2,16 +2,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from "@/components/ui/alert-dialog";
 
 interface OnibusImage {
   id: string;
@@ -92,11 +82,27 @@ export function useOnibusData() {
     try {
       let success = false;
       
-      // Primeiro, verifica se o ônibus é utilizado em alguma viagem
+      // Verificar se o ônibus está sendo usado em alguma viagem
+      // Em vez de procurar por onibus_id, vamos verificar se existe uma viagem 
+      // com a mesma combinação de tipo_onibus e empresa
+      const onibusParaDeletar = onibusList.find(bus => bus.id === onibusToDelete);
+      
+      if (!onibusParaDeletar) {
+        toast({
+          title: "Erro",
+          description: "Ônibus não encontrado",
+          variant: "destructive",
+        });
+        setOnibusToDelete(null);
+        setDeleteDialogOpen(false);
+        return;
+      }
+      
       const { data: viagemOnibus, error: viagemCheckError } = await supabase
         .from("viagem_onibus")
         .select("id")
-        .eq("onibus_id", onibusToDelete)
+        .eq("tipo_onibus", onibusParaDeletar.tipo_onibus)
+        .eq("empresa", onibusParaDeletar.empresa)
         .limit(1);
         
       if (viagemCheckError) throw viagemCheckError;
