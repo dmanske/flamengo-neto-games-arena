@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -267,59 +268,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     setContadorPassageiros(contador);
   };
 
-  // Função para deletar um ônibus específico
-  const handleDeleteOnibus = async (onibusId: string) => {
-    if (!viagemId || !onibusId) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Verificar se há passageiros neste ônibus
-      const { data: passageiros, error: countError } = await supabase
-        .from("viagem_passageiros")
-        .select("id")
-        .eq("onibus_id", onibusId);
-      
-      if (countError) throw countError;
-      
-      // Se houver passageiros, não permitir a exclusão
-      if (passageiros && passageiros.length > 0) {
-        toast.error(`Não é possível excluir este ônibus pois possui ${passageiros.length} passageiros.
-          Transfira os passageiros para outro ônibus antes de excluir.`);
-        return;
-      }
-      
-      // Excluir o ônibus
-      const { error } = await supabase
-        .from("viagem_onibus")
-        .delete()
-        .eq("id", onibusId);
-      
-      if (error) throw error;
-      
-      toast.success("Ônibus removido com sucesso!");
-      
-      // Atualizar a lista de ônibus
-      await fetchOnibus(viagemId);
-      
-      // Se este era o ônibus selecionado, selecionar outro
-      if (selectedOnibusId === onibusId) {
-        if (onibusList.length > 1) {
-          // Selecionar outro ônibus que não seja o excluído
-          const outroOnibusId = onibusList.find(o => o.id !== onibusId)?.id;
-          setSelectedOnibusId(outroOnibusId || null);
-        } else {
-          setSelectedOnibusId(null); // Não há mais ônibus
-        }
-      }
-    } catch (err) {
-      console.error("Erro ao excluir ônibus:", err);
-      toast.error("Erro ao excluir ônibus");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Quando o usuário seleciona um ônibus
   const handleSelectOnibus = (onibusId: string | null) => {
     setSelectedOnibusId(onibusId);
@@ -330,24 +278,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     
     try {
       setIsLoading(true);
-      
-      // Verificar se há passageiros nesta viagem
-      const { data: passageiros, error: passageirosError } = await supabase
-        .from("viagem_passageiros")
-        .select("id")
-        .eq("viagem_id", viagemId);
-      
-      if (passageirosError) throw passageirosError;
-      
-      if (passageiros && passageiros.length > 0) {
-        const confirmar = window.confirm(`Esta viagem tem ${passageiros.length} passageiros cadastrados. 
-          Ao excluir a viagem, todos os passageiros serão removidos. Deseja continuar?`);
-        
-        if (!confirmar) {
-          setIsLoading(false);
-          return;
-        }
-      }
       
       // Chamar a função delete_viagem que criamos
       const { error } = await supabase
@@ -422,7 +352,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     filterStatus,
     handleSelectOnibus,
     handleDelete,
-    handleDeleteOnibus,
     getPassageirosDoOnibusAtual,
     getOnibusAtual,
     fetchPassageiros,

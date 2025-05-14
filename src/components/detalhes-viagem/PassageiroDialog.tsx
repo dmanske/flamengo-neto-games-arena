@@ -1,13 +1,7 @@
-
 import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
-import { Search, UserPlus, X } from "lucide-react";
-import { FormaPagamento } from "@/types/entities";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
@@ -17,47 +11,73 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { FormaPagamento, SetorMaracana, StatusPagamento } from "@/types/entities";
+import { formatCurrency } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
-interface Cliente {
-  id: string;
-  nome: string;
-  telefone: string;
-  cidade: string;
-  cpf: string;
-  email: string;
-}
+// Define the form schema
+const formSchema = z.object({
+  cliente_id: z.string().min(1, "Selecione um cliente"),
+  setor_maracana: z.string().min(1, "Selecione um setor"),
+  status_pagamento: z.string().min(1, "Selecione um status"),
+  forma_pagamento: z.string().optional(),
+  valor: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
+  desconto: z.coerce.number().min(0, "Desconto deve ser maior ou igual a zero"),
+  onibus_id: z.string().min(1, "Selecione um ônibus"),
+});
 
-interface Onibus {
-  id: string;
-  tipo_onibus: string;
-  empresa: string;
-  capacidade_onibus: number;
-  numero_identificacao: string | null;
-  lugares_extras?: number | null;
-}
-
+// Define the component props
 interface PassageiroDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   viagemId: string;
   onSuccess: () => void;
-  valorPadrao: number | null;
-  setorPadrao: string | null;
-  defaultOnibusId?: string;
+  valorPadrao?: number | null;
+  setorPadrao?: string | null;
+  defaultOnibusId?: string | null;
+}
+
+interface ClienteOption {
+  id: string;
+  nome: string;
+  telefone: string;
+  email: string;
+  cidade: string;
+}
+
+interface OnibusOption {
+  id: string;
+  numero_identificacao: string | null;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_onibus: number;
+  passageiros_count?: number;
+  disponivel?: boolean;
 }
 
 export function PassageiroDialog({
@@ -67,434 +87,401 @@ export function PassageiroDialog({
   onSuccess,
   valorPadrao,
   setorPadrao,
-  defaultOnibusId
+  defaultOnibusId,
 }: PassageiroDialogProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Cliente[]>([]);
-  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [setor, setSetor] = useState<string>(setorPadrao || "Norte");
-  const [statusPagamento, setStatusPagamento] = useState<string>("Pendente");
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>("Pix");
-  const [valor, setValor] = useState<number>(valorPadrao || 0);
-  const [desconto, setDesconto] = useState<number>(0);
-  const [isSearching, setIsSearching] = useState(false);
+  const [clientes, setClientes] = useState<ClienteOption[]>([]);
+  const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
+  const [onibusLotados, setOnibusLotados] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [onibusList, setOnibusList] = useState<Onibus[]>([]);
-  const [onibusCapacidades, setOnibusCapacidades] = useState<Record<string, number>>({});
-  const [onibusId, setOnibusId] = useState<string>("");
-  
-  // Initialize with default onibus if provided
+
+  // Initialize the form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      cliente_id: "",
+      setor_maracana: setorPadrao || "",
+      status_pagamento: "Pendente",
+      forma_pagamento: "Pix",
+      valor: valorPadrao || 0,
+      desconto: 0,
+      onibus_id: defaultOnibusId || "",
+    },
+  });
+
+  // Fetch clients and buses on component mount
   useEffect(() => {
-    if (defaultOnibusId) {
-      setOnibusId(defaultOnibusId);
-    }
-  }, [defaultOnibusId]);
-  
-  // Load onibus list and capacities when modal opens
-  useEffect(() => {
-    if (!open || !viagemId) return;
-    
-    const fetchOnibus = async () => {
-      try {
-        // Fetch buses for the trip
-        const { data, error } = await supabase
-          .from("viagem_onibus")
-          .select("*")
-          .eq("viagem_id", viagemId);
-          
-        if (error) throw error;
-        setOnibusList(data || []);
-        
-        // Count passengers for each bus to check capacity
-        const capacidades: Record<string, number> = {};
-        
-        await Promise.all((data || []).map(async (onibus) => {
-          const { count, error: countError } = await supabase
-            .from("viagem_passageiros")
-            .select("*", { count: "exact", head: true })
-            .eq("onibus_id", onibus.id);
-            
-          if (countError) throw countError;
-          capacidades[onibus.id] = count || 0;
-        }));
-        
-        setOnibusCapacidades(capacidades);
-        
-        // Set first available bus if none selected
-        if (!onibusId && data && data.length > 0) {
-          setOnibusId(data[0].id);
+    if (open) {
+      fetchClientes();
+      fetchOnibus().then(() => {
+        if (defaultOnibusId && form.getValues("onibus_id") !== defaultOnibusId) {
+          const onibusExiste = onibusList.some(o => o.id === defaultOnibusId);
+          if (onibusExiste) {
+            form.setValue("onibus_id", defaultOnibusId);
+          }
+        } else if (!defaultOnibusId && onibusList.length === 1 && !form.getValues("onibus_id")){
+          form.setValue("onibus_id", onibusList[0].id);
         }
-      } catch (err) {
-        console.error("Erro ao buscar ônibus:", err);
-        toast.error("Erro ao carregar opções de ônibus");
-      }
-    };
-    
-    fetchOnibus();
-  }, [open, viagemId]);
-
-  // Search for existing clients
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      return;
+      });
     }
+  }, [open, defaultOnibusId]);
 
-    setIsSearching(true);
+  // Fetch clients from the database
+  const fetchClientes = async () => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("clientes")
-        .select("id, nome, telefone, cidade, cpf, email")
+        .select("id, nome, telefone, email, cidade")
         .order("nome");
 
-      // Check if search term is a CPF
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(searchTerm)) {
-        query = query.eq("cpf", searchTerm);
-      } else {
-        query = query.ilike("nome", `%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      setSearchResults(data || []);
-    } catch (err) {
-      console.error("Erro ao buscar clientes:", err);
-      toast.error("Erro ao buscar clientes");
-    } finally {
-      setIsSearching(false);
+      setClientes(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      toast.error("Erro ao carregar a lista de clientes");
     }
   };
 
-  // Add passenger to trip
-  const handleAddPassageiro = async () => {
-    if (!selectedCliente) {
-      toast.error("Selecione um cliente primeiro");
-      return;
-    }
-    
-    if (!onibusId) {
-      toast.error("Selecione um ônibus para o passageiro");
-      return;
-    }
-    
-    // Check if the selected bus has available capacity
-    const selectedBus = onibusList.find(bus => bus.id === onibusId);
-    if (selectedBus) {
-      const totalCapacity = selectedBus.capacidade_onibus + (selectedBus.lugares_extras || 0);
-      const currentPassengers = onibusCapacidades[onibusId] || 0;
+  // Fetch buses associated with this trip and check their capacity
+  const fetchOnibus = async () => {
+    try {
+      // Buscar ônibus da viagem
+      const { data: onibusData, error: onibusError } = await supabase
+        .from("viagem_onibus")
+        .select("id, numero_identificacao, tipo_onibus, empresa, capacidade_onibus")
+        .eq("viagem_id", viagemId)
+        .order("created_at");
+
+      if (onibusError) throw onibusError;
       
-      if (currentPassengers >= totalCapacity) {
-        toast.error(`Este ônibus já está na capacidade máxima (${totalCapacity} passageiros)`);
+      if (!onibusData || onibusData.length === 0) {
         return;
       }
+      
+      // Para cada ônibus, contar quantos passageiros já estão alocados
+      const onibusWithCounts: OnibusOption[] = [];
+      const lotadosMap: Record<string, boolean> = {};
+      
+      for (const onibus of onibusData) {
+        // Buscar contagem de passageiros para este ônibus
+        const { data: passageirosData, error: passageirosError } = await supabase
+          .from('viagem_passageiros')
+          .select('id')
+          .eq('onibus_id', onibus.id);
+          
+        if (passageirosError) throw passageirosError;
+        
+        const passageirosCount = passageirosData ? passageirosData.length : 0;
+        const disponivel = passageirosCount < onibus.capacidade_onibus;
+        
+        onibusWithCounts.push({
+          ...onibus,
+          passageiros_count: passageirosCount,
+          disponivel: disponivel
+        });
+        
+        lotadosMap[onibus.id] = !disponivel;
+      }
+      
+      setOnibusList(onibusWithCounts);
+      setOnibusLotados(lotadosMap);
+      
+      if (onibusWithCounts.length === 1) {
+        form.setValue("onibus_id", onibusWithCounts[0].id);
+      }
+      
+    } catch (error) {
+      console.error("Erro ao buscar ônibus:", error);
+      toast.error("Erro ao carregar a lista de ônibus");
     }
+  };
 
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!viagemId) return;
+    
+    // Verificar se o ônibus está lotado
+    if (onibusLotados[values.onibus_id]) {
+      toast.error("Este ônibus já está lotado. Por favor, escolha outro ônibus.");
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      // Check if the passenger already exists in the trip
+      // Check if the cliente is already added to this trip
       const { data: existingPassageiro, error: checkError } = await supabase
         .from("viagem_passageiros")
         .select("id")
         .eq("viagem_id", viagemId)
-        .eq("cliente_id", selectedCliente.id)
+        .eq("cliente_id", values.cliente_id)
         .single();
 
       if (existingPassageiro) {
-        toast.error("Este passageiro já está cadastrado nesta viagem");
+        toast.error("Este cliente já está cadastrado nesta viagem");
         setIsLoading(false);
         return;
       }
 
-      if (checkError && checkError.code !== "PGRST116") {
-        // If error is not "No rows found", throw it
-        throw checkError;
-      }
-      
-      // Add passenger to the trip
-      const { error } = await supabase
-        .from("viagem_passageiros")
-        .insert([
-          {
-            viagem_id: viagemId,
-            cliente_id: selectedCliente.id,
-            setor_maracana: setor,
-            status_pagamento: statusPagamento,
-            forma_pagamento: formaPagamento,
-            valor: valor,
-            desconto: desconto,
-            onibus_id: onibusId
-          }
-        ]);
+      // Add the passenger to the trip
+      const { error } = await supabase.from("viagem_passageiros").insert({
+        viagem_id: viagemId,
+        cliente_id: values.cliente_id,
+        setor_maracana: values.setor_maracana,
+        status_pagamento: values.status_pagamento,
+        forma_pagamento: values.forma_pagamento,
+        valor: values.valor,
+        desconto: values.desconto,
+        onibus_id: values.onibus_id,
+      });
 
       if (error) throw error;
+
+      toast.success("Passageiro adicionado com sucesso!");
       
-      toast.success(`${selectedCliente.nome} adicionado como passageiro`);
+      // Atualizar a capacidade dos ônibus após adicionar o passageiro
+      await fetchOnibus();
       
-      // Update the capacity count for the selected bus
-      setOnibusCapacidades({
-        ...onibusCapacidades,
-        [onibusId]: (onibusCapacidades[onibusId] || 0) + 1
-      });
-      
-      resetForm();
       onSuccess();
-    } catch (err) {
-      console.error("Erro ao adicionar passageiro:", err);
+      onOpenChange(false);
+      form.reset({
+        cliente_id: "",
+        setor_maracana: setorPadrao || "",
+        status_pagamento: "Pendente",
+        forma_pagamento: "Pix",
+        valor: valorPadrao || 0,
+        desconto: 0,
+        onibus_id: defaultOnibusId || "",
+      });
+    } catch (error) {
+      console.error("Erro ao adicionar passageiro:", error);
       toast.error("Erro ao adicionar passageiro");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Reset form values
-  const resetForm = () => {
-    setSearchTerm("");
-    setSearchResults([]);
-    setSelectedCliente(null);
-    setSetor(setorPadrao || "Norte");
-    setStatusPagamento("Pendente");
-    setFormaPagamento("Pix");
-    setValor(valorPadrao || 0);
-    setDesconto(0);
-  };
+  // Obter informações de ocupação do ônibus selecionado
+  const selectedOnibus = form.watch('onibus_id') 
+    ? onibusList.find(o => o.id === form.watch('onibus_id')) 
+    : null;
 
-  // Format currency for display
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  // Format bus label with capacity info
-  const formatOnibusLabel = (onibus: Onibus) => {
-    const totalCapacidade = (onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0);
-    const passageirosAtuais = onibusCapacidades[onibus.id] || 0;
-    const lotacao = passageirosAtuais >= totalCapacidade ? " (LOTADO)" : 
-                   passageirosAtuais >= totalCapacidade * 0.9 ? " (QUASE CHEIO)" : "";
-    
-    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${passageirosAtuais}/${totalCapacidade})${lotacao}`;
-  };
+  const ocupacaoInfo = selectedOnibus ? {
+    atual: selectedOnibus.passageiros_count || 0,
+    total: selectedOnibus.capacidade_onibus,
+    disponivel: selectedOnibus.disponivel
+  } : null;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        resetForm();
-      }
-      onOpenChange(isOpen);
-    }}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Adicionar Passageiro</DialogTitle>
-          <DialogDescription>
-            Busque um cliente existente para adicionar como passageiro na viagem.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Tabs defaultValue="search">
-          <TabsList>
-            <TabsTrigger value="search">Buscar Cliente</TabsTrigger>
-            <TabsTrigger value="details" disabled={!selectedCliente}>
-              {selectedCliente ? "Dados do Passageiro" : "Selecione um Cliente"}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="search" className="space-y-4 py-4">
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <Label htmlFor="search-term" className="sr-only">Buscar Cliente</Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search-term"
-                    placeholder="Digite nome ou CPF do cliente"
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  />
-                </div>
-              </div>
-              <Button onClick={handleSearch} disabled={isSearching}>
-                {isSearching ? "Buscando..." : "Buscar"}
-              </Button>
-            </div>
-            
-            {searchResults.length > 0 ? (
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-2">
-                  {searchResults.map((cliente) => (
-                    <div 
-                      key={cliente.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedCliente?.id === cliente.id 
-                          ? "border-primary bg-primary/5" 
-                          : "hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedCliente(cliente)}
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Passageiro</DialogTitle>
+            <DialogDescription>
+              Adicione um passageiro à esta viagem.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="cliente_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{cliente.nome}</p>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>CPF: {cliente.cpf}</p>
-                            <p>Telefone: {cliente.telefone}</p>
-                            <p>Cidade: {cliente.cidade}</p>
-                          </div>
-                        </div>
-                        {selectedCliente?.id === cliente.id && (
-                          <div className="bg-primary text-primary-foreground p-1 rounded-full">
-                            <UserPlus className="h-4 w-4" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            ) : (
-              <div className="text-center p-4 border rounded-lg bg-muted/30">
-                {isSearching ? (
-                  <p>Buscando clientes...</p>
-                ) : searchTerm ? (
-                  <p>Nenhum cliente encontrado com esse nome ou CPF.</p>
-                ) : (
-                  <p>Digite um nome ou CPF para buscar um cliente cadastrado.</p>
-                )}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="details" className="space-y-4 py-4">
-            {selectedCliente && (
-              <>
-                <div className="bg-muted/30 p-3 rounded-lg mb-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-lg">{selectedCliente.nome}</p>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>CPF: {selectedCliente.cpf}</p>
-                        <p>Telefone: {selectedCliente.telefone}</p>
-                        <p>Cidade: {selectedCliente.cidade}</p>
-                        <p>Email: {selectedCliente.email}</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setSelectedCliente(null)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remover seleção</span>
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="onibus">Ônibus</Label>
-                    <Select value={onibusId} onValueChange={setOnibusId}>
-                      <SelectTrigger id="onibus">
-                        <SelectValue placeholder="Selecione o ônibus" />
-                      </SelectTrigger>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                      </FormControl>
                       <SelectContent>
-                        {onibusList.map((onibus) => {
-                          const currentPassengers = onibusCapacidades[onibus.id] || 0;
-                          const totalCapacity = (onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0);
-                          const isFull = currentPassengers >= totalCapacity;
-                          
-                          return (
-                            <SelectItem 
-                              key={onibus.id} 
-                              value={onibus.id}
-                              disabled={isFull}
-                            >
-                              {formatOnibusLabel(onibus)}
-                            </SelectItem>
-                          );
-                        })}
+                        {clientes.map((cliente) => (
+                          <SelectItem key={cliente.id} value={cliente.id}>
+                            {cliente.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="setor">Setor do Maracanã</Label>
-                    <Select value={setor} onValueChange={setSetor}>
-                      <SelectTrigger id="setor">
-                        <SelectValue placeholder="Selecione o setor" />
-                      </SelectTrigger>
+                    <FormDescription>
+                      Selecione o cliente para esta viagem
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="onibus_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Ônibus
+                      {ocupacaoInfo && !ocupacaoInfo.disponivel && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Este ônibus está lotado</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={onibusList.length === 1}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um ônibus" />
+                        </SelectTrigger>
+                      </FormControl>
                       <SelectContent>
-                        <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+                        {onibusList.map((onibus) => (
+                          <SelectItem 
+                            key={onibus.id} 
+                            value={onibus.id}
+                            disabled={!onibus.disponivel}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span>
+                                {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
+                              </span>
+                              <span className={`text-xs ${!onibus.disponivel ? 'text-red-500' : 'text-green-600'}`}>
+                                {onibus.passageiros_count || 0}/{onibus.capacidade_onibus}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {ocupacaoInfo 
+                        ? `Ocupação atual: ${ocupacaoInfo.atual}/${ocupacaoInfo.total} passageiros` 
+                        : "Selecione o ônibus para o passageiro"}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="setor_maracana"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Setor do Maracanã</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um setor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
                         <SelectItem value="Norte">Norte</SelectItem>
                         <SelectItem value="Sul">Sul</SelectItem>
                         <SelectItem value="Leste">Leste</SelectItem>
                         <SelectItem value="Oeste">Oeste</SelectItem>
                         <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                        <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Status do Pagamento</Label>
-                    <RadioGroup value={statusPagamento} onValueChange={setStatusPagamento}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Pendente" id="pendente" />
-                        <Label htmlFor="pendente">Pendente</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Pago" id="pago" />
-                        <Label htmlFor="pago">Pago</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="valor">Valor</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                        <Input 
-                          id="valor" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
-                          value={valor} 
-                          onChange={(e) => setValor(parseFloat(e.target.value) || 0)}
-                          className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="desconto">Desconto</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">R$</span>
-                        <Input 
-                          id="desconto" 
-                          type="number" 
-                          min="0" 
-                          max={valor} 
-                          step="0.01" 
-                          value={desconto} 
-                          onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
-                          className="pl-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="desconto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Desconto (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
-                      <Select 
-                        value={formaPagamento} 
-                        onValueChange={(value) => setFormaPagamento(value as FormaPagamento)}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status_pagamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status do Pagamento</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
                       >
-                        <SelectTrigger id="forma-pagamento">
-                          <SelectValue placeholder="Selecione a forma de pagamento" />
-                        </SelectTrigger>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pendente">Pendente</SelectItem>
+                          <SelectItem value="Pago">Pago</SelectItem>
+                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="forma_pagamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Forma de Pagamento</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || "Pix"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma forma" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
                           <SelectItem value="Pix">Pix</SelectItem>
                           <SelectItem value="Cartão">Cartão</SelectItem>
@@ -503,46 +490,31 @@ export function PassageiroDialog({
                           <SelectItem value="Outro">Outro</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    
-                    <div className="space-y-2 border rounded-md p-3 bg-gray-50">
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span>Valor:</span>
-                          <span>{formatCurrency(valor)}</span>
-                        </div>
-                        <div className="flex justify-between text-red-600">
-                          <span>Desconto:</span>
-                          <span>-{formatCurrency(desconto)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold pt-1 border-t mt-1">
-                          <span>Total:</span>
-                          <span>{formatCurrency(valor - desconto)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => {
-            resetForm();
-            onOpenChange(false);
-          }}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleAddPassageiro} 
-            disabled={!selectedCliente || isLoading || !onibusId}
-          >
-            {isLoading ? "Adicionando..." : "Adicionar Passageiro"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || (selectedOnibus && !selectedOnibus.disponivel)}
+                >
+                  {isLoading ? "Salvando..." : "Salvar Passageiro"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 }

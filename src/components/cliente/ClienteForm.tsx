@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -243,7 +244,7 @@ export const ClienteForm: React.FC = () => {
             }}>
               Cadastrar Novo Cliente
             </AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate("/dashboard/clientes")} className="bg-[#e40016] hover:bg-[#c20012]">
+            <AlertDialogAction onClick={() => navigate("/clientes")} className="bg-[#e40016] hover:bg-[#c20012]">
               Ver Lista de Clientes
             </AlertDialogAction>
           </AlertDialogFooter>
