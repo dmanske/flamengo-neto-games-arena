@@ -37,6 +37,12 @@ export function ViagemInfo({
     }
   };
 
+  // Calculate total capacity including extra seats
+  const totalCapacity = onibusList.reduce(
+    (total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0),
+    0
+  );
+
   return (
     <Card className="mb-6">
       <CardHeader className="pb-2">
@@ -89,7 +95,7 @@ export function ViagemInfo({
               <div className="flex items-start gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Capacidade:</span>
-                <span>{capacidade_onibus} passageiros</span>
+                <span>{totalCapacity} passageiros</span>
               </div>
               {onibusList.length > 1 && (
                 <div className="flex items-start gap-2">
@@ -103,7 +109,14 @@ export function ViagemInfo({
                             Ônibus {index + 1}
                           </Badge>
                           <span>{onibus.numero_identificacao || onibus.tipo_onibus}</span>
-                          <span className="text-muted-foreground">({onibus.capacidade_onibus} lugares)</span>
+                          <span className="text-muted-foreground">
+                            ({onibus.capacidade_onibus + (onibus.lugares_extras || 0)} lugares)
+                          </span>
+                          {onibus.lugares_extras > 0 && (
+                            <span className="text-emerald-600 text-xs">
+                              (+{onibus.lugares_extras} extras)
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>

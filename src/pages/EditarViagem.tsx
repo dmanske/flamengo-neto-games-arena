@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -128,7 +129,8 @@ const EditarViagem = () => {
             capacidade_onibus: 46,
             numero_identificacao: "Ônibus 1",
             tipo_onibus: defaultTipo,
-            empresa: "Viação 1001" as EmpresaOnibus
+            empresa: "Viação 1001" as EmpresaOnibus,
+            lugares_extras: 0
           }]);
         }
         
@@ -187,7 +189,7 @@ const EditarViagem = () => {
           logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
           valor_padrao: data.valor_padrao || null,
           setor_padrao: data.setor_padrao || null,
-          capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus, 0),
+          capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0), 0),
         })
         .eq("id", id);
 
@@ -227,7 +229,8 @@ const EditarViagem = () => {
             .from("viagem_onibus")
             .update({
               capacidade_onibus: onibus.capacidade_onibus,
-              numero_identificacao: onibus.numero_identificacao
+              numero_identificacao: onibus.numero_identificacao,
+              lugares_extras: onibus.lugares_extras || 0
             })
             .eq("id", onibus.id);
           
@@ -239,7 +242,10 @@ const EditarViagem = () => {
             .insert({
               viagem_id: id,
               capacidade_onibus: onibus.capacidade_onibus,
-              numero_identificacao: onibus.numero_identificacao
+              numero_identificacao: onibus.numero_identificacao,
+              tipo_onibus: onibus.tipo_onibus,
+              empresa: onibus.empresa,
+              lugares_extras: onibus.lugares_extras || 0
             });
           
           if (insertError) throw insertError;
