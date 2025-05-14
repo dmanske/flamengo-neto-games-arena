@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { PlusCircle, MinusCircle, Bus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { TipoOnibus, EmpresaOnibus, ViagemOnibus } from '@/types/entities';
 
 // Mapeamento entre tipos de ônibus e empresas
 const onibusPorEmpresa: Record<string, string> = {
-  "43 Leitos Totais": "Bertoldo",
   "52 Leitos Master": "Majetur",
   "56 Leitos Master": "Sarcella",
 };
@@ -150,7 +148,6 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                     <SelectValue placeholder="Selecione o tipo de ônibus" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="43 Leitos Totais">43 Leitos Totais</SelectItem>
                     <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
                     <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
                   </SelectContent>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -158,11 +157,8 @@ const CadastrarOnibus = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="43 Leitos Totais">43 Leitos Totais</SelectItem>
                         <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
                         <SelectItem value="50 Convencional">50 Convencional</SelectItem>
-                        <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
-                        <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -183,11 +179,8 @@ const CadastrarOnibus = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Bertoldo">Bertoldo</SelectItem>
                         <SelectItem value="Viação 1001">Viação 1001</SelectItem>
                         <SelectItem value="Kaissara">Kaissara</SelectItem>
-                        <SelectItem value="Majetur">Majetur</SelectItem>
-                        <SelectItem value="Sarcella">Sarcella</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

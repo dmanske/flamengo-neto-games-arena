@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   BrowserRouter,
@@ -53,7 +52,7 @@ function App() {
           <SidebarProvider>
             <Routes>
               {/* Redirecionamento da raiz para o dashboard caso logado ou para a landing page se não estiver logado */}
-              <Route path="/" element={<Navigate to="/site" replace />} />
+              <Route path="/" element={<Navigate to="/login" replace />} />
               
               {/* Landing Page agora em um caminho específico */}
               <Route path="/site" element={<Index />} />

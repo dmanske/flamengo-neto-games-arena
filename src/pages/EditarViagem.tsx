@@ -124,8 +124,6 @@ const EditarViagem = () => {
         if (!onibusData || onibusData.length === 0) {
           setOnibusArray([{
             viagem_id: id,
-            tipo_onibus: "43 Leitos Totais",
-            empresa: "Bertoldo",
             capacidade_onibus: 43,
             numero_identificacao: "Ônibus 1"
           }]);
@@ -225,8 +223,6 @@ const EditarViagem = () => {
           const { error: updateError } = await supabase
             .from("viagem_onibus")
             .update({
-              tipo_onibus: onibus.tipo_onibus,
-              empresa: onibus.empresa,
               capacidade_onibus: onibus.capacidade_onibus,
               numero_identificacao: onibus.numero_identificacao
             })
@@ -239,8 +235,6 @@ const EditarViagem = () => {
             .from("viagem_onibus")
             .insert({
               viagem_id: id,
-              tipo_onibus: onibus.tipo_onibus,
-              empresa: onibus.empresa,
               capacidade_onibus: onibus.capacidade_onibus,
               numero_identificacao: onibus.numero_identificacao
             });
