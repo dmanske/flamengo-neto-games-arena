@@ -1,34 +1,14 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Eye, 
-  Pencil, 
-  Trash2,
-  Users,
-  Calendar,
-  MapPin
-} from "lucide-react";
+import { Eye, Pencil, Trash2, Users, Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-
 interface Viagem {
   id: string;
   data_jogo: string;
@@ -42,25 +22,31 @@ interface Viagem {
   logo_adversario: string | null;
   capacidade_onibus: number;
 }
-
 interface ViagemCardProps {
   viagem: Viagem;
   onDeleteClick: (viagem: Viagem) => void;
   passageirosCount?: number;
 }
-
-export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: ViagemCardProps) {
+export function ViagemCard({
+  viagem,
+  onDeleteClick,
+  passageirosCount = 0
+}: ViagemCardProps) {
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+      return format(new Date(dateString), 'dd/MM/yyyy', {
+        locale: ptBR
+      });
     } catch (error) {
       return 'Data inválida';
     }
   };
-
   const formatValue = (value: number | null) => {
     if (value === null) return 'N/A';
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
   };
 
   // Status badge color - usando cores mais próximas do Flamengo
@@ -80,8 +66,8 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
   };
 
   // Calcular ocupação
-  const percentualOcupacao = Math.round((passageirosCount / viagem.capacidade_onibus) * 100);
-  
+  const percentualOcupacao = Math.round(passageirosCount / viagem.capacidade_onibus * 100);
+
   // Determine card background color based on status
   const getCardBgColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -97,7 +83,6 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
         return 'from-white to-gray-50 border-gray-200';
     }
   };
-
   const cardBgColor = getCardBgColor(viagem.status_viagem);
   const isOcupacaoCritica = percentualOcupacao > 90;
 
@@ -111,36 +96,18 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
       return 'bg-gradient-to-r from-red-400 to-red-300'; // Vermelho claro
     }
   };
-
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <Card className={`h-full flex flex-col shadow-md hover:shadow-lg transition-all bg-gradient-to-br ${cardBgColor} overflow-hidden`}>
         {/* Card Header com destaque em cores do Flamengo */}
         <CardHeader className="pb-2 relative bg-gradient-to-r from-red-700 to-red-600 text-white">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-white p-2 rounded-lg shadow-sm">
-                {viagem.logo_flamengo ? (
-                  <img 
-                    src={viagem.logo_flamengo} 
-                    alt="Flamengo" 
-                    className="h-14 w-14 object-contain" 
-                  />
-                ) : (
-                  <div className="h-14 w-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">FLA</div>
-                )}
+                {viagem.logo_flamengo ? <img src={viagem.logo_flamengo} alt="Flamengo" className="h-14 w-14 object-contain" /> : <div className="h-14 w-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">FLA</div>}
                 <span className="mx-2 text-xl font-bold text-black">x</span>
-                {viagem.logo_adversario ? (
-                  <img 
-                    src={viagem.logo_adversario} 
-                    alt={viagem.adversario} 
-                    className="h-14 w-14 object-contain" 
-                  />
-                ) : (
-                  <div className="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center font-semibold text-black">
+                {viagem.logo_adversario ? <img src={viagem.logo_adversario} alt={viagem.adversario} className="h-14 w-14 object-contain" /> : <div className="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center font-semibold text-black">
                     {viagem.adversario.substring(0, 3).toUpperCase()}
-                  </div>
-                )}
+                  </div>}
               </div>
               <div>
                 <CardTitle className="text-lg font-bold">{viagem.adversario}</CardTitle>
@@ -175,10 +142,9 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
                   </span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full ${getProgressBarColor(percentualOcupacao)}`}
-                    style={{ width: `${percentualOcupacao}%` }}
-                  ></div>
+                  <div className={`h-3 rounded-full ${getProgressBarColor(percentualOcupacao)}`} style={{
+                  width: `${percentualOcupacao}%`
+                }}></div>
                 </div>
               </div>
             </div>
@@ -200,15 +166,10 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
         </CardContent>
         
         {/* Footer com botões de ação */}
-        <CardFooter className="border-t pt-3 pb-3 flex justify-center gap-3 bg-gradient-to-r from-black to-gray-900">
+        <CardFooter className="pb-2 relative bg-gradient-to-r from-red-700 to-red-600 text-white">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                size="sm" 
-                variant="outline"
-                asChild
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
-              >
+              <Button size="sm" variant="outline" asChild className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors">
                 <Link to={`/dashboard/viagem/${viagem.id}`}>
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">Ver detalhes</span>
@@ -222,12 +183,7 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                size="sm" 
-                variant="outline"
-                asChild
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
-              >
+              <Button size="sm" variant="outline" asChild className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors">
                 <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
                   <Pencil className="h-4 w-4" />
                   <span className="sr-only">Editar</span>
@@ -241,12 +197,7 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => onDeleteClick(viagem)}
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
-              >
+              <Button size="sm" variant="outline" onClick={() => onDeleteClick(viagem)} className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors">
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Excluir</span>
               </Button>
@@ -257,6 +208,5 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
           </Tooltip>
         </CardFooter>
       </Card>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 }
