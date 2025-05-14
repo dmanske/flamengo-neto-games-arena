@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -60,6 +59,7 @@ interface PassageiroDialogProps {
   onSuccess: () => void;
   valorPadrao?: number | null;
   setorPadrao?: string | null;
+  defaultOnibusId?: string | null;
 }
 
 interface ClienteOption {
@@ -87,6 +87,7 @@ export function PassageiroDialog({
   onSuccess,
   valorPadrao,
   setorPadrao,
+  defaultOnibusId,
 }: PassageiroDialogProps) {
   const [clientes, setClientes] = useState<ClienteOption[]>([]);
   const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
@@ -103,7 +104,7 @@ export function PassageiroDialog({
       forma_pagamento: "Pix",
       valor: valorPadrao || 0,
       desconto: 0,
-      onibus_id: "",
+      onibus_id: defaultOnibusId || "",
     },
   });
 
@@ -111,9 +112,18 @@ export function PassageiroDialog({
   useEffect(() => {
     if (open) {
       fetchClientes();
-      fetchOnibus();
+      fetchOnibus().then(() => {
+        if (defaultOnibusId && form.getValues("onibus_id") !== defaultOnibusId) {
+          const onibusExiste = onibusList.some(o => o.id === defaultOnibusId);
+          if (onibusExiste) {
+            form.setValue("onibus_id", defaultOnibusId);
+          }
+        } else if (!defaultOnibusId && onibusList.length === 1 && !form.getValues("onibus_id")){
+          form.setValue("onibus_id", onibusList[0].id);
+        }
+      });
     }
-  }, [open]);
+  }, [open, defaultOnibusId]);
 
   // Fetch clients from the database
   const fetchClientes = async () => {
@@ -175,11 +185,8 @@ export function PassageiroDialog({
       setOnibusList(onibusWithCounts);
       setOnibusLotados(lotadosMap);
       
-      // Encontrar o primeiro ônibus disponível para selecionar como padrão
-      const primeiroOnibusDisponivel = onibusWithCounts.find(o => o.disponivel);
-      
-      if (primeiroOnibusDisponivel) {
-        form.setValue("onibus_id", primeiroOnibusDisponivel.id);
+      if (onibusWithCounts.length === 1) {
+        form.setValue("onibus_id", onibusWithCounts[0].id);
       }
       
     } catch (error) {
@@ -242,7 +249,7 @@ export function PassageiroDialog({
         forma_pagamento: "Pix",
         valor: valorPadrao || 0,
         desconto: 0,
-        onibus_id: "",
+        onibus_id: defaultOnibusId || "",
       });
     } catch (error) {
       console.error("Erro ao adicionar passageiro:", error);
@@ -328,6 +335,7 @@ export function PassageiroDialog({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={onibusList.length === 1}
                     >
                       <FormControl>
                         <SelectTrigger>

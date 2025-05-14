@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,6 +23,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPagamento } from "@/types/entities";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 // Define the form validation schema
 const formSchema = z.object({
@@ -43,6 +43,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const CadastrarPassageiro = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   
   // Define form
   const form = useForm<FormValues>({
@@ -98,7 +99,8 @@ const CadastrarPassageiro = () => {
       
       // Reset form after successful submission
       form.reset();
-    } catch (error) {
+      navigate("/dashboard/clientes", { replace: true });
+    } catch (error: any) {
       console.error("Erro ao cadastrar passageiro:", error);
       toast.error("Erro ao cadastrar passageiro. Tente novamente.");
     } finally {

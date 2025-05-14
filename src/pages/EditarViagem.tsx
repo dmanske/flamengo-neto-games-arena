@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -211,8 +210,23 @@ const EditarViagem = () => {
       // IDs para excluir (estão no banco mas não no formulário atual)
       const idsToDelete = [...existingIds].filter(id => !currentIds.has(id));
       
-      // Excluir ônibus que foram removidos
+      // Verificar se há passageiros associados aos ônibus que serão excluídos
       if (idsToDelete.length > 0) {
+        // Verificar se há passageiros associados a esses ônibus
+        const { data: passageirosAssociados, error: checkPassageirosError } = await supabase
+          .from("viagem_passageiros")
+          .select("onibus_id")
+          .in("onibus_id", idsToDelete);
+          
+        if (checkPassageirosError) throw checkPassageirosError;
+        
+        if (passageirosAssociados && passageirosAssociados.length > 0) {
+          toast.error(`Não é possível excluir ônibus que têm passageiros associados. Por favor, realoque ou remova os passageiros primeiro.`);
+          setIsLoading(false);
+          return; // Interrompe a execução
+        }
+        
+        // Se não houver passageiros associados, então exclui os ônibus
         const { error: deleteError } = await supabase
           .from("viagem_onibus")
           .delete()

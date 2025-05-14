@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +7,8 @@ import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Image as ImageIcon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import DatePicker, { registerLocale } from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,7 +52,6 @@ const viagemFormSchema = z.object({
   data_jogo: z.date({
     required_error: "Data do jogo é obrigatória",
   }),
-  data_jogo_manual: z.string().optional(),
   rota: z.string({
     required_error: "Rota é obrigatória",
   }),
@@ -70,6 +70,8 @@ const CadastrarViagem = () => {
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
@@ -78,7 +80,6 @@ const CadastrarViagem = () => {
     logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
     valor_padrao: 0,
     setor_padrao: "Norte",
-    data_jogo_manual: "",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -87,31 +88,7 @@ const CadastrarViagem = () => {
   });
 
   const watchAdversario = form.watch("adversario");
-  const watchDataManual = form.watch("data_jogo_manual");
   
-  // Controla a sincronização entre a data manual e o calendário
-  React.useEffect(() => {
-    if (watchDataManual) {
-      try {
-        // Tenta converter a data digitada para um objeto Date
-        const parts = watchDataManual.split('/');
-        if (parts.length === 3) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Meses em JS são 0-indexed
-          const year = parseInt(parts[2], 10);
-          
-          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-            const date = new Date(year, month, day);
-            date.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
-            form.setValue('data_jogo', date);
-          }
-        }
-      } catch (err) {
-        // Se a data não for válida, não faz nada
-      }
-    }
-  }, [watchDataManual, form]);
-
   const handlePrimaryBusChange = (tipo: TipoOnibus, empresa: EmpresaOnibus) => {
     // Esta função é passada para o OnibusForm para informar a mudança no ônibus principal
   };
@@ -201,6 +178,8 @@ const CadastrarViagem = () => {
     setLogoUrl("");
   };
 
+  registerLocale("pt-BR", ptBR);
+
   return (
     <div className="container py-6">
       <h1 className="text-3xl font-bold mb-6">Cadastrar Nova Viagem</h1>
@@ -280,77 +259,46 @@ const CadastrarViagem = () => {
                   )}
                 />
 
-                <div className="grid grid-cols-1 gap-2">
-                  <FormField
-                    control={form.control}
-                    name="data_jogo"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data do Jogo (Calendário)</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={`w-full pl-3 text-left font-normal ${
-                                  !field.value ? "text-muted-foreground" : ""
-                                }`}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP", { locale: ptBR })
-                                ) : (
-                                  <span>Selecione uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={(date) => {
-                                if (date) {
-                                  // Ajustar para meio-dia para evitar problemas de fuso horário
-                                  const adjustedDate = new Date(date);
-                                  adjustedDate.setHours(12, 0, 0, 0);
-                                  field.onChange(adjustedDate);
-                                  
-                                  // Atualizar também o campo de data manual
-                                  form.setValue("data_jogo_manual", format(adjustedDate, "dd/MM/yyyy", { locale: ptBR }));
-                                }
-                              }}
-                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                              initialFocus
-                              locale={ptBR}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="data_jogo_manual"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data do Jogo (Manual)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="DD/MM/AAAA" 
-                            {...field} 
+                <FormField
+                  control={form.control}
+                  name="data_jogo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data do Jogo</FormLabel>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', maxWidth: 240 }}>
+                        <DatePicker
+                          selected={field.value}
+                          onChange={(date: Date | null) => {
+                            field.onChange(date);
+                            setOpen(false);
+                          }}
+                          dateFormat="dd/MM/yyyy"
+                          locale="pt-BR"
+                          placeholderText="DD/MM/AAAA"
+                          className="input w-full pr-12"
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          minDate={new Date()}
+                          customInput={<Input style={{ paddingRight: 36 }} />}
+                          preventOpenOnFocus={true}
+                          open={open}
+                          onClickOutside={() => setOpen(false)}
+                        />
+                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                          <CalendarIcon
+                            size={20}
+                            onClick={e => {
+                              e.preventDefault();
+                              setOpen(true);
+                            }}
                           />
-                        </FormControl>
-                        <FormDescription>
-                          Digite a data no formato DD/MM/AAAA
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        </span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}

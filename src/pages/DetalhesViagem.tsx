@@ -184,6 +184,7 @@ const DetalhesViagem = () => {
         onSuccess={() => id && fetchPassageiros(id)}
         valorPadrao={viagem.valor_padrao}
         setorPadrao={viagem.setor_padrao}
+        defaultOnibusId={selectedOnibusId || ''}
       />
       
       <PassageiroEditDialog
