@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,10 +31,18 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import { ViagemCard } from "@/components/viagens/ViagemCard";
+import { usePassageirosCount } from "@/hooks/usePassageirosCount";
 
 interface Viagem {
   id: string;
@@ -46,6 +55,7 @@ interface Viagem {
   status_viagem: string;
   logo_flamengo: string | null;
   logo_adversario: string | null;
+  capacidade_onibus: number;
 }
 
 const Viagens = () => {
@@ -55,6 +65,7 @@ const Viagens = () => {
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const navigate = useNavigate();
 
   // Fetch viagens
@@ -89,6 +100,11 @@ const Viagens = () => {
       setLoading(false);
     }
   };
+
+  // Buscar contagem de passageiros para cada viagem
+  const { passageirosCount } = usePassageirosCount(
+    viagens.map(viagem => viagem.id)
+  );
 
   // Apply filters
   const filteredViagens = viagens.filter((viagem) => {
@@ -161,169 +177,272 @@ const Viagens = () => {
   };
 
   return (
-    <div className="container py-6">
-      <h1 className="text-3xl font-bold mb-6">Viagens Cadastradas</h1>
-      
-      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
-        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar viagem..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+    <TooltipProvider>
+      <div className="container py-6">
+        <h1 className="text-3xl font-bold mb-6">Viagens Cadastradas</h1>
+        
+        <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar viagem..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Select
+              value={filterStatus || "todos"}
+              onValueChange={(value) => setFilterStatus(value === "todos" ? null : value)}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="Aberta">Aberta</SelectItem>
+                <SelectItem value="Fechada">Fechada</SelectItem>
+                <SelectItem value="Concluída">Concluída</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex border rounded-md shadow-sm">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    className="rounded-r-none"
+                    onClick={() => setViewMode('table')}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Visualização em tabela</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    className="rounded-l-none"
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Visualização em cards</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-          <Select
-            value={filterStatus || "todos"}
-            onValueChange={(value) => setFilterStatus(value === "todos" ? null : value)}
+          <Button 
+            onClick={() => navigate("/dashboard/cadastrar-viagem")}
+            className="bg-primary hover:bg-primary/90 w-full md:w-auto"
           >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="Aberta">Aberta</SelectItem>
-              <SelectItem value="Fechada">Fechada</SelectItem>
-              <SelectItem value="Concluída">Concluída</SelectItem>
-            </SelectContent>
-          </Select>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nova Viagem
+          </Button>
         </div>
-        <Button 
-          onClick={() => navigate("/dashboard/cadastrar-viagem")}
-          className="bg-primary hover:bg-primary/90 w-full md:w-auto"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nova Viagem
-        </Button>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Lista de Viagens</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Carregando viagens...</span>
+              </div>
+            ) : filteredViagens.length === 0 ? (
+              <div className="py-8 text-center">
+                {searchTerm || filterStatus ? (
+                  <p className="text-gray-500">Nenhuma viagem encontrada com esses critérios de busca.</p>
+                ) : (
+                  <p className="text-gray-500">Nenhuma viagem cadastrada ainda.</p>
+                )}
+              </div>
+            ) : (
+              <>
+                {viewMode === 'table' ? (
+                  // Visualização em tabela
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Adversário</TableHead>
+                          <TableHead>Rota</TableHead>
+                          <TableHead>Valor Padrão</TableHead>
+                          <TableHead>Ocupação</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredViagens.map((viagem) => (
+                          <TableRow key={viagem.id}>
+                            <TableCell className="font-medium">{formatDate(viagem.data_jogo)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {viagem.logo_adversario && (
+                                  <img 
+                                    src={viagem.logo_adversario} 
+                                    alt={viagem.adversario} 
+                                    className="h-6 w-6 object-contain" 
+                                  />
+                                )}
+                                {viagem.adversario}
+                              </div>
+                            </TableCell>
+                            <TableCell>{viagem.rota}</TableCell>
+                            <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
+                            <TableCell>
+                              {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
+                                {viagem.status_viagem}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      asChild
+                                    >
+                                      <Link to={`/dashboard/viagem/${viagem.id}`}>
+                                        <Eye className="h-4 w-4" />
+                                        <span className="sr-only">Ver</span>
+                                      </Link>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Ver detalhes da viagem</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      asChild
+                                    >
+                                      <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Editar</span>
+                                      </Link>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Editar viagem</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          size="sm" 
+                                          variant="outline" 
+                                          onClick={() => setViagemToDelete(viagem)}
+                                          className="text-red-500 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                          <span className="sr-only">Excluir</span>
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Excluir viagem</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={handleDeleteViagem}
+                                        className="bg-red-600 hover:bg-red-700"
+                                        disabled={isDeleting}
+                                      >
+                                        {isDeleting ? (
+                                          <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Excluindo...
+                                          </>
+                                        ) : (
+                                          'Excluir'
+                                        )}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  // Visualização em cards
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredViagens.map((viagem) => (
+                      <AlertDialog key={viagem.id}>
+                        <ViagemCard 
+                          viagem={viagem} 
+                          passageirosCount={passageirosCount[viagem.id] || 0}
+                          onDeleteClick={(v) => setViagemToDelete(v)}
+                        />
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={handleDeleteViagem}
+                              className="bg-red-600 hover:bg-red-700"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Excluindo...
+                                </>
+                              ) : (
+                                'Excluir'
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Lista de Viagens</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Carregando viagens...</span>
-            </div>
-          ) : filteredViagens.length === 0 ? (
-            <div className="py-8 text-center">
-              {searchTerm || filterStatus ? (
-                <p className="text-gray-500">Nenhuma viagem encontrada com esses critérios de busca.</p>
-              ) : (
-                <p className="text-gray-500">Nenhuma viagem cadastrada ainda.</p>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Adversário</TableHead>
-                    <TableHead>Rota</TableHead>
-                    <TableHead>Valor Padrão</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredViagens.map((viagem) => (
-                    <TableRow key={viagem.id}>
-                      <TableCell className="font-medium">{formatDate(viagem.data_jogo)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {viagem.logo_adversario && (
-                            <img 
-                              src={viagem.logo_adversario} 
-                              alt={viagem.adversario} 
-                              className="h-6 w-6 object-contain" 
-                            />
-                          )}
-                          {viagem.adversario}
-                        </div>
-                      </TableCell>
-                      <TableCell>{viagem.rota}</TableCell>
-                      <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
-                      <TableCell className="text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
-                          {viagem.status_viagem}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            asChild
-                          >
-                            <Link to={`/dashboard/viagem/${viagem.id}`}>
-                              <Eye className="h-4 w-4" />
-                              <span className="sr-only">Ver</span>
-                            </Link>
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            asChild
-                          >
-                            <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Editar</span>
-                            </Link>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => setViagemToDelete(viagem)}
-                                className="text-red-500 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Excluir</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={handleDeleteViagem}
-                                  className="bg-red-600 hover:bg-red-700"
-                                  disabled={isDeleting}
-                                >
-                                  {isDeleting ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                      Excluindo...
-                                    </>
-                                  ) : (
-                                    'Excluir'
-                                  )}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    </TooltipProvider>
   );
 };
 

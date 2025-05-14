@@ -33,6 +33,13 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { FormaPagamento, SetorMaracana, StatusPagamento } from "@/types/entities";
 import { formatCurrency } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
 // Define the form schema
 const formSchema = z.object({
@@ -68,6 +75,9 @@ interface OnibusOption {
   numero_identificacao: string | null;
   tipo_onibus: string;
   empresa: string;
+  capacidade_onibus: number;
+  passageiros_count?: number;
+  disponivel?: boolean;
 }
 
 export function PassageiroDialog({
@@ -80,6 +90,7 @@ export function PassageiroDialog({
 }: PassageiroDialogProps) {
   const [clientes, setClientes] = useState<ClienteOption[]>([]);
   const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
+  const [onibusLotados, setOnibusLotados] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   // Initialize the form
@@ -120,22 +131,57 @@ export function PassageiroDialog({
     }
   };
 
-  // Fetch buses associated with this trip
+  // Fetch buses associated with this trip and check their capacity
   const fetchOnibus = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar ônibus da viagem
+      const { data: onibusData, error: onibusError } = await supabase
         .from("viagem_onibus")
-        .select("id, numero_identificacao, tipo_onibus, empresa")
+        .select("id, numero_identificacao, tipo_onibus, empresa, capacidade_onibus")
         .eq("viagem_id", viagemId)
         .order("created_at");
 
-      if (error) throw error;
-      setOnibusList(data || []);
+      if (onibusError) throw onibusError;
       
-      // Set the first bus as default if it's the only one available
-      if (data && data.length === 1) {
-        form.setValue("onibus_id", data[0].id);
+      if (!onibusData || onibusData.length === 0) {
+        return;
       }
+      
+      // Para cada ônibus, contar quantos passageiros já estão alocados
+      const onibusWithCounts: OnibusOption[] = [];
+      const lotadosMap: Record<string, boolean> = {};
+      
+      for (const onibus of onibusData) {
+        // Buscar contagem de passageiros para este ônibus
+        const { data: passageirosData, error: passageirosError } = await supabase
+          .from('viagem_passageiros')
+          .select('id')
+          .eq('onibus_id', onibus.id);
+          
+        if (passageirosError) throw passageirosError;
+        
+        const passageirosCount = passageirosData ? passageirosData.length : 0;
+        const disponivel = passageirosCount < onibus.capacidade_onibus;
+        
+        onibusWithCounts.push({
+          ...onibus,
+          passageiros_count: passageirosCount,
+          disponivel: disponivel
+        });
+        
+        lotadosMap[onibus.id] = !disponivel;
+      }
+      
+      setOnibusList(onibusWithCounts);
+      setOnibusLotados(lotadosMap);
+      
+      // Encontrar o primeiro ônibus disponível para selecionar como padrão
+      const primeiroOnibusDisponivel = onibusWithCounts.find(o => o.disponivel);
+      
+      if (primeiroOnibusDisponivel) {
+        form.setValue("onibus_id", primeiroOnibusDisponivel.id);
+      }
+      
     } catch (error) {
       console.error("Erro ao buscar ônibus:", error);
       toast.error("Erro ao carregar a lista de ônibus");
@@ -145,6 +191,12 @@ export function PassageiroDialog({
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!viagemId) return;
+    
+    // Verificar se o ônibus está lotado
+    if (onibusLotados[values.onibus_id]) {
+      toast.error("Este ônibus já está lotado. Por favor, escolha outro ônibus.");
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -177,6 +229,10 @@ export function PassageiroDialog({
       if (error) throw error;
 
       toast.success("Passageiro adicionado com sucesso!");
+      
+      // Atualizar a capacidade dos ônibus após adicionar o passageiro
+      await fetchOnibus();
+      
       onSuccess();
       onOpenChange(false);
       form.reset({
@@ -186,7 +242,7 @@ export function PassageiroDialog({
         forma_pagamento: "Pix",
         valor: valorPadrao || 0,
         desconto: 0,
-        onibus_id: onibusList.length === 1 ? onibusList[0].id : "",
+        onibus_id: "",
       });
     } catch (error) {
       console.error("Erro ao adicionar passageiro:", error);
@@ -196,171 +252,56 @@ export function PassageiroDialog({
     }
   };
 
+  // Obter informações de ocupação do ônibus selecionado
+  const selectedOnibus = form.watch('onibus_id') 
+    ? onibusList.find(o => o.id === form.watch('onibus_id')) 
+    : null;
+
+  const ocupacaoInfo = selectedOnibus ? {
+    atual: selectedOnibus.passageiros_count || 0,
+    total: selectedOnibus.capacidade_onibus,
+    disponivel: selectedOnibus.disponivel
+  } : null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Adicionar Passageiro</DialogTitle>
-          <DialogDescription>
-            Adicione um passageiro à esta viagem.
-          </DialogDescription>
-        </DialogHeader>
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Passageiro</DialogTitle>
+            <DialogDescription>
+              Adicione um passageiro à esta viagem.
+            </DialogDescription>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="cliente_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Selecione o cliente para esta viagem
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="onibus_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ônibus</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um ônibus" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {onibusList.map((onibus) => (
-                        <SelectItem key={onibus.id} value={onibus.id}>
-                          {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Selecione o ônibus para o passageiro
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="setor_maracana"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Setor do Maracanã</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um setor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Norte">Norte</SelectItem>
-                      <SelectItem value="Sul">Sul</SelectItem>
-                      <SelectItem value="Leste">Leste</SelectItem>
-                      <SelectItem value="Oeste">Oeste</SelectItem>
-                      <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                      <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="valor"
+                name="cliente_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor (R$)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="desconto"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Desconto (R$)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status_pagamento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status do Pagamento</FormLabel>
+                    <FormLabel>Cliente</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione um status" />
+                          <SelectValue placeholder="Selecione um cliente" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Pendente">Pendente</SelectItem>
-                        <SelectItem value="Pago">Pago</SelectItem>
-                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                        {clientes.map((cliente) => (
+                          <SelectItem key={cliente.id} value={cliente.id}>
+                            {cliente.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      Selecione o cliente para esta viagem
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -368,48 +309,204 @@ export function PassageiroDialog({
 
               <FormField
                 control={form.control}
-                name="forma_pagamento"
+                name="onibus_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Forma de Pagamento</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      Ônibus
+                      {ocupacaoInfo && !ocupacaoInfo.disponivel && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Este ônibus está lotado</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value || "Pix"}
+                      defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma forma" />
+                          <SelectValue placeholder="Selecione um ônibus" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Pix">Pix</SelectItem>
-                        <SelectItem value="Cartão">Cartão</SelectItem>
-                        <SelectItem value="Boleto">Boleto</SelectItem>
-                        <SelectItem value="Paypal">Paypal</SelectItem>
-                        <SelectItem value="Outro">Outro</SelectItem>
+                        {onibusList.map((onibus) => (
+                          <SelectItem 
+                            key={onibus.id} 
+                            value={onibus.id}
+                            disabled={!onibus.disponivel}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span>
+                                {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
+                              </span>
+                              <span className={`text-xs ${!onibus.disponivel ? 'text-red-500' : 'text-green-600'}`}>
+                                {onibus.passageiros_count || 0}/{onibus.capacidade_onibus}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {ocupacaoInfo 
+                        ? `Ocupação atual: ${ocupacaoInfo.atual}/${ocupacaoInfo.total} passageiros` 
+                        : "Selecione o ônibus para o passageiro"}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="setor_maracana"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Setor do Maracanã</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um setor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Norte">Norte</SelectItem>
+                        <SelectItem value="Sul">Sul</SelectItem>
+                        <SelectItem value="Leste">Leste</SelectItem>
+                        <SelectItem value="Oeste">Oeste</SelectItem>
+                        <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
+                        <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Salvando..." : "Salvar Passageiro"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="desconto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Desconto (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status_pagamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status do Pagamento</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pendente">Pendente</SelectItem>
+                          <SelectItem value="Pago">Pago</SelectItem>
+                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="forma_pagamento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Forma de Pagamento</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || "Pix"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma forma" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pix">Pix</SelectItem>
+                          <SelectItem value="Cartão">Cartão</SelectItem>
+                          <SelectItem value="Boleto">Boleto</SelectItem>
+                          <SelectItem value="Paypal">Paypal</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || (selectedOnibus && !selectedOnibus.disponivel)}
+                >
+                  {isLoading ? "Salvando..." : "Salvar Passageiro"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 }
