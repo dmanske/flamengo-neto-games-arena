@@ -133,10 +133,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       
     } catch (err) {
       console.error("Erro ao buscar detalhes da viagem:", err);
-      toast({
-        description: "Erro ao carregar detalhes da viagem",
-        variant: "destructive"
-      });
+      toast.error("Erro ao carregar detalhes da viagem");
     } finally {
       setIsLoading(false);
     }
@@ -158,10 +155,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       }
     } catch (err) {
       console.error("Erro ao buscar ônibus:", err);
-      toast({
-        description: "Erro ao carregar dados dos ônibus",
-        variant: "destructive"
-      });
+      toast.error("Erro ao carregar dados dos ônibus");
     }
   };
 
@@ -242,10 +236,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
-      toast({
-        description: "Erro ao carregar passageiros",
-        variant: "destructive"
-      });
+      toast.error("Erro ao carregar passageiros");
     }
   };
 
@@ -296,16 +287,11 @@ export function useViagemDetails(viagemId: string | undefined) {
         throw error;
       }
       
-      toast({
-        description: "Viagem excluída com sucesso!"
-      });
+      toast.success("Viagem excluída com sucesso!");
       navigate("/dashboard/viagens");
     } catch (err) {
       console.error("Erro ao excluir viagem:", err);
-      toast({
-        description: "Erro ao excluir viagem",
-        variant: "destructive"
-      });
+      toast.error("Erro ao excluir viagem");
     } finally {
       setIsLoading(false);
     }
