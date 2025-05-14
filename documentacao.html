@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação - Sistema de Gerenciamento de Caravanas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3 {
+            color: #1a1a1a;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .feature-list li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #666;
+        }
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .status.implementado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.pendente {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sistema de Gerenciamento de Caravanas</h1>
+    
+    <div class="section">
+        <h2>Visão Geral</h2>
+        <p>
+            O Sistema de Gerenciamento de Caravanas é uma aplicação web desenvolvida para gerenciar caravanas de torcedores do Flamengo, 
+            permitindo o controle de viagens, ônibus, passageiros e pagamentos.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Funcionalidades Implementadas</h2>
+        <ul class="feature-list">
+            <li>
+                <strong>Gerenciamento de Viagens</strong>
+                <span class="status implementado">Implementado</span>
+                <ul>
+                    <li>Cadastro de novas viagens</li>
+                    <li>Edição de viagens existentes</li>
+                    <li>Visualização de detalhes da viagem</li>
+                    <li>Controle de status da viagem</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Gerenciamento de Ônibus</strong>
+                <span class="status implementado">Implementado</span>
+                <ul>
+                    <li>Adição de ônibus às viagens</li>
+                    <li>Remoção de ônibus (com validação de passageiros)</li>
+                    <li>Controle de capacidade dos ônibus</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Gerenciamento de Passageiros</strong>
+                <span class="status implementado">Implementado</span>
+                <ul>
+                    <li>Cadastro de novos passageiros</li>
+                    <li>Associação de passageiros a ônibus específicos</li>
+                    <li>Controle de status de pagamento</li>
+                    <li>Notificação via WhatsApp (simulada)</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Interface do Usuário</strong>
+                <span class="status implementado">Implementado</span>
+                <ul>
+                    <li>Dashboard com visão geral</li>
+                    <li>Navegação intuitiva</li>
+                    <li>Formulários com validação</li>
+                    <li>Feedback visual de ações</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Funcionalidades Pendentes</h2>
+        <ul class="feature-list">
+            <li>
+                <strong>Autenticação e Autorização</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Implementação de login de usuários</li>
+                    <li>Controle de acesso baseado em perfis</li>
+                    <li>Recuperação de senha</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Integração com WhatsApp</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Implementação real do envio de mensagens</li>
+                    <li>Confirmação de recebimento</li>
+                    <li>Template de mensagens personalizável</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Relatórios e Analytics</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Relatório de ocupação dos ônibus</li>
+                    <li>Relatório financeiro</li>
+                    <li>Dashboard com métricas importantes</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Melhorias no Cadastro de Passageiros</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Adição de campo para CPF</li>
+                    <li>Validação de CPF</li>
+                    <li>Upload de documentos</li>
+                    <li>Histórico de viagens do passageiro</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Pagamentos</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Integração com gateway de pagamento</li>
+                    <li>Geração de boletos</li>
+                    <li>Controle de parcelas</li>
+                    <li>Comprovantes de pagamento</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Melhorias Técnicas Pendentes</h2>
+        <ul class="feature-list">
+            <li>
+                <strong>Testes</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Implementação de testes unitários</li>
+                    <li>Testes de integração</li>
+                    <li>Testes end-to-end</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Performance</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Otimização de consultas ao banco de dados</li>
+                    <li>Implementação de cache</li>
+                    <li>Lazy loading de componentes</li>
+                </ul>
+            </li>
+            <li>
+                <strong>Segurança</strong>
+                <span class="status pendente">Pendente</span>
+                <ul>
+                    <li>Implementação de HTTPS</li>
+                    <li>Proteção contra ataques comuns</li>
+                    <li>Auditoria de segurança</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 
