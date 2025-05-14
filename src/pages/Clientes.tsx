@@ -215,7 +215,7 @@ const Clientes = () => {
       
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Lista de Clientes</CardTitle>
+          <CardTitle className="section-title mb-0">Lista de Clientes</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -241,6 +241,7 @@ const Clientes = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {showPhotos && <TableHead className="text-center">Foto</TableHead>}
                     <TableHead className="text-center">Nome</TableHead>
                     <TableHead className="text-center">Telefone</TableHead>
                     <TableHead className="text-center">Email</TableHead>
@@ -253,27 +254,29 @@ const Clientes = () => {
                 <TableBody>
                   {filteredClientes.map((cliente) => (
                     <TableRow key={cliente.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
                           {showPhotos && (
-                            <Avatar className="h-8 w-8">
+                        <TableCell className="text-center">
+                          <Avatar className="mx-auto h-12 w-12 border-2 border-primary/20">
                               {cliente.foto ? (
-                                <AvatarImage src={cliente.foto} alt={cliente.nome} />
+                              <AvatarImage 
+                                src={cliente.foto} 
+                                alt={cliente.nome}
+                                className="object-cover"
+                              />
                               ) : (
-                                <AvatarFallback>
-                                  <User className="h-4 w-4 text-muted-foreground" />
+                              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                                {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                 </AvatarFallback>
                               )}
                             </Avatar>
+                        </TableCell>
                           )}
-                          {cliente.nome}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">{cliente.telefone}</TableCell>
-                      <TableCell className="text-center">{cliente.email}</TableCell>
-                      <TableCell className="text-center">{cliente.cidade}/{cliente.estado}</TableCell>
-                      <TableCell className="text-center">{formatCPF(cliente.cpf)}</TableCell>
-                      <TableCell className="text-center">{formatDate(cliente.data_nascimento)}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-rome-navy">{cliente.nome}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.telefone}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{(cliente.email || '').toLowerCase()}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.cidade}/{cliente.estado}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{formatCPF(cliente.cpf)}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{formatDate(cliente.data_nascimento)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           <Button 

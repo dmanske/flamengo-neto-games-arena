@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -82,13 +81,11 @@ export function ViagemCard({
   
   return (
     <TooltipProvider>
-      <Card className="overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-xs">
-        {/* Header with Flamengo gradient */}
-        <div className="bg-gradient-to-r from-red-600 to-black text-white p-3 flex justify-between items-center">
-          <h3 className="text-sm font-semibold m-0">Caravana Rubro-Negra</h3>
-          <Badge className={`${getStatusColor(viagem.status_viagem)} px-2 py-1 text-xs font-medium rounded-full`}>
-            {viagem.status_viagem}
-          </Badge>
+      <Card className="roman-card overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-xs">
+        {/* Header com gradiente vermelho clarinho para preto */}
+        <div className="bg-gradient-to-r from-rose-200 via-rose-400 to-black text-rome-navy p-3 flex justify-between items-center rounded-t-xl">
+          <h3 className="text-lg font-cinzel tracking-wide drop-shadow-sm m-0">Caravana Rubro-Negra</h3>
+          <Badge className={`${getStatusColor(viagem.status_viagem)} px-2 py-1 text-xs font-medium rounded-full shadow-sm`}>{viagem.status_viagem}</Badge>
         </div>
         
         {/* Team logos section */}
@@ -117,14 +114,14 @@ export function ViagemCard({
                 <div className="w-6 h-6 flex items-center justify-center text-red-600">
                   <Calendar className="h-3.5 w-3.5" />
                 </div>
-                <div className="text-xs">{formatDate(viagem.data_jogo)}</div>
+                <div className="text-xs italic">{formatDate(viagem.data_jogo)}</div>
               </div>
               
               <div className="flex items-center">
                 <div className="w-6 h-6 flex items-center justify-center text-red-600">
                   <MapPin className="h-3.5 w-3.5" />
                 </div>
-                <div className="text-xs">{viagem.rota}</div>
+                <div className="text-xs italic">{viagem.rota}</div>
               </div>
               
               <div className="flex items-center">
@@ -138,14 +135,14 @@ export function ViagemCard({
                 <div className="w-6 h-6 flex items-center justify-center text-red-600">
                   <DollarSign className="h-3.5 w-3.5" />
                 </div>
-                <div className="font-bold text-xs">{formatValue(viagem.valor_padrao)}</div>
+                <div className="font-bold text-xs italic">{formatValue(viagem.valor_padrao)}</div>
               </div>
             </div>
             
             {/* Occupation progress bar */}
             <div className="mt-3">
               <div className="flex justify-between mb-1 text-xs">
-                <span>Ocupação</span>
+                <span className="italic">Ocupação</span>
                 <span className="font-bold">
                   {passageirosCount} de {viagem.capacidade_onibus}
                 </span>

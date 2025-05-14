@@ -100,7 +100,7 @@ export function OnibusCards({
                     </Badge>
                   )}
                 </CardTitle>
-                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                <Badge variant="outline" className=" bg-blue-50 text-blue-600 border-blue-200">
                   {onibus.tipo_onibus}
                 </Badge>
               </div>

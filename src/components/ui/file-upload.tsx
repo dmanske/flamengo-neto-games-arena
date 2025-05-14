@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, UploadCloud, X } from "lucide-react";
@@ -126,7 +125,7 @@ export function FileUploadControls({
         type="button"
         variant="outline"
         className={cn(
-          "w-full justify-start text-sm font-normal",
+          "w-full justify-start text-sm font-normal bg-[#e40016] text-white hover:bg-[#c20012] border-none",
           isUploading && "pointer-events-none opacity-60"
         )}
         onClick={onSelectFile}

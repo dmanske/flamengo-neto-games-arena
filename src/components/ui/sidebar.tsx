@@ -50,7 +50,7 @@ export const useSidebar = () => {
 
 // Sidebar components
 export const Sidebar = ({ children }: { children: React.ReactNode }) => {
-  return <aside className="w-64 min-h-screen border-r">{children}</aside>;
+  return <aside className="w-64 min-h-screen border-r !bg-rome-navy !text-rome-gold !border-rome-gold/30 sidebar">{children}</aside>;
 };
 
 export const SidebarContent = ({ children }: { children: React.ReactNode }) => {

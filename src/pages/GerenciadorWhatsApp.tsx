@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WhatsappLinkGenerator from "@/components/WhatsappLinkGenerator";
@@ -6,8 +5,6 @@ import WhatsappLinkGenerator from "@/components/WhatsappLinkGenerator";
 const GerenciadorWhatsApp = () => {
   return (
     <div className="container py-6">
-      <h1 className="text-3xl font-bold mb-6">Gerenciador de Links WhatsApp</h1>
-      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <WhatsappLinkGenerator className="h-full" />

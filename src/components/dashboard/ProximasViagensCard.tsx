@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,17 +41,14 @@ export const ProximasViagensCard = ({
   };
 
   return (
-    <Card className="overflow-hidden border shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-red-600 to-black text-white">
-        <CardTitle>Próximas Viagens</CardTitle>
-        <CardDescription className="text-gray-200">
-          Acompanhe as próximas caravanas
-        </CardDescription>
-      </CardHeader>
+    <Card className="roman-card overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-lg w-full p-6">
+      <div className="bg-gradient-to-r from-red-600 via-red-800 to-black text-rome-navy p-4 flex justify-between items-center rounded-t-xl mb-4">
+        <h3 className="text-lg font-cinzel tracking-wide drop-shadow-sm m-0 text-white">Próximas Viagens</h3>
+      </div>
       <CardContent className="pt-6 bg-white">
         {isLoading ? (
           <div className="flex items-center justify-center py-4">
-            <p className="text-muted-foreground">Carregando viagens...</p>
+            <p className="italic text-muted-foreground">Carregando viagens...</p>
           </div>
         ) : proximasViagens.length > 0 ? (
           <div className="space-y-5">
@@ -101,7 +97,7 @@ export const ProximasViagensCard = ({
                 </div>
               </div>
             ))}
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg text-white">
               <Link to="/dashboard/viagens">Ver todas as viagens</Link>
             </Button>
           </div>
@@ -109,10 +105,10 @@ export const ProximasViagensCard = ({
           <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
             <CalendarCheck className="h-12 w-12 mb-2 text-muted-foreground/50" />
             <p>Nenhuma viagem programada</p>
-            <p className="text-sm">
+            <p className="italic text-sm">
               Clique em "Nova Viagem" para cadastrar
             </p>
-            <Button asChild variant="outline" className="w-full mt-4">
+            <Button asChild className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg text-white mt-4">
               <Link to="/dashboard/cadastrar-viagem">Cadastrar Viagem</Link>
             </Button>
           </div>

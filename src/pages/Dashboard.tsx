@@ -6,6 +6,13 @@ import { DashboardStatsGrid } from "@/components/dashboard/DashboardStatsGrid";
 import { ProximasViagensCard } from "@/components/dashboard/ProximasViagensCard";
 import { UltimosPaymentsCard } from "@/components/dashboard/UltimosPagamentosCard";
 import { DashboardImageSection } from "@/components/dashboard/DashboardImageSection";
+import { ClientesNovosCard } from "@/components/dashboard/ClientesNovosCard";
+import { PagamentosPendentesCard } from "@/components/dashboard/PagamentosPendentesCard";
+import { ViagemMaisLotadaCard } from "@/components/dashboard/ViagemMaisLotadaCard";
+import { RankingAdversariosCard } from "@/components/dashboard/RankingAdversariosCard";
+import { DashboardChartsGrid } from "@/components/dashboard/DashboardChartsGrid";
+import { TopClientesCard } from "@/components/dashboard/TopClientesCard";
+import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
 
 interface Viagem {
   id: string;
@@ -136,13 +143,23 @@ const Dashboard = () => {
       />
       
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-0 mb-6">
         <ProximasViagensCard 
           isLoading={isLoading} 
           proximasViagens={proximasViagens} 
         />
-        <UltimosPaymentsCard />
+        <SetoresEstadioMaisEscolhidosChart />
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <ClientesNovosCard />
+        <PagamentosPendentesCard />
+        <ViagemMaisLotadaCard />
+        <RankingAdversariosCard />
+        <TopClientesCard />
+      </div>
+      
+      {/* Charts Grid */}
+      <DashboardChartsGrid />
       
       {/* Image Section */}
       <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />

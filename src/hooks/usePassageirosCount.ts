@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 export function usePassageirosCount(viagemIds: string[]) {
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
@@ -48,7 +48,11 @@ export function usePassageirosCount(viagemIds: string[]) {
         setPassageirosCount(countsMap);
       } catch (error) {
         console.error("Erro ao buscar contagem de passageiros:", error);
-        toast("Erro: Não foi possível carregar a contagem de passageiros");
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível carregar a contagem de passageiros"
+        });
       } finally {
         setLoading(false);
       }

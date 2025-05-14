@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Bus, CalendarCheck, CreditCard, DollarSign, TrendingUp, Users } from "lucide-react";
 import { DashboardStatCard } from "./DashboardStatCard";
@@ -49,49 +48,47 @@ export const DashboardStatsGrid = ({
       <DashboardStatCard
         title="Total Viagens"
         value={viagemCount}
-        description={formatViagemDescription(viagemCount)}
         icon={CalendarCheck}
-        className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30"
-        iconContainerClassName="bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300"
+        className=""
+        color="bg-gradient-to-br from-red-200 via-yellow-100 to-rose-100"
+        iconContainerClassName="bg-orange-400/80 text-white"
         loading={isLoading}
+        hideDescription={true}
       />
 
       {/* Clientes Card */}
       <DashboardStatCard
         title="Clientes"
         value={clientCount}
-        description={formatClientDescription(clientCount)}
         icon={Users}
-        className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30"
-        iconContainerClassName="bg-green-100 text-green-600 dark:bg-green-800 dark:text-green-300"
+        className=""
+        color="bg-gradient-to-br from-green-200 via-green-100 to-emerald-50"
+        iconContainerClassName="bg-green-700/80 text-white"
         loading={isLoading}
+        hideDescription={true}
       />
 
       {/* Ônibus Card */}
       <DashboardStatCard
         title="Ônibus"
         value={busStats.totalBuses}
-        description={formatBusDescription(busStats.totalBuses)}
         icon={Bus}
-        className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30"
-        iconContainerClassName="bg-amber-100 text-amber-600 dark:bg-amber-800 dark:text-amber-300"
+        className=""
+        color="bg-gradient-to-br from-blue-200 via-blue-100 to-sky-50"
+        iconContainerClassName="bg-blue-700/80 text-white"
         loading={busStats.isLoading}
+        hideDescription={true}
       />
 
       {/* Ônibus Mais Usado Card */}
       <DashboardStatCard
         title="Ônibus Mais Usado"
         value={busStats.mostUsedBus ? busStats.mostUsedBus.tipo : "Nenhum"}
-        description={
-          busStats.mostUsedBus
-            ? `Usado em ${busStats.mostUsedBus.count} ${
-                busStats.mostUsedBus.count === 1 ? "viagem" : "viagens"
-              }`
-            : "Sem dados de utilização"
-        }
+        description={busStats.mostUsedBus ? `Usado em ${busStats.mostUsedBus.count} ${busStats.mostUsedBus.count === 1 ? "viagem" : "viagens"}` : "Sem dados de utilização"}
         icon={TrendingUp}
-        className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30"
-        iconContainerClassName="bg-purple-100 text-purple-600 dark:bg-purple-800 dark:text-purple-300"
+        className=""
+        color="bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-50"
+        iconContainerClassName="bg-yellow-500/80 text-white"
         loading={busStats.isLoading}
       />
 
@@ -101,8 +98,9 @@ export const DashboardStatsGrid = ({
         value={formatCurrency(monthlyRevenue)}
         description="Total do mês atual"
         icon={DollarSign}
-        className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30"
-        iconContainerClassName="bg-emerald-100 text-emerald-600 dark:bg-emerald-800 dark:text-emerald-300"
+        className=""
+        color="bg-gradient-to-br from-green-100 via-emerald-100 to-lime-50"
+        iconContainerClassName="bg-green-500/80 text-white"
         loading={isLoading}
       />
     </div>

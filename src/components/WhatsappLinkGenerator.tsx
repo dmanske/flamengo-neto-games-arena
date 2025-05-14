@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,14 +105,14 @@ const WhatsappLinkGenerator: React.FC<WhatsappLinkGeneratorProps> = ({ className
           <p className="text-sm font-medium mb-1">Link de cadastro:</p>
           <div className="flex items-center gap-2 border p-2 rounded-md bg-muted">
             <span className="text-sm truncate flex-1">{registrationUrl}</span>
-            <Button variant="outline" size="icon" onClick={copyLink}>
+            <Button className="bg-[#22c35f] hover:bg-[#128C7E] text-white" size="icon" onClick={copyLink}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={copyLink}>
+        <Button className="bg-[#22c35f] hover:bg-[#128C7E] text-white" onClick={copyLink}>
           <Copy className="h-4 w-4 mr-2" />
           Copiar Link
         </Button>

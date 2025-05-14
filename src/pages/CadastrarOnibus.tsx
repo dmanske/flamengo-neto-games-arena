@@ -103,7 +103,7 @@ const CadastrarOnibus = () => {
           >
             <div className="flex gap-4 justify-end">
               <Button 
-                variant="outline" 
+                className="bg-[#e40016] text-white hover:bg-[#c20012]"
                 onClick={() => navigate("/dashboard/onibus")} 
                 type="button"
               >
@@ -112,6 +112,7 @@ const CadastrarOnibus = () => {
               <Button 
                 type="submit"
                 disabled={isLoading}
+                className="bg-[#e40016] text-white hover:bg-[#c20012]"
               >
                 {isLoading ? (
                   <>

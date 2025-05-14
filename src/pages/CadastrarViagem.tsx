@@ -1,12 +1,14 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Image as ImageIcon, X } from "lucide-react";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import DatePicker, { registerLocale } from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,19 +69,10 @@ const CadastrarViagem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
-  const [logoFlamengoUrl, setLogoFlamengoUrl] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
-  const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
+  const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   
-  const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([{
-    // Default onibus
-    viagem_id: "",
-    capacidade_onibus: 46,
-    numero_identificacao: "Ônibus 1",
-    tipo_onibus: "46 Semi-Leito" as TipoOnibus,
-    empresa: "Viação 1001" as EmpresaOnibus,
-    lugares_extras: 0
-  }]);
-
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
     status_viagem: "Aberta",
@@ -95,63 +88,80 @@ const CadastrarViagem = () => {
   });
 
   const watchAdversario = form.watch("adversario");
+  
+  const handlePrimaryBusChange = (tipo: TipoOnibus, empresa: EmpresaOnibus) => {
+    // Esta função é passada para o OnibusForm para informar a mudança no ônibus principal
+  };
 
   const onSubmit = async (data: ViagemFormValues) => {
     if (onibusArray.length === 0) {
-      toast("Adicione pelo menos um ônibus para a viagem");
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos um ônibus para a viagem",
+        variant: "destructive",
+      });
       return;
     }
     
     setIsLoading(true);
     try {
-      const capacidadeTotal = onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0), 0);
-      
       // Ajuste para garantir que a data está no formato correto
       const dataJogo = new Date(data.data_jogo);
       dataJogo.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
       
-      // Inserir viagem
+      // Obter o tipo e empresa do primeiro ônibus para a viagem
+      const primaryBus = onibusArray[0];
+      
+      // Primeiro, criamos a viagem
       const { data: viagemData, error: viagemError } = await supabase
         .from("viagens")
         .insert({
           adversario: data.adversario,
           data_jogo: dataJogo.toISOString(),
           rota: data.rota,
-          status_viagem: data.status_viagem || "Aberta",
-          logo_adversario: logoUrl || null,
-          logo_flamengo: logoFlamengoUrl,
-          capacidade_onibus: capacidadeTotal,
+          status_viagem: data.status_viagem,
+          logo_adversario: data.logo_adversario || null,
+          logo_flamengo: data.logo_flamengo,
           valor_padrao: data.valor_padrao || null,
-          setor_padrao: data.setor_padrao || "Norte"
+          setor_padrao: data.setor_padrao || null,
+          // Preenchendo os campos obrigatórios com os dados do primeiro ônibus
+          tipo_onibus: primaryBus.tipo_onibus,
+          empresa: primaryBus.empresa,
+          // Calculamos a capacidade total somando todos os ônibus
+          capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus, 0),
         })
         .select("id")
         .single();
-        
+
       if (viagemError) throw viagemError;
       
+      // Em seguida, inserimos os ônibus relacionados à viagem
       const viagemId = viagemData.id;
       
-      // Inserir ônibus para a viagem
-      for (const onibus of onibusArray) {
-        const { error: onibusError } = await supabase
-          .from("viagem_onibus")
-          .insert({
-            viagem_id: viagemId,
-            capacidade_onibus: onibus.capacidade_onibus,
-            numero_identificacao: onibus.numero_identificacao,
-            tipo_onibus: onibus.tipo_onibus,
-            empresa: onibus.empresa,
-            lugares_extras: onibus.lugares_extras || 0
-          });
-          
-        if (onibusError) throw onibusError;
-      }
+      const onibusWithViagemId = onibusArray.map(onibus => ({
+        ...onibus,
+        viagem_id: viagemId
+      }));
       
-      toast("Viagem cadastrada com sucesso!");
-      navigate(`/dashboard/viagem/${viagemId}`);
+      const { error: onibusError } = await supabase
+        .from("viagem_onibus")
+        .insert(onibusWithViagemId);
+        
+      if (onibusError) throw onibusError;
+
+      toast({
+        title: "Sucesso",
+        description: "Viagem cadastrada com sucesso!",
+      });
+      
+      navigate("/dashboard/viagens"); // Redireciona para a lista de viagens
     } catch (error: any) {
       console.error("Erro ao cadastrar viagem:", error);
-      toast("Erro ao cadastrar viagem. Tente novamente.");
+      toast({
+        title: "Erro",
+        description: `Erro ao cadastrar viagem: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -163,32 +173,16 @@ const CadastrarViagem = () => {
     setLogoDialogOpen(false);
   };
 
-  const handleLogoFlamengoSelect = (url: string) => {
-    form.setValue("logo_flamengo", url);
-    setLogoFlamengoUrl(url);
-    setLogoFlamengoDialogOpen(false);
-  };
-
   const clearLogo = () => {
     form.setValue("logo_adversario", "");
     setLogoUrl("");
   };
 
-  const clearLogoFlamengo = () => {
-    // Reset to default Flamengo logo
-    const defaultLogo = "https://logodetimes.com/wp-content/uploads/flamengo.png";
-    form.setValue("logo_flamengo", defaultLogo);
-    setLogoFlamengoUrl(defaultLogo);
-  };
+  registerLocale("pt-BR", ptBR);
 
   return (
     <div className="container py-6">
-      <div className="mb-6 flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={() => navigate("/dashboard/viagens")}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-3xl font-bold">Cadastrar Viagem</h1>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">Cadastrar Nova Viagem</h1>
 
       <Card>
         <CardHeader>
@@ -264,101 +258,43 @@ const CadastrarViagem = () => {
                     </FormItem>
                   )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="logo_flamengo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Logo do Flamengo</FormLabel>
-                      <div className="flex flex-col space-y-2">
-                        {logoFlamengoUrl && (
-                          <div className="relative w-16 h-16 mb-2">
-                            <img 
-                              src={logoFlamengoUrl} 
-                              alt="Logo do Flamengo" 
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = "https://logodetimes.com/wp-content/uploads/flamengo.png";
-                              }} 
-                            />
-                            <button
-                              type="button"
-                              onClick={clearLogoFlamengo}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setLogoFlamengoDialogOpen(true)}
-                            className="flex items-center gap-2"
-                          >
-                            <ImageIcon className="w-4 h-4" />
-                            {logoFlamengoUrl ? "Alterar Logo" : "Selecionar Logo"}
-                          </Button>
-                          <input 
-                            type="hidden" 
-                            {...field} 
-                            value={logoFlamengoUrl} 
-                          />
-                        </div>
-                      </div>
-                      <FormDescription>
-                        Selecione o logo do Flamengo para esta viagem
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={form.control}
                   name="data_jogo"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>Data do Jogo</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={`w-full pl-3 text-left font-normal ${
-                                !field.value ? "text-muted-foreground" : ""
-                              }`}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Ajustar para meio-dia para evitar problemas de fuso horário
-                                const adjustedDate = new Date(date);
-                                adjustedDate.setHours(12, 0, 0, 0);
-                                field.onChange(adjustedDate);
-                              }
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', maxWidth: 240 }}>
+                        <DatePicker
+                          selected={field.value}
+                          onChange={(date: Date | null) => {
+                            field.onChange(date);
+                            setOpen(false);
+                          }}
+                          dateFormat="dd/MM/yyyy"
+                          locale="pt-BR"
+                          placeholderText="DD/MM/AAAA"
+                          className="input w-full pr-12"
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          minDate={new Date()}
+                          customInput={<Input style={{ paddingRight: 36 }} />}
+                          preventOpenOnFocus={true}
+                          open={open}
+                          onClickOutside={() => setOpen(false)}
+                        />
+                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                          <CalendarIcon
+                            size={20}
+                            onClick={e => {
+                              e.preventDefault();
+                              setOpen(true);
                             }}
-                            initialFocus
-                            locale={ptBR}
                           />
-                        </PopoverContent>
-                      </Popover>
+                        </span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -372,7 +308,7 @@ const CadastrarViagem = () => {
                       <FormLabel>Rota da Viagem</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        value={field.value}
+                        defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -403,7 +339,7 @@ const CadastrarViagem = () => {
                       <FormLabel>Status da Viagem</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        value={field.value}
+                        defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -439,7 +375,7 @@ const CadastrarViagem = () => {
                         />
                       </FormControl>
                       <FormDescription>
-                        Este valor será aplicado como padrão para todos os novos passageiros
+                        Este valor será aplicado como padrão para todos os passageiros
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -454,7 +390,7 @@ const CadastrarViagem = () => {
                       <FormLabel>Setor Padrão do Maracanã</FormLabel>
                       <Select 
                         onValueChange={field.onChange}
-                        value={field.value || "Norte"}
+                        defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -471,7 +407,7 @@ const CadastrarViagem = () => {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Este setor será aplicado como padrão para todos os novos passageiros
+                        Este setor será aplicado como padrão para todos os passageiros
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -482,14 +418,19 @@ const CadastrarViagem = () => {
               <OnibusForm 
                 onibusArray={onibusArray} 
                 onChange={setOnibusArray}
+                onPrimaryBusChange={handlePrimaryBusChange}
               />
 
               <div className="flex justify-end gap-4">
-                <Button variant="outline" onClick={() => navigate("/dashboard/viagens")} type="button">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate("/dashboard/viagens")} 
+                  type="button"
+                >
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Salvando..." : "Cadastrar Viagem"}
+                  {isLoading ? "Cadastrando..." : "Cadastrar Viagem"}
                 </Button>
               </div>
             </form>
@@ -501,7 +442,7 @@ const CadastrarViagem = () => {
       <Dialog open={logoDialogOpen} onOpenChange={setLogoDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Selecionar Logo do Time Adversário</DialogTitle>
+            <DialogTitle>Selecionar Logo do Time</DialogTitle>
             <DialogDescription>
               Digite o nome do time para buscar ou cole a URL de uma imagem
             </DialogDescription>
@@ -556,71 +497,6 @@ const CadastrarViagem = () => {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para buscar e selecionar logos do Flamengo */}
-      <Dialog open={logoFlamengoDialogOpen} onOpenChange={setLogoFlamengoDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Selecionar Logo do Flamengo</DialogTitle>
-            <DialogDescription>
-              Cole a URL de uma imagem ou use o logo padrão
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input 
-                type="text" 
-                placeholder="Cole a URL da imagem" 
-                value={logoFlamengoUrl}
-                onChange={e => setLogoFlamengoUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                onClick={() => handleLogoFlamengoSelect(logoFlamengoUrl)}
-                disabled={!logoFlamengoUrl}
-              >
-                Usar URL
-              </Button>
-            </div>
-            
-            <div className="border-t pt-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Logo Padrão:</h3>
-                <div className="flex items-center gap-4 p-4 border rounded-md">
-                  <img 
-                    src="https://logodetimes.com/wp-content/uploads/flamengo.png" 
-                    alt="Logo do Flamengo" 
-                    className="h-16 w-auto" 
-                  />
-                  <Button
-                    onClick={() => handleLogoFlamengoSelect("https://logodetimes.com/wp-content/uploads/flamengo.png")}
-                  >
-                    Usar Logo Padrão
-                  </Button>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Ou navegue para escolher um logo:</h3>
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    variant="outline"
-                    onClick={() => window.open('https://logodetimes.com/?s=flamengo', '_blank')}
-                    className="w-full"
-                  >
-                    Buscar Logos do Flamengo
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    Navegue até o logo desejado, clique com o botão direito na imagem e selecione "Copiar endereço da imagem".
-                    Depois, cole o endereço no campo URL acima.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </DialogContent>

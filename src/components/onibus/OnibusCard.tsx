@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,26 +79,26 @@ export function OnibusCard({
         </CardHeader>
         <CardContent className="space-y-2">
           <div>
-            <span className="font-medium">Empresa:</span> {empresa}
+            <span className="font-cinzel font-medium">Empresa:</span> <span className="font-cinzel">{empresa}</span>
           </div>
           <div>
-            <span className="font-medium">Capacidade:</span> {capacidade} passageiros
+            <span className="font-cinzel font-medium">Capacidade:</span> <span className="font-cinzel">{capacidade} passageiros</span>
           </div>
           {numero_identificacao && (
             <div>
-              <span className="font-medium">Identificação:</span> {numero_identificacao}
+              <span className="font-cinzel font-medium">Identificação:</span> <span className="font-cinzel">{numero_identificacao}</span>
             </div>
           )}
           {description && (
             <div>
-              <span className="font-medium">Descrição:</span>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-3">{description}</p>
+              <span className="font-cinzel font-medium">Descrição:</span>
+              <p className="text-sm text-gray-500 mt-1 line-clamp-3 font-cinzel">{description}</p>
             </div>
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={handleEdit}
             className="flex items-center gap-1"

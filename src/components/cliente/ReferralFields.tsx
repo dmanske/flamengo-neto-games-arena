@@ -1,4 +1,3 @@
-
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,24 @@ interface ReferralFieldsProps {
 export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form, watchComoConheceu }) => {
   return (
     <>
+      <FormField
+        control={form.control}
+        name="observacoes"
+        render={({ field }) => (
+          <FormItem className="mb-2">
+            <FormLabel>Observações</FormLabel>
+            <FormControl>
+              <Textarea 
+                placeholder="Informações adicionais" 
+                className="min-h-[80px]"
+                {...field} 
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
       <FormField
         control={form.control}
         name="como_conheceu"
@@ -69,24 +86,6 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form, watchComoC
           )}
         />
       )}
-
-      <FormField
-        control={form.control}
-        name="observacoes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Observações</FormLabel>
-            <FormControl>
-              <Textarea 
-                placeholder="Informações adicionais" 
-                className="min-h-[100px]"
-                {...field} 
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </>
   );
 };

@@ -19,6 +19,7 @@ interface NavItemProps {
   isActive?: boolean;
   onClick?: () => void;
   exact?: boolean;
+  roman?: boolean;
 }
 
 const NavItem = ({
@@ -27,9 +28,14 @@ const NavItem = ({
   to,
   isActive = false,
   onClick,
-  exact = false
-}: NavItemProps) => {
-  return <Link to={to} onClick={onClick} className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors", isActive ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground")}>
+  exact = false,
+  roman = false
+}: NavItemProps & { roman?: boolean }) => {
+  return <Link to={to} onClick={onClick} className={cn(
+    "flex items-center gap-3 rounded-md px-3 py-2 font-cinzel font-normal not-italic uppercase tracking-normal transition-colors whitespace-nowrap",
+    roman && "hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90",
+    isActive ? "bg-white/20 text-white shadow-inner" : "text-white/90"
+  )}>
       {icon}
       <span>{title}</span>
     </Link>;
@@ -37,15 +43,20 @@ const NavItem = ({
 
 // LandingPageLink agora usa o componente Link do React Router em vez de anchor tag
 const LandingPageLink = ({
-  onClick
+  onClick,
+  roman = false
 }: {
   onClick?: () => void;
+  roman?: boolean;
 }) => {
   return (
     <Link 
       to="/site" 
       onClick={onClick} 
-      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 font-cinzel font-normal not-italic uppercase tracking-normal transition-colors whitespace-nowrap",
+        roman && "hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90 text-white/90"
+      )}
     >
       <Home className="h-5 w-5" />
       <span>Site</span>
@@ -76,48 +87,57 @@ const MainLayout = () => {
     setMenuOpen(!menuOpen);
   };
   const renderSidebarContent = () => <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-4 py-2">
-        {!collapsed && <div className="flex items-center gap-2">
-            <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="h-8 w-8" />
-            <span className="text-xl font-bold">FlaViagens</span>
-          </div>}
-        {!isMobile && <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? <ChevronRight /> : <ChevronLeft />}
-          </Button>}
+      {/* Header */}
+      <div className="p-3 flex flex-col items-center justify-center border-b border-rome-gold/30">
+        {!collapsed && (
+          <span className="font-cinzel text-xl flex flex-col items-center gap-0 tracking-normal whitespace-nowrap justify-center">
+            <span className="flex items-end gap-1">
+              <span className="text-black font-bold">Neto</span>
+              <span className="text-[red] font-bold">Tours</span>
+            </span>
+            <span className="text-xs text-black font-bold mt-0.5" style={{ letterSpacing: 1 }}>Viagens</span>
+          </span>
+        )}
+        {!isMobile && (
+          <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white mt-2 self-center">
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
+        )}
       </div>
-
-      {!collapsed && <div className="mb-4 mt-2 px-4">
-          <div className="flex items-center gap-2 rounded-md bg-muted p-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              {userInitials}
-            </div>
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <p className="truncate text-sm font-medium">{userProfile}</p>
-            </div>
+      {/* Usuário */}
+      {!collapsed && (
+        <div className="flex items-center gap-3 p-3 border-b border-rome-gold/30">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rome-terracotta to-rome-terracotta/70 flex items-center justify-center text-white font-cinzel text-lg">
+            {userInitials}
           </div>
-        </div>}
-
-      <ScrollArea className="flex-1 px-2">
-        <div className="flex flex-col gap-1 py-2">
-          <NavItem icon={<LayoutDashboard className="h-5 w-5" />} title="Dashboard" to="/dashboard" onClick={closeMenu} />
-          <LandingPageLink onClick={closeMenu} />
-          <NavItem icon={<CalendarDays className="h-5 w-5" />} title="Viagens" to="/dashboard/viagens" onClick={closeMenu} />
-          <NavItem icon={<Users className="h-5 w-5" />} title="Clientes" to="/dashboard/clientes" onClick={closeMenu} />
-          <NavItem icon={<UserPlus className="h-5 w-5" />} title="Cadastrar Cliente" to="/dashboard/cadastrar-cliente" onClick={closeMenu} />
-          <NavItem icon={<Bus className="h-5 w-5" />} title="Ônibus" to="/dashboard/onibus" onClick={closeMenu} />
-          <NavItem icon={<Store className="h-5 w-5" />} title="Loja" to="/dashboard/loja" onClick={closeMenu} />
-          <NavItem icon={<CreditCard className="h-5 w-5" />} title="Pagamentos" to="/dashboard/pagamentos" onClick={closeMenu} />
-          <NavItem icon={<MessageSquare className="h-5 w-5" />} title="WhatsApp" to="/dashboard/whatsapp" onClick={closeMenu} />
+          <div className="flex flex-col min-w-0 max-w-xs">
+            <span className="text-xs text-white/70 font-inter normal-case break-words max-w-xs leading-tight">Administrador</span>
+            <span className="text-xs text-white/70 font-inter normal-case break-words max-w-xs leading-tight">{userProfile}</span>
+          </div>
+        </div>
+      )}
+      {/* Navegação */}
+      <ScrollArea className="flex-1">
+        <div className="py-2 space-y-1 px-3">
+          <NavItem icon={<LayoutDashboard className="h-5 w-5" />} title="Dashboard" to="/dashboard" onClick={closeMenu} roman />
+          <LandingPageLink onClick={closeMenu} roman />
+          <NavItem icon={<CalendarDays className="h-5 w-5" />} title="Viagens" to="/dashboard/viagens" onClick={closeMenu} roman />
+          <NavItem icon={<Users className="h-5 w-5" />} title="Clientes" to="/dashboard/clientes" onClick={closeMenu} roman />
+          <NavItem icon={<UserPlus className="h-5 w-5" />} title="Cadastrar Cliente" to="/dashboard/cadastrar-cliente" onClick={closeMenu} roman />
+          <NavItem icon={<Bus className="h-5 w-5" />} title="Ônibus" to="/dashboard/onibus" onClick={closeMenu} roman />
+          <NavItem icon={<Store className="h-5 w-5" />} title="Loja" to="/dashboard/loja" onClick={closeMenu} roman />
+          <NavItem icon={<CreditCard className="h-5 w-5" />} title="Pagamentos" to="/dashboard/pagamentos" onClick={closeMenu} roman />
+          <NavItem icon={<MessageSquare className="h-5 w-5" />} title="WhatsApp" to="/dashboard/whatsapp" onClick={closeMenu} roman />
         </div>
       </ScrollArea>
-
-      <div className="border-t px-2 py-2">
+      {/* Rodapé (Logout) */}
+      <div className="border-t border-rome-gold/30 px-2 py-4 mt-2">
         {!collapsed && <LogoutButton />}
       </div>
     </div>;
   return <div className="flex min-h-screen">
       {/* Sidebar para desktop */}
-      {!isMobile && <aside className={cn("bg-background border-r transition-all duration-300 ease-in-out", collapsed ? "w-16" : "w-64")}>
+      {!isMobile && <aside className={cn("sidebar-roman bg-gradient-to-b from-rome-navy to-rome-navy/90 text-white border-r border-rome-gold/30 shadow-lg transition-all duration-300 ease-in-out font-inter", collapsed ? "w-16" : "w-64")}> 
           {renderSidebarContent()}
         </aside>}
 

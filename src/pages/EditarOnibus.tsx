@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -23,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
 const onibusFormSchema = z.object({
@@ -90,7 +89,10 @@ const EditarOnibus = () => {
         }
       } catch (error: any) {
         console.error("Erro ao buscar ônibus:", error);
-        toast(`Erro ao carregar dados do ônibus: ${error.message}`);
+        toast({
+          description: `Erro ao carregar dados do ônibus: ${error.message}`,
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -153,12 +155,17 @@ const EditarOnibus = () => {
         if (createImageError) throw createImageError;
       }
 
-      toast("Ônibus atualizado com sucesso");
+      toast({
+        description: "Ônibus atualizado com sucesso",
+      });
 
       navigate("/dashboard/onibus");
     } catch (error: any) {
       console.error("Erro ao atualizar ônibus:", error);
-      toast(`Erro ao atualizar ônibus: ${error.message}`);
+      toast({
+        description: `Erro ao atualizar ônibus: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -322,7 +329,7 @@ const EditarOnibus = () => {
 
               <div className="flex gap-4 justify-end">
                 <Button 
-                  variant="outline" 
+                  className="bg-[#e40016] text-white hover:bg-[#c20012]"
                   onClick={() => navigate("/dashboard/onibus")} 
                   type="button"
                 >
@@ -331,6 +338,7 @@ const EditarOnibus = () => {
                 <Button 
                   type="submit"
                   disabled={isSaving}
+                  className="bg-[#e40016] text-white hover:bg-[#c20012]"
                 >
                   {isSaving ? (
                     <>

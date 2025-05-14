@@ -1,42 +1,47 @@
-
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 
 interface DashboardStatCardProps {
   title: string;
   value: string | number;
-  description: string;
+  description?: string;
   icon: LucideIcon;
   className?: string;
   iconClassName?: string;
   iconContainerClassName?: string;
   loading?: boolean;
+  hideDescription?: boolean;
+  color?: string;
 }
 
 export const DashboardStatCard = ({
   title,
   value,
-  description,
+  description = "",
   icon: Icon,
   className = "",
   iconClassName = "",
   iconContainerClassName = "",
-  loading = false
+  loading = false,
+  hideDescription = false,
+  color = "bg-gradient-to-br from-red-100 via-yellow-100 to-rose-50"
 }: DashboardStatCardProps) => {
   return (
-    <Card className={`overflow-hidden border-0 shadow-md ${className}`}>
+    <Card className={`roman-card ${color} border-0 shadow-md ${className}`} style={{ minHeight: 120 }}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{title}</CardTitle>
-          <div className={`p-2 rounded-full shadow-sm ${iconContainerClassName}`}>
-            <Icon className={`h-5 w-5 ${iconClassName}`} />
+          <CardTitle className="stat-label text-lg font-cinzel text-rome-terracotta">{title}</CardTitle>
+          <div className={`p-2 rounded-full shadow-sm ${iconContainerClassName} bg-white/80`}> 
+            <Icon className={`h-6 w-6 ${iconClassName}`} />
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold">{loading ? "..." : value}</p>
-        <CardDescription>{loading ? "Carregando..." : description}</CardDescription>
+        <p className={`stat-value text-3xl font-bold text-rome-navy mb-0 ${hideDescription ? 'text-center w-full' : ''}`}>{loading ? "..." : value}</p>
+        {!hideDescription && description && (
+          <p className="stat-desc italic text-rome-leaf text-sm mt-1">{loading ? "Carregando..." : description}</p>
+        )}
       </CardContent>
     </Card>
   );
