@@ -316,6 +316,7 @@ export type Database = {
           created_at: string
           empresa: string
           id: string
+          lugares_extras: number
           numero_identificacao: string | null
           tipo_onibus: string
           viagem_id: string
@@ -325,6 +326,7 @@ export type Database = {
           created_at?: string
           empresa: string
           id?: string
+          lugares_extras?: number
           numero_identificacao?: string | null
           tipo_onibus: string
           viagem_id: string
@@ -334,6 +336,7 @@ export type Database = {
           created_at?: string
           empresa?: string
           id?: string
+          lugares_extras?: number
           numero_identificacao?: string | null
           tipo_onibus?: string
           viagem_id?: string

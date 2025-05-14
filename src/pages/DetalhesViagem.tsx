@@ -9,6 +9,7 @@ import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog"
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
 import PassageiroDeleteDialog from "@/components/detalhes-viagem/PassageiroDeleteDialog";
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
+import { PendingPaymentsCard } from "@/components/detalhes-viagem/PendingPaymentsCard";
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { ViagemHeader } from "@/components/detalhes-viagem/ViagemHeader";
 import { ViagemInfo } from "@/components/detalhes-viagem/ViagemInfo";
@@ -39,13 +40,16 @@ const DetalhesViagem = () => {
     onibusList,
     selectedOnibusId,
     contadorPassageiros,
+    countPendentePayment,
     searchTerm,
     setSearchTerm,
     handleSelectOnibus,
     handleDelete,
     getPassageirosDoOnibusAtual,
     getOnibusAtual,
-    fetchPassageiros
+    fetchPassageiros,
+    togglePendingPayments,
+    filterStatus
   } = useViagemDetails(id);
 
   // Efeito que verifica se não há passageiros não alocados e seleciona um ônibus
@@ -134,6 +138,15 @@ const DetalhesViagem = () => {
         </div>
       )}
 
+      {/* Card de pagamentos pendentes */}
+      {countPendentePayment > 0 && (
+        <PendingPaymentsCard 
+          totalPendente={totalPendente}
+          countPendente={countPendentePayment}
+          onShowPendingOnly={togglePendingPayments}
+        />
+      )}
+
       {/* Cards dos ônibus */}
       {onibusList.length > 0 && (
         <div className="mb-6">
@@ -160,6 +173,7 @@ const DetalhesViagem = () => {
         setAddPassageiroOpen={setAddPassageiroOpen}
         onEditPassageiro={openEditPassageiroDialog}
         onDeletePassageiro={openDeletePassageiroDialog}
+        filterStatus={filterStatus}
       />
 
       {/* Modais para gerenciar passageiros */}

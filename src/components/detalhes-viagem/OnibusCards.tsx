@@ -15,6 +15,7 @@ interface Onibus {
   capacidade_onibus: number;
   numero_identificacao: string | null;
   passageiros_count?: number;
+  lugares_extras?: number;
 }
 
 interface OnibusCardsProps {
@@ -66,7 +67,9 @@ export function OnibusCards({
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {onibusList.map((onibus) => {
         const passageirosNoOnibus = passageirosCount[onibus.id] || onibus.passageiros_count || 0;
-        const percentualOcupacao = Math.round((passageirosNoOnibus / onibus.capacidade_onibus) * 100);
+        // Calculate total capacity including extra seats
+        const totalCapacity = onibus.capacidade_onibus + (onibus.lugares_extras || 0);
+        const percentualOcupacao = Math.round((passageirosNoOnibus / totalCapacity) * 100);
         const isSelected = selectedOnibusId === onibus.id;
         const busImage = busImages[onibus.tipo_onibus];
         
@@ -115,7 +118,7 @@ export function OnibusCards({
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span>Ocupação</span>
-                        <span>{passageirosNoOnibus} de {onibus.capacidade_onibus}</span>
+                        <span>{passageirosNoOnibus} de {totalCapacity}</span>
                       </div>
                       <Progress 
                         value={percentualOcupacao} 

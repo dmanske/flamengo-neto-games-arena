@@ -64,12 +64,14 @@ export function useViagemDetails(viagemId: string | undefined) {
   const [filteredPassageiros, setFilteredPassageiros] = useState<PassageiroDisplay[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
   
   // Financeiro
   const [totalArrecadado, setTotalArrecadado] = useState<number>(0);
   const [totalPago, setTotalPago] = useState<number>(0);
   const [totalPendente, setTotalPendente] = useState<number>(0);
   const [valorPotencialTotal, setValorPotencialTotal] = useState<number>(0);
+  const [countPendentePayment, setCountPendentePayment] = useState<number>(0);
 
   // Ônibus
   const [onibusList, setOnibusList] = useState<Onibus[]>([]);
@@ -89,12 +91,19 @@ export function useViagemDetails(viagemId: string | undefined) {
     if (passageiros.length > 0) {
       // Filtrar todos os passageiros primeiro
       const passageirosFiltrados = filterPassageiros(passageiros, searchTerm);
-      setFilteredPassageiros(passageirosFiltrados);
+      
+      // Apply status filter if active
+      let resultFiltered = passageirosFiltrados;
+      if (filterStatus === "pendente") {
+        resultFiltered = passageirosFiltrados.filter(p => p.status_pagamento !== "Pago");
+      }
+      
+      setFilteredPassageiros(resultFiltered);
       
       // Agrupar os passageiros filtrados por ônibus
-      agruparPassageirosPorOnibus(passageirosFiltrados);
+      agruparPassageirosPorOnibus(resultFiltered);
     }
-  }, [searchTerm, passageiros]);
+  }, [searchTerm, passageiros, filterStatus]);
 
   const fetchViagemData = async (id: string) => {
     try {
@@ -197,16 +206,22 @@ export function useViagemDetails(viagemId: string | undefined) {
         viagem_id: item.viagem_id
       }));
       
-      setPassageiros(formattedPassageiros);
-      setFilteredPassageiros(formattedPassageiros);
+      // Sort passengers alphabetically by name
+      const sortedPassageiros = formattedPassageiros.sort((a, b) => 
+        a.nome.localeCompare(b.nome, 'pt-BR')
+      );
+      
+      setPassageiros(sortedPassageiros);
+      setFilteredPassageiros(sortedPassageiros);
       
       // Agrupar passageiros por ônibus
-      agruparPassageirosPorOnibus(formattedPassageiros);
+      agruparPassageirosPorOnibus(sortedPassageiros);
       
       // Calcular resumo financeiro
       let arrecadado = 0;
       let pago = 0;
       let pendente = 0;
+      let countPendente = 0;
       
       formattedPassageiros.forEach(passageiro => {
         const valor = (passageiro.valor || 0) - (passageiro.desconto || 0);
@@ -216,12 +231,14 @@ export function useViagemDetails(viagemId: string | undefined) {
           pago += valor;
         } else {
           pendente += valor;
+          countPendente++;
         }
       });
       
       setTotalArrecadado(arrecadado);
       setTotalPago(pago);
       setTotalPendente(pendente);
+      setCountPendentePayment(countPendente);
       
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
@@ -294,6 +311,11 @@ export function useViagemDetails(viagemId: string | undefined) {
     }
   };
 
+  // Toggle to show only pending payments
+  const togglePendingPayments = () => {
+    setFilterStatus(filterStatus === "pendente" ? null : "pendente");
+  };
+
   // Funções auxiliares
   const getPassageirosDoOnibusAtual = () => {
     if (selectedOnibusId === null) {
@@ -316,7 +338,12 @@ export function useViagemDetails(viagemId: string | undefined) {
       p.nome.toLowerCase().includes(termLower) ||
       p.cpf.includes(termLower) ||
       p.telefone.includes(termLower) ||
-      p.cidade.toLowerCase().includes(termLower)
+      p.cidade.toLowerCase().includes(termLower) ||
+      p.setor_maracana.toLowerCase().includes(termLower) ||
+      p.status_pagamento.toLowerCase().includes(termLower) ||
+      p.forma_pagamento.toLowerCase().includes(termLower) ||
+      (p.valor !== null && p.valor.toString().includes(termLower)) ||
+      (p.desconto !== null && p.desconto.toString().includes(termLower))
     );
   };
 
@@ -335,10 +362,13 @@ export function useViagemDetails(viagemId: string | undefined) {
     selectedOnibusId,
     passageiroPorOnibus,
     contadorPassageiros,
+    countPendentePayment,
+    filterStatus,
     handleSelectOnibus,
     handleDelete,
     getPassageirosDoOnibusAtual,
     getOnibusAtual,
-    fetchPassageiros
+    fetchPassageiros,
+    togglePendingPayments
   };
 }

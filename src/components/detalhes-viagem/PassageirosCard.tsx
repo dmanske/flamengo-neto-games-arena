@@ -1,45 +1,11 @@
 
-import React from "react";
-import { Users, PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { PassageirosList } from "./PassageirosList";
-import { FormaPagamento } from "@/types/entities";
-import { toast } from "@/hooks/use-toast";
-
-interface PassageiroDisplay {
-  id: string;
-  nome: string;
-  telefone: string;
-  cidade: string;
-  cpf: string;
-  setor_maracana: string;
-  status_pagamento: string;
-  forma_pagamento: string;
-  cliente_id: string;
-  viagem_passageiro_id: string;
-  valor: number | null;
-  desconto: number | null;
-  onibus_id?: string | null;
-  viagem_id: string;
-}
-
-interface Onibus {
-  id: string;
-  tipo_onibus: string;
-  empresa: string;
-  capacidade_onibus: number;
-  numero_identificacao: string | null;
-  lugares_extras?: number | null;
-}
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, PlusCircle, XCircle } from 'lucide-react';
+import { PassageiroDisplay, Onibus } from '@/hooks/useViagemDetails';
+import { PassageirosList } from './PassageirosList';
 
 interface PassageirosCardProps {
   passageirosAtuais: PassageiroDisplay[];
@@ -52,117 +18,133 @@ interface PassageirosCardProps {
   setAddPassageiroOpen: (open: boolean) => void;
   onEditPassageiro: (passageiro: PassageiroDisplay) => void;
   onDeletePassageiro: (passageiro: PassageiroDisplay) => void;
+  filterStatus?: string | null;
 }
 
-export function PassageirosCard({
-  passageirosAtuais,
-  passageiros,
-  onibusAtual,
-  selectedOnibusId,
+export function PassageirosCard({ 
+  passageirosAtuais, 
+  passageiros, 
+  onibusAtual, 
+  selectedOnibusId, 
   totalPassageirosNaoAlocados,
   searchTerm,
   setSearchTerm,
   setAddPassageiroOpen,
   onEditPassageiro,
-  onDeletePassageiro
+  onDeletePassageiro,
+  filterStatus
 }: PassageirosCardProps) {
-  // Check if the bus is at full capacity
-  const isOnibusAtFullCapacity = () => {
-    if (!onibusAtual) return false;
-    
-    const totalCapacidade = onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0);
-    return passageirosAtuais.length >= totalCapacidade;
+  const getTituloCard = () => {
+    if (selectedOnibusId === null) {
+      return "Passageiros não Alocados";
+    }
+    return `Passageiros do ${onibusAtual?.numero_identificacao || onibusAtual?.tipo_onibus}`;
   };
 
-  // Function to handle add passenger button click
-  const handleAddPassageiro = () => {
-    if (selectedOnibusId !== null && isOnibusAtFullCapacity()) {
-      toast({
-        description: "Este ônibus está com capacidade máxima. Não é possível adicionar mais passageiros.",
-        variant: "destructive"
-      });
-      return;
+  const getCapacidade = () => {
+    if (selectedOnibusId === null) {
+      return null;
     }
     
-    setAddPassageiroOpen(true);
+    if (!onibusAtual) return null;
+    
+    // Include lugares_extras in capacity calculation
+    const capacidade = onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0);
+    const ocupacao = passageirosAtuais.length;
+    
+    return `${ocupacao} de ${capacidade} lugares ocupados`;
+  };
+  
+  // Determina se o botão de adicionar passageiro deve estar desabilitado
+  const isAddButtonDisabled = () => {
+    if (selectedOnibusId === null) return false;
+    
+    if (!onibusAtual) return true;
+    
+    // Include lugares_extras in capacity calculation
+    const capacidade = onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0);
+    return passageirosAtuais.length >= capacidade;
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
   return (
-    <Card>
+    <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>
-            {selectedOnibusId === null ? (
-              <>Passageiros Não Alocados <Badge variant="outline" className="ml-2">{totalPassageirosNaoAlocados}</Badge></>
-            ) : (
-              <>
-                Passageiros do {onibusAtual?.numero_identificacao || `Ônibus ${onibusAtual?.tipo_onibus}`}
-                <Badge variant="outline" className="ml-2">{passageirosAtuais.length}</Badge>
-              </>
+          <CardTitle className="text-lg">
+            {getTituloCard()}
+            {filterStatus === "pendente" && (
+              <span className="ml-2 text-sm text-amber-600 font-normal">(Filtrando por pendentes)</span>
             )}
           </CardTitle>
-          <CardDescription>
-            {selectedOnibusId !== null ? (
-              `${passageirosAtuais.length} de ${(onibusAtual?.capacidade_onibus || 0) + (onibusAtual?.lugares_extras || 0)} lugares ocupados (${Math.round((passageirosAtuais.length / ((onibusAtual?.capacidade_onibus || 1) + (onibusAtual?.lugares_extras || 0))) * 100)}%)`
-            ) : (
-              `${totalPassageirosNaoAlocados} passageiros sem alocação de ônibus`
-            )}
-          </CardDescription>
+          <p className="text-sm text-muted-foreground mt-1">
+            {getCapacidade()}
+          </p>
         </div>
         
-        {/* Only show the Add button if not at full capacity or if no bus is selected */}
-        {(!selectedOnibusId || !isOnibusAtFullCapacity()) && (
-          <Button onClick={handleAddPassageiro}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Adicionar Passageiro
-          </Button>
-        )}
-        
-        {/* Show disabled button with message when at capacity */}
-        {selectedOnibusId && isOnibusAtFullCapacity() && (
-          <Button disabled title="Ônibus com capacidade máxima">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Capacidade Máxima
-          </Button>
-        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setAddPassageiroOpen(true)}
+          disabled={isAddButtonDisabled()}
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Adicionar Passageiro
+        </Button>
       </CardHeader>
       <CardContent>
-        {passageiros.length > 0 ? (
-          <PassageirosList
-            passageirosAtuais={passageirosAtuais}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onEdit={onEditPassageiro}
-            onDelete={onDeletePassageiro}
-            selectedOnibusId={selectedOnibusId}
-            onibusAtual={onibusAtual}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-            <Users className="h-12 w-12 mb-2 text-muted-foreground/50" />
-            <p>Nenhum passageiro cadastrado para esta viagem</p>
-            <p className="text-sm">Cadastre passageiros para esta viagem</p>
-            <Button className="mt-4" onClick={() => setAddPassageiroOpen(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Adicionar Passageiro
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, telefone, cidade, CPF, setor, forma de pagamento..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
+            {searchTerm && (
+              <button 
+                className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                onClick={handleClearSearch}
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {filterStatus === "pendente" && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setSearchTerm('');
+                onEditPassageiro({ status_pagamento: null } as any); // Hack to trigger filter reset
+              }}
+            >
+              <XCircle className="h-4 w-4 mr-1" /> Limpar filtro
             </Button>
+          )}
+        </div>
+        
+        <PassageirosList 
+          passageiros={passageirosAtuais} 
+          onEdit={onEditPassageiro}
+          onDelete={onDeletePassageiro}
+        />
+        
+        {passageirosAtuais.length === 0 && (
+          <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+            <p>Nenhum passageiro encontrado</p>
+            {searchTerm && (
+              <Button variant="ghost" size="sm" className="mt-2" onClick={handleClearSearch}>
+                Limpar busca
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="text-sm text-muted-foreground">
-          {passageiros.length > 0 && (
-            <>
-              {selectedOnibusId !== null ? (
-                `Ocupação: ${passageirosAtuais.length} de ${(onibusAtual?.capacidade_onibus || 0) + (onibusAtual?.lugares_extras || 0)} lugares (${Math.round((passageirosAtuais.length / ((onibusAtual?.capacidade_onibus || 1) + (onibusAtual?.lugares_extras || 0))) * 100)}%)`
-              ) : (
-                `${totalPassageirosNaoAlocados} passageiros não alocados`
-              )}
-            </>
-          )}
-        </div>
-        <Button variant="outline">Exportar Lista</Button>
-      </CardFooter>
     </Card>
   );
 }
