@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBusStats } from "@/hooks/useBusStats";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStatsGrid } from "@/components/dashboard/DashboardStatsGrid";
 import { ProximasViagensCard } from "@/components/dashboard/ProximasViagensCard";
-import { UltimosPaymentsCard } from "@/components/dashboard/UltimosPaymentsCard";
+import { UltimosPaymentsCard } from "@/components/dashboard/UltimosPagamentosCard";
 import { DashboardImageSection } from "@/components/dashboard/DashboardImageSection";
 
 interface Viagem {
