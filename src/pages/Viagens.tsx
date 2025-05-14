@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
   Select,
@@ -30,7 +32,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -367,13 +369,16 @@ const Viagens = () => {
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
+                                        Tem certeza que deseja excluir a viagem contra {viagem.adversario}? Esta ação não pode ser desfeita.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                       <AlertDialogAction 
-                                        onClick={handleDeleteViagem}
+                                        onClick={() => {
+                                          setViagemToDelete(viagem);
+                                          handleDeleteViagem();
+                                        }}
                                         className="bg-red-600 hover:bg-red-700"
                                         disabled={isDeleting}
                                       >
