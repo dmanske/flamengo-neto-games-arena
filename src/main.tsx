@@ -2,7 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { Toaster } from "@/components/ui/sonner"; // Import Toaster for notifications
+import { Toaster } from "sonner"; // Import Toaster from sonner directly
 
 createRoot(document.getElementById("root")!).render(
   <>

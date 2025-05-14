@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -123,7 +124,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     } catch (err) {
       console.error("Erro ao buscar detalhes da viagem:", err);
       toast({
-        title: "Erro",
         description: "Erro ao carregar detalhes da viagem",
         variant: "destructive"
       });
@@ -149,7 +149,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     } catch (err) {
       console.error("Erro ao buscar ônibus:", err);
       toast({
-        title: "Erro",
         description: "Erro ao carregar dados dos ônibus",
         variant: "destructive"
       });
@@ -226,7 +225,6 @@ export function useViagemDetails(viagemId: string | undefined) {
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
       toast({
-        title: "Erro",
         description: "Erro ao carregar passageiros",
         variant: "destructive"
       });
@@ -281,14 +279,12 @@ export function useViagemDetails(viagemId: string | undefined) {
       }
       
       toast({
-        title: "Sucesso",
         description: "Viagem excluída com sucesso!"
       });
       navigate("/viagens");
     } catch (err) {
       console.error("Erro ao excluir viagem:", err);
       toast({
-        title: "Erro",
         description: "Erro ao excluir viagem",
         variant: "destructive"
       });

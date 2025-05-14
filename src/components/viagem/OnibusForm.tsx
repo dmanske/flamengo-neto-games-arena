@@ -42,7 +42,6 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
         if (error) {
           console.error("Erro ao carregar ônibus:", error);
           toast({
-            title: "Erro",
             description: "Não foi possível carregar a lista de ônibus cadastrados",
             variant: "destructive",
           });
@@ -70,7 +69,6 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
   const addOnibus = () => {
     if (registeredBuses.length === 0) {
       toast({
-        title: "Erro",
         description: "Não há ônibus cadastrados. Cadastre pelo menos um ônibus primeiro.",
         variant: "destructive",
       });

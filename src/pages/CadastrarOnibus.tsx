@@ -60,7 +60,6 @@ const CadastrarOnibus = () => {
           console.error("Erro ao salvar imagem:", imageError);
           // Continue even if image fails, but notify user
           toast({
-            title: "Alerta",
             description: "Ônibus cadastrado, mas houve um erro ao salvar a imagem",
             variant: "destructive",
           });
@@ -68,7 +67,6 @@ const CadastrarOnibus = () => {
       }
 
       toast({
-        title: "Sucesso",
         description: "Ônibus cadastrado com sucesso",
       });
 
@@ -76,7 +74,6 @@ const CadastrarOnibus = () => {
     } catch (error: any) {
       console.error("Erro ao cadastrar ônibus:", error);
       toast({
-        title: "Erro",
         description: `Erro ao cadastrar ônibus: ${error.message}`,
         variant: "destructive",
       });

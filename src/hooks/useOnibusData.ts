@@ -67,7 +67,6 @@ export function useOnibusData() {
     } catch (error: any) {
       console.error("Erro ao buscar dados de ônibus:", error);
       toast({
-        title: "Erro",
         description: "Erro ao carregar dados dos ônibus",
         variant: "destructive",
       });
@@ -89,7 +88,6 @@ export function useOnibusData() {
       
       if (!onibusParaDeletar) {
         toast({
-          title: "Erro",
           description: "Ônibus não encontrado",
           variant: "destructive",
         });
@@ -109,7 +107,6 @@ export function useOnibusData() {
       
       if (viagemOnibus && viagemOnibus.length > 0) {
         toast({
-          title: "Erro",
           description: "Este ônibus está associado a viagens e não pode ser excluído",
           variant: "destructive",
         });
@@ -143,14 +140,12 @@ export function useOnibusData() {
       
       if (success) {
         toast({
-          title: "Sucesso",
           description: "Ônibus removido com sucesso",
         });
       }
     } catch (error: any) {
       console.error("Erro ao excluir:", error);
       toast({
-        title: "Erro",
         description: `Erro ao excluir: ${error.message}`,
         variant: "destructive",
       });

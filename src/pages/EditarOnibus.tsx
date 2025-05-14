@@ -91,7 +91,6 @@ const EditarOnibus = () => {
       } catch (error: any) {
         console.error("Erro ao buscar ônibus:", error);
         toast({
-          title: "Erro",
           description: `Erro ao carregar dados do ônibus: ${error.message}`,
           variant: "destructive",
         });
@@ -158,7 +157,6 @@ const EditarOnibus = () => {
       }
 
       toast({
-        title: "Sucesso",
         description: "Ônibus atualizado com sucesso",
       });
 
@@ -166,7 +164,6 @@ const EditarOnibus = () => {
     } catch (error: any) {
       console.error("Erro ao atualizar ônibus:", error);
       toast({
-        title: "Erro",
         description: `Erro ao atualizar ônibus: ${error.message}`,
         variant: "destructive",
       });

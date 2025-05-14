@@ -45,14 +45,11 @@ export const FileUpload = ({
       const url = await uploadFile(file, bucketName, folderPath);
       onChange(url);
       toast({
-        title: "Sucesso",
         description: "Arquivo enviado com sucesso!",
-        variant: "default",
       });
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
       toast({
-        title: "Erro",
         description: `Erro ao enviar arquivo: ${error.message}`,
         variant: "destructive",
       });
@@ -81,16 +78,13 @@ export const FileUpload = ({
         if (error) {
           console.error("Erro ao remover arquivo:", error);
           toast({
-            title: "Erro",
             description: "Erro ao remover arquivo",
             variant: "destructive",
           });
         } else {
           onChange(null);
           toast({
-            title: "Sucesso",
             description: "Arquivo removido com sucesso!",
-            variant: "default",
           });
         }
       });
@@ -204,7 +198,6 @@ function validateFile(
   // Check file type
   if (!allowedFileTypes.includes(file.type)) {
     toast({
-      title: "Erro",
       description: `Tipo de arquivo não permitido. Use: ${allowedFileTypes.join(", ")}`,
       variant: "destructive",
     });
@@ -215,7 +208,6 @@ function validateFile(
   const fileSizeInMB = file.size / (1024 * 1024);
   if (fileSizeInMB > maxSizeInMB) {
     toast({
-      title: "Erro",
       description: `Arquivo muito grande. Máximo: ${maxSizeInMB}MB`,
       variant: "destructive",
     });
