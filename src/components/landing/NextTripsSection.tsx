@@ -90,43 +90,76 @@ const NextTripsSection = () => {
         ) : trips && trips.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
             {trips.map((trip) => (
-              <Card key={trip.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-52 bg-gray-50 p-6 flex justify-between items-center">
-                  <img 
-                    src={trip.logo_flamengo} 
-                    alt="Flamengo" 
-                    className="h-24 object-contain"
-                  />
-                  <div className="font-bold text-2xl">VS</div>
-                  <img 
-                    src={trip.logo_adversario || "https://upload.wikimedia.org/wikipedia/commons/8/89/HD_transparent_picture.png"} 
-                    alt={trip.adversario} 
-                    className="h-24 object-contain"
-                  />
+              <Card key={trip.id} className="overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all">
+                {/* Header with Flamengo gradient */}
+                <div className="bg-gradient-to-r from-red-600 to-black text-white p-4">
+                  <h3 className="font-bold text-xl">Caravana Rubro-Negra</h3>
                 </div>
-                <CardContent className="p-8">
-                  <h3 className="font-bold text-2xl mb-5">Flamengo x {trip.adversario}</h3>
+                
+                {/* Team logos section */}
+                <div className="flex items-center justify-center gap-6 py-6 bg-white">
+                  <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={trip.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                      alt="Flamengo" 
+                      className="h-12 w-12 object-contain"
+                    />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-800">×</div>
+                  <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={trip.logo_adversario || `https://via.placeholder.com/150?text=${trip.adversario.substring(0, 3).toUpperCase()}`}
+                      alt={trip.adversario}
+                      className="h-12 w-12 object-contain"
+                      onError={e => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = `https://via.placeholder.com/150?text=${trip.adversario.substring(0, 3).toUpperCase()}`;
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                <CardContent className="bg-white p-6">
+                  <h4 className="font-bold text-xl mb-5">Flamengo x {trip.adversario}</h4>
+                  
+                  {/* Details with icons */}
                   <div className="space-y-4 mb-6">
-                    <div className="flex items-center text-gray-700">
-                      <Calendar className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
-                      <span className="text-lg">{format(new Date(trip.data_jogo), "dd 'de' MMMM 'de' yyyy, HH:mm", {locale: ptBR})}</span>
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 flex items-center justify-center text-red-600">
+                        <Calendar className="h-5 w-5" />
+                      </div>
+                      <span>{format(new Date(trip.data_jogo), "dd 'de' MMMM 'de' yyyy, HH:mm", {locale: ptBR})}</span>
                     </div>
-                    <div className="flex items-center text-gray-700">
-                      <MapPin className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
-                      <span className="text-lg">{trip.rota}</span>
+                    
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 flex items-center justify-center text-red-600">
+                        <MapPin className="h-5 w-5" />
+                      </div>
+                      <span>{trip.rota}</span>
                     </div>
-                    <div className="flex items-center text-gray-700">
-                      <DollarSign className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
-                      <span className="text-lg">{formatCurrency(trip.valor_padrao || 0)}</span>
+                    
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 flex items-center justify-center text-red-600">
+                        <DollarSign className="h-5 w-5" />
+                      </div>
+                      <span className="font-bold">{formatCurrency(trip.valor_padrao || 0)}</span>
                     </div>
-                    <div className="flex items-center text-gray-700">
-                      <Users className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
-                      <span className="text-lg font-medium">{trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis</span>
+                    
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 flex items-center justify-center text-red-600">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <span className="font-medium">
+                        {trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis
+                      </span>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  
+                  {/* Action buttons */}
+                  <div className="space-y-3 mt-6">
                     <Button 
-                      className="w-full bg-red-600 hover:bg-red-700 mb-3 py-6 text-lg"
+                      className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg"
                       onClick={() => initiateReservation(trip)}
                     >
                       Reservar Vaga <Check className="ml-2 h-5 w-5" />
