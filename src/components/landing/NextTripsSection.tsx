@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import LoadingSpinner from "./LoadingSpinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CheckoutButton } from "@/components/pagamentos/CheckoutButton";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface Trip {
   id: string;
@@ -87,55 +88,55 @@ const NextTripsSection = () => {
             Erro ao carregar as próximas viagens. Tente novamente mais tarde.
           </div>
         ) : trips && trips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
             {trips.map((trip) => (
               <Card key={trip.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-44 bg-gray-50 p-4 flex justify-between items-center">
+                <div className="h-52 bg-gray-50 p-6 flex justify-between items-center">
                   <img 
                     src={trip.logo_flamengo} 
                     alt="Flamengo" 
-                    className="h-20 object-contain"
+                    className="h-24 object-contain"
                   />
-                  <div className="font-bold text-xl">VS</div>
+                  <div className="font-bold text-2xl">VS</div>
                   <img 
                     src={trip.logo_adversario || "https://upload.wikimedia.org/wikipedia/commons/8/89/HD_transparent_picture.png"} 
                     alt={trip.adversario} 
-                    className="h-20 object-contain"
+                    className="h-24 object-contain"
                   />
                 </div>
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-xl mb-4">Flamengo x {trip.adversario}</h3>
-                  <div className="space-y-3 mb-5">
+                <CardContent className="p-8">
+                  <h3 className="font-bold text-2xl mb-5">Flamengo x {trip.adversario}</h3>
+                  <div className="space-y-4 mb-6">
                     <div className="flex items-center text-gray-700">
-                      <Calendar className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
-                      <span>{format(new Date(trip.data_jogo), "dd 'de' MMMM 'de' yyyy, HH:mm", {locale: ptBR})}</span>
+                      <Calendar className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
+                      <span className="text-lg">{format(new Date(trip.data_jogo), "dd 'de' MMMM 'de' yyyy, HH:mm", {locale: ptBR})}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <MapPin className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
-                      <span>{trip.rota}</span>
+                      <MapPin className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
+                      <span className="text-lg">{trip.rota}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <DollarSign className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
-                      <span>{formatCurrency(trip.valor_padrao || 0)}</span>
+                      <DollarSign className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
+                      <span className="text-lg">{formatCurrency(trip.valor_padrao || 0)}</span>
                     </div>
                     <div className="flex items-center text-gray-700">
-                      <Users className="h-5 w-5 mr-2 text-red-600 flex-shrink-0" />
-                      <span>{trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis</span>
+                      <Users className="h-6 w-6 mr-3 text-red-600 flex-shrink-0" />
+                      <span className="text-lg font-medium">{trip.capacidade_onibus - (trip.passageiros_count || 0)} vagas disponíveis</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Button 
-                      className="w-full bg-red-600 hover:bg-red-700 mb-2"
+                      className="w-full bg-red-600 hover:bg-red-700 mb-3 py-6 text-lg"
                       onClick={() => initiateReservation(trip)}
                     >
-                      Reservar Vaga <Check className="ml-2 h-4 w-4" />
+                      Reservar Vaga <Check className="ml-2 h-5 w-5" />
                     </Button>
                     
                     <CheckoutButton
                       tripId={trip.id}
                       price={trip.valor_padrao}
                       description={`Viagem para Flamengo x ${trip.adversario} - ${trip.rota}`}
-                      className="w-full"
+                      className="w-full py-6 text-lg"
                     >
                       Pagar Diretamente
                     </CheckoutButton>

@@ -210,15 +210,15 @@ const Dashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{busStats.isLoading ? '...' : busCount}</p>
+            <p className="text-2xl font-bold">{busStats.isLoading ? '...' : busStats.totalBuses}</p>
             <CardDescription>
               {busStats.isLoading
                 ? 'Carregando...'
-                : busCount === 0
+                : busStats.totalBuses === 0
                   ? 'Nenhum ônibus cadastrado'
-                  : busCount === 1
+                  : busStats.totalBuses === 1
                     ? '1 ônibus cadastrado'
-                    : `${busCount} ônibus cadastrados`}
+                    : `${busStats.totalBuses} ônibus cadastrados`}
             </CardDescription>
           </CardContent>
         </Card>
@@ -279,26 +279,26 @@ const Dashboard = () => {
                 <p className="text-muted-foreground">Carregando viagens...</p>
               </div>
             ) : proximasViagens.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {proximasViagens.map((viagem) => (
                   <div 
                     key={viagem.id} 
-                    className="flex items-center justify-between border-b pb-3 last:border-0"
+                    className="flex items-center justify-between border-b pb-4 last:border-0"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div className="flex -space-x-2">
-                        <div className="h-8 w-8 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
+                        <div className="h-10 w-10 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
                           <img 
                             src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
                             alt="Flamengo" 
-                            className="h-6 w-6 object-contain"
+                            className="h-8 w-8 object-contain"
                           />
                         </div>
-                        <div className="h-8 w-8 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
+                        <div className="h-10 w-10 rounded-full border-2 border-background bg-accent flex items-center justify-center overflow-hidden">
                           <img 
                             src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
                             alt={viagem.adversario} 
-                            className="h-6 w-6 object-contain"
+                            className="h-8 w-8 object-contain"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.onerror = null;
@@ -308,7 +308,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div>
-                        <p className="font-medium">Flamengo x {viagem.adversario}</p>
+                        <p className="font-medium text-base">Flamengo x {viagem.adversario}</p>
                         <p className="text-sm text-muted-foreground">{formatDate(viagem.data_jogo)}</p>
                       </div>
                     </div>

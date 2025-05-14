@@ -27,31 +27,39 @@ export function useBusStats() {
 
   const fetchBusStats = async () => {
     try {
-      // 1. Get count of all buses by type from the new onibus table
+      // 1. Get count of distinct buses from the onibus table
       const { data: busesData, error: busesError } = await supabase
         .from("onibus")
-        .select("tipo_onibus, id");
+        .select("id, tipo_onibus");
       
       if (busesError) throw busesError;
-
-      // Count by type
-      const busTypes: Record<string, number> = {};
-      busesData?.forEach(bus => {
-        busTypes[bus.tipo_onibus] = (busTypes[bus.tipo_onibus] || 0) + 1;
+      
+      // 2. Get most used bus type from viagens table
+      const { data: viagensData, error: viagensError } = await supabase
+        .from("viagens")
+        .select("tipo_onibus");
+        
+      if (viagensError) throw viagensError;
+      
+      // Count buses by type in viagens
+      const busTypeCount: Record<string, number> = {};
+      
+      viagensData?.forEach(viagem => {
+        busTypeCount[viagem.tipo_onibus] = (busTypeCount[viagem.tipo_onibus] || 0) + 1;
       });
       
       // Find most used bus type
       let maxCount = 0;
       let mostUsedType = null;
       
-      Object.entries(busTypes).forEach(([tipo, count]) => {
+      Object.entries(busTypeCount).forEach(([tipo, count]) => {
         if (count > maxCount) {
           maxCount = count;
           mostUsedType = tipo;
         }
       });
 
-      // 2. Get revenue data by bus type
+      // 3. Get revenue data by bus type
       const { data: revenueData, error: revenueError } = await supabase
         .from("viagem_passageiros")
         .select(`
@@ -82,7 +90,7 @@ export function useBusStats() {
       });
       
       setStats({
-        mostUsedBus: mostUsedType ? { tipo: mostUsedType, count: maxCount } : null,
+        mostUsedBus: mostUsedType ? { tipo: mostUsedType, count: busTypeCount[mostUsedType] } : null,
         totalBuses: busesData?.length || 0,
         revenueByBusType: revenueByType,
         isLoading: false
