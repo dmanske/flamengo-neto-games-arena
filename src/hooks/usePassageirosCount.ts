@@ -17,20 +17,24 @@ export function usePassageirosCount(viagemIds: string[]) {
       try {
         setLoading(true);
         
-        // Buscar contagem de passageiros para cada viagem
+        // Buscar e contar passageiros para cada viagem
         const { data, error } = await supabase
           .from('viagem_passageiros')
-          .select('viagem_id, count')
-          .in('viagem_id', viagemIds)
-          .group('viagem_id');
+          .select('viagem_id')
+          .in('viagem_id', viagemIds);
           
         if (error) throw error;
         
+        // Contar manualmente os passageiros por viagem_id
         const countsMap: Record<string, number> = {};
         
         if (data) {
           data.forEach(item => {
-            countsMap[item.viagem_id] = parseInt(item.count);
+            if (countsMap[item.viagem_id]) {
+              countsMap[item.viagem_id]++;
+            } else {
+              countsMap[item.viagem_id] = 1;
+            }
           });
         }
         
