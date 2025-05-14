@@ -43,7 +43,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
 import { OnibusForm } from "@/components/viagem/OnibusForm";
-import { ViagemOnibus } from "@/types/entities";
+import { ViagemOnibus, TipoOnibus, EmpresaOnibus } from "@/types/entities";
 
 // Schema para validação do formulário
 const viagemFormSchema = z.object({
@@ -122,10 +122,13 @@ const EditarViagem = () => {
         
         // Se não houver ônibus, criar um padrão
         if (!onibusData || onibusData.length === 0) {
+          const defaultTipoOnibus = "52 Leitos Master" as TipoOnibus;
           setOnibusArray([{
             viagem_id: id,
-            capacidade_onibus: 43,
-            numero_identificacao: "Ônibus 1"
+            capacidade_onibus: 52,
+            numero_identificacao: "Ônibus 1",
+            tipo_onibus: defaultTipoOnibus,
+            empresa: "Majetur" as EmpresaOnibus
           }]);
         }
         
