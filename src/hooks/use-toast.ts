@@ -1,22 +1,20 @@
 
-// Import toast from sonner but rename it to prevent conflict
-import { toast as sonnerToast } from "sonner";
-// Import the types we need
-import { ToastProps as ToastUIProps, ToastActionElement } from "@/components/ui/toast";
-import * as React from "react";
+// Import toast from sonner
+import { toast } from "sonner";
+import { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
+// Re-export the sonner toast for direct usage
+export { toast };
+
+// For shadcn/ui toast compatibility
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000000;
 
-// Define our own toast props type
-type ToastProps = {
+type ToasterToast = ToastProps & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
-  variant?: "default" | "destructive";
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 };
 
 const actionTypes = {
@@ -38,11 +36,11 @@ type ActionType = typeof actionTypes;
 type Action =
   | {
       type: ActionType["ADD_TOAST"];
-      toast: ToastProps;
+      toast: ToasterToast;
     }
   | {
       type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToastProps>;
+      toast: Partial<ToasterToast>;
     }
   | {
       type: ActionType["DISMISS_TOAST"];
@@ -54,7 +52,7 @@ type Action =
     };
 
 interface State {
-  toasts: ToastProps[];
+  toasts: ToasterToast[];
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
@@ -117,70 +115,10 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-const listeners: Array<(state: State) => void> = [];
-
-let memoryState: State = { toasts: [] };
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action);
-  listeners.forEach((listener) => {
-    listener(memoryState);
-  });
-}
-
-// Define Toast options type without the id
-type ToastOptions = Omit<ToastProps, "id">;
-
-function useToast() {
-  const [state, setState] = React.useState<State>(memoryState);
-
-  React.useEffect(() => {
-    listeners.push(setState);
-    return () => {
-      const index = listeners.indexOf(setState);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    };
-  }, [state]);
-
+export function useToast() {
   return {
-    ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: () => null,
+    toasts: [], // This is needed for compatibility with the Toaster component
   };
 }
-
-// This is our custom toast function
-function toast(props: ToastOptions) {
-  const id = genId();
-
-  const update = (props: ToastOptions) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    });
-    
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open: boolean) => {
-        if (!open) dismiss();
-      },
-    },
-  });
-
-  return {
-    id: id,
-    dismiss,
-    update,
-  };
-}
-
-// Re-export the sonner toast as well for direct usage
-export { useToast, toast, sonnerToast };

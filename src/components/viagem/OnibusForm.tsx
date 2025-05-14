@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormDescription } from '@/components/ui/form';
 import { TipoOnibus, EmpresaOnibus, ViagemOnibus } from '@/types/entities';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 
 interface OnibusFormProps {
@@ -42,8 +42,9 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
         if (error) {
           console.error("Erro ao carregar ônibus:", error);
           toast({
-            description: "Não foi possível carregar a lista de ônibus cadastrados",
             variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível carregar a lista de ônibus cadastrados",
           });
           return;
         }
@@ -69,8 +70,9 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
   const addOnibus = () => {
     if (registeredBuses.length === 0) {
       toast({
-        description: "Não há ônibus cadastrados. Cadastre pelo menos um ônibus primeiro.",
         variant: "destructive",
+        title: "Erro",
+        description: "Não há ônibus cadastrados. Cadastre pelo menos um ônibus primeiro."
       });
       return;
     }

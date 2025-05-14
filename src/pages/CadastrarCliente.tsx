@@ -16,7 +16,7 @@ const CadastrarCliente = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ClienteForm />
+          <ClienteForm redirectPath="/dashboard/clientes" />
         </CardContent>
       </Card>
     </div>
