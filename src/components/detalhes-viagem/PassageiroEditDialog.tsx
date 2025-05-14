@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +24,8 @@ interface Onibus {
   empresa: string;
   capacidade_onibus: number;
   numero_identificacao: string | null;
+  lugares_extras?: number | null;
+  passageiros_count?: number;
 }
 
 interface PassageiroDisplay {
@@ -39,7 +42,7 @@ interface PassageiroDisplay {
   onibus_id?: string | null;
   valor?: number | null;
   desconto?: number | null;
-  viagem_id: string; // Added the missing property
+  viagem_id: string;
 }
 
 interface PassageiroEditDialogProps {
@@ -69,13 +72,30 @@ export function PassageiroEditDialog({
     const fetchOnibus = async () => {
       if (passageiro) {
         try {
+          // Get buses and passenger count for each bus
           const { data, error } = await supabase
             .from("viagem_onibus")
             .select("*")
             .eq("viagem_id", passageiro.viagem_id);
             
           if (error) throw error;
-          setOnibusList(data || []);
+          
+          // Get passenger count for each bus
+          const busesWithCounts = await Promise.all((data || []).map(async (onibus) => {
+            const { count, error: countError } = await supabase
+              .from("viagem_passageiros")
+              .select("*", { count: "exact", head: true })
+              .eq("onibus_id", onibus.id);
+              
+            if (countError) throw countError;
+            
+            return {
+              ...onibus,
+              passageiros_count: count || 0
+            };
+          }));
+          
+          setOnibusList(busesWithCounts || []);
         } catch (err) {
           console.error("Erro ao buscar ônibus:", err);
           toast.error("Erro ao carregar informações dos ônibus");
@@ -106,6 +126,21 @@ export function PassageiroEditDialog({
         toast.error("Selecione um ônibus para o passageiro");
       }
       return;
+    }
+    
+    // Check if the selected bus has capacity available
+    const selectedBus = onibusList.find(bus => bus.id === onibusId);
+    if (selectedBus) {
+      // If changing to a new bus, check capacity
+      if (passageiro.onibus_id !== onibusId) {
+        const totalCapacity = selectedBus.capacidade_onibus + (selectedBus.lugares_extras || 0);
+        const currentCount = selectedBus.passageiros_count || 0;
+        
+        if (currentCount >= totalCapacity) {
+          toast.error(`Este ônibus já está na capacidade máxima (${totalCapacity} passageiros)`);
+          return;
+        }
+      }
     }
     
     try {
@@ -145,9 +180,14 @@ export function PassageiroEditDialog({
     }).format(value);
   };
 
-  // Formatar identificação do ônibus
+  // Formatar identificação do ônibus com indicação de capacidade
   const formatOnibusLabel = (onibus: Onibus) => {
-    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${onibus.empresa})`;
+    const totalCapacidade = (onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0);
+    const passageirosAtuais = onibus.passageiros_count || 0;
+    const lotacao = passageirosAtuais >= totalCapacidade ? " (LOTADO)" : 
+                   passageirosAtuais >= totalCapacidade * 0.9 ? " (QUASE CHEIO)" : "";
+    
+    return `${onibus.numero_identificacao || onibus.tipo_onibus} (${passageirosAtuais}/${totalCapacidade})${lotacao}`;
   };
 
   // Calcular valor final após descontos
@@ -181,7 +221,11 @@ export function PassageiroEditDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {onibusList.map((onibus) => (
-                    <SelectItem key={onibus.id} value={onibus.id}>
+                    <SelectItem 
+                      key={onibus.id} 
+                      value={onibus.id}
+                      disabled={(onibus.passageiros_count || 0) >= ((onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0)) && onibus.id !== passageiro.onibus_id}
+                    >
                       {formatOnibusLabel(onibus)}
                     </SelectItem>
                   ))}
