@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { OnibusForm, OnibusFormValues } from "@/components/onibus/OnibusForm";
 
@@ -59,24 +58,16 @@ const CadastrarOnibus = () => {
         if (imageError) {
           console.error("Erro ao salvar imagem:", imageError);
           // Continue even if image fails, but notify user
-          toast({
-            description: "Ônibus cadastrado, mas houve um erro ao salvar a imagem",
-            variant: "destructive",
-          });
+          toast.error("Ônibus cadastrado, mas houve um erro ao salvar a imagem");
         }
       }
 
-      toast({
-        description: "Ônibus cadastrado com sucesso",
-      });
+      toast("Ônibus cadastrado com sucesso");
 
       navigate("/dashboard/onibus");
     } catch (error: any) {
       console.error("Erro ao cadastrar ônibus:", error);
-      toast({
-        description: `Erro ao cadastrar ônibus: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error(`Erro ao cadastrar ônibus: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
