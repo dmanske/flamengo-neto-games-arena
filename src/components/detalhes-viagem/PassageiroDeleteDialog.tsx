@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { useViagemDetails } from "@/hooks/useViagemDetails";
 import { 
   AlertDialog,
   AlertDialogContent,

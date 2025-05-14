@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -299,7 +299,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       toast({
         description: "Viagem excluída com sucesso!"
       });
-      navigate("/viagens");
+      navigate("/dashboard/viagens");
     } catch (err) {
       console.error("Erro ao excluir viagem:", err);
       toast({

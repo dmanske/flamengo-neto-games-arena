@@ -85,11 +85,12 @@ export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderPro
             </Link>
           </Button>
           
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir
+          </Button>
+          
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </Button>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
@@ -99,7 +100,10 @@ export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderPro
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground">
+                <AlertDialogAction onClick={() => {
+                  onDelete();
+                  setDeleteDialogOpen(false);
+                }} className="bg-destructive text-destructive-foreground">
                   Excluir
                 </AlertDialogAction>
               </AlertDialogFooter>
