@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -6,13 +5,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, Bus, DollarSign, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 interface Viagem {
   id: string;
   data_jogo: string;
@@ -26,13 +19,11 @@ interface Viagem {
   logo_adversario: string | null;
   capacidade_onibus: number;
 }
-
 interface ViagemCardProps {
   viagem: Viagem;
   onDeleteClick: (viagem: Viagem) => void;
   passageirosCount?: number;
 }
-
 export function ViagemCard({
   viagem,
   onDeleteClick,
@@ -47,7 +38,6 @@ export function ViagemCard({
       return 'Data inválida';
     }
   };
-
   const formatValue = (value: number | null) => {
     if (value === null) return 'N/A';
     return value.toLocaleString('pt-BR', {
@@ -74,7 +64,6 @@ export function ViagemCard({
 
   // Calcular ocupação
   const percentualOcupacao = Math.round(passageirosCount / viagem.capacidade_onibus * 100);
-
   const getProgressBarColor = (percentual: number) => {
     if (percentual > 90) {
       return 'bg-red-600'; // Vermelho forte
@@ -84,9 +73,7 @@ export function ViagemCard({
       return 'bg-red-500'; // Vermelho claro
     }
   };
-
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <Card className="overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all">
         {/* Header with Flamengo gradient */}
         <div className="bg-gradient-to-r from-red-600 to-black text-white p-4 flex justify-between items-center">
@@ -99,24 +86,15 @@ export function ViagemCard({
         {/* Team logos section */}
         <div className="flex items-center justify-center gap-4 py-4 bg-white">
           <div className="h-14 w-14 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-            <img 
-              src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
-              alt="Flamengo" 
-              className="h-10 w-10 object-contain"
-            />
+            <img src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} alt="Flamengo" className="h-10 w-10 object-contain" />
           </div>
           <div className="text-xl font-bold text-gray-800">×</div>
           <div className="h-14 w-14 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-            <img 
-              src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`}
-              alt={viagem.adversario}
-              className="h-10 w-10 object-contain"
-              onError={e => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
-              }}
-            />
+            <img src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} alt={viagem.adversario} onError={e => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+          }} className="h-10 w-10 object-contain" />
           </div>
         </div>
         
@@ -165,10 +143,9 @@ export function ViagemCard({
                 </span>
               </div>
               <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full ${getProgressBarColor(percentualOcupacao)}`} 
-                  style={{ width: `${percentualOcupacao}%` }}
-                ></div>
+                <div className={`h-full ${getProgressBarColor(percentualOcupacao)}`} style={{
+                width: `${percentualOcupacao}%`
+              }}></div>
               </div>
             </div>
           </div>
@@ -200,10 +177,7 @@ export function ViagemCard({
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <button 
-                onClick={() => onDeleteClick(viagem)}
-                className="py-3 text-center text-gray-600 hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => onDeleteClick(viagem)} className="py-3 text-center text-gray-600 hover:bg-gray-50 transition-colors">
                 🗑️ Excluir
               </button>
             </TooltipTrigger>
@@ -213,6 +187,5 @@ export function ViagemCard({
           </Tooltip>
         </div>
       </Card>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 }
