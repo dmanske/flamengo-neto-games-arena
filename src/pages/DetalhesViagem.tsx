@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
@@ -16,10 +15,11 @@ import { ViagemInfo } from "@/components/detalhes-viagem/ViagemInfo";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
 import { useViagemDetails } from "@/hooks/useViagemDetails";
 
+// Cores no estilo do Flamengo
 const statusColors = {
-  "Aberta": "bg-green-100 text-green-800",
-  "Em Andamento": "bg-blue-100 text-blue-800",
-  "Finalizada": "bg-gray-100 text-gray-800",
+  "Aberta": "bg-green-600 text-white",
+  "Em Andamento": "bg-red-600 text-white",
+  "Finalizada": "bg-black text-white",
 };
 
 const DetalhesViagem = () => {
@@ -91,7 +91,7 @@ const DetalhesViagem = () => {
       <div className="container py-6">
         <h1 className="text-3xl font-bold mb-6">Viagem não encontrada</h1>
         <p>A viagem que você está procurando não existe ou foi removida.</p>
-        <Button asChild className="mt-4">
+        <Button asChild className="mt-4 bg-red-600 hover:bg-red-700">
           <Link to="/dashboard/viagens">Voltar para Viagens</Link>
         </Button>
       </div>

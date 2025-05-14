@@ -63,19 +63,19 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  // Status badge color
+  // Status badge color - usando cores mais próximas do Flamengo
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'aberta':
-        return 'bg-gradient-to-r from-green-600 to-green-400 text-white';
+        return 'bg-gradient-to-r from-green-600 to-green-500 text-white';
       case 'fechada':
-        return 'bg-gradient-to-r from-red-600 to-red-400 text-white';
+        return 'bg-gradient-to-r from-black to-gray-700 text-white';
       case 'concluída':
-        return 'bg-gradient-to-r from-blue-600 to-blue-400 text-white';
+        return 'bg-gradient-to-r from-blue-600 to-blue-500 text-white';
       case 'em andamento':
         return 'bg-gradient-to-r from-amber-500 to-yellow-400 text-white';
       default:
-        return 'bg-gradient-to-r from-gray-600 to-gray-400 text-white';
+        return 'bg-gradient-to-r from-gray-600 to-gray-500 text-white';
     }
   };
 
@@ -86,73 +86,87 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
   const getCardBgColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'aberta':
-        return 'from-green-50 to-blue-50 border-green-200';
+        return 'from-red-100 to-red-50 border-red-300';
       case 'fechada':
-        return 'from-gray-50 to-slate-100 border-gray-200';
+        return 'from-gray-100 to-gray-50 border-gray-300';
       case 'concluída':
-        return 'from-blue-50 to-indigo-50 border-blue-200';
+        return 'from-black/10 to-black/5 border-gray-300';
       case 'em andamento':
-        return 'from-amber-50 to-yellow-50 border-amber-200';
+        return 'from-red-50 to-amber-50 border-amber-200';
       default:
-        return '';
+        return 'from-white to-gray-50 border-gray-200';
     }
   };
 
   const cardBgColor = getCardBgColor(viagem.status_viagem);
   const isOcupacaoCritica = percentualOcupacao > 90;
 
+  // Cores do Flamengo para a barra de progresso
+  const getProgressBarColor = (percentual: number) => {
+    if (percentual > 90) {
+      return 'bg-gradient-to-r from-red-600 to-red-500'; // Vermelho forte
+    } else if (percentual > 70) {
+      return 'bg-gradient-to-r from-red-500 to-red-400'; // Vermelho médio
+    } else {
+      return 'bg-gradient-to-r from-red-400 to-red-300'; // Vermelho claro
+    }
+  };
+
   return (
     <TooltipProvider>
-      <Card className={`h-full flex flex-col shadow-md hover:shadow-lg transition-all bg-gradient-to-br ${cardBgColor}`}>
-        <CardHeader className="pb-3 relative">
+      <Card className={`h-full flex flex-col shadow-md hover:shadow-lg transition-all bg-gradient-to-br ${cardBgColor} overflow-hidden`}>
+        {/* Card Header com destaque em cores do Flamengo */}
+        <CardHeader className="pb-2 relative bg-gradient-to-r from-red-700 to-red-600 text-white">
           <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="flex items-center bg-white p-2 rounded-lg shadow-sm">
                 {viagem.logo_flamengo ? (
                   <img 
                     src={viagem.logo_flamengo} 
                     alt="Flamengo" 
-                    className="h-12 w-12 object-contain" 
+                    className="h-14 w-14 object-contain" 
                   />
                 ) : (
-                  <div className="h-12 w-12 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">FLA</div>
+                  <div className="h-14 w-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">FLA</div>
                 )}
-                <span className="mx-2 text-xl font-bold">x</span>
+                <span className="mx-2 text-xl font-bold text-black">x</span>
                 {viagem.logo_adversario ? (
                   <img 
                     src={viagem.logo_adversario} 
                     alt={viagem.adversario} 
-                    className="h-12 w-12 object-contain" 
+                    className="h-14 w-14 object-contain" 
                   />
                 ) : (
-                  <div className="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center font-semibold">
+                  <div className="h-14 w-14 bg-gray-200 rounded-full flex items-center justify-center font-semibold text-black">
                     {viagem.adversario.substring(0, 3).toUpperCase()}
                   </div>
                 )}
               </div>
-              <CardTitle className="text-lg font-bold">{viagem.adversario}</CardTitle>
+              <div>
+                <CardTitle className="text-lg font-bold">{viagem.adversario}</CardTitle>
+                <div className="flex items-center gap-1 mt-1 text-sm text-red-100">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>{formatDate(viagem.data_jogo)}</span>
+                </div>
+              </div>
             </div>
-            <Badge className={`${getStatusColor(viagem.status_viagem)} px-3 py-1 text-sm font-medium shadow`}>
+            <Badge className={`${getStatusColor(viagem.status_viagem)} px-3 py-1.5 text-sm font-medium shadow`}>
               {viagem.status_viagem}
             </Badge>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4 flex-1">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 bg-white p-2 rounded-md shadow-sm">
-              <Calendar className="h-5 w-5 text-primary" />
-              <span className="font-medium">{formatDate(viagem.data_jogo)}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white p-2 rounded-md shadow-sm">
-              <MapPin className="h-5 w-5 text-primary" />
-              <span className="font-medium">{viagem.rota}</span>
-            </div>
+        <CardContent className="space-y-4 flex-1 pt-4">
+          {/* Localização */}
+          <div className="flex items-center gap-2 bg-white p-3 rounded-md shadow-sm border border-gray-100">
+            <MapPin className="h-5 w-5 text-red-600" />
+            <span className="font-medium">{viagem.rota}</span>
           </div>
           
-          <div className="bg-white p-3 rounded-md shadow-sm">
+          {/* Ocupação com cores do Flamengo */}
+          <div className="bg-white p-3 rounded-md shadow-sm border border-gray-100">
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-red-600" />
               <div className="flex-1">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="font-semibold">Ocupação</span>
@@ -160,25 +174,9 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
                     {passageirosCount} de {viagem.capacidade_onibus}
                   </span>
                 </div>
-                <Progress 
-                  value={percentualOcupacao} 
-                  className={`h-2.5 ${
-                    percentualOcupacao > 90 
-                      ? 'bg-red-100' 
-                      : percentualOcupacao > 70 
-                        ? 'bg-yellow-100' 
-                        : 'bg-gray-100'
-                  }`}
-                />
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                <div className="w-full bg-gray-100 rounded-full h-3">
                   <div 
-                    className={`h-2.5 rounded-full ${
-                      percentualOcupacao > 90 
-                        ? 'bg-gradient-to-r from-red-500 to-red-600' 
-                        : percentualOcupacao > 70 
-                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500' 
-                          : 'bg-gradient-to-r from-green-500 to-green-600'
-                    }`}
+                    className={`h-3 rounded-full ${getProgressBarColor(percentualOcupacao)}`}
                     style={{ width: `${percentualOcupacao}%` }}
                   ></div>
                 </div>
@@ -186,13 +184,14 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
             </div>
           </div>
 
+          {/* Informações do ônibus e valor */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white p-3 rounded-md shadow-sm">
+            <div className="bg-white p-3 rounded-md shadow-sm border border-gray-100">
               <div className="text-sm font-medium text-gray-500">Valor Padrão:</div>
-              <div className="font-bold text-lg text-primary">{formatValue(viagem.valor_padrao)}</div>
+              <div className="font-bold text-lg text-red-600">{formatValue(viagem.valor_padrao)}</div>
             </div>
             
-            <div className="bg-white p-3 rounded-md shadow-sm">
+            <div className="bg-white p-3 rounded-md shadow-sm border border-gray-100">
               <div className="text-sm font-medium text-gray-500">Ônibus:</div>
               <div className="font-medium truncate">{viagem.tipo_onibus}</div>
               <div className="text-sm text-gray-500 truncate">{viagem.empresa}</div>
@@ -200,14 +199,15 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
           </div>
         </CardContent>
         
-        <CardFooter className="border-t pt-4 flex justify-between bg-white bg-opacity-70">
+        {/* Footer com botões de ação */}
+        <CardFooter className="border-t pt-3 pb-3 flex justify-center gap-3 bg-gradient-to-r from-black to-gray-900">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 size="sm" 
                 variant="outline"
                 asChild
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-gray-50 hover:text-primary transition-colors"
+                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
               >
                 <Link to={`/dashboard/viagem/${viagem.id}`}>
                   <Eye className="h-4 w-4" />
@@ -226,7 +226,7 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
                 size="sm" 
                 variant="outline"
                 asChild
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-gray-50 hover:text-primary transition-colors"
+                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
               >
                 <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
                   <Pencil className="h-4 w-4" />
@@ -245,7 +245,7 @@ export function ViagemCard({ viagem, onDeleteClick, passageirosCount = 0 }: Viag
                 size="sm" 
                 variant="outline" 
                 onClick={() => onDeleteClick(viagem)}
-                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-500 transition-colors"
+                className="rounded-full h-9 w-9 p-0 bg-white hover:bg-red-50 hover:text-red-600 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Excluir</span>
