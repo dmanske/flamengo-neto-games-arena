@@ -2,18 +2,21 @@
 // Import toast from sonner but rename it to prevent conflict
 import { toast as sonnerToast } from "sonner";
 // Import the types we need
-import { Toast, ToastActionElement } from "@/components/ui/toast";
+import { ToastProps as ToastUIProps, ToastActionElement } from "@/components/ui/toast";
 import * as React from "react";
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000000;
 
 // Define our own toast props type
-type ToastProps = Toast & {
+type ToastProps = {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
+  variant?: "default" | "destructive";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 const actionTypes = {
@@ -125,8 +128,8 @@ function dispatch(action: Action) {
   });
 }
 
-// Define Toast type without the id
-type ToastOptions = Omit<Toast, "id">;
+// Define Toast options type without the id
+type ToastOptions = Omit<ToastProps, "id">;
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);

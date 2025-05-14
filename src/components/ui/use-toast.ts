@@ -1,2 +1,3 @@
 
-export { useToast, toast, sonnerToast as toast } from "@/hooks/use-toast";
+// Simply re-export what we need from the hooks directory
+export { useToast, toast } from "@/hooks/use-toast";
