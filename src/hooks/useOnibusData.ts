@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 interface OnibusImage {
@@ -66,10 +65,7 @@ export function useOnibusData() {
       
     } catch (error: any) {
       console.error("Erro ao buscar dados de ônibus:", error);
-      toast({
-        description: "Erro ao carregar dados dos ônibus",
-        variant: "destructive",
-      });
+      toast("Erro ao carregar dados dos ônibus");
     } finally {
       setLoading(false);
     }
@@ -87,10 +83,7 @@ export function useOnibusData() {
       const onibusParaDeletar = onibusList.find(bus => bus.id === onibusToDelete);
       
       if (!onibusParaDeletar) {
-        toast({
-          description: "Ônibus não encontrado",
-          variant: "destructive",
-        });
+        toast("Ônibus não encontrado");
         setOnibusToDelete(null);
         setDeleteDialogOpen(false);
         return;
@@ -106,10 +99,7 @@ export function useOnibusData() {
       if (viagemCheckError) throw viagemCheckError;
       
       if (viagemOnibus && viagemOnibus.length > 0) {
-        toast({
-          description: "Este ônibus está associado a viagens e não pode ser excluído",
-          variant: "destructive",
-        });
+        toast("Este ônibus está associado a viagens e não pode ser excluído");
         setOnibusToDelete(null);
         setDeleteDialogOpen(false);
         return;
@@ -139,16 +129,11 @@ export function useOnibusData() {
       success = true;
       
       if (success) {
-        toast({
-          description: "Ônibus removido com sucesso",
-        });
+        toast("Ônibus removido com sucesso");
       }
     } catch (error: any) {
       console.error("Erro ao excluir:", error);
-      toast({
-        description: `Erro ao excluir: ${error.message}`,
-        variant: "destructive",
-      });
+      toast(`Erro ao excluir: ${error.message}`);
     } finally {
       setOnibusToDelete(null);
       setDeleteDialogOpen(false);

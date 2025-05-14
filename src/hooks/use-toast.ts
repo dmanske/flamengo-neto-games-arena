@@ -1,10 +1,10 @@
 
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast, ToastOptions } from "sonner";
 
-// Re-export the sonner toast for direct usage
+// Export the sonner toast directly
 export const toast = sonnerToast;
 
-// For compatibility with existing code
+// For compatibility with existing code patterns
 export function useToast() {
   return {
     toast: sonnerToast

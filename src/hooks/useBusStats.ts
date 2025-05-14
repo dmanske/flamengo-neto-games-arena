@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export interface BusStats {
   mostUsedBus: {
@@ -120,11 +120,7 @@ export function useBusStats() {
       
     } catch (err) {
       console.error("Erro ao buscar estatísticas de ônibus:", err);
-      toast({
-        title: "Erro", 
-        description: "Não foi possível carregar estatísticas dos ônibus",
-        variant: "destructive"
-      });
+      toast("Erro: Não foi possível carregar estatísticas dos ônibus");
       setStats(prev => ({ ...prev, isLoading: false }));
     }
   };
