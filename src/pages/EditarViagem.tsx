@@ -122,13 +122,13 @@ const EditarViagem = () => {
         
         // Se não houver ônibus, criar um padrão
         if (!onibusData || onibusData.length === 0) {
-          const defaultTipoOnibus = "52 Leitos Master" as TipoOnibus;
+          const defaultTipo = "46 Semi-Leito" as TipoOnibus;
           setOnibusArray([{
             viagem_id: id,
-            capacidade_onibus: 52,
+            capacidade_onibus: 46,
             numero_identificacao: "Ônibus 1",
-            tipo_onibus: defaultTipoOnibus,
-            empresa: "Majetur" as EmpresaOnibus
+            tipo_onibus: defaultTipo,
+            empresa: "Viação 1001" as EmpresaOnibus
           }]);
         }
         

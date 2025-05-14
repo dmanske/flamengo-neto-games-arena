@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PlusCircle, MinusCircle, Bus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormDescription } from '@/components/ui/form';
 import { TipoOnibus, EmpresaOnibus, ViagemOnibus } from '@/types/entities';
+import { toast } from '@/hooks/use-toast';
 
 // Mapeamento entre tipos de ônibus e empresas
 const onibusPorEmpresa: Record<string, string> = {
-  "52 Leitos Master": "Majetur",
-  "56 Leitos Master": "Sarcella",
+  "46 Semi-Leito": "Viação 1001",
+  "50 Convencional": "Kaissara",
 };
 
 interface OnibusFormProps {
@@ -30,14 +32,14 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
   }, []);
 
   const addOnibus = () => {
-    const defaultTipo = "43 Leitos Totais" as TipoOnibus;
+    const defaultTipo = "46 Semi-Leito" as TipoOnibus;
     const defaultEmpresa = onibusPorEmpresa[defaultTipo] as EmpresaOnibus;
     
     const newOnibus: ViagemOnibus = {
       viagem_id: viagemId || '',
       tipo_onibus: defaultTipo,
       empresa: defaultEmpresa,
-      capacidade_onibus: 43,
+      capacidade_onibus: 46,
       numero_identificacao: `Ônibus ${onibusArray.length + 1}`
     };
     
@@ -64,10 +66,10 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
     if (field === 'tipo_onibus') {
       // Atualizar capacidade e empresa com base no tipo
       const tipoOnibus = value as TipoOnibus;
-      let capacidade = 43;
+      let capacidade = 46;
       
-      if (tipoOnibus === '52 Leitos Master') capacidade = 52;
-      else if (tipoOnibus === '56 Leitos Master') capacidade = 56;
+      if (tipoOnibus === '46 Semi-Leito') capacidade = 46;
+      else if (tipoOnibus === '50 Convencional') capacidade = 50;
       
       newArray[index] = {
         ...newArray[index],
@@ -148,8 +150,8 @@ export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange
                     <SelectValue placeholder="Selecione o tipo de ônibus" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="52 Leitos Master">52 Leitos Master</SelectItem>
-                    <SelectItem value="56 Leitos Master">56 Leitos Master</SelectItem>
+                    <SelectItem value="46 Semi-Leito">46 Semi-Leito</SelectItem>
+                    <SelectItem value="50 Convencional">50 Convencional</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

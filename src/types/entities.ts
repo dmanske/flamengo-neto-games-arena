@@ -1,4 +1,3 @@
-
 export type FonteConhecimento = 
   | "Instagram" 
   | "Indicação" 
@@ -13,9 +12,9 @@ export type FormaPagamento = "Pix" | "Cartão" | "Boleto" | "Paypal" | "Outro";
 
 export type SetorMaracana = "Norte" | "Sul" | "Leste" | "Oeste" | "Maracanã Mais" | "Sem ingresso";
 
-export type TipoOnibus = "43 Leitos Totais" | "52 Leitos Master" | "56 Leitos Master";
+export type TipoOnibus = "46 Semi-Leito" | "50 Convencional";
 
-export type EmpresaOnibus = "Bertoldo" | "Majetur" | "Sarcella";
+export type EmpresaOnibus = "Viação 1001" | "Kaissara";
 
 export interface ViagemOnibus {
   viagem_id: string;
