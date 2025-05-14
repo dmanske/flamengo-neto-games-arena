@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +31,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -85,11 +84,7 @@ const Viagens = () => {
       setViagens(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar viagens:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados das viagens",
-        variant: "destructive"
-      });
+      toast.error("Erro ao carregar dados das viagens");
     } finally {
       setLoading(false);
     }
@@ -126,18 +121,11 @@ const Viagens = () => {
       
       // Update local state
       setViagens(viagens.filter(v => v.id !== viagemToDelete.id));
-      toast({
-        title: "Sucesso",
-        description: `Viagem contra ${viagemToDelete.adversario} removida com sucesso`,
-      });
+      toast.success(`Viagem contra ${viagemToDelete.adversario} removida com sucesso`);
       setViagemToDelete(null);
     } catch (err: any) {
       console.error('Erro ao excluir viagem:', err);
-      toast({
-        title: "Erro",
-        description: `Erro ao excluir viagem: ${err.message}`,
-        variant: "destructive"
-      });
+      toast.error(`Erro ao excluir viagem: ${err.message}`);
     } finally {
       setIsDeleting(false);
     }

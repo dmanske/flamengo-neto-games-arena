@@ -1,15 +1,14 @@
 
-import { toast } from "sonner";
-import {
-  ToasterToast,
-  Toast,
-  ToastActionElement,
-} from "@/components/ui/toast";
+// Import toast from sonner but rename it to prevent conflict
+import { toast as sonnerToast } from "sonner";
+// Import the types we need
+import { Toast, ToastActionElement } from "@/components/ui/toast";
 import * as React from "react";
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000000;
 
+// Define our own toast props type
 type ToastProps = Toast & {
   id: string;
   title?: React.ReactNode;
@@ -126,7 +125,8 @@ function dispatch(action: Action) {
   });
 }
 
-type Toast = Omit<ToasterToast, "id">;
+// Define Toast type without the id
+type ToastOptions = Omit<Toast, "id">;
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
@@ -148,17 +148,16 @@ function useToast() {
   };
 }
 
-// This is the new toast function to be exported directly
-function toast({
-  ...props
-}: ToasterToast) {
+// This is our custom toast function
+function toast(props: ToastOptions) {
   const id = genId();
 
-  const update = (props: ToasterToast) =>
+  const update = (props: ToastOptions) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     });
+    
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
 
   dispatch({
@@ -180,4 +179,5 @@ function toast({
   };
 }
 
-export { useToast, toast };
+// Re-export the sonner toast as well for direct usage
+export { useToast, toast, sonnerToast };
