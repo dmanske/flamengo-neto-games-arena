@@ -1,65 +1,62 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
-export function usePassageirosCount(viagemIds: string[]) {
-  const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+interface PassageirosCount {
+  total: number;
+  confirmados: number;
+  pendentes: number;
+}
+
+export function usePassageirosCount(viagemId: string) {
+  const [count, setCount] = useState<PassageirosCount>({
+    total: 0,
+    confirmados: 0,
+    pendentes: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPassageirosCount = async () => {
-      if (!viagemIds.length) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        setLoading(true);
+        setIsLoading(true);
         
-        // Buscar e contar passageiros para cada viagem
-        const { data, error } = await supabase
+        const { data: passageiros, error } = await supabase
           .from('viagem_passageiros')
-          .select('viagem_id')
-          .in('viagem_id', viagemIds);
-          
-        if (error) throw error;
-        
-        // Contar manualmente os passageiros por viagem_id
-        const countsMap: Record<string, number> = {};
-        
-        if (data) {
-          data.forEach(item => {
-            if (countsMap[item.viagem_id]) {
-              countsMap[item.viagem_id]++;
-            } else {
-              countsMap[item.viagem_id] = 1;
-            }
+          .select('status_pagamento')
+          .eq('viagem_id', viagemId);
+
+        if (error) {
+          throw error;
+        }
+
+        if (passageiros) {
+          const total = passageiros.length;
+          const confirmados = passageiros.filter(p => p.status_pagamento === 'Pago').length;
+          const pendentes = passageiros.filter(p => p.status_pagamento === 'Pendente').length;
+
+          setCount({
+            total,
+            confirmados,
+            pendentes,
           });
         }
-        
-        // Garantir que todas as viagens tenham uma contagem, mesmo que zero
-        viagemIds.forEach(id => {
-          if (!countsMap[id]) {
-            countsMap[id] = 0;
-          }
-        });
-        
-        setPassageirosCount(countsMap);
-      } catch (error) {
-        console.error("Erro ao buscar contagem de passageiros:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível carregar a contagem de passageiros"
-        });
+      } catch (error: any) {
+        console.error('Erro ao buscar contagem de passageiros:', error);
+        toast.error('Erro ao carregar contagem de passageiros');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    
-    fetchPassageirosCount();
-  }, [viagemIds]);
 
-  return { passageirosCount, loading };
+    if (viagemId) {
+      fetchPassageirosCount();
+    }
+  }, [viagemId]);
+
+  return {
+    count,
+    isLoading,
+  };
 }

@@ -134,7 +134,6 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
                 onChange={field.onChange}
                 bucketName="client-photos"
                 folderPath="clientes"
-                allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
                 maxSizeInMB={5}
               />
             </FormControl>

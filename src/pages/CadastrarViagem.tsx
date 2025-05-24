@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +16,6 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { OnibusForm } from "@/components/viagem/OnibusForm";
 
 const CadastrarViagem = () => {
   const navigate = useNavigate();
@@ -179,10 +179,60 @@ const CadastrarViagem = () => {
         </Card>
 
         {/* Informações do Ônibus */}
-        <OnibusForm
-          formData={formData}
-          handleInputChange={handleInputChange}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações do Ônibus</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tipo_onibus">Tipo de Ônibus *</Label>
+                <Input
+                  id="tipo_onibus"
+                  value={formData.tipo_onibus}
+                  onChange={(e) => handleInputChange("tipo_onibus", e.target.value)}
+                  placeholder="Ex: Leito, Semi-leito, Executivo"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="empresa">Empresa *</Label>
+                <Input
+                  id="empresa"
+                  value={formData.empresa}
+                  onChange={(e) => handleInputChange("empresa", e.target.value)}
+                  placeholder="Nome da empresa"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="rota">Rota *</Label>
+                <Input
+                  id="rota"
+                  value={formData.rota}
+                  onChange={(e) => handleInputChange("rota", e.target.value)}
+                  placeholder="Ex: Rio de Janeiro - São Paulo"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="capacidade_onibus">Capacidade *</Label>
+                <Input
+                  id="capacidade_onibus"
+                  type="number"
+                  value={formData.capacidade_onibus}
+                  onChange={(e) => handleInputChange("capacidade_onibus", e.target.value)}
+                  placeholder="Número de assentos"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex gap-4">
           <Button type="submit" disabled={isLoading} className="bg-red-600 hover:bg-red-700">

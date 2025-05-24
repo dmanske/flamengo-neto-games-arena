@@ -7,7 +7,7 @@ export function useViagemReport() {
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => reportRef.current,
+    contentRef: reportRef,
     documentTitle: `Relatorio_Viagem_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`,
     onAfterPrint: () => {
       toast.success('Relatório enviado para impressão!');

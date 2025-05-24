@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -211,7 +210,7 @@ const EditarCliente = () => {
                           value={field.value}
                           onChange={field.onChange}
                           bucketName="client-photos"
-                          allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+                          folderPath="clientes"
                           maxSizeInMB={5}
                         />
                       </FormControl>

@@ -148,7 +148,6 @@ export function OnibusForm({
             onChange={setImagePath}
             bucketName="bus-images"
             folderPath="buses"
-            allowedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
             maxSizeInMB={5}
           />
         </div>

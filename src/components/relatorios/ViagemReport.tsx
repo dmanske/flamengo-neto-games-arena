@@ -254,7 +254,7 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
         </div>
 
         {/* Estilos para impressão */}
-        <style jsx>{`
+        <style>{`
           @media print {
             .print-report {
               margin: 0;
