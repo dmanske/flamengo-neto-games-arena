@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store } from "lucide-react";
@@ -19,7 +20,6 @@ interface NavItemProps {
   isActive?: boolean;
   onClick?: () => void;
   exact?: boolean;
-  roman?: boolean;
 }
 
 const NavItem = ({
@@ -28,150 +28,217 @@ const NavItem = ({
   to,
   isActive = false,
   onClick,
-  exact = false,
-  roman = false
-}: NavItemProps & { roman?: boolean }) => {
-  return <Link to={to} onClick={onClick} className={cn(
-    "flex items-center gap-3 rounded-md px-3 py-2 font-cinzel font-normal not-italic uppercase tracking-normal transition-colors whitespace-nowrap",
-    roman && "hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90",
-    isActive ? "bg-white/20 text-white shadow-inner" : "text-white/90"
-  )}>
-      {icon}
-      <span>{title}</span>
-    </Link>;
+  exact = false
+}: NavItemProps) => {
+  return (
+    <Link 
+      to={to} 
+      onClick={onClick} 
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-4 py-3 font-medium transition-all duration-300 whitespace-nowrap group",
+        "hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90",
+        isActive ? "bg-white/20 text-white shadow-lg border border-white/20" : "text-white/80 hover:text-white"
+      )}
+    >
+      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+        {icon}
+      </div>
+      <span className="font-semibold">{title}</span>
+    </Link>
+  );
 };
 
-// LandingPageLink agora usa o componente Link do React Router em vez de anchor tag
-const LandingPageLink = ({
-  onClick,
-  roman = false
-}: {
-  onClick?: () => void;
-  roman?: boolean;
-}) => {
+// LandingPageLink component
+const LandingPageLink = ({ onClick }: { onClick?: () => void }) => {
   return (
     <Link 
       to="/site" 
       onClick={onClick} 
-      className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 font-cinzel font-normal not-italic uppercase tracking-normal transition-colors whitespace-nowrap",
-        roman && "hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90 text-white/90"
-      )}
+      className="flex items-center gap-3 rounded-xl px-4 py-3 font-medium transition-all duration-300 whitespace-nowrap group hover:bg-white/10 hover:text-white/90 focus:bg-white/20 focus:text-white/90 text-white/80 hover:text-white"
     >
-      <Home className="h-5 w-5" />
-      <span>Site</span>
+      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+        <Home className="h-5 w-5" />
+      </div>
+      <span className="font-semibold">Site</span>
     </Link>
   );
 };
 
 const MainLayout = () => {
-  // Set isOpen to false (meaning not collapsed, sidebar is open)
   const {
     isOpen: collapsed,
     setIsOpen: setCollapsed
   } = useSidebar();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const userProfile = user ? user.email : "Usuário";
   const userInitials = userProfile?.substring(0, 2).toUpperCase();
+  
   const closeMenu = () => {
     if (isMobile) {
       setMenuOpen(false);
     }
   };
+  
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
-  const renderSidebarContent = () => <div className="flex h-full flex-col">
+  
+  const renderSidebarContent = () => (
+    <div className="flex h-full flex-col bg-gradient-to-b from-red-900/95 via-red-800/90 to-black/95 backdrop-blur-md border-r border-white/20">
       {/* Header */}
-      <div className="p-3 flex flex-col items-center justify-center border-b border-rome-gold/30">
+      <div className="p-4 flex flex-col items-center justify-center border-b border-white/20 bg-black/20">
         {!collapsed && (
-          <span className="font-cinzel text-xl flex flex-col items-center gap-0 tracking-normal whitespace-nowrap justify-center">
-            <span className="flex items-end gap-1">
-              <span className="text-black font-bold">Neto</span>
-              <span className="text-[red] font-bold">Tours</span>
-            </span>
-            <span className="text-xs text-black font-bold mt-0.5" style={{ letterSpacing: 1 }}>Viagens</span>
-          </span>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center mb-3 shadow-lg">
+              <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-8 h-8" />
+            </div>
+            <div className="font-bold text-white">
+              <span className="text-lg">Neto Tours</span>
+              <div className="text-xs text-red-200 mt-1">Caravanas Rubro-Negras</div>
+            </div>
+          </div>
         )}
         {!isMobile && (
-          <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white mt-2 self-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setCollapsed(!collapsed)} 
+            className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white mt-3 self-center"
+          >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         )}
       </div>
-      {/* Usuário */}
+      
+      {/* User Profile */}
       {!collapsed && (
-        <div className="flex items-center gap-3 p-3 border-b border-rome-gold/30">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rome-terracotta to-rome-terracotta/70 flex items-center justify-center text-white font-cinzel text-lg">
+        <div className="flex items-center gap-3 p-4 border-b border-white/20 bg-black/10">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black font-bold text-sm shadow-lg">
             {userInitials}
           </div>
           <div className="flex flex-col min-w-0 max-w-xs">
-            <span className="text-xs text-white/70 font-inter normal-case break-words max-w-xs leading-tight">Administrador</span>
-            <span className="text-xs text-white/70 font-inter normal-case break-words max-w-xs leading-tight">{userProfile}</span>
+            <span className="text-sm font-semibold text-white truncate">Administrador</span>
+            <span className="text-xs text-white/70 truncate">{userProfile}</span>
           </div>
         </div>
       )}
-      {/* Navegação */}
+      
+      {/* Navigation */}
       <ScrollArea className="flex-1">
-        <div className="py-2 space-y-1 px-3">
-          <NavItem icon={<LayoutDashboard className="h-5 w-5" />} title="Dashboard" to="/dashboard" onClick={closeMenu} roman />
-          <LandingPageLink onClick={closeMenu} roman />
-          <NavItem icon={<CalendarDays className="h-5 w-5" />} title="Viagens" to="/dashboard/viagens" onClick={closeMenu} roman />
-          <NavItem icon={<Users className="h-5 w-5" />} title="Clientes" to="/dashboard/clientes" onClick={closeMenu} roman />
-          <NavItem icon={<UserPlus className="h-5 w-5" />} title="Cadastrar Cliente" to="/dashboard/cadastrar-cliente" onClick={closeMenu} roman />
-          <NavItem icon={<Bus className="h-5 w-5" />} title="Ônibus" to="/dashboard/onibus" onClick={closeMenu} roman />
-          <NavItem icon={<Store className="h-5 w-5" />} title="Loja" to="/dashboard/loja" onClick={closeMenu} roman />
-          <NavItem icon={<CreditCard className="h-5 w-5" />} title="Pagamentos" to="/dashboard/pagamentos" onClick={closeMenu} roman />
-          <NavItem icon={<MessageSquare className="h-5 w-5" />} title="WhatsApp" to="/dashboard/whatsapp" onClick={closeMenu} roman />
+        <div className="py-4 space-y-2 px-3">
+          <NavItem 
+            icon={<LayoutDashboard className="h-5 w-5" />} 
+            title="Dashboard" 
+            to="/dashboard" 
+            onClick={closeMenu} 
+          />
+          <LandingPageLink onClick={closeMenu} />
+          <NavItem 
+            icon={<CalendarDays className="h-5 w-5" />} 
+            title="Viagens" 
+            to="/dashboard/viagens" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<Users className="h-5 w-5" />} 
+            title="Clientes" 
+            to="/dashboard/clientes" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<UserPlus className="h-5 w-5" />} 
+            title="Cadastrar Cliente" 
+            to="/dashboard/cadastrar-cliente" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<Bus className="h-5 w-5" />} 
+            title="Ônibus" 
+            to="/dashboard/onibus" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<Store className="h-5 w-5" />} 
+            title="Loja" 
+            to="/dashboard/loja" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<CreditCard className="h-5 w-5" />} 
+            title="Pagamentos" 
+            to="/dashboard/pagamentos" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<MessageSquare className="h-5 w-5" />} 
+            title="WhatsApp" 
+            to="/dashboard/whatsapp" 
+            onClick={closeMenu} 
+          />
         </div>
       </ScrollArea>
-      {/* Rodapé (Logout) */}
-      <div className="border-t border-rome-gold/30 px-2 py-4 mt-2">
+      
+      {/* Footer (Logout) */}
+      <div className="border-t border-white/20 px-3 py-4 bg-black/20">
         {!collapsed && <LogoutButton />}
       </div>
-    </div>;
-  return <div className="flex min-h-screen">
-      {/* Sidebar para desktop */}
-      {!isMobile && <aside className={cn("sidebar-roman bg-gradient-to-b from-rome-navy to-rome-navy/90 text-white border-r border-rome-gold/30 shadow-lg transition-all duration-300 ease-in-out font-inter", collapsed ? "w-16" : "w-64")}> 
-          {renderSidebarContent()}
-        </aside>}
+    </div>
+  );
 
-      {/* Conteúdo principal */}
-      <div className="flex flex-1 flex-col">
-        {/* Barra superior para mobile */}
-        {isMobile && <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background px-4">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleMenu}>
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-red-900 via-black to-red-800">
+      {/* Sidebar for desktop */}
+      {!isMobile && (
+        <aside className={cn(
+          "transition-all duration-300 ease-in-out relative",
+          collapsed ? "w-16" : "w-64"
+        )}> 
+          {renderSidebarContent()}
+        </aside>
+      )}
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Top bar for mobile */}
+        {isMobile && (
+          <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-white/20 bg-red-900/95 backdrop-blur-md px-4">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={toggleMenu} className="text-white hover:bg-white/10">
                 <Menu className="h-5 w-5" />
               </Button>
-              <div className="flex items-center gap-2">
-                <img src="https://logodetimes.com/wp-content/uploads/flamengo.png" alt="Flamengo" className="h-8 w-8" />
-                <span className="text-xl font-bold">Neto Tours Viagens</span>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
+                  <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-5 h-5" />
+                </div>
+                <span className="text-lg font-bold text-white">Neto Tours</span>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
               <LogoutButton />
             </div>
-          </div>}
+          </div>
+        )}
 
-        {/* Menu lateral mobile */}
-        {isMobile && menuOpen && <div className="fixed inset-0 z-20 bg-black bg-opacity-50" onClick={closeMenu}>
-            <div className="h-full w-64 bg-background" onClick={e => e.stopPropagation()}>
+        {/* Mobile menu overlay */}
+        {isMobile && menuOpen && (
+          <div className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm" onClick={closeMenu}>
+            <div className="h-full w-64" onClick={e => e.stopPropagation()}>
               {renderSidebarContent()}
             </div>
-          </div>}
+          </div>
+        )}
 
-        {/* Conteúdo da página */}
-        <main className="flex-1">
+        {/* Page content */}
+        <main className="flex-1 relative">
           <Outlet />
         </main>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default MainLayout;

@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBusStats } from "@/hooks/useBusStats";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardStatsGrid } from "@/components/dashboard/DashboardStatsGrid";
+import { ModernStatCard } from "@/components/ui/modern-stat-card";
+import { ModernCard } from "@/components/ui/modern-card";
 import { ProximasViagensCard } from "@/components/dashboard/ProximasViagensCard";
 import { UltimosPaymentsCard } from "@/components/dashboard/UltimosPagamentosCard";
 import { DashboardImageSection } from "@/components/dashboard/DashboardImageSection";
@@ -13,6 +15,7 @@ import { RankingAdversariosCard } from "@/components/dashboard/RankingAdversario
 import { DashboardChartsGrid } from "@/components/dashboard/DashboardChartsGrid";
 import { TopClientesCard } from "@/components/dashboard/TopClientesCard";
 import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
+import { Users, Calendar, DollarSign, Bus, TrendingUp } from "lucide-react";
 
 interface Viagem {
   id: string;
@@ -129,40 +132,88 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="container py-6">
-      {/* Dashboard Header */}
-      <DashboardHeader />
+    <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-800 relative">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
       
-      {/* Stats Grid */}
-      <DashboardStatsGrid
-        isLoading={isLoading}
-        clientCount={clientCount}
-        viagemCount={viagemCount}
-        monthlyRevenue={monthlyRevenue}
-        busStats={busStats}
-      />
+      {/* Floating Elements */}
+      <div className="absolute top-20 left-10 w-32 h-32 bg-red-500/10 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-20 w-48 h-48 bg-yellow-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-0 mb-6">
-        <ProximasViagensCard 
-          isLoading={isLoading} 
-          proximasViagens={proximasViagens} 
-        />
-        <SetoresEstadioMaisEscolhidosChart />
+      <div className="relative z-10 container py-8">
+        {/* Dashboard Header */}
+        <DashboardHeader />
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <ModernStatCard
+            icon={Users}
+            value={isLoading ? "..." : clientCount.toLocaleString()}
+            label="Total de Clientes"
+            change={{ value: 12, type: 'increase' }}
+          />
+          
+          <ModernStatCard
+            icon={Calendar}
+            value={isLoading ? "..." : viagemCount.toLocaleString()}
+            label="Viagens Cadastradas"
+            change={{ value: 8, type: 'increase' }}
+          />
+          
+          <ModernStatCard
+            icon={DollarSign}
+            value={isLoading ? "..." : `R$ ${monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            label="Receita Mensal"
+            change={{ value: 15, type: 'increase' }}
+          />
+          
+          <ModernStatCard
+            icon={Bus}
+            value={isLoading ? "..." : (busStats?.total || 0).toString()}
+            label="Ônibus Disponíveis"
+            change={{ value: 5, type: 'increase' }}
+          />
+        </div>
+        
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 mb-8">
+          <ModernCard variant="elevated" className="p-6">
+            <ProximasViagensCard 
+              isLoading={isLoading} 
+              proximasViagens={proximasViagens} 
+            />
+          </ModernCard>
+          <ModernCard variant="elevated" className="p-6">
+            <SetoresEstadioMaisEscolhidosChart />
+          </ModernCard>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <ModernCard variant="interactive" className="p-6">
+            <ClientesNovosCard />
+          </ModernCard>
+          <ModernCard variant="interactive" className="p-6">
+            <PagamentosPendentesCard />
+          </ModernCard>
+          <ModernCard variant="interactive" className="p-6">
+            <ViagemMaisLotadaCard />
+          </ModernCard>
+          <ModernCard variant="interactive" className="p-6">
+            <RankingAdversariosCard />
+          </ModernCard>
+          <ModernCard variant="interactive" className="p-6">
+            <TopClientesCard />
+          </ModernCard>
+        </div>
+        
+        {/* Charts Grid */}
+        <ModernCard variant="elevated" className="p-6 mb-8">
+          <DashboardChartsGrid />
+        </ModernCard>
+        
+        {/* Image Section */}
+        <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-        <ClientesNovosCard />
-        <PagamentosPendentesCard />
-        <ViagemMaisLotadaCard />
-        <RankingAdversariosCard />
-        <TopClientesCard />
-      </div>
-      
-      {/* Charts Grid */}
-      <DashboardChartsGrid />
-      
-      {/* Image Section */}
-      <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />
     </div>
   );
 };
