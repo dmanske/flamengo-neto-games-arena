@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,23 +42,23 @@ export const ViagemMaisLotadaCard = () => {
   }, []);
 
   return (
-    <Card className="roman-card overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-xs p-6">
-      <div className="bg-gradient-to-r from-red-600 via-red-800 to-black p-4 flex items-center rounded-t-xl mb-4">
+    <Card className="bg-white rounded-xl shadow-professional border border-gray-100 hover:shadow-professional-md transition-all max-w-xs p-6">
+      <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 flex items-center rounded-t-xl mb-4">
         <TrendingUp className="text-white mr-2" />
-        <h3 className="text-lg font-cinzel tracking-wide drop-shadow-sm m-0 text-white">Viagem Mais Lotada</h3>
+        <h3 className="text-lg font-semibold tracking-wide drop-shadow-sm m-0 text-white">Viagem Mais Lotada</h3>
       </div>
       <CardContent className="pt-6 flex flex-col items-center">
         {loading ? (
-          <span className="text-2xl font-bold text-rome-navy">...</span>
+          <span className="text-2xl font-bold text-gray-900">...</span>
         ) : viagem ? (
           <>
-            <span className="text-2xl font-bold text-rome-navy">{viagem.adversario}</span>
-            <span className="text-sm text-muted-foreground mb-2">{viagem.rota}</span>
-            <span className="text-lg font-semibold text-green-700">{percentual}%</span>
-            <span className="text-xs text-muted-foreground">Ocupação</span>
+            <span className="text-2xl font-bold text-gray-900">{viagem.adversario}</span>
+            <span className="text-sm text-gray-600 mb-2">{viagem.rota}</span>
+            <span className="text-lg font-semibold text-green-600">{percentual}%</span>
+            <span className="text-xs text-gray-500">Ocupação</span>
           </>
         ) : (
-          <span className="text-sm text-muted-foreground">Nenhuma viagem encontrada</span>
+          <span className="text-sm text-gray-600">Nenhuma viagem encontrada</span>
         )}
       </CardContent>
     </Card>

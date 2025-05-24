@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,25 +39,25 @@ export const RankingAdversariosCard = () => {
   }, []);
 
   return (
-    <Card className="roman-card overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-xs p-6">
-      <div className="bg-gradient-to-r from-red-600 via-red-800 to-black p-4 flex items-center rounded-t-xl mb-4">
+    <Card className="bg-white rounded-xl shadow-professional border border-gray-100 hover:shadow-professional-md transition-all max-w-xs p-6">
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4 flex items-center rounded-t-xl mb-4">
         <Trophy className="text-white mr-2" />
-        <h3 className="text-lg font-cinzel tracking-wide drop-shadow-sm m-0 text-white">Ranking Adversários</h3>
+        <h3 className="text-lg font-semibold tracking-wide drop-shadow-sm m-0 text-white">Ranking Adversários</h3>
       </div>
       <CardContent className="pt-6 flex flex-col items-center">
         {loading ? (
-          <span className="text-2xl font-bold text-rome-navy">...</span>
+          <span className="text-2xl font-bold text-gray-900">...</span>
         ) : ranking.length > 0 ? (
           <ol className="w-full">
             {ranking.map((item, idx) => (
-              <li key={item.adversario} className="flex justify-between text-lg font-cinzel mb-1">
-                <span>{idx + 1}º {item.adversario}</span>
-                <span className="text-rome-navy font-bold">{item.total}</span>
+              <li key={item.adversario} className="flex justify-between text-lg font-medium mb-1">
+                <span className="text-gray-700">{idx + 1}º {item.adversario}</span>
+                <span className="text-gray-900 font-bold">{item.total}</span>
               </li>
             ))}
           </ol>
         ) : (
-          <span className="text-sm text-muted-foreground">Sem dados suficientes</span>
+          <span className="text-sm text-gray-600">Sem dados suficientes</span>
         )}
       </CardContent>
     </Card>

@@ -15,12 +15,12 @@ export const ModernCard = ({
   variant = 'default',
   onClick
 }: ModernCardProps) => {
-  const baseClasses = "rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 transition-all duration-300";
+  const baseClasses = "rounded-xl bg-white border border-gray-100 transition-all duration-300";
   
   const variantClasses = {
-    default: "",
-    elevated: "shadow-2xl bg-white/20 border-white/30",
-    interactive: "hover:bg-white/20 hover:border-white/40 cursor-pointer transform hover:scale-[1.02] hover:shadow-xl"
+    default: "shadow-professional",
+    elevated: "shadow-professional-md border-gray-100",
+    interactive: "hover:border-gray-200 hover:shadow-professional-md cursor-pointer transform hover:scale-[1.02]"
   };
 
   return (
