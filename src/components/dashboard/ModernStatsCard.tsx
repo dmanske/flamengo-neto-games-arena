@@ -23,7 +23,7 @@ export const ModernStatsCard = ({
   loading = false,
   trend = "neutral",
   trendValue,
-  gradient = "from-rome-terracotta/20 to-rome-red/10"
+  gradient = "from-blue-50 to-indigo-50"
 }: ModernStatsCardProps) => {
   const trendColors = {
     up: "text-green-600",
@@ -33,44 +33,41 @@ export const ModernStatsCard = ({
 
   if (loading) {
     return (
-      <GlassCard variant="elevated" className="p-6 min-h-[140px]">
+      <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm min-h-[140px]">
         <div className="flex justify-between items-start mb-4">
           <Skeleton variant="text" width="60%" height="20px" />
           <Skeleton variant="circular" width="48px" height="48px" />
         </div>
         <Skeleton variant="text" width="40%" height="32px" className="mb-2" />
         <Skeleton variant="text" width="80%" height="16px" />
-      </GlassCard>
+      </div>
     );
   }
 
   return (
-    <GlassCard 
-      variant="elevated" 
-      className={`group relative overflow-hidden p-6 bg-gradient-to-br ${gradient} border-white/30 hover:border-white/50 transition-all duration-300 min-h-[140px]`}
-    >
+    <div className={`group relative overflow-hidden p-6 bg-gradient-to-br ${gradient} border border-gray-200 hover:border-gray-300 transition-all duration-200 min-h-[140px] rounded-xl shadow-sm hover:shadow-md`}>
       {/* Background decorative element */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-6 translate-x-6 group-hover:scale-110 transition-transform duration-500" />
+      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/30 rounded-full -translate-y-6 translate-x-6 group-hover:scale-110 transition-transform duration-300" />
       
       <div className="relative">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-cinzel font-semibold text-rome-navy tracking-wide">
+          <h3 className="text-lg font-semibold text-gray-900 tracking-wide">
             {title}
           </h3>
-          <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 group-hover:scale-110 transition-transform duration-200">
-            <Icon className="h-6 w-6 text-rome-terracotta" />
+          <div className="p-3 rounded-lg bg-blue-100 border border-blue-200 group-hover:scale-110 transition-transform duration-200">
+            <Icon className="h-6 w-6 text-blue-600" />
           </div>
         </div>
         
         <div className="space-y-2">
-          <p className="text-3xl font-bold text-rome-navy font-sans">
+          <p className="text-3xl font-bold text-gray-900 font-sans">
             {value}
           </p>
           
           {(description || trendValue) && (
             <div className="flex items-center gap-2 text-sm">
               {description && (
-                <span className="text-rome-leaf font-medium">{description}</span>
+                <span className="text-gray-600 font-medium">{description}</span>
               )}
               {trendValue && (
                 <span className={`font-semibold ${trendColors[trend]}`}>
@@ -81,6 +78,6 @@ export const ModernStatsCard = ({
           )}
         </div>
       </div>
-    </GlassCard>
+    </div>
   );
 };
