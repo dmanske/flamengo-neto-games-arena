@@ -41,6 +41,7 @@ type OnibusFormValues = z.infer<typeof onibusFormSchema>;
 const EditarOnibus = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  console.log("Página EditarOnibus - ID da URL:", id); 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -57,8 +58,12 @@ const EditarOnibus = () => {
   });
 
   useEffect(() => {
+    console.log("Página EditarOnibus - useEffect - ID:", id); 
     const fetchOnibus = async () => {
-      if (!id) return;
+      if (!id) {
+        console.log("Página EditarOnibus - useEffect - ID ausente, retornando."); 
+        return;
+      }
       
       try {
         setIsLoading(true);
@@ -89,10 +94,7 @@ const EditarOnibus = () => {
         }
       } catch (error: any) {
         console.error("Erro ao buscar ônibus:", error);
-        toast({
-          description: `Erro ao carregar dados do ônibus: ${error.message}`,
-          variant: "destructive",
-        });
+        toast.error(`Erro ao carregar dados do ônibus: ${error.message}`);
       } finally {
         setIsLoading(false);
       }
@@ -155,17 +157,12 @@ const EditarOnibus = () => {
         if (createImageError) throw createImageError;
       }
 
-      toast({
-        description: "Ônibus atualizado com sucesso",
-      });
+      toast.success("Ônibus atualizado com sucesso");
 
       navigate("/dashboard/onibus");
     } catch (error: any) {
       console.error("Erro ao atualizar ônibus:", error);
-      toast({
-        description: `Erro ao atualizar ônibus: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error(`Erro ao atualizar ônibus: ${error.message}`);
     } finally {
       setIsSaving(false);
     }

@@ -75,6 +75,9 @@ const CadastrarViagem = () => {
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
+    adversario: "",
+    data_jogo: null,
+    rota: "",
     status_viagem: "Aberta",
     logo_adversario: "",
     logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
@@ -95,11 +98,7 @@ const CadastrarViagem = () => {
 
   const onSubmit = async (data: ViagemFormValues) => {
     if (onibusArray.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Adicione pelo menos um ônibus para a viagem",
-        variant: "destructive",
-      });
+      toast.error("Adicione pelo menos um ônibus para a viagem");
       return;
     }
     
@@ -149,19 +148,12 @@ const CadastrarViagem = () => {
         
       if (onibusError) throw onibusError;
 
-      toast({
-        title: "Sucesso",
-        description: "Viagem cadastrada com sucesso!",
-      });
+      toast.success("Viagem cadastrada com sucesso!");
       
       navigate("/dashboard/viagens"); // Redireciona para a lista de viagens
     } catch (error: any) {
       console.error("Erro ao cadastrar viagem:", error);
-      toast({
-        title: "Erro",
-        description: `Erro ao cadastrar viagem: ${error.message}`,
-        variant: "destructive",
-      });
+      toast.error(`Erro ao cadastrar viagem: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

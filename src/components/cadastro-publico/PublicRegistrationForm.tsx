@@ -197,6 +197,20 @@ export function PublicRegistrationForm() {
   
   return (
     <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
+        a[href*="lovable.dev"],
+        iframe[src*="lovable.dev"],
+        div[style*="Edit with Lovable"],
+        .lovable-badge {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          position: absolute !important;
+          z-index: -9999 !important;
+        }
+      `}</style>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -315,3 +329,4 @@ export function PublicRegistrationForm() {
     </>
   );
 }
+

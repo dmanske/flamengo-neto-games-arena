@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -44,6 +43,7 @@ export interface PassageiroDisplay {
   desconto: number | null;
   onibus_id?: string | null;
   viagem_id: string;
+  passeio_cristo?: string;
 }
 
 export interface Onibus {
@@ -176,7 +176,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           desconto,
           created_at,
           onibus_id,
-          clientes!viagem_passageiros_cliente_id_fkey (id, nome, telefone, cidade, cpf)
+          clientes!viagem_passageiros_cliente_id_fkey (id, nome, telefone, cidade, cpf, passeio_cristo)
         `)
         .eq("viagem_id", viagemId);
       
@@ -197,7 +197,8 @@ export function useViagemDetails(viagemId: string | undefined) {
         valor: item.valor || 0,
         desconto: item.desconto || 0,
         onibus_id: item.onibus_id,
-        viagem_id: item.viagem_id
+        viagem_id: item.viagem_id,
+        passeio_cristo: item.clientes.passeio_cristo,
       }));
       
       // Sort passengers alphabetically by name
@@ -317,8 +318,7 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   // Filtro de passageiros
   const filterPassageiros = (passageiros: PassageiroDisplay[], searchTerm: string): PassageiroDisplay[] => {
-    if (!searchTerm) return passageiros;
-    
+    if (!searchTerm) return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     const termLower = searchTerm.toLowerCase();
     return passageiros.filter(p => 
       p.nome.toLowerCase().includes(termLower) ||
@@ -329,8 +329,13 @@ export function useViagemDetails(viagemId: string | undefined) {
       p.status_pagamento.toLowerCase().includes(termLower) ||
       p.forma_pagamento.toLowerCase().includes(termLower) ||
       (p.valor !== null && p.valor.toString().includes(termLower)) ||
-      (p.desconto !== null && p.desconto.toString().includes(termLower))
-    );
+      (p.desconto !== null && p.desconto.toString().includes(termLower)) ||
+      (p.passeio_cristo && (
+        (termLower === 'sim' && p.passeio_cristo === 'sim') ||
+        (termLower === 'nao' && p.passeio_cristo === 'nao') ||
+        (termLower === 'passeio' && (p.passeio_cristo === 'sim' || p.passeio_cristo === 'nao'))
+      ))
+    ).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   };
 
   return {

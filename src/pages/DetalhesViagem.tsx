@@ -157,6 +157,7 @@ const DetalhesViagem = () => {
             onSelectOnibus={handleSelectOnibus}
             passageirosCount={contadorPassageiros}
             passageirosNaoAlocados={totalPassageirosNaoAlocados}
+            passageiros={passageiros}
           />
         </div>
       )}

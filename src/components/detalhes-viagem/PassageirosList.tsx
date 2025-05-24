@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,7 @@ export function PassageirosList({
             <TableHead>Total</TableHead>
             <TableHead>Pgto.</TableHead>
             <TableHead>Forma</TableHead>
+            <TableHead>Passeio</TableHead>
             <TableHead className="text-center">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -77,24 +77,34 @@ export function PassageirosList({
                   </Badge>
                 </TableCell>
                 <TableCell>{passageiro.forma_pagamento}</TableCell>
+                <TableCell>{
+                  passageiro.passeio_cristo === 'sim' ? (
+                    <Badge className="bg-green-100 text-green-800">Sim</Badge>
+                  ) : passageiro.passeio_cristo === 'nao' ? (
+                    <Badge className="bg-red-100 text-red-700">Não</Badge>
+                  ) : (
+                    <Badge className="bg-gray-100 text-gray-700">-</Badge>
+                  )
+                }</TableCell>
                 <TableCell className="text-center">
-                  <div className="flex justify-center gap-2">
+                  <div className="flex justify-center gap-1">
                     <Button 
-                      size="sm" 
+                      size="icon" 
                       variant="outline" 
+                      className="h-7 w-7 p-0 flex items-center justify-center"
                       onClick={() => onEdit(passageiro)}
+                      title="Editar"
                     >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Editar
+                      <Pencil className="h-3 w-3" />
                     </Button>
                     <Button 
-                      size="sm" 
+                      size="icon" 
                       variant="outline" 
-                      className="text-destructive" 
+                      className="h-7 w-7 p-0 flex items-center justify-center text-destructive"
                       onClick={() => onDelete(passageiro)}
+                      title="Remover"
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Remover
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </TableCell>
@@ -102,7 +112,7 @@ export function PassageirosList({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={11} className="text-center py-4">
+              <TableCell colSpan={12} className="text-center py-4">
                 Nenhum passageiro encontrado.
               </TableCell>
             </TableRow>
