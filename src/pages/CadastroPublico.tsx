@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublicRegistrationForm } from "@/components/cadastro-publico/PublicRegistrationForm";
@@ -13,7 +12,7 @@ const CadastroPublico = () => {
           className="h-20 w-20"
         />
         <div className="ml-4 flex flex-col justify-center">
-          <h1 className="text-3xl font-bold">FlaViagens</h1>
+          <h1 className="text-3xl font-bold">Neto Tours Viagens</h1>
           <p className="text-sm text-gray-600">Caravanas Rubro-Negras</p>
         </div>
       </div>

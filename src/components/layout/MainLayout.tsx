@@ -151,7 +151,7 @@ const MainLayout = () => {
               </Button>
               <div className="flex items-center gap-2">
                 <img src="https://logodetimes.com/wp-content/uploads/flamengo.png" alt="Flamengo" className="h-8 w-8" />
-                <span className="text-xl font-bold">FlaViagens</span>
+                <span className="text-xl font-bold">Neto Tours Viagens</span>
               </div>
             </div>
             

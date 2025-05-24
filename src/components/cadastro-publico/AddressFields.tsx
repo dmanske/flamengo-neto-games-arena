@@ -1,4 +1,3 @@
-
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -22,11 +21,12 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
         name="cep"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>CEP*</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-700">CEP<span className="text-red-600">*</span></FormLabel>
             <div className="relative">
               <FormControl>
                 <Input 
                   placeholder="00000-000" 
+                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
                   {...field} 
                   onChange={(e) => {
                     const formattedCEP = formatCEP(e.target.value);
@@ -36,8 +36,8 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
                 />
               </FormControl>
               {loadingCep && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                 </div>
               )}
             </div>
@@ -46,15 +46,19 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
         )}
       />
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={control}
           name="endereco"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Endereço*</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">Endereço<span className="text-red-600">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Rua, Avenida, etc." {...field} />
+                <Input 
+                  placeholder="Rua, Avenida, etc." 
+                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -66,9 +70,13 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
           name="numero"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número*</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">Número<span className="text-red-600">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="123" {...field} />
+                <Input 
+                  placeholder="123" 
+                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,15 +84,19 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-4">
         <FormField
           control={control}
           name="cidade"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cidade*</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">Cidade<span className="text-red-600">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Cidade" {...field} />
+                <Input 
+                  placeholder="Cidade" 
+                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -96,9 +108,13 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
           name="bairro"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bairro*</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">Bairro<span className="text-red-600">*</span></FormLabel>
               <FormControl>
-                <Input placeholder="Bairro" {...field} />
+                <Input 
+                  placeholder="Bairro" 
+                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -111,9 +127,13 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
         name="complemento"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Complemento</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-700">Complemento</FormLabel>
             <FormControl>
-              <Input placeholder="Apto, bloco, etc." {...field} />
+              <Input 
+                placeholder="Apto, bloco, etc." 
+                className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
+                {...field} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -125,20 +145,20 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
         name="estado"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Estado*</FormLabel>
+            <FormLabel className="text-sm font-medium text-gray-700">Estado<span className="text-red-600">*</span></FormLabel>
             <Select 
               onValueChange={field.onChange} 
               value={field.value}
               defaultValue={field.value}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {estadosBrasileiros.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
+                  <SelectItem key={estado} value={estado} className="cursor-pointer hover:bg-red-50">
                     {estado}
                   </SelectItem>
                 ))}

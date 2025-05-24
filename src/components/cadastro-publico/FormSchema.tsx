@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 export const formSchema = z.object({
@@ -34,6 +33,9 @@ export const formSchema = z.object({
   observacoes: z.string().optional(),
   fonte_cadastro: z.string().optional(),
   foto: z.string().nullable().optional(),
+  passeio_cristo: z.enum(["sim", "nao"], {
+    message: "Por favor selecione se deseja fazer o passeio no Cristo Redentor"
+  }),
 });
 
 export type FormValues = z.infer<typeof formSchema>;

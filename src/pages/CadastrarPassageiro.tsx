@@ -37,6 +37,7 @@ const formSchema = z.object({
   setor_maracana: z.string().min(2, { message: "Setor do Maracanã é obrigatório" }),
   status_pagamento: z.enum(["Pendente", "Pago", "Cancelado"] as const),
   numero_onibus: z.string().min(1, { message: "Número do ônibus é obrigatório" }),
+  passeio_cristo: z.enum(["sim", "nao"] as const),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,6 +57,7 @@ const CadastrarPassageiro = () => {
       setor_maracana: "",
       status_pagamento: "Pendente",
       numero_onibus: "",
+      passeio_cristo: "nao",
     },
   });
 
@@ -229,6 +231,28 @@ const CadastrarPassageiro = () => {
                           <SelectItem value="Pendente">Pendente</SelectItem>
                           <SelectItem value="Pago">Pago</SelectItem>
                           <SelectItem value="Cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="passeio_cristo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Deseja ir ao passeio do Cristo Redentor?</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma opção" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

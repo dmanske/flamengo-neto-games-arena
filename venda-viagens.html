@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flamengo Neto Games - Viagens</title>
+    <style>
+        :root {
+            --primary: #e30613;
+            --secondary: #000000;
+            --accent: #f7b731;
+            --text: #333333;
+            --light: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--light);
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin: 2rem 0 1rem;
+            font-size: 1.8rem;
+        }
+
+        .section {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .game-card {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--primary);
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .price-tag {
+            background: var(--primary);
+            color: var(--light);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        .benefits-list {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .benefits-list li {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .benefits-list li::before {
+            content: "✓";
+            color: var(--primary);
+            position: absolute;
+            left: 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--light);
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--secondary);
+        }
+
+        .whatsapp-button {
+            display: inline-block;
+            background: #25D366;
+            color: var(--light);
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-left: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .whatsapp-button:hover {
+            background: #128C7E;
+        }
+
+        .payment-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .game-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Flamengo Neto Games</h1>
+            <p>Viagens para os Jogos do Flamengo</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="section">
+            <h2>Próximos Jogos</h2>
+            
+            <div class="game-card">
+                <h3>Flamengo x Vasco</h3>
+                <div class="game-info">
+                    <div class="info-item">
+                        <span>📅 Data:</span>
+                        <span>25/03/2024</span>
+                    </div>
+                    <div class="info-item">
+                        <span>⏰ Horário:</span>
+                        <span>16:00</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🏟️ Estádio:</span>
+                        <span>Maracanã</span>
+                    </div>
+                </div>
+                <div class="price-tag">R$ 150,00 por pessoa</div>
+                <ul class="benefits-list">
+                    <li>Ônibus executivo com ar condicionado</li>
+                    <li>Seguro viagem incluído</li>
+                    <li>Lanche durante a viagem</li>
+                    <li>Guia acompanhante</li>
+                </ul>
+                <div class="payment-info">
+                    <h4>Formas de Pagamento:</h4>
+                    <ul class="benefits-list">
+                        <li>Pix (pagamento à vista)</li>
+                        <li>Cartão de crédito (parcelado em até 3x)</li>
+                        <li>Transferência bancária</li>
+                    </ul>
+                </div>
+                <a href="#" class="cta-button">Reservar Agora</a>
+                <a href="https://wa.me/SEUNUMERO" class="whatsapp-button">Falar no WhatsApp</a>
+            </div>
+
+            <div class="game-card">
+                <h3>Flamengo x Fluminense</h3>
+                <div class="game-info">
+                    <div class="info-item">
+                        <span>📅 Data:</span>
+                        <span>02/04/2024</span>
+                    </div>
+                    <div class="info-item">
+                        <span>⏰ Horário:</span>
+                        <span>20:00</span>
+                    </div>
+                    <div class="info-item">
+                        <span>🏟️ Estádio:</span>
+                        <span>Maracanã</span>
+                    </div>
+                </div>
+                <div class="price-tag">R$ 180,00 por pessoa</div>
+                <ul class="benefits-list">
+                    <li>Ônibus executivo com ar condicionado</li>
+                    <li>Seguro viagem incluído</li>
+                    <li>Lanche durante a viagem</li>
+                    <li>Guia acompanhante</li>
+                </ul>
+                <div class="payment-info">
+                    <h4>Formas de Pagamento:</h4>
+                    <ul class="benefits-list">
+                        <li>Pix (pagamento à vista)</li>
+                        <li>Cartão de crédito (parcelado em até 3x)</li>
+                        <li>Transferência bancária</li>
+                    </ul>
+                </div>
+                <a href="#" class="cta-button">Reservar Agora</a>
+                <a href="https://wa.me/SEUNUMERO" class="whatsapp-button">Falar no WhatsApp</a>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Por que viajar conosco?</h2>
+            <div class="benefits-list">
+                <li>Ônibus confortáveis e seguros</li>
+                <li>Equipe experiente e profissional</li>
+                <li>Pontualidade garantida</li>
+                <li>Seguro viagem incluído</li>
+                <li>Lanche durante a viagem</li>
+                <li>Guia acompanhante</li>
+                <li>Preços competitivos</li>
+                <li>Formas de pagamento flexíveis</li>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Informações Importantes</h2>
+            <ul class="benefits-list">
+                <li>Cancelamentos com até 48h de antecedência têm reembolso de 100%</li>
+                <li>É necessário apresentar documento com foto no dia da viagem</li>
+                <li>Chegada no ponto de encontro 30 minutos antes do horário marcado</li>
+                <li>Menores de 18 anos devem estar acompanhados de responsável</li>
+            </ul>
+        </section>
+
+        <section class="section" style="text-align: center;">
+            <h2>Entre em Contato</h2>
+            <p>Dúvidas? Quer reservar sua vaga? Entre em contato conosco!</p>
+            <a href="https://wa.me/SEUNUMERO" class="whatsapp-button">Falar no WhatsApp</a>
+        </section>
+    </div>
+</body>
+</html> 

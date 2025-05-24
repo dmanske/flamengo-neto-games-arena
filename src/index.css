@@ -125,3 +125,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Deixar Select e botões com a mesma cor dos inputs padrão */
+.select-trigger,
+button,
+[data-state="open"].select-trigger,
+[data-state="checked"].select-trigger {
+  background-color: var(--input) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+/* Remove cor de fundo dos itens selecionados no Select */
+[data-state="checked"] {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: inherit !important;
+  box-shadow: none !important;
+}

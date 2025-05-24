@@ -88,7 +88,7 @@ const CadastrarViagem = () => {
   });
 
   const watchAdversario = form.watch("adversario");
-  
+
   const handlePrimaryBusChange = (tipo: TipoOnibus, empresa: EmpresaOnibus) => {
     // Esta função é passada para o OnibusForm para informar a mudança no ônibus principal
   };
@@ -267,7 +267,7 @@ const CadastrarViagem = () => {
                       <FormLabel>Data do Jogo</FormLabel>
                       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', maxWidth: 240 }}>
                         <DatePicker
-                          selected={field.value}
+                            selected={field.value}
                           onChange={(date: Date | null) => {
                             field.onChange(date);
                             setOpen(false);
