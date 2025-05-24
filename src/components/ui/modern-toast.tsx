@@ -28,10 +28,10 @@ export const ModernToast = ({
   };
 
   const variants = {
-    success: "bg-emerald-500/20 border-emerald-500/40 text-emerald-100",
-    error: "bg-red-500/20 border-red-500/40 text-red-100",
-    warning: "bg-yellow-500/20 border-yellow-500/40 text-yellow-100",
-    info: "bg-blue-500/20 border-blue-500/40 text-blue-100"
+    success: "bg-emerald-500/20 border-emerald-500/30 text-emerald-100",
+    error: "bg-red-500/20 border-red-500/30 text-red-100",
+    warning: "bg-yellow-500/20 border-yellow-500/30 text-yellow-100",
+    info: "bg-blue-500/20 border-blue-500/30 text-blue-100"
   };
 
   const iconColors = {
@@ -47,12 +47,11 @@ export const ModernToast = ({
     <div className={cn(
       "relative overflow-hidden rounded-2xl backdrop-blur-xl border shadow-2xl p-4 min-w-80 max-w-md",
       "animate-in slide-in-from-top-5 fade-in-0 duration-300",
-      "bg-slate-900/90",
       variants[type],
       className
     )}>
-      {/* Professional gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-400/10 via-transparent to-transparent"></div>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent"></div>
       
       <div className="relative z-10 flex items-start gap-3">
         <Icon className={cn("w-6 h-6 flex-shrink-0 mt-0.5", iconColors[type])} />
@@ -67,7 +66,7 @@ export const ModernToast = ({
         {onClose && (
           <button
             onClick={onClose}
-            className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-800/50 hover:bg-slate-700/50 transition-colors duration-200 flex items-center justify-center group"
+            className="flex-shrink-0 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 flex items-center justify-center group"
           >
             <XCircle className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
           </button>
