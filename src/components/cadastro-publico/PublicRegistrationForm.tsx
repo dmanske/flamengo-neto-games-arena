@@ -321,7 +321,7 @@ export function PublicRegistrationForm() {
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> 
                         Cadastrando...
                       </>
-                    ) : "📱 Enviar via WhatsApp"}
+                    ) : "📱 Enviar pelo WhatsApp"}
                   </Button>
                 </div>
               </div>
