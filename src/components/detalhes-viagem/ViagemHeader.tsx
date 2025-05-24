@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,9 +29,11 @@ interface ViagemHeaderProps {
   viagem: Viagem;
   onDelete: () => void;
   statusColors: Record<string, string>;
+  onPrint?: () => void;
+  onExportPDF?: () => void;
 }
 
-export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderProps) {
+export function ViagemHeader({ viagem, onDelete, statusColors, onPrint, onExportPDF }: ViagemHeaderProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   return (
@@ -78,6 +80,21 @@ export function ViagemHeader({ viagem, onDelete, statusColors }: ViagemHeaderPro
           </CardTitle>
         </div>
         <div className="flex gap-2">
+          {/* Botões de Relatório */}
+          {onPrint && (
+            <Button variant="outline" onClick={onPrint} className="text-blue-600 border-blue-600 hover:bg-blue-50">
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir
+            </Button>
+          )}
+          
+          {onExportPDF && (
+            <Button variant="outline" onClick={onExportPDF} className="text-green-600 border-green-600 hover:bg-green-50">
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+          )}
+
           <Button variant="outline" asChild>
             <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
               <Pencil className="h-4 w-4 mr-2" />

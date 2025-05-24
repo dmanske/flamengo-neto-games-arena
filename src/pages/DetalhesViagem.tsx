@@ -13,7 +13,9 @@ import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { ViagemHeader } from "@/components/detalhes-viagem/ViagemHeader";
 import { ViagemInfo } from "@/components/detalhes-viagem/ViagemInfo";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
+import { ViagemReport } from "@/components/relatorios/ViagemReport";
 import { useViagemDetails } from "@/hooks/useViagemDetails";
+import { useViagemReport } from "@/hooks/useViagemReport";
 
 // Cores no estilo do Flamengo
 const statusColors = {
@@ -43,6 +45,7 @@ const DetalhesViagem = () => {
     countPendentePayment,
     searchTerm,
     setSearchTerm,
+    passageiroPorOnibus,
     handleSelectOnibus,
     handleDelete,
     getPassageirosDoOnibusAtual,
@@ -51,6 +54,8 @@ const DetalhesViagem = () => {
     togglePendingPayments,
     filterStatus
   } = useViagemDetails(id);
+
+  const { reportRef, handlePrint, handleExportPDF } = useViagemReport();
 
   // Efeito que verifica se não há passageiros não alocados e seleciona um ônibus
   useEffect(() => {
@@ -108,8 +113,24 @@ const DetalhesViagem = () => {
       <ViagemHeader 
         viagem={viagem} 
         onDelete={handleDelete} 
-        statusColors={statusColors} 
+        statusColors={statusColors}
+        onPrint={handlePrint}
+        onExportPDF={handleExportPDF}
       />
+
+      {/* Componente de Relatório (oculto) */}
+      <div style={{ display: 'none' }}>
+        <ViagemReport
+          ref={reportRef}
+          viagem={viagem}
+          passageiros={passageiros}
+          onibusList={onibusList}
+          totalArrecadado={totalArrecadado}
+          totalPago={totalPago}
+          totalPendente={totalPendente}
+          passageiroPorOnibus={passageiroPorOnibus}
+        />
+      </div>
 
       {/* Cards de informações da viagem */}
       <ViagemInfo 
