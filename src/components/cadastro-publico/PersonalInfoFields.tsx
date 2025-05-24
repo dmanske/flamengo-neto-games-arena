@@ -26,13 +26,9 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="nome"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-700">Nome Completo<span className="text-red-600">*</span></FormLabel>
+            <FormLabel>Nome*</FormLabel>
             <FormControl>
-              <Input 
-                placeholder="Digite seu nome completo" 
-                className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
-                {...field} 
-              />
+              <Input placeholder="Nome completo" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -44,13 +40,9 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="email"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-700">E-mail<span className="text-red-600">*</span></FormLabel>
+            <FormLabel>Email*</FormLabel>
             <FormControl>
-              <Input 
-                placeholder="email@exemplo.com" 
-                className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
-                {...field} 
-              />
+              <Input placeholder="email@exemplo.com" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -62,11 +54,10 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="telefone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-700">Telefone (WhatsApp)<span className="text-red-600">*</span></FormLabel>
+            <FormLabel>Telefone (WhatsApp)*</FormLabel>
             <FormControl>
               <Input 
                 placeholder="(00) 0 0000-0000" 
-                className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
                 {...field} 
                 onChange={(e) => {
                   field.onChange(formatTelefone(e.target.value));
@@ -83,11 +74,10 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="cpf"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-700">CPF<span className="text-red-600">*</span></FormLabel>
+            <FormLabel>CPF*</FormLabel>
             <FormControl>
               <Input 
                 placeholder="000.000.000-00" 
-                className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
                 {...field} 
                 onChange={(e) => {
                   field.onChange(formatCPF(e.target.value));
@@ -104,12 +94,11 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="data_nascimento"
         render={({ field }) => (
           <FormItem className="flex flex-col">
-            <FormLabel className="text-sm font-medium text-gray-700">Data de Nascimento<span className="text-red-600">*</span></FormLabel>
+            <FormLabel>Data de Nascimento*</FormLabel>
             <div className="flex">
               <FormControl>
                 <Input
                   placeholder="DD/MM/AAAA"
-                  className="h-12 px-4 rounded-xl border-2 focus:border-red-500 focus:ring-red-500"
                   {...field}
                 />
               </FormControl>
@@ -117,13 +106,13 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="ml-2 h-12 w-12 rounded-xl border-2 hover:border-red-500 hover:bg-red-50"
+                    className="ml-2 px-2"
                     type="button"
                   >
-                    <CalendarIcon className="h-5 w-5" />
+                    <CalendarIcon className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-xl shadow-lg" align="start">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={field.value ? parse(field.value, 'dd/MM/yyyy', new Date()) : undefined}
@@ -138,7 +127,7 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
                     }
                     locale={ptBR}
                     initialFocus
-                    className={cn("p-3 rounded-xl")}
+                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
