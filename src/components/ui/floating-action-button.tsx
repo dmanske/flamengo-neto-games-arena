@@ -21,9 +21,9 @@ export const FloatingActionButton = ({
   tooltip
 }: FloatingActionButtonProps) => {
   const variants = {
-    primary: "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25",
-    secondary: "bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white shadow-lg shadow-gray-500/25",
-    accent: "bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black shadow-lg shadow-yellow-500/25"
+    primary: "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25",
+    secondary: "bg-gradient-to-br from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white shadow-lg shadow-slate-500/25",
+    accent: "bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg shadow-purple-500/25"
   };
 
   const sizes = {
@@ -43,7 +43,7 @@ export const FloatingActionButton = ({
       <button
         onClick={onClick}
         className={cn(
-          "relative overflow-hidden rounded-full backdrop-blur-md border border-white/20 transition-all duration-300 transform hover:scale-110 active:scale-95 hover:shadow-2xl",
+          "relative overflow-hidden rounded-full backdrop-blur-md border border-slate-600/50 transition-all duration-300 transform hover:scale-110 active:scale-95 hover:shadow-2xl",
           variants[variant],
           sizes[size],
           "flex items-center justify-center",
@@ -51,17 +51,17 @@ export const FloatingActionButton = ({
         )}
         title={tooltip}
       >
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"></div>
+        {/* Professional animated background */}
+        <div className="absolute inset-0 bg-slate-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full"></div>
         
         <Icon className={cn(iconSizes[size], "relative z-10 drop-shadow-sm")} />
       </button>
       
-      {/* Tooltip */}
+      {/* Professional Tooltip */}
       {tooltip && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-black/80 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap backdrop-blur-sm border border-white/10">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-slate-900/90 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap backdrop-blur-sm border border-slate-600/50">
           {tooltip}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900/90"></div>
         </div>
       )}
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store } from "lucide-react";
@@ -10,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import LogoutButton from "@/components/LogoutButton";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Default logo URL
+// Professional logo URL
 const DEFAULT_LOGO_URL = "https://logodetimes.com/wp-content/uploads/flamengo.png";
 
 interface NavItemProps {
@@ -87,17 +86,17 @@ const MainLayout = () => {
   };
   
   const renderSidebarContent = () => (
-    <div className="flex h-full flex-col bg-gradient-to-b from-red-900/95 via-red-800/90 to-black/95 backdrop-blur-md border-r border-white/20">
-      {/* Header */}
-      <div className="p-4 flex flex-col items-center justify-center border-b border-white/20 bg-black/20">
+    <div className="flex h-full flex-col bg-gradient-to-b from-slate-900/95 via-slate-800/90 to-slate-950/95 backdrop-blur-md border-r border-slate-700/50">
+      {/* Professional Header */}
+      <div className="p-4 flex flex-col items-center justify-center border-b border-slate-700/50 bg-slate-950/50">
         {!collapsed && (
           <div className="text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center mb-3 shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mb-3 shadow-lg shadow-blue-500/20">
               <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-8 h-8" />
             </div>
             <div className="font-bold text-white">
               <span className="text-lg">Neto Tours</span>
-              <div className="text-xs text-red-200 mt-1">Caravanas Rubro-Negras</div>
+              <div className="text-xs text-blue-200 mt-1">Sistema de Gestão</div>
             </div>
           </div>
         )}
@@ -106,27 +105,27 @@ const MainLayout = () => {
             variant="ghost" 
             size="icon" 
             onClick={() => setCollapsed(!collapsed)} 
-            className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white mt-3 self-center"
+            className="p-2 rounded-full hover:bg-slate-800/50 transition-colors text-white/80 hover:text-white mt-3 self-center"
           >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         )}
       </div>
       
-      {/* User Profile */}
+      {/* Professional User Profile */}
       {!collapsed && (
-        <div className="flex items-center gap-3 p-4 border-b border-white/20 bg-black/10">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black font-bold text-sm shadow-lg">
+        <div className="flex items-center gap-3 p-4 border-b border-slate-700/50 bg-slate-950/30">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
             {userInitials}
           </div>
           <div className="flex flex-col min-w-0 max-w-xs">
             <span className="text-sm font-semibold text-white truncate">Administrador</span>
-            <span className="text-xs text-white/70 truncate">{userProfile}</span>
+            <span className="text-xs text-slate-400 truncate">{userProfile}</span>
           </div>
         </div>
       )}
       
-      {/* Navigation */}
+      {/* Professional Navigation */}
       <ScrollArea className="flex-1">
         <div className="py-4 space-y-2 px-3">
           <NavItem 
@@ -181,15 +180,15 @@ const MainLayout = () => {
         </div>
       </ScrollArea>
       
-      {/* Footer (Logout) */}
-      <div className="border-t border-white/20 px-3 py-4 bg-black/20">
+      {/* Professional Footer (Logout) */}
+      <div className="border-t border-slate-700/50 px-3 py-4 bg-slate-950/50">
         {!collapsed && <LogoutButton />}
       </div>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-red-900 via-black to-red-800">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Sidebar for desktop */}
       {!isMobile && (
         <aside className={cn(
@@ -202,15 +201,15 @@ const MainLayout = () => {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0">
-        {/* Top bar for mobile */}
+        {/* Professional Top bar for mobile */}
         {isMobile && (
-          <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-white/20 bg-red-900/95 backdrop-blur-md px-4">
+          <div className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-700/50 bg-slate-900/95 backdrop-blur-md px-4">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={toggleMenu} className="text-white hover:bg-white/10">
+              <Button variant="ghost" size="icon" onClick={toggleMenu} className="text-white hover:bg-slate-800/50">
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
                   <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-5 h-5" />
                 </div>
                 <span className="text-lg font-bold text-white">Neto Tours</span>
