@@ -60,3 +60,49 @@ export function usePassageirosCount(viagemId: string) {
     isLoading,
   };
 }
+
+// New hook for multiple viagens
+export function useMultiplePassageirosCount(viagemIds: string[]) {
+  const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllCounts = async () => {
+      try {
+        setIsLoading(true);
+        const counts: Record<string, number> = {};
+
+        // Fetch counts for all viagens at once
+        if (viagemIds.length > 0) {
+          const { data: passageiros, error } = await supabase
+            .from('viagem_passageiros')
+            .select('viagem_id')
+            .in('viagem_id', viagemIds);
+
+          if (error) {
+            throw error;
+          }
+
+          // Count passengers per viagem
+          passageiros?.forEach(p => {
+            counts[p.viagem_id] = (counts[p.viagem_id] || 0) + 1;
+          });
+        }
+
+        setPassageirosCount(counts);
+      } catch (error: any) {
+        console.error('Erro ao buscar contagem de passageiros:', error);
+        toast.error('Erro ao carregar contagem de passageiros');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllCounts();
+  }, [viagemIds.join(',')]);
+
+  return {
+    passageirosCount,
+    isLoading,
+  };
+}

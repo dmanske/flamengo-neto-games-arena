@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +41,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ViagemCard } from "@/components/viagens/ViagemCard";
-import { usePassageirosCount } from "@/hooks/usePassageirosCount";
+import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
 interface Viagem {
   id: string;
@@ -102,7 +101,7 @@ const Viagens = () => {
   };
 
   // Buscar contagem de passageiros para cada viagem
-  const { passageirosCount } = usePassageirosCount(
+  const { passageirosCount } = useMultiplePassageirosCount(
     viagens.map(viagem => viagem.id)
   );
 
