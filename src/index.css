@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
@@ -108,67 +107,116 @@
   }
 }
 
-/* Modern Glassmorphism Effects */
-.glass-effect {
-  @apply bg-white/10 backdrop-blur-md border border-white/20;
+/* Advanced Modern Effects */
+@layer utilities {
+  /* Glassmorphism Effects */
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-elevated {
+    @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-2xl;
+  }
+
+  .glass-interactive {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer transform hover:scale-[1.02];
+  }
+
+  /* Advanced Button Styles */
+  .btn-modern {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95;
+  }
+
+  .btn-glass {
+    @apply glass-effect text-white hover:bg-white/20 hover:border-white/40;
+  }
+
+  .btn-gradient {
+    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl;
+  }
+
+  /* Modern Card Styles */
+  .card-modern {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl;
+  }
+
+  .card-elevated {
+    @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-3xl;
+  }
+
+  .card-interactive {
+    @apply card-modern hover:bg-white/15 hover:border-white/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1;
+  }
+
+  /* Text Effects */
+  .text-gradient {
+    @apply bg-gradient-to-r from-red-400 to-yellow-400 bg-clip-text text-transparent;
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Focus States */
+  .focus-modern {
+    @apply focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent;
+  }
 }
 
-.glass-elevated {
-  @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-2xl;
+/* Advanced Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(5px) rotate(-1deg); }
 }
 
-.glass-interactive {
-  @apply bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer transform hover:scale-[1.02];
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8), 0 0 60px rgba(239, 68, 68, 0.3); }
 }
 
-/* Modern Button Styles */
-.btn-modern {
-  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.btn-secondary {
-  @apply bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:border-white/40;
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
 }
 
-.btn-ghost {
-  @apply text-white hover:bg-white/10 backdrop-blur-sm;
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
-/* Card Styles */
-.card-modern {
-  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-xl;
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
-.card-elevated {
-  @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-2xl rounded-xl;
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
 }
 
-.card-interactive {
-  @apply card-modern hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer transform hover:scale-[1.02];
+/* Microinteractions */
+.hover-lift {
+  @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl;
 }
 
-/* Hero Section */
-.hero-gradient {
-  @apply bg-gradient-to-br from-red-900 via-black to-red-800;
+.hover-glow {
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25;
 }
 
-/* Navigation */
-.nav-modern {
-  @apply bg-white/5 backdrop-blur-md border-b border-white/10;
+.press-effect {
+  @apply active:scale-95 transition-transform duration-150;
 }
 
-/* Footer */
-.footer-modern {
-  @apply bg-black/20 backdrop-blur-sm border-t border-white/10;
-}
-
-/* Text Effects */
-.text-gradient {
-  @apply bg-gradient-to-r from-red-400 to-yellow-400 bg-clip-text text-transparent;
-}
-
-.text-shadow {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+/* Loading States */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
 /* Scrollbar Styling */
@@ -177,15 +225,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-black/20;
+  @apply bg-black/20 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-red-500/50 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-red-500/70;
+  @apply bg-red-500/50 rounded-full hover:bg-red-500/70;
 }
 
 /* Selection Styling */
@@ -193,64 +237,21 @@
   @apply bg-red-500/30 text-white;
 }
 
-/* Focus Styles */
-.focus-modern {
-  @apply focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent;
+/* Performance Optimizations */
+.will-change-transform {
+  will-change: transform;
 }
 
-/* Loading Animation */
-.loading-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Roman/Flamengo Theme Overrides */
-.roman-card {
-  @apply card-modern;
-}
-
-section {
-  @apply bg-transparent;
-}
-
-input, textarea, select {
-  @apply glass-effect text-white placeholder:text-white/60 focus:ring-2 focus:ring-red-500 focus:border-red-500/70;
-  font-family: 'Inter', sans-serif !important;
-}
-
-.sidebar, .Sidebar, .side-bar {
-  @apply bg-gradient-to-b from-black to-red-900/20 text-white border-r border-white/10;
-}
-
-.btn-outline {
-  @apply border-2 border-red-500 text-red-500 font-medium py-2 px-6 rounded-lg shadow hover:bg-red-500/10 transition-all duration-200;
-}
-
-/* Mobile Optimizations */
-@media (max-width: 768px) {
-  .hero-gradient {
-    min-height: 100vh;
-  }
-  
-  .glass-effect,
-  .glass-elevated,
-  .glass-interactive {
-    @apply backdrop-blur-sm;
-  }
+.will-change-opacity {
+  will-change: opacity;
 }
 
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
   .animate-pulse,
-  .animate-fade-in,
-  .animate-scale-in {
+  .animate-glow,
+  .animate-shimmer {
     animation: none;
   }
   
@@ -267,5 +268,18 @@ input, textarea, select {
   .glass-elevated,
   .glass-interactive {
     @apply bg-black/80 border-white/80;
+  }
+}
+
+/* Container Queries for Advanced Responsiveness */
+@container (min-width: 640px) {
+  .container-responsive {
+    @apply grid-cols-2;
+  }
+}
+
+@container (min-width: 1024px) {
+  .container-responsive {
+    @apply grid-cols-4;
   }
 }

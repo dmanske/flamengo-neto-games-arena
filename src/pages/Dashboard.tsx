@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBusStats } from "@/hooks/useBusStats";
@@ -132,25 +131,33 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 via-black to-red-800 relative">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+    <div className="min-h-screen bg-gradient-to-br from-red-950 via-black to-red-900 relative overflow-hidden">
+      {/* Advanced Background Effects */}
+      <div className="absolute inset-0">
+        {/* Animated Gradient Mesh */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-yellow-900/10 animate-pulse"></div>
+        
+        {/* Floating Geometric Shapes */}
+        <div className="absolute top-20 left-10 w-64 h-64 bg-red-500/5 rounded-full blur-3xl animate-float opacity-60"></div>
+        <div className="absolute bottom-32 right-20 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-float opacity-40" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-red-400/10 rounded-full blur-2xl animate-pulse"></div>
+        
+        {/* Subtle Grid Pattern */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDIpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
+      </div>
       
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-red-500/10 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute bottom-32 right-20 w-48 h-48 bg-yellow-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      
-      <div className="relative z-10 container py-8">
-        {/* Dashboard Header */}
+      <div className="relative z-10 container py-6">
+        {/* Modern Dashboard Header */}
         <DashboardHeader />
         
-        {/* Stats Grid */}
+        {/* Enhanced Stats Grid with Glassmorphism */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <ModernStatCard
             icon={Users}
             value={isLoading ? "..." : clientCount.toLocaleString()}
             label="Total de Clientes"
             change={{ value: 12, type: 'increase' }}
+            className="group hover:scale-105 transition-all duration-300"
           />
           
           <ModernStatCard
@@ -158,6 +165,7 @@ const Dashboard = () => {
             value={isLoading ? "..." : viagemCount.toLocaleString()}
             label="Viagens Cadastradas"
             change={{ value: 8, type: 'increase' }}
+            className="group hover:scale-105 transition-all duration-300"
           />
           
           <ModernStatCard
@@ -165,54 +173,61 @@ const Dashboard = () => {
             value={isLoading ? "..." : `R$ ${monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             label="Receita Mensal"
             change={{ value: 15, type: 'increase' }}
+            className="group hover:scale-105 transition-all duration-300"
           />
           
           <ModernStatCard
             icon={Bus}
-            value={isLoading ? "..." : (busStats?.total || 0).toString()}
+            value={isLoading ? "..." : (busStats?.totalBuses || 0).toString()}
             label="Ônibus Disponíveis"
             change={{ value: 5, type: 'increase' }}
+            className="group hover:scale-105 transition-all duration-300"
           />
         </div>
         
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 mb-8">
-          <ModernCard variant="elevated" className="p-6">
+        {/* Modern Cards Grid with Improved Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6 mb-8">
+          <ModernCard variant="elevated" className="p-6 group hover:scale-[1.02] transition-all duration-300">
             <ProximasViagensCard 
               isLoading={isLoading} 
               proximasViagens={proximasViagens} 
             />
           </ModernCard>
-          <ModernCard variant="elevated" className="p-6">
+          <ModernCard variant="elevated" className="p-6 group hover:scale-[1.02] transition-all duration-300">
             <SetoresEstadioMaisEscolhidosChart />
           </ModernCard>
         </div>
         
+        {/* Enhanced Interactive Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <ModernCard variant="interactive" className="p-6">
+          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-500">
             <ClientesNovosCard />
           </ModernCard>
-          <ModernCard variant="interactive" className="p-6">
+          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500">
             <PagamentosPendentesCard />
           </ModernCard>
-          <ModernCard variant="interactive" className="p-6">
+          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500">
             <ViagemMaisLotadaCard />
           </ModernCard>
-          <ModernCard variant="interactive" className="p-6">
+          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500">
             <RankingAdversariosCard />
           </ModernCard>
-          <ModernCard variant="interactive" className="p-6">
+          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
             <TopClientesCard />
           </ModernCard>
         </div>
         
-        {/* Charts Grid */}
-        <ModernCard variant="elevated" className="p-6 mb-8">
+        {/* Modern Charts Section */}
+        <ModernCard variant="elevated" className="p-8 mb-8 group hover:scale-[1.01] transition-all duration-300">
           <DashboardChartsGrid />
         </ModernCard>
         
-        {/* Image Section */}
-        <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />
+        {/* Enhanced Image Section */}
+        <div className="relative">
+          <ModernCard variant="elevated" className="overflow-hidden group">
+            <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />
+          </ModernCard>
+        </div>
       </div>
     </div>
   );
