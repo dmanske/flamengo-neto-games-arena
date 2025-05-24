@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -84,63 +85,199 @@
     --sidebar-ring: 16 58% 51%;
   }
 
-  h1, h2, h3, h4, h5, h6, label, legend, .section-title, .card-title, .btn-primary, .btn, button {
-    font-family: 'Cinzel', serif !important;
-    @apply font-cinzel font-bold tracking-wide text-rome-navy;
-  }
-  body {
-    font-family: 'Inter', sans-serif !important;
-    @apply font-sans bg-rome-parchment text-foreground;
-  }
-  section {
-    @apply bg-rome-parchment;
-  }
-  .card, .Card, .stat-box {
-    @apply bg-rome-marble border border-rome-gold/30 shadow-md rounded-lg;
-  }
-  input, textarea, select {
-    @apply border border-rome-gold/30 rounded-md bg-rome-marble text-rome-navy placeholder:text-rome-leaf focus:ring-2 focus:ring-rome-gold focus:border-rome-gold/70;
-    font-family: 'Inter', sans-serif !important;
-  }
-  .sidebar, .Sidebar, .side-bar {
-    @apply bg-rome-navy text-rome-gold border-r border-rome-gold/30;
-  }
-  .btn, .btn-primary, button, .Button {
-    @apply font-cinzel rounded bg-rome-terracotta text-white shadow hover:bg-rome-terracotta/90 transition-all;
-  }
-  .btn-secondary {
-    @apply bg-rome-navy text-rome-gold border border-rome-gold/30 hover:bg-rome-navy/90;
-  }
-  .btn-outline {
-    @apply border-2 border-rome-terracotta text-rome-terracotta font-cinzel py-1.5 px-4 rounded shadow hover:bg-rome-terracotta/10 transition-all duration-200;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif !important;
+    @apply font-bold tracking-tight;
+  }
+
+  .font-cinzel {
+    font-family: 'Cinzel', serif !important;
+  }
+
+  .font-sans {
+    font-family: 'Inter', sans-serif !important;
   }
 }
 
-/* Deixar Select e botões com a mesma cor dos inputs padrão */
-.select-trigger,
-button,
-[data-state="open"].select-trigger,
-[data-state="checked"].select-trigger {
-  background-color: var(--input) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
-  box-shadow: none !important;
+/* Modern Glassmorphism Effects */
+.glass-effect {
+  @apply bg-white/10 backdrop-blur-md border border-white/20;
 }
 
-/* Remove cor de fundo dos itens selecionados no Select */
-[data-state="checked"] {
-  background-color: transparent !important;
-  color: inherit !important;
-  border-color: inherit !important;
-  box-shadow: none !important;
+.glass-elevated {
+  @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-2xl;
+}
+
+.glass-interactive {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer transform hover:scale-[1.02];
+}
+
+/* Modern Button Styles */
+.btn-modern {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700;
+}
+
+.btn-secondary {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:border-white/40;
+}
+
+.btn-ghost {
+  @apply text-white hover:bg-white/10 backdrop-blur-sm;
+}
+
+/* Card Styles */
+.card-modern {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-xl;
+}
+
+.card-elevated {
+  @apply bg-white/20 backdrop-blur-lg border border-white/30 shadow-2xl rounded-xl;
+}
+
+.card-interactive {
+  @apply card-modern hover:bg-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer transform hover:scale-[1.02];
+}
+
+/* Hero Section */
+.hero-gradient {
+  @apply bg-gradient-to-br from-red-900 via-black to-red-800;
+}
+
+/* Navigation */
+.nav-modern {
+  @apply bg-white/5 backdrop-blur-md border-b border-white/10;
+}
+
+/* Footer */
+.footer-modern {
+  @apply bg-black/20 backdrop-blur-sm border-t border-white/10;
+}
+
+/* Text Effects */
+.text-gradient {
+  @apply bg-gradient-to-r from-red-400 to-yellow-400 bg-clip-text text-transparent;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-black/20;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-red-500/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-red-500/70;
+}
+
+/* Selection Styling */
+::selection {
+  @apply bg-red-500/30 text-white;
+}
+
+/* Focus Styles */
+.focus-modern {
+  @apply focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-transparent;
+}
+
+/* Loading Animation */
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Roman/Flamengo Theme Overrides */
+.roman-card {
+  @apply card-modern;
+}
+
+section {
+  @apply bg-transparent;
+}
+
+input, textarea, select {
+  @apply glass-effect text-white placeholder:text-white/60 focus:ring-2 focus:ring-red-500 focus:border-red-500/70;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.sidebar, .Sidebar, .side-bar {
+  @apply bg-gradient-to-b from-black to-red-900/20 text-white border-r border-white/10;
+}
+
+.btn, .btn-primary, button, .Button {
+  @apply btn-modern btn-primary;
+}
+
+.btn-secondary {
+  @apply btn-modern bg-white/10 text-white border border-white/20 hover:bg-white/20;
+}
+
+.btn-outline {
+  @apply border-2 border-red-500 text-red-500 font-medium py-2 px-6 rounded-lg shadow hover:bg-red-500/10 transition-all duration-200;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .hero-gradient {
+    min-height: 100vh;
+  }
+  
+  .glass-effect,
+  .glass-elevated,
+  .glass-interactive {
+    @apply backdrop-blur-sm;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse,
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none;
+  }
+  
+  .transition-all,
+  .transition-transform,
+  .transition-colors {
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .glass-effect,
+  .glass-elevated,
+  .glass-interactive {
+    @apply bg-black/80 border-white/80;
+  }
 }
