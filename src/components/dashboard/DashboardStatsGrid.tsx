@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Bus, CalendarCheck, CreditCard, DollarSign, TrendingUp, Users } from "lucide-react";
-import { DashboardStatCard } from "./DashboardStatCard";
+import { ModernStatsCard } from "./ModernStatsCard";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
@@ -21,87 +22,55 @@ export const DashboardStatsGrid = ({
   monthlyRevenue,
   busStats,
 }: DashboardStatsGridProps) => {
-  const formatViagemDescription = (count: number) => {
-    if (count === 0) return "Nenhuma viagem agendada";
-    if (count === 1) return "1 viagem agendada";
-    return `${count} viagens agendadas`;
-  };
-
-  const formatClientDescription = (count: number) => {
-    if (count === 0) return "Nenhum cliente cadastrado";
-    if (count === 1) return "1 cliente cadastrado";
-    return `${count} clientes cadastrados`;
-  };
-
-  const formatBusDescription = (count: number) => {
-    if (count === 0) return "Nenhum ônibus cadastrado";
-    if (count === 1) return "1 ônibus cadastrado";
-    return `${count} ônibus cadastrados`;
-  };
-
-  // Get current month name
   const currentMonthName = format(new Date(), "MMMM", { locale: ptBR });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-      {/* Viagens Card */}
-      <DashboardStatCard
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+      <ModernStatsCard
         title="Total Viagens"
         value={viagemCount}
+        description={viagemCount === 1 ? "viagem agendada" : "viagens agendadas"}
         icon={CalendarCheck}
-        className=""
-        color="bg-gradient-to-br from-red-200 via-yellow-100 to-rose-100"
-        iconContainerClassName="bg-orange-400/80 text-white"
         loading={isLoading}
-        hideDescription={true}
+        gradient="from-orange-200/30 to-red-200/20"
       />
 
-      {/* Clientes Card */}
-      <DashboardStatCard
+      <ModernStatsCard
         title="Clientes"
         value={clientCount}
+        description={clientCount === 1 ? "cliente cadastrado" : "clientes cadastrados"}
         icon={Users}
-        className=""
-        color="bg-gradient-to-br from-green-200 via-green-100 to-emerald-50"
-        iconContainerClassName="bg-green-700/80 text-white"
         loading={isLoading}
-        hideDescription={true}
+        gradient="from-green-200/30 to-emerald-200/20"
       />
 
-      {/* Ônibus Card */}
-      <DashboardStatCard
+      <ModernStatsCard
         title="Ônibus"
         value={busStats.totalBuses}
+        description={busStats.totalBuses === 1 ? "ônibus cadastrado" : "ônibus cadastrados"}
         icon={Bus}
-        className=""
-        color="bg-gradient-to-br from-blue-200 via-blue-100 to-sky-50"
-        iconContainerClassName="bg-blue-700/80 text-white"
         loading={busStats.isLoading}
-        hideDescription={true}
+        gradient="from-blue-200/30 to-sky-200/20"
       />
 
-      {/* Ônibus Mais Usado Card */}
-      <DashboardStatCard
-        title="Ônibus Mais Usado"
+      <ModernStatsCard
+        title="Mais Usado"
         value={busStats.mostUsedBus ? busStats.mostUsedBus.tipo : "Nenhum"}
-        description={busStats.mostUsedBus ? `Usado em ${busStats.mostUsedBus.count} ${busStats.mostUsedBus.count === 1 ? "viagem" : "viagens"}` : "Sem dados de utilização"}
+        description={busStats.mostUsedBus ? `${busStats.mostUsedBus.count} ${busStats.mostUsedBus.count === 1 ? "viagem" : "viagens"}` : "Sem dados"}
         icon={TrendingUp}
-        className=""
-        color="bg-gradient-to-br from-yellow-100 via-orange-100 to-amber-50"
-        iconContainerClassName="bg-yellow-500/80 text-white"
         loading={busStats.isLoading}
+        gradient="from-yellow-200/30 to-orange-200/20"
       />
 
-      {/* Receita Card */}
-      <DashboardStatCard
+      <ModernStatsCard
         title={`Receita ${currentMonthName}`}
         value={formatCurrency(monthlyRevenue)}
         description="Total do mês atual"
         icon={DollarSign}
-        className=""
-        color="bg-gradient-to-br from-green-100 via-emerald-100 to-lime-50"
-        iconContainerClassName="bg-green-500/80 text-white"
         loading={isLoading}
+        trend="up"
+        trendValue="+12%"
+        gradient="from-green-200/30 to-lime-200/20"
       />
     </div>
   );

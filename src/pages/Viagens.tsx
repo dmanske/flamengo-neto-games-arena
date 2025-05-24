@@ -1,7 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GlassCard } from "@/components/ui/glass-card";
+import { ModernButton } from "@/components/ui/modern-button";
+import { Skeleton } from "@/components/ui/skeleton-loader";
 import { 
   Table, 
   TableBody, 
@@ -30,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid, CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
@@ -41,6 +45,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ViagemCard } from "@/components/viagens/ViagemCard";
+import { ModernViagemCard } from "@/components/viagens/ModernViagemCard";
 import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
 interface Viagem {
