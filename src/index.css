@@ -126,10 +126,6 @@
   @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95;
 }
 
-.btn-primary {
-  @apply bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700;
-}
-
 .btn-secondary {
   @apply bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:border-white/40;
 }
@@ -230,14 +226,6 @@ input, textarea, select {
 
 .sidebar, .Sidebar, .side-bar {
   @apply bg-gradient-to-b from-black to-red-900/20 text-white border-r border-white/10;
-}
-
-.btn, .btn-primary, button, .Button {
-  @apply btn-modern btn-primary;
-}
-
-.btn-secondary {
-  @apply btn-modern bg-white/10 text-white border border-white/20 hover:bg-white/20;
 }
 
 .btn-outline {
