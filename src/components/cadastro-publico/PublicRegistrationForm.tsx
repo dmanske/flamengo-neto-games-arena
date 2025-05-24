@@ -218,7 +218,7 @@ export function PublicRegistrationForm() {
               watchComoConheceu={watchComoConheceu} 
             />
 
-            <div className="col-span-2">
+            <div className="col-span-1 md:col-span-2">
               <FormField
                 control={form.control}
                 name="passeio_cristo"
@@ -230,7 +230,7 @@ export function PublicRegistrationForm() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione uma opção" />
                         </SelectTrigger>
                       </FormControl>
@@ -245,8 +245,7 @@ export function PublicRegistrationForm() {
               />
             </div>
 
-            {/* Campo de foto alinhado à esquerda */}
-            <div className="col-span-2">
+            <div className="col-span-1 md:col-span-2">
               <FormField
                 control={form.control}
                 name="foto"
@@ -261,7 +260,7 @@ export function PublicRegistrationForm() {
                         folderPath="cadastro-publico"
                         maxSizeInMB={2}
                         showPreview={true}
-                        previewClassName="h-48 w-48 object-cover rounded-lg shadow-md"
+                        previewClassName="h-32 w-32 md:h-48 md:w-48 object-cover rounded-lg shadow-md"
                         uploadText="Clique ou arraste para enviar uma foto (máx. 2MB)"
                       />
                     </FormControl>
@@ -277,10 +276,11 @@ export function PublicRegistrationForm() {
             </div>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-center md:justify-end mt-6">
             <Button 
               type="submit" 
               variant="default"
+              className="w-full md:w-auto"
               disabled={loading || addClientMutation.isPending}
             >
               {(loading || addClientMutation.isPending) ? (

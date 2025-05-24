@@ -27,27 +27,27 @@ export function ReferralFields({ control, watchComoConheceu }: ReferralFieldsPro
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Instagram" id="instagram" />
-                  <FormLabel htmlFor="instagram" className="font-normal cursor-pointer">Instagram</FormLabel>
+                  <FormLabel htmlFor="instagram" className="font-normal cursor-pointer text-sm md:text-base">Instagram</FormLabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Facebook" id="facebook" />
-                  <FormLabel htmlFor="facebook" className="font-normal cursor-pointer">Facebook</FormLabel>
+                  <FormLabel htmlFor="facebook" className="font-normal cursor-pointer text-sm md:text-base">Facebook</FormLabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Google" id="google" />
-                  <FormLabel htmlFor="google" className="font-normal cursor-pointer">Google</FormLabel>
+                  <FormLabel htmlFor="google" className="font-normal cursor-pointer text-sm md:text-base">Google</FormLabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="WhatsApp" id="whatsapp" />
-                  <FormLabel htmlFor="whatsapp" className="font-normal cursor-pointer">WhatsApp</FormLabel>
+                  <FormLabel htmlFor="whatsapp" className="font-normal cursor-pointer text-sm md:text-base">WhatsApp</FormLabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Indicação" id="indicacao" />
-                  <FormLabel htmlFor="indicacao" className="font-normal cursor-pointer">Indicação</FormLabel>
+                  <FormLabel htmlFor="indicacao" className="font-normal cursor-pointer text-sm md:text-base">Indicação</FormLabel>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Outro" id="outro" />
-                  <FormLabel htmlFor="outro" className="font-normal cursor-pointer">Outro</FormLabel>
+                  <FormLabel htmlFor="outro" className="font-normal cursor-pointer text-sm md:text-base">Outro</FormLabel>
                 </div>
               </RadioGroup>
             </FormControl>
