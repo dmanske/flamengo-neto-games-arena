@@ -37,7 +37,7 @@ const Dashboard = () => {
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
   
   // Use the BusStats hook to get bus data
-  const busStats = useBusStats();
+  const { stats: busStats } = useBusStats();
   
   useEffect(() => {
     const fetchCounts = async () => {

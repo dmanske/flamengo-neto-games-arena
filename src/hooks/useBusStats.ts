@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -67,6 +68,7 @@ export function useBusStats() {
             busTypes,
             busesWithImage,
             mostUsedBus: mostUsedBusType ? { tipo: mostUsedBusType, count: mostUsedBus[mostUsedBusType] } : undefined,
+            isLoading: false,
           });
         }
       } catch (error: any) {
