@@ -7,10 +7,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { Loader2, ArrowLeft, User } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { FonteConhecimento } from "@/types/entities";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useClientValidation } from "@/hooks/useClientValidation";
+import { formatPhone, formatCPF, cleanPhone, cleanCPF } from "@/utils/formatters";
 
 import {
   Form,
@@ -53,6 +55,7 @@ const EditarCliente = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { validateClient, isValidating } = useClientValidation();
 
   // Inicializar o formulário
   const form = useForm<FormValues>({
@@ -80,6 +83,19 @@ const EditarCliente = () => {
   // Obter o valor atual do campo "como_conheceu"
   const comoConheceu = form.watch("como_conheceu");
   const clienteFoto = form.watch("foto");
+  const nomeCliente = form.watch("nome");
+
+  // Format phone on change
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    form.setValue("telefone", formatted);
+  };
+
+  // Format CPF on change
+  const handleCPFChange = (value: string) => {
+    const formatted = formatCPF(value);
+    form.setValue("cpf", formatted);
+  };
 
   // Carregar dados do cliente
   useEffect(() => {
@@ -108,6 +124,10 @@ const EditarCliente = () => {
             formattedData.data_nascimento = format(dateObj, "yyyy-MM-dd");
           }
           
+          // Format phone and CPF for display
+          formattedData.telefone = formatPhone(formattedData.telefone);
+          formattedData.cpf = formatCPF(formattedData.cpf);
+          
           // Garantir que observacoes e indicacao_nome sejam strings vazias se for null
           formattedData.observacoes = formattedData.observacoes || "";
           formattedData.indicacao_nome = formattedData.indicacao_nome || "";
@@ -118,7 +138,7 @@ const EditarCliente = () => {
       } catch (error: any) {
         console.error("Erro ao buscar cliente:", error);
         toast.error("Erro ao carregar dados do cliente");
-        navigate("/clientes");
+        navigate("/dashboard/clientes");
       } finally {
         setLoading(false);
       }
@@ -132,6 +152,14 @@ const EditarCliente = () => {
     try {
       setSubmitting(true);
       
+      // Validate for duplicates (excluding current client)
+      const validation = await validateClient(values.cpf, values.telefone, values.email, id);
+      
+      if (!validation.isValid) {
+        toast.error(validation.message);
+        return;
+      }
+      
       // Formatar a data de nascimento para o formato do banco de dados
       let formattedValues = { ...values };
       if (formattedValues.data_nascimento) {
@@ -140,6 +168,11 @@ const EditarCliente = () => {
         dateObj.setHours(12, 0, 0, 0);
         formattedValues.data_nascimento = dateObj.toISOString();
       }
+      
+      // Clean phone and CPF before saving
+      formattedValues.telefone = cleanPhone(formattedValues.telefone);
+      formattedValues.cpf = cleanCPF(formattedValues.cpf);
+      formattedValues.email = formattedValues.email.toLowerCase();
       
       // Garantir que observacoes e indicacao_nome sejam strings vazias e não null
       formattedValues.observacoes = formattedValues.observacoes || "";
@@ -155,7 +188,6 @@ const EditarCliente = () => {
       }
 
       toast.success("Cliente atualizado com sucesso");
-      // Correção: Navegação para a rota correta
       navigate("/dashboard/clientes");
     } catch (error: any) {
       console.error("Erro ao atualizar cliente:", error);
@@ -178,7 +210,7 @@ const EditarCliente = () => {
       <div className="flex items-center gap-2 mb-6">
         <Button 
           variant="ghost"
-          onClick={() => navigate("/dashboard/clientes")} // Correção: Navegação para a rota correta
+          onClick={() => navigate("/dashboard/clientes")}
           className="p-0 h-auto"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -199,25 +231,45 @@ const EditarCliente = () => {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="foto"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Foto do Cliente (opcional)</FormLabel>
-                      <FormControl>
-                        <FileUpload
-                          value={field.value}
-                          onChange={field.onChange}
-                          bucketName="client-photos"
-                          folderPath="clientes"
-                          maxSizeInMB={5}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <FormField
+                    control={form.control}
+                    name="foto"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col items-center">
+                        <FormLabel>Foto do Cliente (opcional)</FormLabel>
+                        
+                        {/* Preview da foto */}
+                        <div className="flex flex-col items-center gap-3">
+                          <Avatar className="h-24 w-24 border-2 border-gray-200">
+                            {clienteFoto ? (
+                              <AvatarImage 
+                                src={clienteFoto} 
+                                alt={nomeCliente || "Preview"}
+                                className="object-cover"
+                              />
+                            ) : (
+                              <AvatarFallback className="bg-gray-100 text-gray-400 text-lg">
+                                {nomeCliente ? nomeCliente.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "FT"}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          
+                          <FormControl>
+                            <FileUpload
+                              value={field.value}
+                              onChange={field.onChange}
+                              bucketName="client-photos"
+                              folderPath="clientes"
+                              maxSizeInMB={5}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
@@ -241,7 +293,12 @@ const EditarCliente = () => {
                       <FormItem>
                         <FormLabel>CPF *</FormLabel>
                         <FormControl>
-                          <Input placeholder="000.000.000-00" {...field} />
+                          <Input 
+                            placeholder="000.000.000-00" 
+                            value={field.value}
+                            onChange={(e) => handleCPFChange(e.target.value)}
+                            className="bg-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -283,7 +340,12 @@ const EditarCliente = () => {
                       <FormItem>
                         <FormLabel>Telefone *</FormLabel>
                         <FormControl>
-                          <Input placeholder="(00) 00000-0000" {...field} />
+                          <Input 
+                            placeholder="(00) 00000-0000" 
+                            value={field.value}
+                            onChange={(e) => handlePhoneChange(e.target.value)}
+                            className="bg-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -397,7 +459,7 @@ const EditarCliente = () => {
                         <FormItem>
                           <FormLabel>Nome da indicação</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nome de quem indicou" {...field} />
+                            <Input placeholder="Nome de quem indicou" {...field} className="bg-white" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -457,19 +519,19 @@ const EditarCliente = () => {
                   <Button 
                     type="button" 
                     variant="outline"
-                    onClick={() => navigate("/dashboard/clientes")} // Correção: Navegação para a rota correta
+                    onClick={() => navigate("/dashboard/clientes")}
                   >
                     Cancelar
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={submitting}
+                    disabled={submitting || isValidating}
                     className="bg-primary hover:bg-primary/90"
                   >
-                    {submitting ? (
+                    {submitting || isValidating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Salvando...
+                        {isValidating ? "Validando..." : "Salvando..."}
                       </>
                     ) : (
                       'Salvar Alterações'

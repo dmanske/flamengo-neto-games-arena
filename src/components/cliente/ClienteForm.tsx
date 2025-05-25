@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react";
 import { FonteConhecimento } from "@/types/entities";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useClientValidation } from "@/hooks/useClientValidation";
+import { formatPhone, formatCPF, cleanPhone, cleanCPF } from "@/utils/formatters";
 
 import {
   Form,
@@ -48,6 +50,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function ClienteForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { validateClient, isValidating } = useClientValidation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -75,14 +78,44 @@ export function ClienteForm() {
   const clienteFoto = form.watch("foto");
   const comoConheceu = form.watch("como_conheceu");
   const nomeCliente = form.watch("nome");
+  const telefone = form.watch("telefone");
+  const cpfValue = form.watch("cpf");
+
+  // Format phone on change
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    form.setValue("telefone", formatted);
+  };
+
+  // Format CPF on change
+  const handleCPFChange = (value: string) => {
+    const formatted = formatCPF(value);
+    form.setValue("cpf", formatted);
+  };
 
   const onSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
       
+      // Validate for duplicates
+      const validation = await validateClient(values.cpf, values.telefone, values.email);
+      
+      if (!validation.isValid) {
+        toast.error(validation.message);
+        return;
+      }
+      
+      // Clean phone and CPF before saving
+      const dataToSave = {
+        ...values,
+        telefone: cleanPhone(values.telefone),
+        cpf: cleanCPF(values.cpf),
+        email: values.email.toLowerCase()
+      };
+      
       const { data, error } = await supabase
         .from("clientes")
-        .insert(values)
+        .insert(dataToSave)
         .single();
 
       if (error) {
@@ -161,7 +194,7 @@ export function ClienteForm() {
                   <Input 
                     placeholder="Nome completo" 
                     {...field} 
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </FormControl>
                 <FormMessage />
@@ -178,8 +211,9 @@ export function ClienteForm() {
                 <FormControl>
                   <Input 
                     placeholder="000.000.000-00" 
-                    {...field} 
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    value={field.value}
+                    onChange={(e) => handleCPFChange(e.target.value)}
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </FormControl>
                 <FormMessage />
@@ -216,7 +250,7 @@ export function ClienteForm() {
                     type="email" 
                     placeholder="exemplo@email.com" 
                     {...field} 
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </FormControl>
                 <FormMessage />
@@ -233,8 +267,9 @@ export function ClienteForm() {
                 <FormControl>
                   <Input 
                     placeholder="(00) 00000-0000" 
-                    {...field} 
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    value={field.value}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </FormControl>
                 <FormMessage />
@@ -380,7 +415,7 @@ export function ClienteForm() {
                     <Input 
                       placeholder="Nome de quem indicou" 
                       {...field} 
-                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     />
                   </FormControl>
                   <FormMessage />
@@ -448,13 +483,13 @@ export function ClienteForm() {
           </Button>
           <Button 
             type="submit" 
-            disabled={isSubmitting}
+            disabled={isSubmitting || isValidating}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {isSubmitting ? (
+            {isSubmitting || isValidating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
+                {isValidating ? "Validando..." : "Salvando..."}
               </>
             ) : (
               'Cadastrar Cliente'

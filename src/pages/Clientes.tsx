@@ -25,10 +25,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil, User } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
+import { formatPhone, formatCPF } from "@/utils/formatters";
 
 // Type for the cliente object
 interface Cliente {
@@ -129,16 +130,6 @@ const Clientes = () => {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  // Format CPF
-  const formatCPF = (cpf: string) => {
-    if (!cpf) return 'N/A';
-    cpf = cpf.replace(/[^\d]/g, '');
-    
-    if (cpf.length !== 11) return cpf;
-    
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
 
   // Format date for display
@@ -254,25 +245,25 @@ const Clientes = () => {
                 <TableBody>
                   {filteredClientes.map((cliente) => (
                     <TableRow key={cliente.id}>
-                          {showPhotos && (
+                      {showPhotos && (
                         <TableCell className="text-center">
                           <Avatar className="mx-auto h-12 w-12 border-2 border-primary/20">
-                              {cliente.foto ? (
+                            {cliente.foto ? (
                               <AvatarImage 
                                 src={cliente.foto} 
                                 alt={cliente.nome}
                                 className="object-cover"
                               />
-                              ) : (
+                            ) : (
                               <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
                                 {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
                         </TableCell>
-                          )}
+                      )}
                       <TableCell className="font-cinzel font-semibold text-center text-rome-navy">{cliente.nome}</TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.telefone}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">{formatPhone(cliente.telefone)}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{(cliente.email || '').toLowerCase()}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.cidade}/{cliente.estado}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{formatCPF(cliente.cpf)}</TableCell>
