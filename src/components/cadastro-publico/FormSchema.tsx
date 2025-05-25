@@ -42,14 +42,19 @@ export const formSchema = z.object({
   email: z.string().email("E-mail obrigatório"),
   data_nascimento: z.string().optional(),
   foto: z.string().nullable().optional(),
-  cep: z.string().optional(),
-  endereco: z.string().optional(),
-  numero: z.string().optional(),
+  cep: z.string().min(8, "CEP inválido").optional(),
+  endereco: z.string().min(3, "Endereço inválido").optional(),
+  numero: z.string().min(1, "Número inválido").optional(),
   complemento: z.string().optional(),
-  bairro: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
-  cpf: z.string().optional(),
+  bairro: z.string().min(2, "Bairro inválido").optional(),
+  cidade: z.string().min(2, "Cidade inválida").optional(),
+  estado: z.string().length(2, "Estado inválido").optional(),
+  cpf: z.string()
+    .refine((cpf) => {
+      if (!cpf) return true; // Permite vazio
+      return isValidCPF(cpf);
+    }, "CPF inválido")
+    .optional(),
   como_conheceu: z.string().optional(),
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),

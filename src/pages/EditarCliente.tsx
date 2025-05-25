@@ -146,11 +146,36 @@ const EditarCliente = () => {
       
       // Formatar a data de nascimento para o formato do banco de dados
       let formattedValues = { ...values };
-      if (formattedValues.data_nascimento) {
-        // Set to noon of the selected date to avoid timezone issues
-        const dateObj = new Date(formattedValues.data_nascimento);
-        dateObj.setHours(12, 0, 0, 0);
-        formattedValues.data_nascimento = dateObj.toISOString();
+      
+      // Tratar a data de nascimento
+      if (formattedValues.data_nascimento && formattedValues.data_nascimento.trim() !== '') {
+        try {
+          // Tenta converter a data no formato DD/MM/AAAA
+          const dateParts = formattedValues.data_nascimento.split('/');
+          if (dateParts.length === 3) {
+            const dateObj = new Date(
+              parseInt(dateParts[2]), // year
+              parseInt(dateParts[1]) - 1, // month (0-based)
+              parseInt(dateParts[0]) // day
+            );
+            dateObj.setHours(12, 0, 0, 0);
+            formattedValues.data_nascimento = dateObj.toISOString();
+          } else {
+            // Se não estiver no formato esperado, tenta converter diretamente
+            const date = new Date(formattedValues.data_nascimento);
+            if (!isNaN(date.getTime())) {
+              date.setHours(12, 0, 0, 0);
+              formattedValues.data_nascimento = date.toISOString();
+            } else {
+              formattedValues.data_nascimento = null;
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao converter data de nascimento:", error);
+          formattedValues.data_nascimento = null;
+        }
+      } else {
+        formattedValues.data_nascimento = null;
       }
       
       // Clean phone and CPF before saving
@@ -161,6 +186,9 @@ const EditarCliente = () => {
       // Garantir que observacoes e indicacao_nome sejam strings vazias e não null
       formattedValues.observacoes = formattedValues.observacoes || "";
       formattedValues.indicacao_nome = formattedValues.indicacao_nome || "";
+      
+      // Remover campos que não devem ser atualizados
+      delete formattedValues.foto;
       
       const { error } = await supabase
         .from("clientes")
@@ -269,16 +297,15 @@ const EditarCliente = () => {
                       </FormItem>
                     )}
                   />
-                  
                   <FormField
                     control={form.control}
                     name="cpf"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CPF *</FormLabel>
+                        <FormLabel>CPF</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="000.000.000-00" 
+                            placeholder="000.000.000-00 (opcional)" 
                             value={field.value}
                             onChange={(e) => handleCPFChange(e.target.value)}
                             className="bg-white"
@@ -288,7 +315,6 @@ const EditarCliente = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="data_nascimento"
@@ -302,7 +328,6 @@ const EditarCliente = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="email"
@@ -316,7 +341,6 @@ const EditarCliente = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="telefone"
@@ -335,49 +359,45 @@ const EditarCliente = () => {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="cep"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CEP *</FormLabel>
+                        <FormLabel>CEP</FormLabel>
                         <FormControl>
-                          <Input placeholder="00000-000" {...field} />
+                          <Input placeholder="00000-000 (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="endereco"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Endereço *</FormLabel>
+                        <FormLabel>Endereço</FormLabel>
                         <FormControl>
-                          <Input placeholder="Rua, Avenida, etc." {...field} />
+                          <Input placeholder="Rua, Avenida, etc. (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="numero"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número *</FormLabel>
+                        <FormLabel>Número</FormLabel>
                         <FormControl>
-                          <Input placeholder="Número" {...field} />
+                          <Input placeholder="Número (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="complemento"
@@ -385,56 +405,51 @@ const EditarCliente = () => {
                       <FormItem>
                         <FormLabel>Complemento</FormLabel>
                         <FormControl>
-                          <Input placeholder="Apartamento, bloco, etc." {...field} />
+                          <Input placeholder="Apartamento, bloco, etc. (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="bairro"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bairro *</FormLabel>
+                        <FormLabel>Bairro</FormLabel>
                         <FormControl>
-                          <Input placeholder="Bairro" {...field} />
+                          <Input placeholder="Bairro (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="cidade"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cidade *</FormLabel>
+                        <FormLabel>Cidade</FormLabel>
                         <FormControl>
-                          <Input placeholder="Cidade" {...field} />
+                          <Input placeholder="Cidade (opcional)" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="estado"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estado *</FormLabel>
+                        <FormLabel>Estado</FormLabel>
                         <FormControl>
-                          <Input placeholder="UF" maxLength={2} {...field} />
+                          <Input placeholder="UF (opcional)" maxLength={2} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  {/* Campo de nome da indicação condicionalmente */}
                   {comoConheceu === "Indicação" && (
                     <FormField
                       control={form.control}
@@ -443,7 +458,7 @@ const EditarCliente = () => {
                         <FormItem>
                           <FormLabel>Nome da indicação</FormLabel>
                           <FormControl>
-                            <Input placeholder="Nome de quem indicou" {...field} className="bg-white" />
+                            <Input placeholder="Nome de quem indicou (opcional)" {...field} className="bg-white" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

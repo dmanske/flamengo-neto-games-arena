@@ -96,6 +96,37 @@ export function ClienteForm() {
         cpf: cleanCPF(values.cpf),
         email: values.email.toLowerCase()
       };
+
+      // Tratar a data de nascimento
+      if (dataToSave.data_nascimento && dataToSave.data_nascimento.trim() !== '') {
+        try {
+          // Tenta converter a data no formato DD/MM/AAAA
+          const dateParts = dataToSave.data_nascimento.split('/');
+          if (dateParts.length === 3) {
+            const dateObj = new Date(
+              parseInt(dateParts[2]), // year
+              parseInt(dateParts[1]) - 1, // month (0-based)
+              parseInt(dateParts[0]) // day
+            );
+            dateObj.setHours(12, 0, 0, 0);
+            dataToSave.data_nascimento = dateObj.toISOString();
+          } else {
+            // Se não estiver no formato esperado, tenta converter diretamente
+            const date = new Date(dataToSave.data_nascimento);
+            if (!isNaN(date.getTime())) {
+              date.setHours(12, 0, 0, 0);
+              dataToSave.data_nascimento = date.toISOString();
+            } else {
+              dataToSave.data_nascimento = null;
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao converter data de nascimento:", error);
+          dataToSave.data_nascimento = null;
+        }
+      } else {
+        dataToSave.data_nascimento = null;
+      }
       
       const { data, error } = await supabase
         .from("clientes")

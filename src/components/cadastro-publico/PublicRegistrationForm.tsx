@@ -42,15 +42,17 @@ export function PublicRegistrationForm() {
       console.log("Starting form submission with data:", data);
       
       try {
-        // Verificar duplicidade de CPF
-        const { data: existingCPF, error: cpfError } = await supabase
-          .from('clientes')
-          .select('id')
-          .eq('cpf', data.cpf)
-          .single();
+        // Verificar duplicidade de CPF apenas se CPF foi fornecido
+        if (data.cpf) {
+          const { data: existingCPF, error: cpfError } = await supabase
+            .from('clientes')
+            .select('id')
+            .eq('cpf', data.cpf)
+            .single();
 
-        if (existingCPF) {
-          throw new Error("CPF já cadastrado no sistema");
+          if (existingCPF) {
+            throw new Error("CPF já cadastrado no sistema");
+          }
         }
 
         // Verificar duplicidade de telefone
@@ -65,59 +67,56 @@ export function PublicRegistrationForm() {
         }
 
         // Convert string date to Date object for API
-        const dateParts = data.data_nascimento.split('/');
-        const dateObject = new Date(
-          parseInt(dateParts[2]), // year
-          parseInt(dateParts[1]) - 1, // month (0-based)
-          parseInt(dateParts[0]) // day
-        );
+        let dataNascimento = null;
+        if (data.data_nascimento && data.data_nascimento.trim() !== '') {
+          try {
+            // Tenta converter a data no formato DD/MM/AAAA
+            const dateParts = data.data_nascimento.split('/');
+            if (dateParts.length === 3) {
+              dataNascimento = new Date(
+                parseInt(dateParts[2]), // year
+                parseInt(dateParts[1]) - 1, // month (0-based)
+                parseInt(dateParts[0]) // day
+              ).toISOString();
+            } else {
+              // Se não estiver no formato esperado, tenta converter diretamente
+              const date = new Date(data.data_nascimento);
+              if (!isNaN(date.getTime())) {
+                dataNascimento = date.toISOString();
+              }
+            }
+          } catch (error) {
+            console.error("Erro ao converter data de nascimento:", error);
+            // Se houver erro na conversão, mantém como null
+          }
+        }
 
-        console.log("Inserting client data:", {
+        const clientData = {
           nome: data.nome,
-          endereco: data.endereco,
-          numero: data.numero,
+          endereco: data.endereco || null,
+          numero: data.numero || null,
           complemento: data.complemento || null,
-          bairro: data.bairro,
+          bairro: data.bairro || null,
           telefone: data.telefone,
-          cep: data.cep,
-          cidade: data.cidade,
-          estado: data.estado,
-          cpf: data.cpf,
-          data_nascimento: dateObject.toISOString(),
+          cep: data.cep || null,
+          cidade: data.cidade || null,
+          estado: data.estado || null,
+          cpf: data.cpf || null,
+          data_nascimento: dataNascimento,
           email: data.email,
-          como_conheceu: data.como_conheceu,
+          como_conheceu: data.como_conheceu || null,
           indicacao_nome: data.indicacao_nome || null,
           observacoes: data.observacoes || null,
           fonte_cadastro: data.fonte_cadastro || fonte,
           foto: data.foto || null,
-          passeio_cristo: data.passeio_cristo,
-        });
+        };
+
+        console.log("Inserting client data:", clientData);
 
         // Insert client into Supabase
         const { data: client, error } = await supabase
           .from('clientes')
-          .insert([
-            {
-              nome: data.nome,
-              endereco: data.endereco,
-              numero: data.numero,
-              complemento: data.complemento || null,
-              bairro: data.bairro,
-              telefone: data.telefone,
-              cep: data.cep,
-              cidade: data.cidade,
-              estado: data.estado,
-              cpf: data.cpf,
-              data_nascimento: dateObject.toISOString(),
-              email: data.email,
-              como_conheceu: data.como_conheceu,
-              indicacao_nome: data.indicacao_nome || null,
-              observacoes: data.observacoes || null,
-              fonte_cadastro: data.fonte_cadastro || fonte,
-              foto: data.foto || null,
-              passeio_cristo: data.passeio_cristo,
-            }
-          ])
+          .insert([clientData])
           .select();
           
         console.log("Supabase response:", { client, error });
@@ -177,7 +176,6 @@ export function PublicRegistrationForm() {
       observacoes: "",
       fonte_cadastro: fonte,
       foto: null,
-      passeio_cristo: "sim",
     },
   });
 
