@@ -1,12 +1,17 @@
+
 import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Eye, Pencil, Trash2, MapPin, Users, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Bus, DollarSign, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 interface Viagem {
   id: string;
@@ -24,177 +29,136 @@ interface Viagem {
 
 interface ViagemCardProps {
   viagem: Viagem;
+  passageirosCount: number;
   onDeleteClick: (viagem: Viagem) => void;
-  passageirosCount?: number;
 }
 
-export function ViagemCard({
-  viagem,
-  onDeleteClick,
-  passageirosCount = 0
-}: ViagemCardProps) {
+export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCardProps) {
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy", {
-        locale: ptBR
-      });
+      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
       return 'Data inválida';
     }
   };
-  
+
   const formatValue = (value: number | null) => {
     if (value === null) return 'N/A';
-    return value.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  // Status badge color
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'aberta':
-        return 'bg-green-500 text-white';
+        return 'bg-green-100 text-green-700';
       case 'fechada':
-        return 'bg-gray-700 text-white';
+        return 'bg-red-100 text-red-700';
       case 'concluída':
-        return 'bg-blue-600 text-white';
-      case 'em andamento':
-        return 'bg-amber-500 text-white';
+        return 'bg-blue-100 text-blue-700';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
-  // Calcular ocupação
-  const percentualOcupacao = Math.round(passageirosCount / viagem.capacidade_onibus * 100);
-  const getProgressBarColor = (percentual: number) => {
-    if (percentual > 90) {
-      return 'bg-red-600';
-    } else if (percentual > 70) {
-      return 'bg-red-500';
-    } else {
-      return 'bg-red-500';
-    }
-  };
-  
   return (
-    <TooltipProvider>
-      <Card className="roman-card overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all max-w-xs">
-        {/* Header com gradiente vermelho clarinho para preto */}
-        <div className="bg-gradient-to-r from-rose-200 via-rose-400 to-black text-rome-navy p-3 flex justify-between items-center rounded-t-xl">
-          <h3 className="text-lg font-cinzel tracking-wide drop-shadow-sm m-0">Caravana Rubro-Negra</h3>
-          <Badge className={`${getStatusColor(viagem.status_viagem)} px-2 py-1 text-xs font-medium rounded-full shadow-sm`}>{viagem.status_viagem}</Badge>
-        </div>
-        
-        {/* Team logos section */}
-        <div className="flex items-center justify-center gap-4 py-3 bg-white">
-          <div className="h-10 w-10 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-            <img src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} alt="Flamengo" className="h-8 w-8 object-contain" />
-          </div>
-          <div className="text-base font-bold text-gray-800">×</div>
-          <div className="h-10 w-10 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
-            <img src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} alt={viagem.adversario} onError={e => {
-            const target = e.target as HTMLImageElement;
-            target.onerror = null;
-            target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
-          }} className="h-8 w-8 object-contain" />
-          </div>
-        </div>
-        
-        {/* Details section - more compact */}
-        <div className="p-3 bg-white">
-          <div className="mb-2">
-            <h4 className="font-bold text-sm mb-2">Flamengo x {viagem.adversario}</h4>
-            
-            {/* Details with icons */}
-            <div className="space-y-1 text-sm">
-              <div className="flex items-center">
-                <div className="w-6 h-6 flex items-center justify-center text-red-600">
-                  <Calendar className="h-3.5 w-3.5" />
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {viagem.logo_flamengo && (
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img 
+                    src={viagem.logo_flamengo} 
+                    alt="Flamengo" 
+                    className="w-full h-full object-contain" 
+                  />
                 </div>
-                <div className="text-xs italic">{formatDate(viagem.data_jogo)}</div>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="w-6 h-6 flex items-center justify-center text-red-600">
-                  <MapPin className="h-3.5 w-3.5" />
+              )}
+              <span className="text-sm font-medium">vs</span>
+              {viagem.logo_adversario && (
+                <div className="w-8 h-8 flex items-center justify-center">
+                  <img 
+                    src={viagem.logo_adversario} 
+                    alt={viagem.adversario} 
+                    className="w-full h-full object-contain" 
+                  />
                 </div>
-                <div className="text-xs italic">{viagem.rota}</div>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="w-6 h-6 flex items-center justify-center text-red-600">
-                  <Bus className="h-3.5 w-3.5" />
-                </div>
-                <div className="text-xs">{viagem.tipo_onibus} ({viagem.empresa})</div>
-              </div>
-              
-              <div className="flex items-center">
-                <div className="w-6 h-6 flex items-center justify-center text-red-600">
-                  <DollarSign className="h-3.5 w-3.5" />
-                </div>
-                <div className="font-bold text-xs italic">{formatValue(viagem.valor_padrao)}</div>
-              </div>
-            </div>
-            
-            {/* Occupation progress bar */}
-            <div className="mt-3">
-              <div className="flex justify-between mb-1 text-xs">
-                <span className="italic">Ocupação</span>
-                <span className="font-bold">
-                  {passageirosCount} de {viagem.capacidade_onibus}
-                </span>
-              </div>
-              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <div className={`h-full ${getProgressBarColor(percentualOcupacao)}`} style={{
-                width: `${percentualOcupacao}%`
-              }}></div>
-              </div>
+              )}
             </div>
           </div>
+          <Badge className={getStatusColor(viagem.status_viagem)}>
+            {viagem.status_viagem}
+          </Badge>
+        </div>
+        <CardTitle className="text-lg">{viagem.adversario}</CardTitle>
+        <p className="text-sm text-gray-600">{formatDate(viagem.data_jogo)}</p>
+      </CardHeader>
+      
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <MapPin className="h-4 w-4" />
+          <span className="truncate">{viagem.rota}</span>
         </div>
         
-        {/* Actions footer */}
-        <div className="grid grid-cols-3 border-t border-gray-200 bg-white">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Users className="h-4 w-4" />
+          <span>{passageirosCount}/{viagem.capacidade_onibus}</span>
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <DollarSign className="h-4 w-4" />
+          <span>{formatValue(viagem.valor_padrao)}</span>
+        </div>
+        
+        <div className="text-xs text-gray-500">
+          {viagem.empresa} • {viagem.tipo_onibus}
+        </div>
+        
+        <div className="flex gap-2 pt-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to={`/dashboard/viagem/${viagem.id}`} className="py-2 text-center text-gray-600 hover:bg-gray-50 border-r border-gray-200 transition-colors text-xs">
-                👁️ Ver
-              </Link>
+              <Button size="sm" variant="outline" asChild className="flex-1">
+                <Link to={`/dashboard/viagem/${viagem.id}`}>
+                  <Eye className="h-4 w-4" />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Ver detalhes da viagem</p>
+              <p>Ver detalhes</p>
             </TooltipContent>
           </Tooltip>
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to={`/dashboard/viagem/${viagem.id}/editar`} className="py-2 text-center text-gray-600 hover:bg-gray-50 border-r border-gray-200 transition-colors text-xs">
-                ✏️ Editar
-              </Link>
+              <Button size="sm" variant="outline" asChild className="flex-1">
+                <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Editar viagem</p>
+              <p>Editar</p>
             </TooltipContent>
           </Tooltip>
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <button 
-                onClick={() => onDeleteClick(viagem)} 
-                className="py-2 text-center text-gray-600 hover:bg-gray-50 transition-colors text-xs"
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onDeleteClick(viagem)}
+                className="flex-1 text-red-500 hover:bg-red-50"
               >
-                🗑️ Excluir
-              </button>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Excluir viagem</p>
+              <p>Excluir</p>
             </TooltipContent>
           </Tooltip>
         </div>
-      </Card>
-    </TooltipProvider>
+      </CardContent>
+    </Card>
   );
 }

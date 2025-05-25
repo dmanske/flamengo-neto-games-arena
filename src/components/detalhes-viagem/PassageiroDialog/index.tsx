@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClienteSearchField } from "./ClienteSearchField";
+import { ClienteSearchWithSuggestions } from "./ClienteSearchWithSuggestions";
 import { OnibusSelectField } from "./OnibusSelectField";
 import { ParcelasManager } from "./ParcelasManager";
 import { formSchema, FormData } from "./formSchema";
@@ -159,7 +159,7 @@ export function PassageiroDialog({
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <ClienteSearchField control={form.control} />
+              <ClienteSearchWithSuggestions control={form.control} />
 
               <OnibusSelectField 
                 control={form.control} 
@@ -179,19 +179,19 @@ export function PassageiroDialog({
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
                           <SelectValue placeholder="Selecione um setor" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white border-gray-200">
-                        <SelectItem value="A definir">A definir</SelectItem>
-                        <SelectItem value="Norte">Norte</SelectItem>
-                        <SelectItem value="Sul">Sul</SelectItem>
-                        <SelectItem value="Leste Inferior">Leste Inferior</SelectItem>
-                        <SelectItem value="Leste Superior">Leste Superior</SelectItem>
-                        <SelectItem value="Oeste">Oeste</SelectItem>
-                        <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                        <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+                      <SelectContent className="bg-white border-gray-200 z-50">
+                        <SelectItem value="A definir" className="bg-white text-gray-900 hover:bg-gray-50">A definir</SelectItem>
+                        <SelectItem value="Norte" className="bg-white text-gray-900 hover:bg-gray-50">Norte</SelectItem>
+                        <SelectItem value="Sul" className="bg-white text-gray-900 hover:bg-gray-50">Sul</SelectItem>
+                        <SelectItem value="Leste Inferior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Inferior</SelectItem>
+                        <SelectItem value="Leste Superior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Superior</SelectItem>
+                        <SelectItem value="Oeste" className="bg-white text-gray-900 hover:bg-gray-50">Oeste</SelectItem>
+                        <SelectItem value="Maracanã Mais" className="bg-white text-gray-900 hover:bg-gray-50">Maracanã Mais</SelectItem>
+                        <SelectItem value="Sem ingresso" className="bg-white text-gray-900 hover:bg-gray-50">Sem ingresso</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -212,7 +212,7 @@ export function PassageiroDialog({
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                         />
                       </FormControl>
                       <FormMessage />
@@ -232,7 +232,7 @@ export function PassageiroDialog({
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                         />
                       </FormControl>
                       <FormMessage />
@@ -253,14 +253,14 @@ export function PassageiroDialog({
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
                             <SelectValue placeholder="Selecione um status" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border-gray-200">
-                          <SelectItem value="Pendente" className="bg-white text-gray-900">Pendente</SelectItem>
-                          <SelectItem value="Pago" className="bg-white text-gray-900">Pago</SelectItem>
-                          <SelectItem value="Cancelado" className="bg-white text-gray-900">Cancelado</SelectItem>
+                        <SelectContent className="bg-white border-gray-200 z-50">
+                          <SelectItem value="Pendente" className="bg-white text-gray-900 hover:bg-gray-50">Pendente</SelectItem>
+                          <SelectItem value="Pago" className="bg-white text-gray-900 hover:bg-gray-50">Pago</SelectItem>
+                          <SelectItem value="Cancelado" className="bg-white text-gray-900 hover:bg-gray-50">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -279,16 +279,16 @@ export function PassageiroDialog({
                         defaultValue={field.value || "Pix"}
                       >
                         <FormControl>
-                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
                             <SelectValue placeholder="Selecione uma forma" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border-gray-200">
-                          <SelectItem value="Pix">Pix</SelectItem>
-                          <SelectItem value="Cartão">Cartão</SelectItem>
-                          <SelectItem value="Boleto">Boleto</SelectItem>
-                          <SelectItem value="Paypal">Paypal</SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
+                        <SelectContent className="bg-white border-gray-200 z-50">
+                          <SelectItem value="Pix" className="bg-white text-gray-900 hover:bg-gray-50">Pix</SelectItem>
+                          <SelectItem value="Cartão" className="bg-white text-gray-900 hover:bg-gray-50">Cartão</SelectItem>
+                          <SelectItem value="Boleto" className="bg-white text-gray-900 hover:bg-gray-50">Boleto</SelectItem>
+                          <SelectItem value="Paypal" className="bg-white text-gray-900 hover:bg-gray-50">Paypal</SelectItem>
+                          <SelectItem value="Outro" className="bg-white text-gray-900 hover:bg-gray-50">Outro</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -311,7 +311,7 @@ export function PassageiroDialog({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-700"
                 >
                   Cancelar
                 </Button>

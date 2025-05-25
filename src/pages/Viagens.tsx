@@ -3,8 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { GlassCard } from "@/components/ui/glass-card";
-import { ModernButton } from "@/components/ui/modern-button";
 import { Skeleton } from "@/components/ui/skeleton-loader";
 import { 
   Table, 
@@ -23,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
   Select,
@@ -32,9 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid, CalendarCheck } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid, CalendarCheck, History, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
@@ -45,7 +43,6 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ViagemCard } from "@/components/viagens/ViagemCard";
-import { ModernViagemCard } from "@/components/viagens/ModernViagemCard";
 import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
 interface Viagem {
@@ -70,6 +67,8 @@ const Viagens = () => {
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
   const navigate = useNavigate();
 
   // Fetch viagens
@@ -110,18 +109,56 @@ const Viagens = () => {
     viagens.map(viagem => viagem.id)
   );
 
+  // Separar viagens ativas e históricas
+  const viagensAtivas = viagens.filter(viagem => 
+    viagem.status_viagem === 'Aberta' || viagem.status_viagem === 'Fechada'
+  );
+  
+  const viagensHistoricas = viagens.filter(viagem => 
+    viagem.status_viagem === 'Concluída'
+  );
+
+  // Filtrar viagens históricas por período
+  const getViagensPorPeriodo = (viagens: Viagem[]) => {
+    if (periodoFiltro === "todos") return viagens;
+    
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = hoje.getMonth();
+    
+    return viagens.filter(viagem => {
+      const dataJogo = new Date(viagem.data_jogo);
+      const anoViagem = dataJogo.getFullYear();
+      const mesViagem = dataJogo.getMonth();
+      
+      switch (periodoFiltro) {
+        case "mes_atual":
+          return anoViagem === anoAtual && mesViagem === mesAtual;
+        case "ano_atual":
+          return anoViagem === anoAtual;
+        case "ano_anterior":
+          return anoViagem === anoAtual - 1;
+        default:
+          return true;
+      }
+    });
+  };
+
   // Apply filters
-  const filteredViagens = viagens.filter((viagem) => {
-    if (!searchTerm) return true;
+  const filterViagens = (viagensList: Viagem[]) => {
+    if (!searchTerm) return viagensList;
     
     const term = searchTerm.toLowerCase();
     
-    return (
+    return viagensList.filter((viagem) => 
       viagem.adversario.toLowerCase().includes(term) ||
       viagem.rota.toLowerCase().includes(term) ||
       format(new Date(viagem.data_jogo), 'dd/MM/yyyy', { locale: ptBR }).includes(term)
     );
-  });
+  };
+
+  const viagensAtivasFiltradas = filterViagens(viagensAtivas);
+  const viagensHistoricasFiltradas = filterViagens(getViagensPorPeriodo(viagensHistoricas));
 
   // Delete viagem
   const handleDeleteViagem = async () => {
@@ -139,7 +176,6 @@ const Viagens = () => {
         throw error;
       }
       
-      // Update local state
       setViagens(viagens.filter(v => v.id !== viagemToDelete.id));
       toast.success(`Viagem contra ${viagemToDelete.adversario} removida com sucesso`);
       setViagemToDelete(null);
@@ -180,255 +216,261 @@ const Viagens = () => {
     }
   };
 
+  const renderViagensContent = (viagensList: Viagem[]) => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Carregando viagens...</span>
+        </div>
+      );
+    }
+
+    if (viagensList.length === 0) {
+      return (
+        <div className="py-8 text-center">
+          {searchTerm ? (
+            <p className="text-gray-500">Nenhuma viagem encontrada com esses critérios de busca.</p>
+          ) : (
+            <p className="text-gray-500">Nenhuma viagem encontrada.</p>
+          )}
+        </div>
+      );
+    }
+
+    if (viewMode === 'table') {
+      return (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Adversário</TableHead>
+                <TableHead>Rota</TableHead>
+                <TableHead>Valor Padrão</TableHead>
+                <TableHead>Ocupação</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {viagensList.map((viagem) => (
+                <TableRow key={viagem.id}>
+                  <TableCell className="font-medium">{formatDate(viagem.data_jogo)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {viagem.logo_adversario && (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <img 
+                            src={viagem.logo_adversario} 
+                            alt={viagem.adversario} 
+                            className="w-full h-full object-contain" 
+                          />
+                        </div>
+                      )}
+                      {viagem.adversario}
+                    </div>
+                  </TableCell>
+                  <TableCell>{viagem.rota}</TableCell>
+                  <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
+                  <TableCell>
+                    {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
+                      {viagem.status_viagem}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/dashboard/viagem/${viagem.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Ver detalhes da viagem</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Editar viagem</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setViagemToDelete(viagem)}
+                            className="text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Excluir viagem</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {viagensList.map((viagem) => (
+          <ViagemCard 
+            key={viagem.id}
+            viagem={viagem} 
+            passageirosCount={passageirosCount[viagem.id] || 0}
+            onDeleteClick={(v) => setViagemToDelete(v)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <TooltipProvider>
       <div className="container py-6">
-        <h1 className="text-3xl font-bold mb-6">Viagens Cadastradas</h1>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar viagem..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select
-              value={filterStatus || "todos"}
-              onValueChange={(value) => setFilterStatus(value === "todos" ? null : value)}
-            >
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="Aberta">Aberta</SelectItem>
-                <SelectItem value="Fechada">Fechada</SelectItem>
-                <SelectItem value="Concluída">Concluída</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex border rounded-md shadow-sm">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={viewMode === 'table' ? 'default' : 'ghost'}
-                    className="rounded-r-none"
-                    onClick={() => setViewMode('table')}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Visualização em tabela</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    className="rounded-l-none"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Visualização em cards</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Viagens</h1>
           <Button 
             onClick={() => navigate("/dashboard/cadastrar-viagem")}
-            className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+            className="bg-primary hover:bg-primary/90"
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Nova Viagem
           </Button>
         </div>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Lista de Viagens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Carregando viagens...</span>
-              </div>
-            ) : filteredViagens.length === 0 ? (
-              <div className="py-8 text-center">
-                {searchTerm || filterStatus ? (
-                  <p className="text-gray-500">Nenhuma viagem encontrada com esses critérios de busca.</p>
-                ) : (
-                  <p className="text-gray-500">Nenhuma viagem cadastrada ainda.</p>
-                )}
-              </div>
-            ) : (
-              <>
-                {viewMode === 'table' ? (
-                  // Visualização em tabela
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Data</TableHead>
-                          <TableHead>Adversário</TableHead>
-                          <TableHead>Rota</TableHead>
-                          <TableHead>Valor Padrão</TableHead>
-                          <TableHead>Ocupação</TableHead>
-                          <TableHead className="text-center">Status</TableHead>
-                          <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredViagens.map((viagem) => (
-                          <TableRow key={viagem.id}>
-                            <TableCell className="font-medium">{formatDate(viagem.data_jogo)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {viagem.logo_adversario && (
-                                  <img 
-                                    src={viagem.logo_adversario} 
-                                    alt={viagem.adversario} 
-                                    className="h-6 w-6 object-contain" 
-                                  />
-                                )}
-                                {viagem.adversario}
-                              </div>
-                            </TableCell>
-                            <TableCell>{viagem.rota}</TableCell>
-                            <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
-                            <TableCell>
-                              {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
-                                {viagem.status_viagem}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      asChild
-                                    >
-                                      <Link to={`/dashboard/viagem/${viagem.id}`}>
-                                        <Eye className="h-4 w-4" />
-                                        <span className="sr-only">Ver</span>
-                                      </Link>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Ver detalhes da viagem</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      asChild
-                                    >
-                                      <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="sr-only">Editar</span>
-                                      </Link>
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Editar viagem</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button 
-                                          size="sm" 
-                                          variant="outline" 
-                                          onClick={() => setViagemToDelete(viagem)}
-                                          className="text-red-500 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">Excluir</span>
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Excluir viagem</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Tem certeza que deseja excluir a viagem contra {viagem.adversario}? Esta ação não pode ser desfeita.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction 
-                                        onClick={() => {
-                                          setViagemToDelete(viagem);
-                                          handleDeleteViagem();
-                                        }}
-                                        className="bg-red-600 hover:bg-red-700"
-                                        disabled={isDeleting}
-                                      >
-                                        {isDeleting ? (
-                                          <>
-                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            Excluindo...
-                                          </>
-                                        ) : (
-                                          'Excluir'
-                                        )}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  // Grid view with fixed delete dialog
-                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {filteredViagens.map((viagem) => (
-                      <div key={viagem.id}>
-                        <ViagemCard 
-                          viagem={viagem} 
-                          passageirosCount={passageirosCount[viagem.id] || 0}
-                          onDeleteClick={(v) => setViagemToDelete(v)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Separate AlertDialog outside of the map function */}
+        <Tabs defaultValue="ativas" className="w-full" onValueChange={(value) => setActiveTab(value as 'ativas' | 'historico')}>
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="ativas" className="flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4" />
+              Viagens Ativas
+            </TabsTrigger>
+            <TabsTrigger value="historico" className="flex items-center gap-2">
+              <Archive className="h-4 w-4" />
+              Histórico
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar viagem..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              
+              {activeTab === 'historico' && (
+                <Select
+                  value={periodoFiltro}
+                  onValueChange={setPeriodoFiltro}
+                >
+                  <SelectTrigger className="w-full md:w-[180px] bg-white">
+                    <SelectValue placeholder="Período" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-200 z-50">
+                    <SelectItem value="todos" className="bg-white text-gray-900 hover:bg-gray-50">Todos os períodos</SelectItem>
+                    <SelectItem value="mes_atual" className="bg-white text-gray-900 hover:bg-gray-50">Mês atual</SelectItem>
+                    <SelectItem value="ano_atual" className="bg-white text-gray-900 hover:bg-gray-50">Ano atual</SelectItem>
+                    <SelectItem value="ano_anterior" className="bg-white text-gray-900 hover:bg-gray-50">Ano anterior</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
+              <div className="flex border rounded-md shadow-sm">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'ghost'}
+                      className="rounded-r-none"
+                      onClick={() => setViewMode('table')}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Visualização em tabela</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      className="rounded-l-none"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Visualização em cards</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
+
+          <TabsContent value="ativas">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5" />
+                  Viagens Ativas ({viagensAtivasFiltradas.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderViagensContent(viagensAtivasFiltradas)}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="historico">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Archive className="h-5 w-5" />
+                  Histórico de Viagens ({viagensHistoricasFiltradas.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {renderViagensContent(viagensHistoricasFiltradas)}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* AlertDialog para confirmação de exclusão */}
         <AlertDialog open={!!viagemToDelete} onOpenChange={(open) => {
           if (!open) setViagemToDelete(null);
         }}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
               <AlertDialogDescription>
@@ -436,7 +478,7 @@ const Viagens = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel className="hover:text-gray-700">Cancelar</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleDeleteViagem}
                 className="bg-red-600 hover:bg-red-700"
