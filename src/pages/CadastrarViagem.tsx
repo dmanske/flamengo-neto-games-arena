@@ -29,7 +29,7 @@ const CadastrarViagem = () => {
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
-  const [logoFlamengoUrl, setLogoFlamengoUrl] = useState("");
+  const [logoFlamengoUrl, setLogoFlamengoUrl] = useState("https://logodetimes.com/times/flamengo/logo-flamengo-256.png");
   
   const [formData, setFormData] = useState({
     adversario: "",
@@ -42,7 +42,7 @@ const CadastrarViagem = () => {
     valor_padrao: "",
     setor_padrao: "",
     logo_adversario: "",
-    logo_flamengo: "",
+    logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
   });
 
   const handleInputChange = (name: string, value: string) => {
@@ -71,6 +71,22 @@ const CadastrarViagem = () => {
     handleInputChange("logo_flamengo", "");
   };
 
+  const handleCustomLogoSubmit = () => {
+    const input = document.getElementById('custom-logo') as HTMLInputElement;
+    if (input?.value.trim()) {
+      handleLogoSelect(input.value.trim());
+      input.value = '';
+    }
+  };
+
+  const handleCustomFlamengoLogoSubmit = () => {
+    const input = document.getElementById('custom-flamengo-logo') as HTMLInputElement;
+    if (input?.value.trim()) {
+      handleLogoFlamengoSelect(input.value.trim());
+      input.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -94,7 +110,7 @@ const CadastrarViagem = () => {
         valor_padrao: formData.valor_padrao ? parseFloat(formData.valor_padrao) : null,
         setor_padrao: formData.setor_padrao || null,
         logo_adversario: formData.logo_adversario || null,
-        logo_flamengo: formData.logo_flamengo || null,
+        logo_flamengo: formData.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
       };
 
       const { data: viagemInserted, error: viagemError } = await supabase
@@ -154,6 +170,7 @@ const CadastrarViagem = () => {
               <CardTitle className="text-lg font-semibold">Informações da Viagem</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
+              {/* ... keep existing code (form fields) the same until logo section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="adversario" className="text-gray-700 font-medium">Adversário *</Label>
@@ -195,18 +212,18 @@ const CadastrarViagem = () => {
                 <div>
                   <Label htmlFor="setor_padrao" className="text-gray-700 font-medium">Setor Padrão</Label>
                   <Select onValueChange={(value) => handleInputChange("setor_padrao", value)}>
-                    <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
                       <SelectValue placeholder="Selecionar setor" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200">
-                      <SelectItem value="A definir">A definir</SelectItem>
-                      <SelectItem value="Norte">Norte</SelectItem>
-                      <SelectItem value="Sul">Sul</SelectItem>
-                      <SelectItem value="Leste Inferior">Leste Inferior</SelectItem>
-                      <SelectItem value="Leste Superior">Leste Superior</SelectItem>
-                      <SelectItem value="Oeste">Oeste</SelectItem>
-                      <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                      <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+                    <SelectContent className="bg-white border-gray-200 z-50">
+                      <SelectItem value="A definir" className="bg-white text-gray-900 hover:bg-gray-50">A definir</SelectItem>
+                      <SelectItem value="Norte" className="bg-white text-gray-900 hover:bg-gray-50">Norte</SelectItem>
+                      <SelectItem value="Sul" className="bg-white text-gray-900 hover:bg-gray-50">Sul</SelectItem>
+                      <SelectItem value="Leste Inferior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Inferior</SelectItem>
+                      <SelectItem value="Leste Superior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Superior</SelectItem>
+                      <SelectItem value="Oeste" className="bg-white text-gray-900 hover:bg-gray-50">Oeste</SelectItem>
+                      <SelectItem value="Maracanã Mais" className="bg-white text-gray-900 hover:bg-gray-50">Maracanã Mais</SelectItem>
+                      <SelectItem value="Sem ingresso" className="bg-white text-gray-900 hover:bg-gray-50">Sem ingresso</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -247,37 +264,31 @@ const CadastrarViagem = () => {
                 </div>
               </div>
 
-              {/* Logo do Flamengo */}
+              {/* Logo do Flamengo - com logo padrão */}
               <div>
                 <Label className="text-gray-700 font-medium">Logo do Flamengo</Label>
                 <div className="flex items-center gap-4 mt-2">
-                  {logoFlamengoUrl ? (
-                    <div className="relative">
-                      <img 
-                        src={logoFlamengoUrl} 
-                        alt="Logo do Flamengo" 
-                        className="w-16 h-16 object-contain border border-gray-200 rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={clearLogoFlamengo}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                      <Image className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
+                  <div className="relative">
+                    <img 
+                      src={logoFlamengoUrl} 
+                      alt="Logo do Flamengo" 
+                      className="w-16 h-16 object-contain border border-gray-200 rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearLogoFlamengo}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setLogoFlamengoDialogOpen(true)}
                     className="border-blue-200 text-blue-700 hover:bg-blue-50"
                   >
-                    Selecionar Logo
+                    Alterar Logo
                   </Button>
                 </div>
               </div>
@@ -288,13 +299,13 @@ const CadastrarViagem = () => {
                   value={formData.status_viagem}
                   onValueChange={(value) => handleInputChange("status_viagem", value)}
                 >
-                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-gray-200">
-                    <SelectItem value="Aberta">Aberta</SelectItem>
-                    <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                    <SelectItem value="Finalizada">Finalizada</SelectItem>
+                  <SelectContent className="bg-white border-gray-200 z-50">
+                    <SelectItem value="Aberta" className="bg-white text-gray-900 hover:bg-gray-50">Aberta</SelectItem>
+                    <SelectItem value="Em Andamento" className="bg-white text-gray-900 hover:bg-gray-50">Em Andamento</SelectItem>
+                    <SelectItem value="Finalizada" className="bg-white text-gray-900 hover:bg-gray-50">Finalizada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -408,18 +419,14 @@ const CadastrarViagem = () => {
                   className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
-                      handleLogoSelect((e.target as HTMLInputElement).value);
+                      e.preventDefault();
+                      handleCustomLogoSubmit();
                     }
                   }}
                 />
                 <Button
                   type="button"
-                  onClick={() => {
-                    const input = document.getElementById('custom-logo') as HTMLInputElement;
-                    if (input.value.trim()) {
-                      handleLogoSelect(input.value.trim());
-                    }
-                  }}
+                  onClick={handleCustomLogoSubmit}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Usar
@@ -462,18 +469,14 @@ const CadastrarViagem = () => {
                   className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
-                      handleLogoFlamengoSelect((e.target as HTMLInputElement).value);
+                      e.preventDefault();
+                      handleCustomFlamengoLogoSubmit();
                     }
                   }}
                 />
                 <Button
                   type="button"
-                  onClick={() => {
-                    const input = document.getElementById('custom-flamengo-logo') as HTMLInputElement;
-                    if (input.value.trim()) {
-                      handleLogoFlamengoSelect(input.value.trim());
-                    }
-                  }}
+                  onClick={handleCustomFlamengoLogoSubmit}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   Usar

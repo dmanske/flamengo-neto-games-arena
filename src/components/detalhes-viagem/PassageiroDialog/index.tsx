@@ -184,14 +184,14 @@ export function PassageiroDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-white border-gray-200 z-50">
-                        <SelectItem value="A definir" className="bg-white text-gray-900 hover:bg-gray-50">A definir</SelectItem>
-                        <SelectItem value="Norte" className="bg-white text-gray-900 hover:bg-gray-50">Norte</SelectItem>
-                        <SelectItem value="Sul" className="bg-white text-gray-900 hover:bg-gray-50">Sul</SelectItem>
-                        <SelectItem value="Leste Inferior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Inferior</SelectItem>
-                        <SelectItem value="Leste Superior" className="bg-white text-gray-900 hover:bg-gray-50">Leste Superior</SelectItem>
-                        <SelectItem value="Oeste" className="bg-white text-gray-900 hover:bg-gray-50">Oeste</SelectItem>
-                        <SelectItem value="Maracanã Mais" className="bg-white text-gray-900 hover:bg-gray-50">Maracanã Mais</SelectItem>
-                        <SelectItem value="Sem ingresso" className="bg-white text-gray-900 hover:bg-gray-50">Sem ingresso</SelectItem>
+                        <SelectItem value="A definir" className="hover:bg-gray-50 focus:bg-gray-50">A definir</SelectItem>
+                        <SelectItem value="Norte" className="hover:bg-gray-50 focus:bg-gray-50">Norte</SelectItem>
+                        <SelectItem value="Sul" className="hover:bg-gray-50 focus:bg-gray-50">Sul</SelectItem>
+                        <SelectItem value="Leste Inferior" className="hover:bg-gray-50 focus:bg-gray-50">Leste Inferior</SelectItem>
+                        <SelectItem value="Leste Superior" className="hover:bg-gray-50 focus:bg-gray-50">Leste Superior</SelectItem>
+                        <SelectItem value="Oeste" className="hover:bg-gray-50 focus:bg-gray-50">Oeste</SelectItem>
+                        <SelectItem value="Maracanã Mais" className="hover:bg-gray-50 focus:bg-gray-50">Maracanã Mais</SelectItem>
+                        <SelectItem value="Sem ingresso" className="hover:bg-gray-50 focus:bg-gray-50">Sem ingresso</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -258,9 +258,9 @@ export function PassageiroDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white border-gray-200 z-50">
-                          <SelectItem value="Pendente" className="bg-white text-gray-900 hover:bg-gray-50">Pendente</SelectItem>
-                          <SelectItem value="Pago" className="bg-white text-gray-900 hover:bg-gray-50">Pago</SelectItem>
-                          <SelectItem value="Cancelado" className="bg-white text-gray-900 hover:bg-gray-50">Cancelado</SelectItem>
+                          <SelectItem value="Pendente" className="hover:bg-gray-50 focus:bg-gray-50">Pendente</SelectItem>
+                          <SelectItem value="Pago" className="hover:bg-gray-50 focus:bg-gray-50">Pago</SelectItem>
+                          <SelectItem value="Cancelado" className="hover:bg-gray-50 focus:bg-gray-50">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -284,11 +284,11 @@ export function PassageiroDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white border-gray-200 z-50">
-                          <SelectItem value="Pix" className="bg-white text-gray-900 hover:bg-gray-50">Pix</SelectItem>
-                          <SelectItem value="Cartão" className="bg-white text-gray-900 hover:bg-gray-50">Cartão</SelectItem>
-                          <SelectItem value="Boleto" className="bg-white text-gray-900 hover:bg-gray-50">Boleto</SelectItem>
-                          <SelectItem value="Paypal" className="bg-white text-gray-900 hover:bg-gray-50">Paypal</SelectItem>
-                          <SelectItem value="Outro" className="bg-white text-gray-900 hover:bg-gray-50">Outro</SelectItem>
+                          <SelectItem value="Pix" className="hover:bg-gray-50 focus:bg-gray-50">Pix</SelectItem>
+                          <SelectItem value="Cartão" className="hover:bg-gray-50 focus:bg-gray-50">Cartão</SelectItem>
+                          <SelectItem value="Boleto" className="hover:bg-gray-50 focus:bg-gray-50">Boleto</SelectItem>
+                          <SelectItem value="Paypal" className="hover:bg-gray-50 focus:bg-gray-50">Paypal</SelectItem>
+                          <SelectItem value="Outro" className="hover:bg-gray-50 focus:bg-gray-50">Outro</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
