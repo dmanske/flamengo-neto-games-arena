@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +43,8 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ViagemCard } from "@/components/viagens/ViagemCard";
+import { PremiumViagemCard } from "@/components/viagens/PremiumViagemCard";
+import { CleanViagemCard } from "@/components/viagens/CleanViagemCard";
 import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
 interface Viagem {
@@ -339,7 +342,6 @@ const Viagens = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {viagensList.map((viagem) => {
           if (cardDesign === 'premium') {
-            const { PremiumViagemCard } = require('@/components/viagens/PremiumViagemCard');
             return (
               <PremiumViagemCard 
                 key={viagem.id}
@@ -349,7 +351,6 @@ const Viagens = () => {
               />
             );
           } else if (cardDesign === 'clean') {
-            const { CleanViagemCard } = require('@/components/viagens/CleanViagemCard');
             return (
               <CleanViagemCard 
                 key={viagem.id}
