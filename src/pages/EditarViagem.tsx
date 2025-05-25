@@ -616,7 +616,6 @@ const EditarViagem = () => {
               <OnibusForm 
                 onibusArray={onibusArray} 
                 onChange={setOnibusArray}
-                viagemId={id}
               />
 
               <div className="flex justify-end gap-4">

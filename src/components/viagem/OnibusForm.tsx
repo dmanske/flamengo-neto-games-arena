@@ -26,7 +26,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
   onChange,
   onPrimaryBusChange,
 }) => {
-  const { onibusOptions, loading: loadingOnibus } = useOnibusData();
+  const { onibusList, loading: loadingOnibus } = useOnibusData();
   const [newOnibus, setNewOnibus] = useState<Partial<ViagemOnibus>>({
     tipo_onibus: "",
     empresa: "",
@@ -77,7 +77,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
   };
 
   const handleSelectOnibus = (onibusId: string) => {
-    const selectedOnibus = onibusOptions.find(o => o.id === onibusId);
+    const selectedOnibus = onibusList.find(o => o.id === onibusId);
     if (selectedOnibus) {
       setNewOnibus({
         tipo_onibus: selectedOnibus.tipo_onibus,
@@ -179,7 +179,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
                 <SelectValue placeholder={loadingOnibus ? "Carregando..." : "Selecionar ônibus"} />
               </SelectTrigger>
               <SelectContent className="bg-white border-gray-200 z-50">
-                {onibusOptions.map((onibus) => (
+                {onibusList.map((onibus) => (
                   <SelectItem 
                     key={onibus.id} 
                     value={onibus.id}
