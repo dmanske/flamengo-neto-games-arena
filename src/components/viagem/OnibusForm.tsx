@@ -1,305 +1,264 @@
-import { useState, useEffect } from 'react';
-import { PlusCircle, MinusCircle, Bus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormDescription } from '@/components/ui/form';
-import { TipoOnibus, EmpresaOnibus, ViagemOnibus } from '@/types/entities';
-import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, Bus } from "lucide-react";
+import { ViagemOnibus } from "@/types/entities";
+import { useOnibusData } from "@/hooks/useOnibusData";
 
 interface OnibusFormProps {
   onibusArray: ViagemOnibus[];
   onChange: (onibusArray: ViagemOnibus[]) => void;
-  viagemId?: string;
-  onPrimaryBusChange?: (tipo: TipoOnibus, empresa: EmpresaOnibus) => void;
+  onPrimaryBusChange?: (tipo: string, empresa: string) => void;
 }
 
-interface RegisteredBus {
-  id: string;
-  tipo_onibus: string;
-  empresa: string;
-  capacidade: number;
-  numero_identificacao: string | null;
-}
+export const OnibusForm: React.FC<OnibusFormProps> = ({
+  onibusArray,
+  onChange,
+  onPrimaryBusChange,
+}) => {
+  const { onibusOptions, loading: loadingOnibus } = useOnibusData();
+  const [newOnibus, setNewOnibus] = useState<Partial<ViagemOnibus>>({
+    tipo_onibus: "",
+    empresa: "",
+    capacidade_onibus: 0,
+    lugares_extras: 0,
+  });
 
-export function OnibusForm({ onibusArray, onChange, viagemId, onPrimaryBusChange }: OnibusFormProps) {
-  const [registeredBuses, setRegisteredBuses] = useState<RegisteredBus[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch registered buses
-  useEffect(() => {
-    const fetchBuses = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("onibus")
-          .select("id, tipo_onibus, empresa, capacidade, numero_identificacao");
-          
-        if (error) {
-          console.error("Erro ao carregar ônibus:", error);
-          toast.error("Não foi possível carregar a lista de ônibus cadastrados");
-          return;
-        }
-        
-        setRegisteredBuses(data || []);
-      } catch (err) {
-        console.error("Erro ao buscar ônibus:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchBuses();
-  }, []);
-
-  // Adicionar ônibus inicial se a array estiver vazia
-  useEffect(() => {
-    if (onibusArray.length === 0 && registeredBuses.length > 0) {
-      addOnibus();
-    }
-  }, [registeredBuses]);
-
-  const addOnibus = () => {
-    if (registeredBuses.length === 0) {
-      toast.error("Não há ônibus cadastrados. Cadastre pelo menos um ônibus primeiro.");
+  const handleAddOnibus = () => {
+    if (!newOnibus.tipo_onibus || !newOnibus.empresa || !newOnibus.capacidade_onibus) {
       return;
     }
-    
-    const defaultBus = registeredBuses[0];
-    
-    const newOnibus: ViagemOnibus = {
-      viagem_id: viagemId || '',
-      tipo_onibus: defaultBus.tipo_onibus,
-      empresa: defaultBus.empresa,
-      capacidade_onibus: defaultBus.capacidade,
+
+    const onibus: ViagemOnibus = {
+      id: `temp-${Date.now()}`,
+      tipo_onibus: newOnibus.tipo_onibus,
+      empresa: newOnibus.empresa,
+      capacidade_onibus: newOnibus.capacidade_onibus,
+      lugares_extras: newOnibus.lugares_extras || 0,
+      numero_identificacao: `${newOnibus.empresa} - ${newOnibus.tipo_onibus}`,
+      viagem_id: "", // Será preenchido ao salvar a viagem
+    };
+
+    const newArray = [...onibusArray, onibus];
+    onChange(newArray);
+
+    // Notificar sobre o primeiro ônibus (principal)
+    if (newArray.length === 1 && onPrimaryBusChange) {
+      onPrimaryBusChange(onibus.tipo_onibus, onibus.empresa);
+    }
+
+    // Limpar o formulário
+    setNewOnibus({
+      tipo_onibus: "",
+      empresa: "",
+      capacidade_onibus: 0,
       lugares_extras: 0,
-      numero_identificacao: defaultBus.numero_identificacao || `Ônibus ${onibusArray.length + 1}`
-    };
-    
-    const newArray = [...onibusArray, newOnibus];
+    });
+  };
+
+  const handleRemoveOnibus = (index: number) => {
+    const newArray = onibusArray.filter((_, i) => i !== index);
     onChange(newArray);
-    
-    // Notificar o componente pai sobre o ônibus principal se este for o primeiro
-    if (onibusArray.length === 0 && onPrimaryBusChange) {
-      onPrimaryBusChange(defaultBus.tipo_onibus, defaultBus.empresa);
+
+    // Notificar sobre o novo primeiro ônibus se ainda houver ônibus
+    if (newArray.length > 0 && onPrimaryBusChange) {
+      onPrimaryBusChange(newArray[0].tipo_onibus, newArray[0].empresa);
     }
   };
 
-  const removeOnibus = (index: number) => {
-    if (onibusArray.length <= 1) return; // Manter pelo menos um ônibus
-    
-    const newArray = [...onibusArray];
-    newArray.splice(index, 1);
-    onChange(newArray);
-  };
-
-  const updateOnibus = (index: number, busId: string) => {
-    const selectedBus = registeredBuses.find(bus => bus.id === busId);
-    if (!selectedBus) return;
-    
-    const newArray = [...onibusArray];
-    newArray[index] = {
-      ...newArray[index],
-      tipo_onibus: selectedBus.tipo_onibus,
-      empresa: selectedBus.empresa,
-      capacidade_onibus: selectedBus.capacidade,
-      numero_identificacao: selectedBus.numero_identificacao || `Ônibus ${index + 1}`,
-      lugares_extras: newArray[index].lugares_extras || 0
-    };
-    
-    // Notificar o componente pai sobre a mudança do tipo do ônibus principal (primeiro)
-    if (index === 0 && onPrimaryBusChange) {
-      onPrimaryBusChange(selectedBus.tipo_onibus, selectedBus.empresa);
+  const handleSelectOnibus = (onibusId: string) => {
+    const selectedOnibus = onibusOptions.find(o => o.id === onibusId);
+    if (selectedOnibus) {
+      setNewOnibus({
+        tipo_onibus: selectedOnibus.tipo_onibus,
+        empresa: selectedOnibus.empresa,
+        capacidade_onibus: selectedOnibus.capacidade,
+        lugares_extras: 0,
+      });
     }
-    
-    onChange(newArray);
   };
 
-  // Update lugares_extras for a specific bus
-  const updateLugaresExtras = (index: number, lugares: number) => {
-    const newArray = [...onibusArray];
-    newArray[index].lugares_extras = lugares;
-    onChange(newArray);
-  };
-
-  // Se estiver carregando, mostrar indicador de carregamento
-  if (isLoading) {
-    return <div className="flex justify-center py-4">Carregando ônibus...</div>;
-  }
-
-  // Se não houver ônibus cadastrados, mostrar mensagem
-  if (registeredBuses.length === 0) {
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Ônibus da Viagem</h3>
-        <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md">
-          <p className="text-yellow-800">
-            Não há ônibus cadastrados no sistema. 
-            Por favor, <a href="/dashboard/cadastrar-onibus" className="underline font-medium">cadastre pelo menos um ônibus</a> antes de criar uma viagem.
-          </p>
-        </div>
-      </div>
+  const getTotalCapacidade = () => {
+    return onibusArray.reduce((total, onibus) => 
+      total + onibus.capacidade_onibus + (onibus.lugares_extras || 0), 0
     );
-  }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Ônibus da Viagem</h3>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm"
-          onClick={addOnibus}
-          className="flex items-center gap-1"
-        >
-          <PlusCircle className="h-4 w-4" /> 
-          Adicionar Ônibus
-        </Button>
-      </div>
-      
-      {onibusArray.map((onibus, index) => (
-        <Card key={index} className="relative">
-          <CardContent className="pt-6">
-            <div className="absolute top-2 right-2 flex gap-1">
-              {onibusArray.length > 1 && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => removeOnibus(index)}
-                  className="h-8 w-8 p-0 text-destructive"
-                >
-                  <MinusCircle className="h-4 w-4" />
-                  <span className="sr-only">Remover</span>
-                </Button>
-              )}
+    <div className="space-y-6">
+      {/* Lista de ônibus adicionados */}
+      {onibusArray.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Bus className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Ônibus da Viagem ({onibusArray.length})
+            </h3>
+            <div className="ml-auto text-sm text-gray-600">
+              Capacidade Total: {getTotalCapacidade()} passageiros
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor={`onibus-select-${index}`}>Selecionar Ônibus</Label>
-                <Select
-                  onValueChange={(value) => updateOnibus(index, value)}
-                  value={registeredBuses.find(bus => 
-                    bus.tipo_onibus === onibus.tipo_onibus && 
-                    bus.empresa === onibus.empresa
-                  )?.id || ""}
-                >
-                  <SelectTrigger id={`onibus-select-${index}`}>
-                    <SelectValue placeholder="Selecione um ônibus cadastrado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {registeredBuses.map((bus) => (
-                      <SelectItem key={bus.id} value={bus.id}>
-                        {bus.tipo_onibus} - {bus.empresa} ({bus.capacidade} lugares)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Selecione um ônibus cadastrado
-                </FormDescription>
-              </div>
-              
-              <div>
-                <Label htmlFor={`onibus-id-${index}`}>Identificação</Label>
-                <Input
-                  id={`onibus-id-${index}`}
-                  value={onibus.numero_identificacao || ''}
-                  onChange={(e) => {
-                    const newArray = [...onibusArray];
-                    newArray[index].numero_identificacao = e.target.value;
-                    onChange(newArray);
-                  }}
-                  placeholder="Ex: Ônibus 1"
-                />
-                <FormDescription>
-                  Identificação para este ônibus
-                </FormDescription>
-              </div>
-              
-              <div>
-                <Label htmlFor={`onibus-tipo-${index}`}>Tipo de Ônibus</Label>
-                <Input
-                  id={`onibus-tipo-${index}`}
-                  value={onibus.tipo_onibus}
-                  readOnly
-                  className="bg-gray-100"
-                />
-                <FormDescription>
-                  Definido pelo ônibus selecionado
-                </FormDescription>
-              </div>
-              
-              <div>
-                <Label htmlFor={`onibus-capacidade-${index}`}>Capacidade</Label>
-                <Input
-                  id={`onibus-capacidade-${index}`}
-                  type="number"
-                  value={onibus.capacidade_onibus}
-                  readOnly
-                  className="bg-gray-100"
-                />
-                <FormDescription>
-                  Definida pelo tipo de ônibus selecionado
-                </FormDescription>
-              </div>
-              
-              {/* Novo campo para lugares extras */}
-              <div>
-                <Label htmlFor={`onibus-lugares-extras-${index}`} className="flex items-center">
-                  Lugares Extras
-                  <span className="ml-2 inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
-                    Novo
-                  </span>
-                </Label>
-                <Input
-                  id={`onibus-lugares-extras-${index}`}
-                  type="number"
-                  min="0"
-                  value={onibus.lugares_extras || 0}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value);
-                    updateLugaresExtras(index, isNaN(value) ? 0 : value);
-                  }}
-                  placeholder="0"
-                />
-                <FormDescription>
-                  Lugares extras além da capacidade padrão do ônibus (opcional)
-                </FormDescription>
-              </div>
-              
-              <div>
-                <Label htmlFor={`onibus-empresa-${index}`}>Empresa</Label>
-                <Input
-                  id={`onibus-empresa-${index}`}
-                  value={onibus.empresa}
-                  readOnly
-                  className="bg-gray-100"
-                />
-                <FormDescription>
-                  Definida pelo ônibus selecionado
-                </FormDescription>
-              </div>
-              
-              {/* Display total capacity (standard + extra seats) */}
-              <div>
-                <Label>Capacidade Total</Label>
-                <div className="px-4 py-2 border border-gray-200 rounded bg-gray-50 text-gray-800">
-                  {onibus.capacidade_onibus + (onibus.lugares_extras || 0)} lugares
+          </div>
+          
+          {onibusArray.map((onibus, index) => (
+            <Card key={onibus.id} className="border-gray-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Empresa</Label>
+                        <p className="text-sm text-gray-900">{onibus.empresa}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Tipo</Label>
+                        <p className="text-sm text-gray-900">{onibus.tipo_onibus}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Capacidade</Label>
+                        <p className="text-sm text-gray-900">{onibus.capacidade_onibus} passageiros</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Lugares Extras</Label>
+                        <p className="text-sm text-gray-900">{onibus.lugares_extras || 0} lugares</p>
+                      </div>
+                    </div>
+                    {index === 0 && (
+                      <div className="mt-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Ônibus Principal
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRemoveOnibus(index)}
+                    className="ml-4 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <FormDescription>
-                  Capacidade padrão + lugares extras
-                </FormDescription>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Formulário para adicionar novo ônibus */}
+      <Card className="border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            {onibusArray.length === 0 ? "Adicionar Primeiro Ônibus *" : "Adicionar Outro Ônibus"}
+          </CardTitle>
+          <p className="text-sm text-gray-600">
+            {onibusArray.length === 0 
+              ? "Adicione pelo menos um ônibus para a viagem" 
+              : "Adicione ônibus adicionais se necessário"
+            }
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="onibus-select" className="text-gray-700 font-medium">
+              Selecionar Ônibus Cadastrado
+            </Label>
+            <Select onValueChange={handleSelectOnibus} disabled={loadingOnibus}>
+              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
+                <SelectValue placeholder={loadingOnibus ? "Carregando..." : "Selecionar ônibus"} />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200 z-50">
+                {onibusOptions.map((onibus) => (
+                  <SelectItem 
+                    key={onibus.id} 
+                    value={onibus.id}
+                    className="bg-white text-gray-900 hover:bg-gray-50"
+                  >
+                    {onibus.empresa} - {onibus.tipo_onibus} ({onibus.capacidade} lugares)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="empresa" className="text-gray-700 font-medium">Empresa *</Label>
+              <Input
+                id="empresa"
+                value={newOnibus.empresa || ""}
+                onChange={(e) => setNewOnibus(prev => ({ ...prev, empresa: e.target.value }))}
+                placeholder="Nome da empresa"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
             </div>
-          </CardContent>
-        </Card>
-      ))}
+            <div>
+              <Label htmlFor="tipo_onibus" className="text-gray-700 font-medium">Tipo do Ônibus *</Label>
+              <Input
+                id="tipo_onibus"
+                value={newOnibus.tipo_onibus || ""}
+                onChange={(e) => setNewOnibus(prev => ({ ...prev, tipo_onibus: e.target.value }))}
+                placeholder="Ex: Leito Total, Executivo"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="capacidade" className="text-gray-700 font-medium">Capacidade *</Label>
+              <Input
+                id="capacidade"
+                type="number"
+                min="1"
+                value={newOnibus.capacidade_onibus || ""}
+                onChange={(e) => setNewOnibus(prev => ({ 
+                  ...prev, 
+                  capacidade_onibus: parseInt(e.target.value) || 0 
+                }))}
+                placeholder="Número de assentos"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lugares_extras" className="text-gray-700 font-medium">Lugares Extras</Label>
+              <Input
+                id="lugares_extras"
+                type="number"
+                min="0"
+                value={newOnibus.lugares_extras || ""}
+                onChange={(e) => setNewOnibus(prev => ({ 
+                  ...prev, 
+                  lugares_extras: parseInt(e.target.value) || 0 
+                }))}
+                placeholder="Lugares adicionais"
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleAddOnibus}
+            disabled={!newOnibus.tipo_onibus || !newOnibus.empresa || !newOnibus.capacidade_onibus}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Ônibus
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
