@@ -13,6 +13,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useClientValidation } from "@/hooks/useClientValidation";
 import { formatPhone, formatCPF, cleanPhone, cleanCPF } from "@/utils/formatters";
+import { formSchema as clienteFormSchema } from "@/components/cadastro-publico/FormSchema";
 
 import {
   Form,
@@ -29,24 +30,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
 // Schema de validação do formulário - corrigido para aceitar string vazia ou null nas observações
-const formSchema = z.object({
-  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido"),
-  telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
-  cpf: z.string().min(11, "CPF inválido"),
-  data_nascimento: z.string().optional(),
-  endereco: z.string().min(5, "Endereço deve ter pelo menos 5 caracteres"),
-  cep: z.string().min(8, "CEP inválido"),
-  cidade: z.string().min(2, "Cidade deve ter pelo menos 2 caracteres"),
-  estado: z.string().length(2, "Estado deve ter 2 caracteres"),
-  bairro: z.string().min(2, "Bairro deve ter pelo menos 2 caracteres"),
-  numero: z.string().min(1, "Número é obrigatório"),
-  complemento: z.string().optional(),
-  observacoes: z.string().optional().nullable().transform(val => val === null ? "" : val),
-  como_conheceu: z.string().min(2, "Selecione como conheceu a empresa"),
-  indicacao_nome: z.string().optional().nullable().transform(val => val === null ? "" : val),
-  foto: z.string().optional().nullable(),
-});
+const formSchema = clienteFormSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

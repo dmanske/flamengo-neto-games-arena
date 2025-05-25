@@ -28,45 +28,32 @@ function isValidCPF(cpf: string) {
   return digit1 === parseInt(cpf.charAt(9)) && digit2 === parseInt(cpf.charAt(10));
 }
 
+// Schema centralizado para cadastro de clientes (público e administrativo)
+// Utilize este schema para garantir validação padronizada em todo o sistema
+// Mensagens de erro revisadas para clareza
 export const formSchema = z.object({
   nome: z.string()
-    .min(5, { message: "O nome deve ter pelo menos 5 caracteres" })
-    .refine(
-      (nome) => nome.trim().includes(' '),
-      { message: "Por favor, informe seu nome completo com sobrenome" }
-    ),
-  cep: z.string().min(9, { message: "CEP é obrigatório e deve estar no formato 00000-000" }),
-  endereco: z.string().min(5, { message: "Endereço é obrigatório" }),
-  numero: z.string().min(1, { message: "Número é obrigatório" }),
+    .min(5, "Informe o nome completo")
+    .refine((nome) => {
+      const partes = nome.trim().split(" ");
+      return partes.length >= 2 && partes.every(p => p.length >= 2);
+    }, { message: "Informe nome e sobrenome" }),
+  telefone: z.string().min(8, "Telefone obrigatório"),
+  email: z.string().email("E-mail obrigatório"),
+  data_nascimento: z.string().optional(),
+  foto: z.string().nullable().optional(),
+  cep: z.string().optional(),
+  endereco: z.string().optional(),
+  numero: z.string().optional(),
   complemento: z.string().optional(),
-  bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
-  telefone: z
-    .string()
-    .min(14, { message: "O telefone deve estar completo" })
-    .regex(/^\(\d{2}\) \d \d{4}-\d{4}$/, { message: "Formato de telefone inválido" }),
-  cidade: z.string().min(2, { message: "Cidade é obrigatória" }),
-  estado: z.string().min(2, { message: "Estado é obrigatório" }),
-  cpf: z
-    .string()
-    .min(14, { message: "CPF deve estar completo" })
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "Formato de CPF inválido" })
-    .refine(isValidCPF, { message: "CPF inválido" }),
-  data_nascimento: z.string().refine((val) => {
-    try {
-      const date = new Date(val.split('/').reverse().join('-'));
-      return !isNaN(date.getTime());
-    } catch {
-      return false;
-    }
-  }, { message: "Data inválida. Use o formato DD/MM/AAAA" }),
-  email: z.string().email({ message: "Email inválido" }),
-  como_conheceu: z.enum(["Instagram", "Indicação", "Facebook", "Google", "Outro", "WhatsApp"], {
-    message: "Por favor selecione como conheceu a Neto Tours Viagens"
-  }),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
+  estado: z.string().optional(),
+  cpf: z.string().optional(),
+  como_conheceu: z.string().optional(),
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),
   fonte_cadastro: z.string().optional(),
-  foto: z.string().nullable().optional(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
