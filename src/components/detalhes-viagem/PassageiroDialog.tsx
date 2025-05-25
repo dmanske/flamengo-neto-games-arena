@@ -32,7 +32,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
-import { AlertCircle, Search, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Search, Plus, Trash2, DollarSign } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
@@ -615,7 +615,10 @@ export function PassageiroDialog({
               {statusPagamento === "Pendente" && (
                 <Card className="mt-4">
                   <CardHeader>
-                    <CardTitle className="text-lg text-gray-900">Sistema de Parcelas</CardTitle>
+                    <CardTitle className="text-lg text-gray-900 flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Sistema de Parcelas
+                    </CardTitle>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Valor Total:</span>
