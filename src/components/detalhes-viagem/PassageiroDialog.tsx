@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -30,9 +31,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { FormaPagamento, SetorMaracana, StatusPagamento } from "@/types/entities";
 import { formatCurrency } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Search } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
@@ -90,6 +90,8 @@ export function PassageiroDialog({
   defaultOnibusId,
 }: PassageiroDialogProps) {
   const [clientes, setClientes] = useState<ClienteOption[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<ClienteOption[]>([]);
+  const [clienteSearchTerm, setClienteSearchTerm] = useState("");
   const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
   const [onibusLotados, setOnibusLotados] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +101,7 @@ export function PassageiroDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       cliente_id: "",
-      setor_maracana: setorPadrao || "",
+      setor_maracana: setorPadrao || "A definir",
       status_pagamento: "Pendente",
       forma_pagamento: "Pix",
       valor: valorPadrao || 0,
@@ -125,6 +127,21 @@ export function PassageiroDialog({
     }
   }, [open, defaultOnibusId]);
 
+  // Filter clients based on search term
+  useEffect(() => {
+    if (clienteSearchTerm.trim() === "") {
+      setFilteredClientes(clientes);
+    } else {
+      const filtered = clientes.filter(cliente =>
+        cliente.nome.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+        cliente.telefone.includes(clienteSearchTerm) ||
+        cliente.email.toLowerCase().includes(clienteSearchTerm.toLowerCase()) ||
+        cliente.cidade.toLowerCase().includes(clienteSearchTerm.toLowerCase())
+      );
+      setFilteredClientes(filtered);
+    }
+  }, [clienteSearchTerm, clientes]);
+
   // Fetch clients from the database
   const fetchClientes = async () => {
     try {
@@ -135,6 +152,7 @@ export function PassageiroDialog({
 
       if (error) throw error;
       setClientes(data || []);
+      setFilteredClientes(data || []);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
       toast.error("Erro ao carregar a lista de clientes");
@@ -244,13 +262,14 @@ export function PassageiroDialog({
       onOpenChange(false);
       form.reset({
         cliente_id: "",
-        setor_maracana: setorPadrao || "",
+        setor_maracana: setorPadrao || "A definir",
         status_pagamento: "Pendente",
         forma_pagamento: "Pix",
         valor: valorPadrao || 0,
         desconto: 0,
         onibus_id: defaultOnibusId || "",
       });
+      setClienteSearchTerm("");
     } catch (error) {
       console.error("Erro ao adicionar passageiro:", error);
       toast.error("Erro ao adicionar passageiro");
@@ -273,10 +292,10 @@ export function PassageiroDialog({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle>Adicionar Passageiro</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900">Adicionar Passageiro</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Adicione um passageiro à esta viagem.
             </DialogDescription>
           </DialogHeader>
@@ -288,26 +307,38 @@ export function PassageiroDialog({
                 name="cliente_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cliente</FormLabel>
+                    <FormLabel className="text-gray-700">Cliente</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                           <SelectValue placeholder="Selecione um cliente" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {clientes.map((cliente) => (
+                      <SelectContent className="bg-white border-gray-200 max-h-60">
+                        {filteredClientes.map((cliente) => (
                           <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.nome}
+                            {cliente.nome} - {cliente.cidade}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Selecione o cliente para esta viagem
+                    
+                    {/* Barra de busca de clientes */}
+                    <div className="relative mt-2">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Buscar cliente por nome, telefone, email ou cidade..."
+                        value={clienteSearchTerm}
+                        onChange={(e) => setClienteSearchTerm(e.target.value)}
+                        className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <FormDescription className="text-gray-600">
+                      Use a busca acima para encontrar o cliente
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -319,7 +350,7 @@ export function PassageiroDialog({
                 name="onibus_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
+                    <FormLabel className="flex items-center gap-2 text-gray-700">
                       Ônibus
                       {ocupacaoInfo && !ocupacaoInfo.disponivel && (
                         <Tooltip>
@@ -338,11 +369,11 @@ export function PassageiroDialog({
                       disabled={onibusList.length === 1}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                           <SelectValue placeholder="Selecione um ônibus" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200">
                         {onibusList.map((onibus) => (
                           <SelectItem 
                             key={onibus.id} 
@@ -361,7 +392,7 @@ export function PassageiroDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
+                    <FormDescription className="text-gray-600">
                       {ocupacaoInfo 
                         ? `Ocupação atual: ${ocupacaoInfo.atual}/${ocupacaoInfo.total} passageiros` 
                         : "Selecione o ônibus para o passageiro"}
@@ -376,20 +407,22 @@ export function PassageiroDialog({
                 name="setor_maracana"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Setor do Maracanã</FormLabel>
+                    <FormLabel className="text-gray-700">Setor do Maracanã</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                           <SelectValue placeholder="Selecione um setor" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="A definir">A definir</SelectItem>
                         <SelectItem value="Norte">Norte</SelectItem>
                         <SelectItem value="Sul">Sul</SelectItem>
-                        <SelectItem value="Leste">Leste</SelectItem>
+                        <SelectItem value="Leste Inferior">Leste Inferior</SelectItem>
+                        <SelectItem value="Leste Superior">Leste Superior</SelectItem>
                         <SelectItem value="Oeste">Oeste</SelectItem>
                         <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
                         <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
@@ -406,13 +439,14 @@ export function PassageiroDialog({
                   name="valor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor (R$)</FormLabel>
+                      <FormLabel className="text-gray-700">Valor (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -425,13 +459,14 @@ export function PassageiroDialog({
                   name="desconto"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Desconto (R$)</FormLabel>
+                      <FormLabel className="text-gray-700">Desconto (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -446,17 +481,17 @@ export function PassageiroDialog({
                   name="status_pagamento"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status do Pagamento</FormLabel>
+                      <FormLabel className="text-gray-700">Status do Pagamento</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                             <SelectValue placeholder="Selecione um status" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white border-gray-200">
                           <SelectItem value="Pendente">Pendente</SelectItem>
                           <SelectItem value="Pago">Pago</SelectItem>
                           <SelectItem value="Cancelado">Cancelado</SelectItem>
@@ -472,17 +507,17 @@ export function PassageiroDialog({
                   name="forma_pagamento"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Forma de Pagamento</FormLabel>
+                      <FormLabel className="text-gray-700">Forma de Pagamento</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value || "Pix"}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                             <SelectValue placeholder="Selecione uma forma" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white border-gray-200">
                           <SelectItem value="Pix">Pix</SelectItem>
                           <SelectItem value="Cartão">Cartão</SelectItem>
                           <SelectItem value="Boleto">Boleto</SelectItem>
@@ -501,12 +536,14 @@ export function PassageiroDialog({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isLoading || (selectedOnibus && !selectedOnibus.disponivel)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isLoading ? "Salvando..." : "Salvar Passageiro"}
                 </Button>
