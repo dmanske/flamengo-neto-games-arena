@@ -32,13 +32,14 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
-import { AlertCircle, Search } from "lucide-react";
+import { AlertCircle, Search, Plus, Trash2 } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger 
 } from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Define the form schema
 const formSchema = z.object({
@@ -80,6 +81,13 @@ interface OnibusOption {
   disponivel?: boolean;
 }
 
+interface Parcela {
+  id?: string;
+  valor_parcela: number;
+  forma_pagamento: string;
+  observacoes?: string;
+}
+
 export function PassageiroDialog({
   open,
   onOpenChange,
@@ -95,6 +103,12 @@ export function PassageiroDialog({
   const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
   const [onibusLotados, setOnibusLotados] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
+  const [novaParcela, setNovaParcela] = useState<Omit<Parcela, 'id'>>({
+    valor_parcela: 0,
+    forma_pagamento: "Pix",
+    observacoes: ""
+  });
 
   // Initialize the form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -109,6 +123,16 @@ export function PassageiroDialog({
       onibus_id: defaultOnibusId || "",
     },
   });
+
+  // Watch status de pagamento para mostrar/ocultar seção de parcelas
+  const statusPagamento = form.watch("status_pagamento");
+  const valorTotal = form.watch("valor");
+  const desconto = form.watch("desconto");
+  
+  // Calcular valores
+  const valorLiquido = valorTotal - desconto;
+  const totalPago = parcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+  const saldoRestante = valorLiquido - totalPago;
 
   // Fetch clients and buses on component mount
   useEffect(() => {
@@ -213,6 +237,32 @@ export function PassageiroDialog({
     }
   };
 
+  // Adicionar nova parcela
+  const adicionarParcela = () => {
+    if (novaParcela.valor_parcela <= 0) {
+      toast.error("Valor da parcela deve ser maior que zero");
+      return;
+    }
+    
+    if (totalPago + novaParcela.valor_parcela > valorLiquido) {
+      toast.error("O valor total das parcelas não pode exceder o valor líquido");
+      return;
+    }
+    
+    setParcelas([...parcelas, { ...novaParcela }]);
+    setNovaParcela({
+      valor_parcela: 0,
+      forma_pagamento: "Pix",
+      observacoes: ""
+    });
+  };
+
+  // Remover parcela
+  const removerParcela = (index: number) => {
+    const novasParcelas = parcelas.filter((_, i) => i !== index);
+    setParcelas(novasParcelas);
+  };
+
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!viagemId) return;
@@ -221,6 +271,14 @@ export function PassageiroDialog({
     if (onibusLotados[values.onibus_id]) {
       toast.error("Este ônibus já está lotado. Por favor, escolha outro ônibus.");
       return;
+    }
+    
+    // Se status é Pendente e há parcelas, verificar se está tudo correto
+    if (values.status_pagamento === "Pendente" && parcelas.length > 0) {
+      if (totalPago > valorLiquido) {
+        toast.error("O valor total das parcelas não pode exceder o valor líquido");
+        return;
+      }
     }
     
     setIsLoading(true);
@@ -240,18 +298,38 @@ export function PassageiroDialog({
       }
 
       // Add the passenger to the trip
-      const { error } = await supabase.from("viagem_passageiros").insert({
-        viagem_id: viagemId,
-        cliente_id: values.cliente_id,
-        setor_maracana: values.setor_maracana,
-        status_pagamento: values.status_pagamento,
-        forma_pagamento: values.forma_pagamento,
-        valor: values.valor,
-        desconto: values.desconto,
-        onibus_id: values.onibus_id,
-      });
+      const { data: passageiroData, error: passageiroError } = await supabase
+        .from("viagem_passageiros")
+        .insert({
+          viagem_id: viagemId,
+          cliente_id: values.cliente_id,
+          setor_maracana: values.setor_maracana,
+          status_pagamento: values.status_pagamento,
+          forma_pagamento: values.forma_pagamento,
+          valor: values.valor,
+          desconto: values.desconto,
+          onibus_id: values.onibus_id,
+        })
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (passageiroError) throw passageiroError;
+
+      // Se há parcelas para salvar
+      if (parcelas.length > 0 && passageiroData) {
+        const parcelasParaInserir = parcelas.map(parcela => ({
+          viagem_passageiro_id: passageiroData.id,
+          valor_parcela: parcela.valor_parcela,
+          forma_pagamento: parcela.forma_pagamento,
+          observacoes: parcela.observacoes || null
+        }));
+
+        const { error: parcelasError } = await supabase
+          .from("viagem_passageiros_parcelas")
+          .insert(parcelasParaInserir);
+
+        if (parcelasError) throw parcelasError;
+      }
 
       toast.success("Passageiro adicionado com sucesso!");
       
@@ -269,6 +347,7 @@ export function PassageiroDialog({
         desconto: 0,
         onibus_id: defaultOnibusId || "",
       });
+      setParcelas([]);
       setClienteSearchTerm("");
     } catch (error) {
       console.error("Erro ao adicionar passageiro:", error);
@@ -292,7 +371,7 @@ export function PassageiroDialog({
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px] bg-white border-gray-200">
+        <DialogContent className="sm:max-w-[700px] bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Adicionar Passageiro</DialogTitle>
             <DialogDescription className="text-gray-600">
@@ -308,6 +387,18 @@ export function PassageiroDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">Cliente</FormLabel>
+                    
+                    {/* Barra de busca de clientes */}
+                    <div className="relative mb-2">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Buscar cliente por nome, telefone, email ou cidade..."
+                        value={clienteSearchTerm}
+                        onChange={(e) => setClienteSearchTerm(e.target.value)}
+                        className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                    
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -325,17 +416,6 @@ export function PassageiroDialog({
                         ))}
                       </SelectContent>
                     </Select>
-                    
-                    {/* Barra de busca de clientes */}
-                    <div className="relative mt-2">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="Buscar cliente por nome, telefone, email ou cidade..."
-                        value={clienteSearchTerm}
-                        onChange={(e) => setClienteSearchTerm(e.target.value)}
-                        className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
                     
                     <FormDescription className="text-gray-600">
                       Use a busca acima para encontrar o cliente
@@ -492,9 +572,9 @@ export function PassageiroDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-white border-gray-200">
-                          <SelectItem value="Pendente">Pendente</SelectItem>
-                          <SelectItem value="Pago">Pago</SelectItem>
-                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                          <SelectItem value="Pendente" className="bg-white text-gray-900">Pendente</SelectItem>
+                          <SelectItem value="Pago" className="bg-white text-gray-900">Pago</SelectItem>
+                          <SelectItem value="Cancelado" className="bg-white text-gray-900">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -530,6 +610,121 @@ export function PassageiroDialog({
                   )}
                 />
               </div>
+
+              {/* Seção de Parcelas - aparece apenas quando status é Pendente */}
+              {statusPagamento === "Pendente" && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-gray-900">Sistema de Parcelas</CardTitle>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Valor Total:</span>
+                        <p className="font-semibold text-blue-600">{formatCurrency(valorTotal)}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Valor Pago:</span>
+                        <p className="font-semibold text-green-600">{formatCurrency(totalPago)}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Saldo Restante:</span>
+                        <p className="font-semibold text-orange-600">{formatCurrency(saldoRestante)}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Lista de parcelas adicionadas */}
+                    {parcelas.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700">Parcelas Adicionadas:</h4>
+                        {parcelas.map((parcela, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">{formatCurrency(parcela.valor_parcela)}</span>
+                              <span className="text-xs text-gray-500 ml-2">({parcela.forma_pagamento})</span>
+                              {parcela.observacoes && (
+                                <p className="text-xs text-gray-600 mt-1">{parcela.observacoes}</p>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removerParcela(index)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Formulário para adicionar nova parcela */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Valor da Parcela</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          value={novaParcela.valor_parcela || ""}
+                          onChange={(e) => setNovaParcela({
+                            ...novaParcela,
+                            valor_parcela: parseFloat(e.target.value) || 0
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Forma de Pagamento</label>
+                        <Select 
+                          value={novaParcela.forma_pagamento}
+                          onValueChange={(value) => setNovaParcela({
+                            ...novaParcela,
+                            forma_pagamento: value
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pix">Pix</SelectItem>
+                            <SelectItem value="Cartão">Cartão</SelectItem>
+                            <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="Boleto">Boleto</SelectItem>
+                            <SelectItem value="Outro">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Observações</label>
+                        <Input
+                          placeholder="Observações (opcional)"
+                          value={novaParcela.observacoes || ""}
+                          onChange={(e) => setNovaParcela({
+                            ...novaParcela,
+                            observacoes: e.target.value
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={adicionarParcela}
+                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+                      disabled={novaParcela.valor_parcela <= 0 || totalPago + novaParcela.valor_parcela > valorLiquido}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Parcela
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
 
               <DialogFooter>
                 <Button

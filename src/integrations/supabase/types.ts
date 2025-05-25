@@ -443,6 +443,44 @@ export type Database = {
           },
         ]
       }
+      viagem_passageiros_parcelas: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          forma_pagamento: string
+          id: string
+          observacoes: string | null
+          valor_parcela: number
+          viagem_passageiro_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          valor_parcela: number
+          viagem_passageiro_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          valor_parcela?: number
+          viagem_passageiro_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_passageiros_parcelas_viagem_passageiro_id_fkey"
+            columns: ["viagem_passageiro_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_passageiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagens: {
         Row: {
           adversario: string
