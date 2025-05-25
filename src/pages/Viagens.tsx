@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +42,6 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { ViagemCard } from "@/components/viagens/ViagemCard";
-import { PremiumViagemCard } from "@/components/viagens/PremiumViagemCard";
 import { CleanViagemCard } from "@/components/viagens/CleanViagemCard";
 import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
@@ -69,7 +67,7 @@ const Viagens = () => {
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [cardDesign, setCardDesign] = useState<'original' | 'premium' | 'clean'>('original');
+  const [cardDesign, setCardDesign] = useState<'original' | 'clean'>('original');
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
   const navigate = useNavigate();
@@ -341,16 +339,7 @@ const Viagens = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {viagensList.map((viagem) => {
-          if (cardDesign === 'premium') {
-            return (
-              <PremiumViagemCard 
-                key={viagem.id}
-                viagem={viagem} 
-                passageirosCount={passageirosCount[viagem.id] || 0}
-                onDeleteClick={(v) => setViagemToDelete(v)}
-              />
-            );
-          } else if (cardDesign === 'clean') {
+          if (cardDesign === 'clean') {
             return (
               <CleanViagemCard 
                 key={viagem.id}
@@ -468,7 +457,7 @@ const Viagens = () => {
                     <TooltipTrigger asChild>
                       <Button
                         variant={cardDesign === 'original' ? 'default' : 'ghost'}
-                        className="rounded-r-none rounded-l-md text-xs px-2"
+                        className="rounded-r-none text-xs px-3"
                         onClick={() => setCardDesign('original')}
                       >
                         Original
@@ -482,23 +471,8 @@ const Viagens = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={cardDesign === 'premium' ? 'default' : 'ghost'}
-                        className="rounded-none text-xs px-2"
-                        onClick={() => setCardDesign('premium')}
-                      >
-                        Premium
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Design premium com efeitos glass</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
                         variant={cardDesign === 'clean' ? 'default' : 'ghost'}
-                        className="rounded-l-none rounded-r-md text-xs px-2"
+                        className="rounded-l-none text-xs px-3"
                         onClick={() => setCardDesign('clean')}
                       >
                         Clean
