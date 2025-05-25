@@ -43,7 +43,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
     try {
       const { data: onibusData, error: onibusError } = await supabase
         .from("viagem_onibus")
-        .select("id, numero_identificacao, tipo_onibus, empresa, capacidade_onibus")
+        .select("id, numero_identificacao, tipo_onibus, empresa, capacidade_onibus, lugares_extras")
         .eq("viagem_id", viagemId)
         .order("created_at");
 
@@ -64,12 +64,14 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
         if (passageirosError) throw passageirosError;
         
         const passageirosCount = passageirosData ? passageirosData.length : 0;
-        const disponivel = passageirosCount < onibus.capacidade_onibus;
+        const capacidadeTotal = onibus.capacidade_onibus + (onibus.lugares_extras || 0);
+        const disponivel = passageirosCount < capacidadeTotal;
         
         onibusWithCounts.push({
           ...onibus,
           passageiros_count: passageirosCount,
-          disponivel: disponivel
+          disponivel: disponivel,
+          capacidade_total: capacidadeTotal
         });
       }
       
@@ -86,7 +88,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
 
   const ocupacaoInfo = selectedOnibus ? {
     atual: selectedOnibus.passageiros_count || 0,
-    total: selectedOnibus.capacidade_onibus,
+    total: selectedOnibus.capacidade_total || selectedOnibus.capacidade_onibus,
     disponivel: selectedOnibus.disponivel
   } : null;
 
@@ -129,7 +131,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
                       {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
                     </span>
                     <span className={`text-xs ${!onibus.disponivel ? 'text-red-500' : 'text-green-600'}`}>
-                      {onibus.passageiros_count || 0}/{onibus.capacidade_onibus}
+                      {onibus.passageiros_count || 0}/{onibus.capacidade_total || onibus.capacidade_onibus}
                     </span>
                   </div>
                 </SelectItem>

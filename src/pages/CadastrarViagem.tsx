@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,8 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Image, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { OnibusForm } from "@/components/viagem/OnibusForm";
+import { ViagemOnibus } from "@/types/entities";
 
 const CadastrarViagem = () => {
   const navigate = useNavigate();
@@ -30,14 +33,12 @@ const CadastrarViagem = () => {
   const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFlamengoUrl, setLogoFlamengoUrl] = useState("https://logodetimes.com/times/flamengo/logo-flamengo-256.png");
+  const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
   
   const [formData, setFormData] = useState({
     adversario: "",
     data_jogo: "",
-    tipo_onibus: "",
-    empresa: "",
     rota: "",
-    capacidade_onibus: "",
     status_viagem: "Aberta",
     valor_padrao: "",
     setor_padrao: "",
@@ -87,25 +88,37 @@ const CadastrarViagem = () => {
     }
   };
 
+  const handlePrimaryBusChange = (tipo: string, empresa: string) => {
+    // Atualizar dados principais da viagem com o primeiro ônibus
+    console.log("Primary bus changed:", { tipo, empresa });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.adversario || !formData.data_jogo || !formData.tipo_onibus || 
-        !formData.empresa || !formData.rota || !formData.capacidade_onibus) {
-      toast.error("Por favor, preencha todos os campos obrigatórios");
+    if (!formData.adversario || !formData.data_jogo || !formData.rota || onibusArray.length === 0) {
+      toast.error("Por favor, preencha todos os campos obrigatórios e adicione pelo menos um ônibus");
       return;
     }
 
     setIsLoading(true);
 
     try {
+      // Calcular capacidade total de todos os ônibus
+      const capacidadeTotal = onibusArray.reduce((total, onibus) => 
+        total + onibus.capacidade_onibus + (onibus.lugares_extras || 0), 0
+      );
+
+      // Usar dados do primeiro ônibus como padrão da viagem
+      const primeiroOnibus = onibusArray[0];
+
       const viagemData = {
         adversario: formData.adversario,
         data_jogo: formData.data_jogo,
-        tipo_onibus: formData.tipo_onibus,
-        empresa: formData.empresa,
+        tipo_onibus: primeiroOnibus.tipo_onibus,
+        empresa: primeiroOnibus.empresa,
         rota: formData.rota,
-        capacidade_onibus: parseInt(formData.capacidade_onibus),
+        capacidade_onibus: capacidadeTotal,
         status_viagem: formData.status_viagem,
         valor_padrao: formData.valor_padrao ? parseFloat(formData.valor_padrao) : null,
         setor_padrao: formData.setor_padrao || null,
@@ -120,6 +133,18 @@ const CadastrarViagem = () => {
         .single();
 
       if (viagemError) throw viagemError;
+
+      // Inserir todos os ônibus da viagem
+      const onibusDataArray = onibusArray.map(onibus => ({
+        ...onibus,
+        viagem_id: viagemInserted.id
+      }));
+
+      const { error: onibusError } = await supabase
+        .from("viagem_onibus")
+        .insert(onibusDataArray);
+
+      if (onibusError) throw onibusError;
 
       toast.success("Viagem criada com sucesso!");
       navigate(`/dashboard/viagem/${viagemInserted.id}`);
@@ -170,7 +195,6 @@ const CadastrarViagem = () => {
               <CardTitle className="text-lg font-semibold">Informações da Viagem</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
-              {/* ... keep existing code (form fields) the same until logo section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="adversario" className="text-gray-700 font-medium">Adversário *</Label>
@@ -229,6 +253,18 @@ const CadastrarViagem = () => {
                 </div>
               </div>
 
+              <div>
+                <Label htmlFor="rota" className="text-gray-700 font-medium">Rota *</Label>
+                <Input
+                  id="rota"
+                  value={formData.rota}
+                  onChange={(e) => handleInputChange("rota", e.target.value)}
+                  placeholder="Ex: Rio de Janeiro - São Paulo"
+                  required
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
               {/* Logo do Adversário */}
               <div>
                 <Label className="text-gray-700 font-medium">Logo do Adversário</Label>
@@ -264,7 +300,7 @@ const CadastrarViagem = () => {
                 </div>
               </div>
 
-              {/* Logo do Flamengo - com logo padrão */}
+              {/* Logo do Flamengo */}
               <div>
                 <Label className="text-gray-700 font-medium">Logo do Flamengo</Label>
                 <div className="flex items-center gap-4 mt-2">
@@ -312,63 +348,17 @@ const CadastrarViagem = () => {
             </CardContent>
           </Card>
 
-          {/* Informações do Ônibus */}
+          {/* Seção de Ônibus */}
           <Card className="bg-white border-gray-200 shadow-professional">
             <CardHeader className="bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-t-xl">
-              <CardTitle className="text-lg font-semibold">Informações do Ônibus</CardTitle>
+              <CardTitle className="text-lg font-semibold">Ônibus da Viagem</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="tipo_onibus" className="text-gray-700 font-medium">Tipo de Ônibus *</Label>
-                  <Input
-                    id="tipo_onibus"
-                    value={formData.tipo_onibus}
-                    onChange={(e) => handleInputChange("tipo_onibus", e.target.value)}
-                    placeholder="Ex: Leito, Semi-leito, Executivo"
-                    required
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="empresa" className="text-gray-700 font-medium">Empresa *</Label>
-                  <Input
-                    id="empresa"
-                    value={formData.empresa}
-                    onChange={(e) => handleInputChange("empresa", e.target.value)}
-                    placeholder="Nome da empresa"
-                    required
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rota" className="text-gray-700 font-medium">Rota *</Label>
-                  <Input
-                    id="rota"
-                    value={formData.rota}
-                    onChange={(e) => handleInputChange("rota", e.target.value)}
-                    placeholder="Ex: Rio de Janeiro - São Paulo"
-                    required
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="capacidade_onibus" className="text-gray-700 font-medium">Capacidade *</Label>
-                  <Input
-                    id="capacidade_onibus"
-                    type="number"
-                    value={formData.capacidade_onibus}
-                    onChange={(e) => handleInputChange("capacidade_onibus", e.target.value)}
-                    placeholder="Número de assentos"
-                    min="1"
-                    required
-                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+            <CardContent className="p-6">
+              <OnibusForm 
+                onibusArray={onibusArray}
+                onChange={setOnibusArray}
+                onPrimaryBusChange={handlePrimaryBusChange}
+              />
             </CardContent>
           </Card>
 
