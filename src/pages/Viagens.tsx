@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +66,7 @@ const Viagens = () => {
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [cardDesign, setCardDesign] = useState<'original' | 'premium' | 'clean'>('original');
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
   const navigate = useNavigate();
@@ -334,16 +334,41 @@ const Viagens = () => {
       );
     }
 
+    // Grid view with different card designs
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {viagensList.map((viagem) => (
-          <ViagemCard 
-            key={viagem.id}
-            viagem={viagem} 
-            passageirosCount={passageirosCount[viagem.id] || 0}
-            onDeleteClick={(v) => setViagemToDelete(v)}
-          />
-        ))}
+        {viagensList.map((viagem) => {
+          if (cardDesign === 'premium') {
+            const { PremiumViagemCard } = require('@/components/viagens/PremiumViagemCard');
+            return (
+              <PremiumViagemCard 
+                key={viagem.id}
+                viagem={viagem} 
+                passageirosCount={passageirosCount[viagem.id] || 0}
+                onDeleteClick={(v) => setViagemToDelete(v)}
+              />
+            );
+          } else if (cardDesign === 'clean') {
+            const { CleanViagemCard } = require('@/components/viagens/CleanViagemCard');
+            return (
+              <CleanViagemCard 
+                key={viagem.id}
+                viagem={viagem} 
+                passageirosCount={passageirosCount[viagem.id] || 0}
+                onDeleteClick={(v) => setViagemToDelete(v)}
+              />
+            );
+          } else {
+            return (
+              <ViagemCard 
+                key={viagem.id}
+                viagem={viagem} 
+                passageirosCount={passageirosCount[viagem.id] || 0}
+                onDeleteClick={(v) => setViagemToDelete(v)}
+              />
+            );
+          }
+        })}
       </div>
     );
   };
@@ -434,6 +459,56 @@ const Viagens = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
+
+              {/* Card Design Selector - only show in grid mode */}
+              {viewMode === 'grid' && (
+                <div className="flex border rounded-md shadow-sm">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={cardDesign === 'original' ? 'default' : 'ghost'}
+                        className="rounded-r-none rounded-l-md text-xs px-2"
+                        onClick={() => setCardDesign('original')}
+                      >
+                        Original
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Design original</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={cardDesign === 'premium' ? 'default' : 'ghost'}
+                        className="rounded-none text-xs px-2"
+                        onClick={() => setCardDesign('premium')}
+                      >
+                        Premium
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Design premium com efeitos glass</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={cardDesign === 'clean' ? 'default' : 'ghost'}
+                        className="rounded-l-none rounded-r-md text-xs px-2"
+                        onClick={() => setCardDesign('clean')}
+                      >
+                        Clean
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Design limpo e moderno</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           </div>
 
