@@ -41,7 +41,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
-import { ViagemCard } from "@/components/viagens/ViagemCard";
 import { CleanViagemCard } from "@/components/viagens/CleanViagemCard";
 import { useMultiplePassageirosCount } from "@/hooks/usePassageirosCount";
 
@@ -67,7 +66,6 @@ const Viagens = () => {
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [cardDesign, setCardDesign] = useState<'original' | 'clean'>('original');
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
   const navigate = useNavigate();
@@ -335,30 +333,17 @@ const Viagens = () => {
       );
     }
 
-    // Grid view with different card designs
+    // Grid view with clean cards only
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {viagensList.map((viagem) => {
-          if (cardDesign === 'clean') {
-            return (
-              <CleanViagemCard 
-                key={viagem.id}
-                viagem={viagem} 
-                passageirosCount={passageirosCount[viagem.id] || 0}
-                onDeleteClick={(v) => setViagemToDelete(v)}
-              />
-            );
-          } else {
-            return (
-              <ViagemCard 
-                key={viagem.id}
-                viagem={viagem} 
-                passageirosCount={passageirosCount[viagem.id] || 0}
-                onDeleteClick={(v) => setViagemToDelete(v)}
-              />
-            );
-          }
-        })}
+        {viagensList.map((viagem) => (
+          <CleanViagemCard 
+            key={viagem.id}
+            viagem={viagem} 
+            passageirosCount={passageirosCount[viagem.id] || 0}
+            onDeleteClick={(v) => setViagemToDelete(v)}
+          />
+        ))}
       </div>
     );
   };
@@ -449,41 +434,6 @@ const Viagens = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
-
-              {/* Card Design Selector - only show in grid mode */}
-              {viewMode === 'grid' && (
-                <div className="flex border rounded-md shadow-sm">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={cardDesign === 'original' ? 'default' : 'ghost'}
-                        className="rounded-r-none text-xs px-3"
-                        onClick={() => setCardDesign('original')}
-                      >
-                        Original
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Design original</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={cardDesign === 'clean' ? 'default' : 'ghost'}
-                        className="rounded-l-none text-xs px-3"
-                        onClick={() => setCardDesign('clean')}
-                      >
-                        Clean
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Design limpo e moderno</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              )}
             </div>
           </div>
 

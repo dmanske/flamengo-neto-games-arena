@@ -10,9 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import LogoutButton from "@/components/LogoutButton";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Default logo URL
-const DEFAULT_LOGO_URL = "https://logodetimes.com/wp-content/uploads/flamengo.png";
-
 interface NavItemProps {
   icon: React.ReactNode;
   title: string;
@@ -92,9 +89,6 @@ const MainLayout = () => {
       <div className="p-4 flex flex-col items-center justify-center border-b border-gray-200 bg-gray-50/50">
         {!collapsed && (
           <div className="text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-3 shadow-sm">
-              <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-8 h-8" />
-            </div>
             <div className="font-bold text-gray-900">
               <span className="text-lg">Neto Tours</span>
               <div className="text-xs text-gray-600 mt-1">Caravanas Rubro-Negras</div>
@@ -210,9 +204,6 @@ const MainLayout = () => {
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <img src={DEFAULT_LOGO_URL} alt="Flamengo" className="w-5 h-5" />
-                </div>
                 <span className="text-lg font-bold text-gray-900">Neto Tours</span>
               </div>
             </div>
