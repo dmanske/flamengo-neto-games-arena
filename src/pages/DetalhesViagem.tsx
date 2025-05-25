@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
@@ -15,6 +16,9 @@ import { ViagemHeader } from "@/components/detalhes-viagem/ViagemHeader";
 import { ViagemInfo } from "@/components/detalhes-viagem/ViagemInfo";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
 import { ViagemReport } from "@/components/relatorios/ViagemReport";
+import { LayoutSelector } from "@/components/detalhes-viagem/LayoutSelector";
+import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernViagemDetailsLayout";
+import { GlassViagemDetailsLayout } from "@/components/detalhes-viagem/GlassViagemDetailsLayout";
 import { useViagemDetails } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
 
@@ -32,6 +36,7 @@ const DetalhesViagem = () => {
   const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
   const [detailsPassageiroOpen, setDetailsPassageiroOpen] = useState(false);
   const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
+  const [selectedLayout, setSelectedLayout] = useState<'original' | 'modern' | 'glass'>('original');
   
   const {
     viagem,
@@ -115,16 +120,9 @@ const DetalhesViagem = () => {
   const onibusAtual = getOnibusAtual();
   const totalPassageirosNaoAlocados = passageiros.filter(p => !p.onibus_id).length;
 
-  return (
-    <div className="container py-6">
-      <ViagemHeader 
-        viagem={viagem} 
-        onDelete={handleDelete} 
-        statusColors={statusColors}
-        onPrint={handlePrint}
-        onExportPDF={handleExportPDF}
-      />
-
+  // Conteúdo principal que será passado para os layouts
+  const mainContent = (
+    <>
       {/* Componente de Relatório (oculto) */}
       <div style={{ display: 'none' }}>
         <ViagemReport
@@ -139,17 +137,27 @@ const DetalhesViagem = () => {
         />
       </div>
 
-      {/* Cards de informações da viagem */}
-      <ViagemInfo 
-        data_jogo={viagem.data_jogo}
-        rota={viagem.rota}
-        setor_padrao={viagem.setor_padrao}
-        valor_padrao={viagem.valor_padrao}
-        tipo_onibus={viagem.tipo_onibus}
-        empresa={viagem.empresa}
-        capacidade_onibus={viagem.capacidade_onibus}
-        onibusList={onibusList}
-      />
+      {/* Seletor de Layout - apenas para layouts alternativos */}
+      {selectedLayout === 'original' && (
+        <LayoutSelector 
+          selectedLayout={selectedLayout}
+          onLayoutChange={setSelectedLayout}
+        />
+      )}
+
+      {/* Cards de informações da viagem - apenas para layout original */}
+      {selectedLayout === 'original' && (
+        <ViagemInfo 
+          data_jogo={viagem.data_jogo}
+          rota={viagem.rota}
+          setor_padrao={viagem.setor_padrao}
+          valor_padrao={viagem.valor_padrao}
+          tipo_onibus={viagem.tipo_onibus}
+          empresa={viagem.empresa}
+          capacidade_onibus={viagem.capacidade_onibus}
+          onibusList={onibusList}
+        />
+      )}
 
       {/* Resumo financeiro */}
       {passageiros.length > 0 && (
@@ -239,6 +247,70 @@ const DetalhesViagem = () => {
           onSuccess={() => id && fetchPassageiros(id)}
         />
       )}
+    </>
+  );
+
+  // Renderizar com base no layout selecionado
+  if (selectedLayout === 'modern') {
+    return (
+      <ModernViagemDetailsLayout
+        viagem={viagem}
+        onDelete={handleDelete}
+        onPrint={handlePrint}
+        onExportPDF={handleExportPDF}
+        onibusList={onibusList}
+      >
+        {/* Botão para voltar ao seletor */}
+        <div className="mb-6">
+          <Button 
+            variant="outline" 
+            onClick={() => setSelectedLayout('original')}
+            className="bg-white border-gray-300"
+          >
+            ← Voltar às opções de visualização
+          </Button>
+        </div>
+        {mainContent}
+      </ModernViagemDetailsLayout>
+    );
+  }
+
+  if (selectedLayout === 'glass') {
+    return (
+      <GlassViagemDetailsLayout
+        viagem={viagem}
+        onDelete={handleDelete}
+        onPrint={handlePrint}
+        onExportPDF={handleExportPDF}
+        onibusList={onibusList}
+      >
+        {/* Botão para voltar ao seletor */}
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => setSelectedLayout('original')}
+            className="bg-white/10 border border-white/30 text-white backdrop-blur-md hover:bg-white/20"
+          >
+            ← Voltar às opções de visualização
+          </Button>
+        </div>
+        {mainContent}
+      </GlassViagemDetailsLayout>
+    );
+  }
+
+  // Layout original
+  return (
+    <div className="container py-6">
+      <ViagemHeader 
+        viagem={viagem} 
+        onDelete={handleDelete} 
+        statusColors={statusColors}
+        onPrint={handlePrint}
+        onExportPDF={handleExportPDF}
+      />
+
+      {mainContent}
     </div>
   );
 };
