@@ -1,254 +1,467 @@
 import React, { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import * as z from "zod";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { FonteConhecimento } from "@/types/entities";
+import { FileUpload } from "@/components/ui/file-upload";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-import { Button } from "@/components/ui/button";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
-import { PersonalInfoFields } from "./PersonalInfoFields";
-import { AddressFields } from "./AddressFields";
-import { ContactInfoFields } from "./ContactInfoFields";
-import { ReferralFields } from "./ReferralFields";
-import { FonteConhecimento } from "@/types/entities";
-
-// Define the form validation schema
+// Schema de validação do formulário - corrigido para aceitar string vazia ou null nas observações
 const formSchema = z.object({
-  nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
-  cep: z.string().min(9, { message: "CEP é obrigatório e deve estar no formato 00000-000" }),
-  endereco: z.string().min(5, { message: "Endereço é obrigatório" }),
-  numero: z.string().min(1, { message: "Número é obrigatório" }),
+  nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  cpf: z.string().min(11, "CPF inválido"),
+  data_nascimento: z.string().optional(),
+  endereco: z.string().min(5, "Endereço deve ter pelo menos 5 caracteres"),
+  cep: z.string().min(8, "CEP inválido"),
+  cidade: z.string().min(2, "Cidade deve ter pelo menos 2 caracteres"),
+  estado: z.string().length(2, "Estado deve ter 2 caracteres"),
+  bairro: z.string().min(2, "Bairro deve ter pelo menos 2 caracteres"),
+  numero: z.string().min(1, "Número é obrigatório"),
   complemento: z.string().optional(),
-  bairro: z.string().min(1, { message: "Bairro é obrigatório" }),
-  telefone: z
-    .string()
-    .min(14, { message: "O telefone deve estar completo" })
-    .regex(/^\(\d{2}\) \d \d{4}-\d{4}$/, { message: "Formato de telefone inválido" }),
-  cidade: z.string().min(2, { message: "Cidade é obrigatória" }),
-  estado: z.string().min(2, { message: "Estado é obrigatório" }),
-  cpf: z
-    .string()
-    .min(14, { message: "CPF deve estar completo" })
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "Formato de CPF inválido" }),
-  data_nascimento: z.string().refine((val) => {
-    try {
-      const date = new Date(val.split('/').reverse().join('-'));
-      return !isNaN(date.getTime());
-    } catch {
-      return false;
-    }
-  }, { message: "Data inválida. Use o formato DD/MM/AAAA" }),
-  email: z.string().email({ message: "Email inválido" }),
-  como_conheceu: z.enum(["Instagram", "Indicação", "Facebook", "Google", "Outro"], {
-    message: "Por favor selecione como conheceu a Neto Tours"
-  }),
-  indicacao_nome: z.string().optional(),
-  observacoes: z.string().optional(),
-  foto: z.string().nullable().optional(),
-}).refine((data) => {
-  // If como_conheceu is "Indicação", indicacao_nome is required
-  if (data.como_conheceu === "Indicação" && (!data.indicacao_nome || data.indicacao_nome.length < 2)) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Nome de quem indicou é obrigatório",
-  path: ["indicacao_nome"]
+  observacoes: z.string().optional().nullable().transform(val => val === null ? "" : val),
+  como_conheceu: z.string().min(2, "Selecione como conheceu a empresa"),
+  indicacao_nome: z.string().optional().nullable().transform(val => val === null ? "" : val),
+  foto: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const ClienteForm: React.FC = () => {
+export function ClienteForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  // Define form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: "",
-      cep: "",
-      endereco: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
+      email: "",
       telefone: "",
-      cidade: "",
-      estado: "RJ",
       cpf: "",
       data_nascimento: "",
-      email: "",
-      como_conheceu: undefined,
-      indicacao_nome: "",
+      endereco: "",
+      cep: "",
+      cidade: "",
+      estado: "SC",  // SC como padrão
+      bairro: "",
+      numero: "",
+      complemento: "",
       observacoes: "",
+      como_conheceu: "",
+      indicacao_nome: "",
       foto: null,
     },
   });
 
-  const watchComoConheceu = form.watch("como_conheceu") as FonteConhecimento | undefined;
+  // Watch para mostrar preview da foto
+  const clienteFoto = form.watch("foto");
+  const comoConheceu = form.watch("como_conheceu");
+  const nomeCliente = form.watch("nome");
 
-  // Set up react-query mutation for adding client
-  const addClientMutation = useMutation({
-    mutationFn: async (data: FormValues) => {
-      // Convert string date to Date object for API
-      const dateParts = data.data_nascimento.split('/');
-      const dateObject = new Date(
-        parseInt(dateParts[2]), // year
-        parseInt(dateParts[1]) - 1, // month (0-based)
-        parseInt(dateParts[0]) // day
-      );
-
-      console.log("Inserting client data:", {
-        nome: data.nome,
-        endereco: data.endereco,
-        numero: data.numero,
-        complemento: data.complemento || null,
-        bairro: data.bairro,
-        telefone: data.telefone,
-        cep: data.cep,
-        cidade: data.cidade,
-        estado: data.estado,
-        cpf: data.cpf,
-        data_nascimento: dateObject.toISOString(),
-        email: data.email,
-        como_conheceu: data.como_conheceu,
-        indicacao_nome: data.indicacao_nome || null,
-        observacoes: data.observacoes || null,
-        foto: data.foto || null,
-      });
-
-      // Insert client into Supabase
-      const { data: client, error } = await supabase
-        .from('clientes')
-        .insert([
-          {
-            nome: data.nome,
-            endereco: data.endereco,
-            numero: data.numero,
-            complemento: data.complemento || null,
-            bairro: data.bairro,
-            telefone: data.telefone,
-            cep: data.cep,
-            cidade: data.cidade,
-            estado: data.estado,
-            cpf: data.cpf,
-            data_nascimento: dateObject.toISOString(),
-            email: data.email,
-            como_conheceu: data.como_conheceu,
-            indicacao_nome: data.indicacao_nome || null,
-            observacoes: data.observacoes || null,
-            foto: data.foto || null,
-          }
-        ])
-        .select();
-        
-      console.log("Supabase response:", { client, error });
+  const onSubmit = async (values: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      const { data, error } = await supabase
+        .from("clientes")
+        .insert(values)
+        .single();
 
       if (error) {
-        console.error("Supabase error:", error);
         throw error;
       }
-      return client;
-    },
-    onSuccess: () => {
-      // Send WhatsApp message (in production you'd use a proper API/service)
-      console.log(`Enviando mensagem para ${form.getValues().telefone}: 🎟️ Olá, ${form.getValues().nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
-      
-      // Show success dialog
-      setSuccessDialogOpen(true);
-    },
-    onError: (error) => {
-      console.error("Erro ao cadastrar cliente:", error);
-      toast.error("Erro ao cadastrar cliente. Tente novamente.");
-    }
-  });
 
-  // Handle form submission
-  const onSubmit = async (values: FormValues) => {
-    addClientMutation.mutate(values);
+      toast.success("Cliente cadastrado com sucesso!");
+      navigate("/dashboard/clientes");
+    } catch (error: any) {
+      console.error("Erro ao cadastrar cliente:", error);
+      toast.error(`Erro ao cadastrar cliente: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  const fontesConhecimento: FonteConhecimento[] = [
+    "Instagram", 
+    "Indicação", 
+    "Facebook", 
+    "Google", 
+    "Outro"
+  ];
+
   return (
-    <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PersonalInfoFields 
-              form={form} 
-              calendarOpen={calendarOpen} 
-              setCalendarOpen={setCalendarOpen} 
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex flex-col items-center gap-4 mb-6">
+          <FormField
+            control={form.control}
+            name="foto"
+            render={({ field }) => (
+              <FormItem className="flex flex-col items-center">
+                <FormLabel>Foto do Cliente (opcional)</FormLabel>
+                
+                {/* Preview da foto */}
+                <div className="flex flex-col items-center gap-3">
+                  <Avatar className="h-24 w-24 border-2 border-gray-200">
+                    {clienteFoto ? (
+                      <AvatarImage 
+                        src={clienteFoto} 
+                        alt={nomeCliente || "Preview"}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-gray-100 text-gray-400 text-lg">
+                        {nomeCliente ? nomeCliente.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "FT"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  
+                  <FormControl>
+                    <FileUpload
+                      value={field.value}
+                      onChange={field.onChange}
+                      bucketName="client-photos"
+                      folderPath="clientes"
+                      maxSizeInMB={5}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="nome"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome Completo *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Nome completo" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="cpf"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CPF *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="000.000.000-00" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="data_nascimento"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Nascimento</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="date" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email *</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="email" 
+                    placeholder="exemplo@email.com" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="telefone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="(00) 00000-0000" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cep"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CEP *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="00000-000" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="endereco"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Endereço *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Rua, Avenida, etc." 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="numero"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Número *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Número" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="complemento"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Complemento</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Apartamento, bloco, etc." 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="bairro"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Bairro *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Bairro" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cidade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cidade *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Cidade" 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="estado"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="SC" 
+                    maxLength={2} 
+                    {...field} 
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {comoConheceu === "Indicação" && (
+            <FormField
+              control={form.control}
+              name="indicacao_nome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da indicação</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Nome de quem indicou" 
+                      {...field} 
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            
-            <ContactInfoFields form={form} />
-            
-            <AddressFields form={form} />
+          )}
+        </div>
 
-            <ReferralFields form={form} watchComoConheceu={watchComoConheceu} />
-          </div>
+        <FormField
+          control={form.control}
+          name="como_conheceu"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Como conheceu *</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-wrap gap-4"
+                >
+                  {fontesConhecimento.map((fonte) => (
+                    <FormItem key={fonte} className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value={fonte} />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">
+                        {fonte}
+                      </FormLabel>
+                    </FormItem>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <div className="flex justify-end mt-6">
-            <Button 
-              type="submit" 
-              className="bg-[#e40016] hover:bg-[#c20012]"
-              disabled={addClientMutation.isPending}
-            >
-              {addClientMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Cadastrando...
-                </>
-              ) : "Cadastrar Cliente"}
-            </Button>
-          </div>
-        </form>
-      </Form>
+        <FormField
+          control={form.control}
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Observações (opcional)" 
+                  {...field} 
+                  className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cliente cadastrado com sucesso!</AlertDialogTitle>
-            <AlertDialogDescription>
-              O cliente foi cadastrado com sucesso e uma notificação foi enviada pelo WhatsApp.
-              O que você deseja fazer agora?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              form.reset();
-              setSuccessDialogOpen(false);
-            }}>
-              Cadastrar Novo Cliente
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate("/dashboard/clientes")} className="bg-[#e40016] hover:bg-[#c20012]">
-              Ver Lista de Clientes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        <div className="flex justify-end gap-3">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => navigate("/dashboard/clientes")}
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Cadastrar Cliente'
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-};
+}

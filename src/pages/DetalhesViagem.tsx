@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
 import PassageiroDeleteDialog from "@/components/detalhes-viagem/PassageiroDeleteDialog";
+import { PassageiroDetailsDialog } from "@/components/detalhes-viagem/PassageiroDetailsDialog";
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
 import { PendingPaymentsCard } from "@/components/detalhes-viagem/PendingPaymentsCard";
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
@@ -29,6 +30,7 @@ const DetalhesViagem = () => {
   const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
   const [editPassageiroOpen, setEditPassageiroOpen] = useState(false);
   const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
+  const [detailsPassageiroOpen, setDetailsPassageiroOpen] = useState(false);
   const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
   
   const {
@@ -75,6 +77,11 @@ const DetalhesViagem = () => {
   const openDeletePassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);
     setDeletePassageiroOpen(true);
+  };
+
+  const openDetailsPassageiroDialog = (passageiro: any) => {
+    setSelectedPassageiro(passageiro);
+    setDetailsPassageiroOpen(true);
   };
 
   if (isLoading) {
@@ -195,6 +202,7 @@ const DetalhesViagem = () => {
         setAddPassageiroOpen={setAddPassageiroOpen}
         onEditPassageiro={openEditPassageiroDialog}
         onDeletePassageiro={openDeletePassageiroDialog}
+        onViewDetails={openDetailsPassageiroDialog}
         filterStatus={filterStatus}
       />
 
@@ -214,6 +222,12 @@ const DetalhesViagem = () => {
         onOpenChange={setEditPassageiroOpen}
         passageiro={selectedPassageiro}
         onSuccess={() => id && fetchPassageiros(id)}
+      />
+
+      <PassageiroDetailsDialog
+        open={detailsPassageiroOpen}
+        onOpenChange={setDetailsPassageiroOpen}
+        passageiro={selectedPassageiro}
       />
 
       {selectedPassageiro && (
