@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import {
@@ -116,15 +115,17 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
             value={field.value}
           >
             <FormControl>
-              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+              <SelectTrigger className="bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50">
                 <SelectValue placeholder="Selecione um ônibus" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent className="bg-white border-gray-200">
+            <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
               {onibusList.map((onibus) => (
-                <SelectItem 
-                  key={onibus.id} 
+                <SelectItem
+                  key={onibus.id}
                   value={onibus.id}
+                  disabled={!onibus.disponivel}
+                  className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
                 >
                   <div className="flex items-center justify-between w-full">
                     <span>

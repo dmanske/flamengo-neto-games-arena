@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -115,7 +114,8 @@ export function PassageiroDialog({
           viagem_passageiro_id: passageiroData.id,
           valor_parcela: parcela.valor_parcela,
           forma_pagamento: parcela.forma_pagamento,
-          observacoes: parcela.observacoes || null
+          observacoes: parcela.observacoes || null,
+          data_pagamento: parcela.data_pagamento
         }));
 
         const { error: parcelasError } = await supabase
@@ -183,15 +183,15 @@ export function PassageiroDialog({
                           <SelectValue placeholder="Selecione um setor" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white border-gray-200 z-50">
-                        <SelectItem value="A definir" className="hover:bg-gray-50 focus:bg-gray-50">A definir</SelectItem>
-                        <SelectItem value="Norte" className="hover:bg-gray-50 focus:bg-gray-50">Norte</SelectItem>
-                        <SelectItem value="Sul" className="hover:bg-gray-50 focus:bg-gray-50">Sul</SelectItem>
-                        <SelectItem value="Leste Inferior" className="hover:bg-gray-50 focus:bg-gray-50">Leste Inferior</SelectItem>
-                        <SelectItem value="Leste Superior" className="hover:bg-gray-50 focus:bg-gray-50">Leste Superior</SelectItem>
-                        <SelectItem value="Oeste" className="hover:bg-gray-50 focus:bg-gray-50">Oeste</SelectItem>
-                        <SelectItem value="Maracanã Mais" className="hover:bg-gray-50 focus:bg-gray-50">Maracanã Mais</SelectItem>
-                        <SelectItem value="Sem ingresso" className="hover:bg-gray-50 focus:bg-gray-50">Sem ingresso</SelectItem>
+                      <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                        <SelectItem value="A definir" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">A definir</SelectItem>
+                        <SelectItem value="Norte" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Norte</SelectItem>
+                        <SelectItem value="Sul" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Sul</SelectItem>
+                        <SelectItem value="Leste Inferior" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Leste Inferior</SelectItem>
+                        <SelectItem value="Leste Superior" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Leste Superior</SelectItem>
+                        <SelectItem value="Oeste" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Oeste</SelectItem>
+                        <SelectItem value="Maracanã Mais" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Maracanã Mais</SelectItem>
+                        <SelectItem value="Sem ingresso" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Sem ingresso</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -257,10 +257,10 @@ export function PassageiroDialog({
                             <SelectValue placeholder="Selecione um status" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border-gray-200 z-50">
-                          <SelectItem value="Pendente" className="hover:bg-gray-50 focus:bg-gray-50">Pendente</SelectItem>
-                          <SelectItem value="Pago" className="hover:bg-gray-50 focus:bg-gray-50">Pago</SelectItem>
-                          <SelectItem value="Cancelado" className="hover:bg-gray-50 focus:bg-gray-50">Cancelado</SelectItem>
+                        <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                          <SelectItem value="Pendente" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pendente</SelectItem>
+                          <SelectItem value="Pago" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pago</SelectItem>
+                          <SelectItem value="Cancelado" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -283,12 +283,12 @@ export function PassageiroDialog({
                             <SelectValue placeholder="Selecione uma forma" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border-gray-200 z-50">
-                          <SelectItem value="Pix" className="hover:bg-gray-50 focus:bg-gray-50">Pix</SelectItem>
-                          <SelectItem value="Cartão" className="hover:bg-gray-50 focus:bg-gray-50">Cartão</SelectItem>
-                          <SelectItem value="Boleto" className="hover:bg-gray-50 focus:bg-gray-50">Boleto</SelectItem>
-                          <SelectItem value="Paypal" className="hover:bg-gray-50 focus:bg-gray-50">Paypal</SelectItem>
-                          <SelectItem value="Outro" className="hover:bg-gray-50 focus:bg-gray-50">Outro</SelectItem>
+                        <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                          <SelectItem value="Pix" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pix</SelectItem>
+                          <SelectItem value="Cartão" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cartão</SelectItem>
+                          <SelectItem value="Boleto" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Boleto</SelectItem>
+                          <SelectItem value="Paypal" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Paypal</SelectItem>
+                          <SelectItem value="Outro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Outro</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

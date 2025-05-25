@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -85,7 +84,7 @@ export function ModernViagemDetailsLayout({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-white">
       {/* Modern Header */}
       <div className="bg-white shadow-xl border-b border-gray-100">
         <div className="container py-6">

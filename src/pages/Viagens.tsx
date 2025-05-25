@@ -350,152 +350,154 @@ const Viagens = () => {
 
   return (
     <TooltipProvider>
-      <div className="container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Viagens</h1>
-          <Button 
-            onClick={() => navigate("/dashboard/cadastrar-viagem")}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nova Viagem
-          </Button>
-        </div>
-
-        <Tabs defaultValue="ativas" className="w-full" onValueChange={(value) => setActiveTab(value as 'ativas' | 'historico')}>
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-            <TabsTrigger value="ativas" className="flex items-center gap-2">
-              <CalendarCheck className="h-4 w-4" />
-              Viagens Ativas
-            </TabsTrigger>
-            <TabsTrigger value="historico" className="flex items-center gap-2">
-              <Archive className="h-4 w-4" />
-              Histórico
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
-            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar viagem..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              
-              {activeTab === 'historico' && (
-                <Select
-                  value={periodoFiltro}
-                  onValueChange={setPeriodoFiltro}
-                >
-                  <SelectTrigger className="w-full md:w-[180px] bg-white">
-                    <SelectValue placeholder="Período" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-gray-200 z-50">
-                    <SelectItem value="todos" className="bg-white text-gray-900 hover:bg-gray-50">Todos os períodos</SelectItem>
-                    <SelectItem value="mes_atual" className="bg-white text-gray-900 hover:bg-gray-50">Mês atual</SelectItem>
-                    <SelectItem value="ano_atual" className="bg-white text-gray-900 hover:bg-gray-50">Ano atual</SelectItem>
-                    <SelectItem value="ano_anterior" className="bg-white text-gray-900 hover:bg-gray-50">Ano anterior</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              <div className="flex border rounded-md shadow-sm">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'table' ? 'default' : 'ghost'}
-                      className="rounded-r-none"
-                      onClick={() => setViewMode('table')}
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Visualização em tabela</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                      className="rounded-l-none"
-                      onClick={() => setViewMode('grid')}
-                    >
-                      <LayoutGrid className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Visualização em cards</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
+      <div className="min-h-screen bg-white">
+        <div className="container py-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Viagens</h1>
+            <Button 
+              onClick={() => navigate("/dashboard/cadastrar-viagem")}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nova Viagem
+            </Button>
           </div>
 
-          <TabsContent value="ativas">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarCheck className="h-5 w-5" />
-                  Viagens Ativas ({viagensAtivasFiltradas.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {renderViagensContent(viagensAtivasFiltradas)}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <Tabs defaultValue="ativas" className="w-full" onValueChange={(value) => setActiveTab(value as 'ativas' | 'historico')}>
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="ativas" className="flex items-center gap-2">
+                <CalendarCheck className="h-4 w-4" />
+                Viagens Ativas
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="flex items-center gap-2">
+                <Archive className="h-4 w-4" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="historico">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Archive className="h-5 w-5" />
-                  Histórico de Viagens ({viagensHistoricasFiltradas.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {renderViagensContent(viagensHistoricasFiltradas)}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* AlertDialog para confirmação de exclusão */}
-        <AlertDialog open={!!viagemToDelete} onOpenChange={(open) => {
-          if (!open) setViagemToDelete(null);
-        }}>
-          <AlertDialogContent className="bg-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="hover:text-gray-700">Cancelar</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDeleteViagem}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Excluindo...
-                  </>
-                ) : (
-                  'Excluir'
+            <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
+              <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar viagem..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                
+                {activeTab === 'historico' && (
+                  <Select
+                    value={periodoFiltro}
+                    onValueChange={setPeriodoFiltro}
+                  >
+                    <SelectTrigger className="w-full md:w-[180px] bg-white">
+                      <SelectValue placeholder="Período" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 z-50">
+                      <SelectItem value="todos" className="bg-white text-gray-900 hover:bg-gray-50">Todos os períodos</SelectItem>
+                      <SelectItem value="mes_atual" className="bg-white text-gray-900 hover:bg-gray-50">Mês atual</SelectItem>
+                      <SelectItem value="ano_atual" className="bg-white text-gray-900 hover:bg-gray-50">Ano atual</SelectItem>
+                      <SelectItem value="ano_anterior" className="bg-white text-gray-900 hover:bg-gray-50">Ano anterior</SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
+                <div className="flex border rounded-md shadow-sm">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={viewMode === 'table' ? 'default' : 'ghost'}
+                        className="rounded-r-none"
+                        onClick={() => setViewMode('table')}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Visualização em tabela</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        className="rounded-l-none"
+                        onClick={() => setViewMode('grid')}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Visualização em cards</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
+
+            <TabsContent value="ativas">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarCheck className="h-5 w-5" />
+                    Viagens Ativas ({viagensAtivasFiltradas.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {renderViagensContent(viagensAtivasFiltradas)}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="historico">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Archive className="h-5 w-5" />
+                    Histórico de Viagens ({viagensHistoricasFiltradas.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {renderViagensContent(viagensHistoricasFiltradas)}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* AlertDialog para confirmação de exclusão */}
+          <AlertDialog open={!!viagemToDelete} onOpenChange={(open) => {
+            if (!open) setViagemToDelete(null);
+          }}>
+            <AlertDialogContent className="bg-white">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir a viagem contra {viagemToDelete?.adversario}? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="hover:text-gray-700">Cancelar</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteViagem}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    'Excluir'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </TooltipProvider>
   );

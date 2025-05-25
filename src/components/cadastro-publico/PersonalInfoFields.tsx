@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { formatTelefone, formatCPF } from "@/utils/cepUtils";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Label } from "@/components/ui/label";
 
 interface PersonalInfoFieldsProps {
   control: Control<any>;
@@ -26,7 +27,7 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
         name="nome"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Nome*</FormLabel>
+            <FormLabel>Nome Completo*</FormLabel>
             <FormControl>
               <Input placeholder="Nome completo" {...field} />
             </FormControl>
@@ -78,10 +79,13 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
             <FormControl>
               <Input 
                 placeholder="000.000.000-00" 
-                {...field} 
+                {...field}
                 onChange={(e) => {
-                  field.onChange(formatCPF(e.target.value));
+                  const formatted = formatCPF(e.target.value);
+                  field.onChange(formatted);
                 }}
+                maxLength={14}
+                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
             </FormControl>
             <FormMessage />

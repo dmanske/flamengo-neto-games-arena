@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +50,17 @@ export function PassageirosCard({
   filterStatus,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+
+  // Permitir controle externo do filtro de status
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail === "Pago" || e.detail === "Pendente" || e.detail === "Cancelado") {
+        setStatusFilter(e.detail);
+      }
+    };
+    document.addEventListener("setPassageirosStatusFilter", handler);
+    return () => document.removeEventListener("setPassageirosStatusFilter", handler);
+  }, []);
 
   // Filtrar passageiros por status se necessário
   const passageirosFiltrados = passageirosAtuais.filter((passageiro) => {
@@ -140,12 +150,12 @@ export function PassageirosCard({
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>Telefone</TableHead>
+                <TableHead className="text-center">Telefone</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Setor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="text-center">Setor</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Valor</TableHead>
+                <TableHead className="text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,72 +168,86 @@ export function PassageirosCard({
                   </TableCell>
                 </TableRow>
               ) : (
-                passageirosFiltrados.map((passageiro) => (
-                  <TableRow key={passageiro.viagem_passageiro_id}>
-                    <TableCell className="font-medium">
-                      {onViewDetails ? (
-                        <button
-                          onClick={() => onViewDetails(passageiro)}
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                        >
-                          {passageiro.nome}
-                        </button>
-                      ) : (
-                        passageiro.nome
-                      )}
-                    </TableCell>
-                    <TableCell>{passageiro.telefone}</TableCell>
-                    <TableCell>{passageiro.email}</TableCell>
-                    <TableCell>{passageiro.setor_maracana}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(passageiro.status_pagamento)}>
-                        {passageiro.status_pagamento}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm">
-                          R$ {(passageiro.valor - passageiro.desconto).toFixed(2)}
+                passageirosFiltrados.map((passageiro) => {
+                  // Calcular valor pago e valor que falta
+                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
+                  const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
+                  const valorFalta = valorLiquido - valorPago;
+                  return (
+                    <TableRow key={passageiro.viagem_passageiro_id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {passageiro.foto ? (
+                            <img src={passageiro.foto} alt={passageiro.nome} className="w-8 h-8 rounded-full object-cover border" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border">
+                              <span className="text-xs">{passageiro.nome[0]}</span>
+                            </div>
+                          )}
+                          {onViewDetails ? (
+                            <button
+                              onClick={() => onViewDetails(passageiro)}
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                            >
+                              {passageiro.nome}
+                            </button>
+                          ) : (
+                            passageiro.nome
+                          )}
                         </div>
-                        {passageiro.desconto > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            (Desc: R$ {passageiro.desconto.toFixed(2)})
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        {onViewDetails && (
+                      </TableCell>
+                      <TableCell className="text-center">{passageiro.telefone}</TableCell>
+                      <TableCell>{passageiro.email}</TableCell>
+                      <TableCell className="text-center">{passageiro.setor_maracana}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={getStatusColor(passageiro.status_pagamento)}>
+                          {passageiro.status_pagamento}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-semibold">R$ {valorLiquido.toFixed(2)}</span>
+                          {passageiro.status_pagamento !== 'Pago' && (
+                            <span className="text-xs text-green-700">Pago: R$ {valorPago.toFixed(2)}</span>
+                          )}
+                          {((valorFalta > 0.009) && passageiro.status_pagamento !== 'Pago') && (
+                            <span className="text-xs text-orange-600">Falta: R$ {valorFalta.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          {onViewDetails && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onViewDetails(passageiro)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onViewDetails(passageiro)}
+                            onClick={() => onEditPassageiro(passageiro)}
                             className="h-8 w-8 p-0"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEditPassageiro(passageiro)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onDeletePassageiro(passageiro)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDeletePassageiro(passageiro)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

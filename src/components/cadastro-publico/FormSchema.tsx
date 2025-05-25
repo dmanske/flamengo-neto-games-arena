@@ -1,7 +1,40 @@
 import { z } from "zod";
 
+// Função para validar CPF
+function isValidCPF(cpf: string) {
+  cpf = cpf.replace(/[^\d]/g, '');
+  
+  if (cpf.length !== 11) return false;
+  
+  // Verifica se todos os dígitos são iguais
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  
+  // Validação do primeiro dígito verificador
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cpf.charAt(i)) * (10 - i);
+  }
+  let rest = 11 - (sum % 11);
+  let digit1 = rest > 9 ? 0 : rest;
+  
+  // Validação do segundo dígito verificador
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpf.charAt(i)) * (11 - i);
+  }
+  rest = 11 - (sum % 11);
+  let digit2 = rest > 9 ? 0 : rest;
+  
+  return digit1 === parseInt(cpf.charAt(9)) && digit2 === parseInt(cpf.charAt(10));
+}
+
 export const formSchema = z.object({
-  nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres" }),
+  nome: z.string()
+    .min(5, { message: "O nome deve ter pelo menos 5 caracteres" })
+    .refine(
+      (nome) => nome.trim().includes(' '),
+      { message: "Por favor, informe seu nome completo com sobrenome" }
+    ),
   cep: z.string().min(9, { message: "CEP é obrigatório e deve estar no formato 00000-000" }),
   endereco: z.string().min(5, { message: "Endereço é obrigatório" }),
   numero: z.string().min(1, { message: "Número é obrigatório" }),
@@ -16,7 +49,8 @@ export const formSchema = z.object({
   cpf: z
     .string()
     .min(14, { message: "CPF deve estar completo" })
-    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "Formato de CPF inválido" }),
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, { message: "Formato de CPF inválido" })
+    .refine(isValidCPF, { message: "CPF inválido" }),
   data_nascimento: z.string().refine((val) => {
     try {
       const date = new Date(val.split('/').reverse().join('-'));
@@ -27,15 +61,12 @@ export const formSchema = z.object({
   }, { message: "Data inválida. Use o formato DD/MM/AAAA" }),
   email: z.string().email({ message: "Email inválido" }),
   como_conheceu: z.enum(["Instagram", "Indicação", "Facebook", "Google", "Outro", "WhatsApp"], {
-    message: "Por favor selecione como conheceu a FlaViagens"
+    message: "Por favor selecione como conheceu a Neto Tours Viagens"
   }),
   indicacao_nome: z.string().optional(),
   observacoes: z.string().optional(),
   fonte_cadastro: z.string().optional(),
   foto: z.string().nullable().optional(),
-  passeio_cristo: z.enum(["sim", "nao"], {
-    message: "Por favor selecione se deseja fazer o passeio no Cristo Redentor"
-  }),
 });
 
 export type FormValues = z.infer<typeof formSchema>;

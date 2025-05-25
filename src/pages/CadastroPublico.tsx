@@ -6,12 +6,7 @@ const CadastroPublico = () => {
   return (
     <div className="container py-6 max-w-4xl mx-auto">
       <div className="flex justify-center mb-8">
-        <img 
-          src="https://logodetimes.com/wp-content/uploads/flamengo.png" 
-          alt="Flamengo" 
-          className="h-20 w-20"
-        />
-        <div className="ml-4 flex flex-col justify-center">
+        <div className="flex flex-col justify-center items-center text-center">
           <h1 className="text-3xl font-bold">Neto Tours Viagens</h1>
           <p className="text-sm text-gray-600">Caravanas Rubro-Negras</p>
         </div>

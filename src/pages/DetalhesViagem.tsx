@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
@@ -17,6 +16,7 @@ import { ViagemReport } from "@/components/relatorios/ViagemReport";
 import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernViagemDetailsLayout";
 import { useViagemDetails } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
+import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +51,34 @@ const DetalhesViagem = () => {
   } = useViagemDetails(id);
 
   const { reportRef, handlePrint, handleExportPDF } = useViagemReport();
+
+  const passageirosListRef = React.useRef<HTMLDivElement>(null);
+
+  // Funções para filtrar e rolar até a lista
+  const handleShowPaidOnly = () => {
+    setSearchTerm("");
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        if (passageirosListRef.current) {
+          passageirosListRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+    // Forçar filtro de pagos
+    document.dispatchEvent(new CustomEvent("setPassageirosStatusFilter", { detail: "Pago" }));
+  };
+  const handleShowPendingOnly = () => {
+    setSearchTerm("");
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        if (passageirosListRef.current) {
+          passageirosListRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+    // Forçar filtro de pendentes
+    document.dispatchEvent(new CustomEvent("setPassageirosStatusFilter", { detail: "Pendente" }));
+  };
 
   // Efeito que verifica se não há passageiros não alocados e seleciona um ônibus
   useEffect(() => {
@@ -140,14 +168,37 @@ const DetalhesViagem = () => {
         </div>
       )}
 
+      {/* Card de pagamentos pagos */}
+      <PaidPaymentsCard
+        totalPago={totalPago}
+        countPago={passageiros.filter(p => p.status_pagamento === "Pago").length}
+        onShowPaidOnly={handleShowPaidOnly}
+      />
       {/* Card de pagamentos pendentes */}
       {countPendentePayment > 0 && (
         <PendingPaymentsCard 
           totalPendente={totalPendente}
           countPendente={countPendentePayment}
-          onShowPendingOnly={togglePendingPayments}
+          onShowPendingOnly={handleShowPendingOnly}
         />
       )}
+
+      {/* Lista de Passageiros */}
+      <div ref={passageirosListRef} />
+      <PassageirosCard 
+        passageirosAtuais={passageirosAtuais}
+        passageiros={passageiros}
+        onibusAtual={onibusAtual}
+        selectedOnibusId={selectedOnibusId}
+        totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        setAddPassageiroOpen={setAddPassageiroOpen}
+        onEditPassageiro={openEditPassageiroDialog}
+        onDeletePassageiro={openDeletePassageiroDialog}
+        onViewDetails={openDetailsPassageiroDialog}
+        filterStatus={filterStatus}
+      />
 
       {/* Cards dos ônibus */}
       {onibusList.length > 0 && (
@@ -163,22 +214,6 @@ const DetalhesViagem = () => {
           />
         </div>
       )}
-
-      {/* Lista de Passageiros */}
-      <PassageirosCard 
-        passageirosAtuais={passageirosAtuais}
-        passageiros={passageiros}
-        onibusAtual={onibusAtual}
-        selectedOnibusId={selectedOnibusId}
-        totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        setAddPassageiroOpen={setAddPassageiroOpen}
-        onEditPassageiro={openEditPassageiroDialog}
-        onDeletePassageiro={openDeletePassageiroDialog}
-        onViewDetails={openDetailsPassageiroDialog}
-        filterStatus={filterStatus}
-      />
 
       {/* Modais para gerenciar passageiros */}
       <PassageiroDialog 

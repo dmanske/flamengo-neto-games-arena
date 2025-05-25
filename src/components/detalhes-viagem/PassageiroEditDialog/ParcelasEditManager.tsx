@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Parcela } from "./types";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ParcelasEditManagerProps {
   passageiroId: string;
@@ -27,7 +28,8 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
   const [novaParcela, setNovaParcela] = useState({
     valor_parcela: 0,
     forma_pagamento: "Pix",
-    observacoes: ""
+    observacoes: "",
+    data_pagamento: format(new Date(), 'yyyy-MM-dd')
   });
 
   const valorLiquido = valorTotal - desconto;
@@ -74,7 +76,8 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
           viagem_passageiro_id: passageiroId,
           valor_parcela: novaParcela.valor_parcela,
           forma_pagamento: novaParcela.forma_pagamento,
-          observacoes: novaParcela.observacoes || null
+          observacoes: novaParcela.observacoes || null,
+          data_pagamento: novaParcela.data_pagamento
         })
         .select()
         .single();
@@ -85,7 +88,8 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
       setNovaParcela({
         valor_parcela: 0,
         forma_pagamento: "Pix",
-        observacoes: ""
+        observacoes: "",
+        data_pagamento: format(new Date(), 'yyyy-MM-dd')
       });
       
       toast.success("Parcela adicionada com sucesso!");
@@ -148,7 +152,7 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
                   )}
                   {parcela.data_pagamento && (
                     <p className="text-xs text-gray-500">
-                      {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
+                      {format(new Date(parcela.data_pagamento), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   )}
                 </div>
@@ -156,7 +160,7 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => removerParcela(parcela.id)}
+                  onClick={() => removerParcela(parcela.id!)}
                   className="text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -166,75 +170,68 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
           </div>
         )}
 
-        {saldoRestante > 0 && (
-          <>
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Adicionar Nova Parcela:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Valor da Parcela</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={novaParcela.valor_parcela || ""}
-                    onChange={(e) => setNovaParcela({
-                      ...novaParcela,
-                      valor_parcela: parseFloat(e.target.value) || 0
-                    })}
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Forma de Pagamento</label>
-                  <Select 
-                    value={novaParcela.forma_pagamento}
-                    onValueChange={(value) => setNovaParcela({
-                      ...novaParcela,
-                      forma_pagamento: value
-                    })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pix">Pix</SelectItem>
-                      <SelectItem value="Cartão">Cartão</SelectItem>
-                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="Boleto">Boleto</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700">Valor da Parcela</label>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="0,00"
+              value={novaParcela.valor_parcela || ""}
+              onChange={(e) => setNovaParcela({
+                ...novaParcela,
+                valor_parcela: parseFloat(e.target.value) || 0
+              })}
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-gray-700">Forma de Pagamento</label>
+            <Select
+              value={novaParcela.forma_pagamento}
+              onValueChange={(value) => setNovaParcela({
+                ...novaParcela,
+                forma_pagamento: value
+              })}
+            >
+              <SelectTrigger className="mt-1 bg-white text-gray-900 border-gray-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                <SelectItem value="Pix" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pix</SelectItem>
+                <SelectItem value="Cartão" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cartão</SelectItem>
+                <SelectItem value="Dinheiro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Dinheiro</SelectItem>
+                <SelectItem value="Boleto" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Boleto</SelectItem>
+                <SelectItem value="Outro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Observações</label>
-                  <Input
-                    placeholder="Observações (opcional)"
-                    value={novaParcela.observacoes || ""}
-                    onChange={(e) => setNovaParcela({
-                      ...novaParcela,
-                      observacoes: e.target.value
-                    })}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700">Data do Pagamento</label>
+            <Input
+              type="date"
+              value={novaParcela.data_pagamento}
+              onChange={(e) => setNovaParcela({
+                ...novaParcela,
+                data_pagamento: e.target.value
+              })}
+              className="mt-1"
+            />
+          </div>
+        </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={adicionarParcela}
-                className="w-full mt-3 border-blue-300 text-blue-700 hover:bg-blue-50"
-                disabled={novaParcela.valor_parcela <= 0 || totalPago + novaParcela.valor_parcela > valorLiquido}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Parcela
-              </Button>
-            </div>
-          </>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={adicionarParcela}
+          className="w-full mt-3 border-blue-300 text-blue-700 hover:bg-blue-50"
+          disabled={novaParcela.valor_parcela <= 0 || totalPago + novaParcela.valor_parcela > valorLiquido}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar Parcela
+        </Button>
       </CardContent>
     </Card>
   );

@@ -24,6 +24,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export function PublicRegistrationForm() {
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,28 @@ export function PublicRegistrationForm() {
       console.log("Starting form submission with data:", data);
       
       try {
+        // Verificar duplicidade de CPF
+        const { data: existingCPF, error: cpfError } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('cpf', data.cpf)
+          .single();
+
+        if (existingCPF) {
+          throw new Error("CPF já cadastrado no sistema");
+        }
+
+        // Verificar duplicidade de telefone
+        const { data: existingPhone, error: phoneError } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('telefone', data.telefone)
+          .single();
+
+        if (existingPhone) {
+          throw new Error("Telefone já cadastrado no sistema");
+        }
+
         // Convert string date to Date object for API
         const dateParts = data.data_nascimento.split('/');
         const dateObject = new Date(
@@ -106,7 +130,10 @@ export function PublicRegistrationForm() {
         return client;
       } catch (error: any) {
         console.error("Error in mutation function:", error);
-        throw error;
+        if (error.message === "CPF já cadastrado no sistema" || error.message === "Telefone já cadastrado no sistema") {
+          throw error;
+        }
+        throw new Error("Erro ao cadastrar cliente. Tente novamente.");
       }
     },
     onSuccess: () => {
@@ -117,9 +144,15 @@ export function PublicRegistrationForm() {
       // Show success dialog
       setSuccessDialogOpen(true);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Erro ao cadastrar cliente:", error);
-      toast.error("Erro ao cadastrar cliente. Tente novamente.");
+      if (error.message === "CPF já cadastrado no sistema") {
+        toast.error("Este CPF já está cadastrado no sistema. Por favor, verifique os dados ou entre em contato conosco.");
+      } else if (error.message === "Telefone já cadastrado no sistema") {
+        toast.error("Este telefone já está cadastrado no sistema. Por favor, verifique os dados ou entre em contato conosco.");
+      } else {
+        toast.error("Erro ao cadastrar cliente. Tente novamente.");
+      }
     }
   });
 
@@ -235,24 +268,29 @@ export function PublicRegistrationForm() {
             <div className="col-span-1 md:col-span-2">
               <FormField
                 control={form.control}
-                name="passeio_cristo"
+                name="fonte_cadastro"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Deseja fazer o passeio no Cristo Redentor?*</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione uma opção" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="sim">Sim</SelectItem>
-                        <SelectItem value="nao">Não</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Fonte do Cadastro</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <FormField
+                control={form.control}
+                name="observacoes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

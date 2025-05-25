@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useBusStats } from "@/hooks/useBusStats";
@@ -132,7 +131,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="container py-6">
         {/* Modern Dashboard Header */}
         <DashboardHeader />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { PassageiroDisplay } from '@/hooks/useViagemDetails';
@@ -53,10 +52,6 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
       minute: '2-digit'
     });
 
-    // Estatísticas do Cristo Redentor
-    const passageirosSim = passageiros.filter(p => p.passeio_cristo === 'sim');
-    const passageirosNao = passageiros.filter(p => p.passeio_cristo === 'nao');
-
     // Estatísticas por setor
     const passageirosPorSetor = passageiros.reduce((acc, p) => {
       const setor = p.setor_maracana || 'Não informado';
@@ -107,23 +102,6 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
             </div>
           </div>
         </div>
-
-        {/* Estatísticas do Cristo Redentor */}
-        {(passageirosSim.length > 0 || passageirosNao.length > 0) && (
-          <div className="mb-8">
-            <h3 className="font-semibold text-gray-800 mb-4 text-lg">Passeio Cristo Redentor</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-700 mb-2">Confirmaram o Passeio</h4>
-                <p className="text-2xl font-bold text-green-600">{passageirosSim.length}</p>
-              </div>
-              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                <h4 className="font-medium text-red-700 mb-2">Não Farão o Passeio</h4>
-                <p className="text-2xl font-bold text-red-600">{passageirosNao.length}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Setores do Maracanã */}
         {Object.keys(passageirosPorSetor).length > 0 && (

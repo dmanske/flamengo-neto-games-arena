@@ -32,8 +32,16 @@ export interface PassageiroDisplay {
   id: string;
   nome: string;
   telefone: string;
-  cidade: string;
+  email: string;
   cpf: string;
+  cidade: string;
+  estado: string;
+  endereco: string;
+  numero: string;
+  bairro: string;
+  cep: string;
+  complemento?: string;
+  data_nascimento?: string;
   setor_maracana: string;
   status_pagamento: string;
   forma_pagamento: string;
@@ -44,6 +52,14 @@ export interface PassageiroDisplay {
   onibus_id?: string | null;
   viagem_id: string;
   passeio_cristo?: string;
+  foto?: string | null;
+  parcelas?: Array<{
+    id: string;
+    valor_parcela: number;
+    forma_pagamento: string;
+    data_pagamento: string;
+    observacoes?: string;
+  }>;
 }
 
 export interface Onibus {
@@ -162,7 +178,6 @@ export function useViagemDetails(viagemId: string | undefined) {
   const fetchPassageiros = async (viagemId: string) => {
     try {
       // Buscar passageiros da viagem com dados do cliente usando a relação específica
-      // Adicionamos '!viagem_passageiros_cliente_id_fkey' para especificar exatamente qual relação usar
       const { data, error } = await supabase
         .from("viagem_passageiros")
         .select(`
@@ -176,7 +191,30 @@ export function useViagemDetails(viagemId: string | undefined) {
           desconto,
           created_at,
           onibus_id,
-          clientes!viagem_passageiros_cliente_id_fkey (id, nome, telefone, cidade, cpf, passeio_cristo)
+          clientes!viagem_passageiros_cliente_id_fkey (
+            id,
+            nome,
+            telefone,
+            email,
+            cpf,
+            cidade,
+            estado,
+            endereco,
+            numero,
+            bairro,
+            cep,
+            complemento,
+            data_nascimento,
+            passeio_cristo,
+            foto
+          ),
+          viagem_passageiros_parcelas (
+            id,
+            valor_parcela,
+            forma_pagamento,
+            data_pagamento,
+            observacoes
+          )
         `)
         .eq("viagem_id", viagemId);
       
@@ -187,8 +225,16 @@ export function useViagemDetails(viagemId: string | undefined) {
         id: item.clientes.id,
         nome: item.clientes.nome,
         telefone: item.clientes.telefone,
-        cidade: item.clientes.cidade,
+        email: item.clientes.email,
         cpf: item.clientes.cpf,
+        cidade: item.clientes.cidade,
+        estado: item.clientes.estado,
+        endereco: item.clientes.endereco,
+        numero: item.clientes.numero,
+        bairro: item.clientes.bairro,
+        cep: item.clientes.cep,
+        complemento: item.clientes.complemento,
+        data_nascimento: item.clientes.data_nascimento,
         setor_maracana: item.setor_maracana,
         status_pagamento: item.status_pagamento,
         forma_pagamento: item.forma_pagamento || "Pix",
@@ -199,6 +245,8 @@ export function useViagemDetails(viagemId: string | undefined) {
         onibus_id: item.onibus_id,
         viagem_id: item.viagem_id,
         passeio_cristo: item.clientes.passeio_cristo,
+        foto: item.clientes.foto || null,
+        parcelas: item.viagem_passageiros_parcelas
       }));
       
       // Sort passengers alphabetically by name

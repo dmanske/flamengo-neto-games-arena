@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Plus, Trash2, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { Parcela } from "./types";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ParcelasManagerProps {
   valorTotal: number;
@@ -26,7 +27,8 @@ export function ParcelasManager({ valorTotal, desconto, parcelas, setParcelas }:
   const [novaParcela, setNovaParcela] = useState<Omit<Parcela, 'id'>>({
     valor_parcela: 0,
     forma_pagamento: "Pix",
-    observacoes: ""
+    observacoes: "",
+    data_pagamento: format(new Date(), 'yyyy-MM-dd')
   });
 
   const valorLiquido = valorTotal - desconto;
@@ -48,7 +50,8 @@ export function ParcelasManager({ valorTotal, desconto, parcelas, setParcelas }:
     setNovaParcela({
       valor_parcela: 0,
       forma_pagamento: "Pix",
-      observacoes: ""
+      observacoes: "",
+      data_pagamento: format(new Date(), 'yyyy-MM-dd')
     });
   };
 
@@ -91,6 +94,11 @@ export function ParcelasManager({ valorTotal, desconto, parcelas, setParcelas }:
                   {parcela.observacoes && (
                     <p className="text-xs text-gray-600 mt-1">{parcela.observacoes}</p>
                   )}
+                  {parcela.data_pagamento && (
+                    <p className="text-xs text-gray-500">
+                      {format(new Date(parcela.data_pagamento), 'dd/MM/yyyy', { locale: ptBR })}
+                    </p>
+                  )}
                 </div>
                 <Button
                   type="button"
@@ -106,7 +114,7 @@ export function ParcelasManager({ valorTotal, desconto, parcelas, setParcelas }:
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label className="text-sm font-medium text-gray-700">Valor da Parcela</label>
             <Input
@@ -131,17 +139,30 @@ export function ParcelasManager({ valorTotal, desconto, parcelas, setParcelas }:
                 forma_pagamento: value
               })}
             >
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-white text-gray-900 border-gray-300">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Pix">Pix</SelectItem>
-                <SelectItem value="Cartão">Cartão</SelectItem>
-                <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="Boleto">Boleto</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
+              <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                <SelectItem value="Pix" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pix</SelectItem>
+                <SelectItem value="Cartão" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cartão</SelectItem>
+                <SelectItem value="Dinheiro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Dinheiro</SelectItem>
+                <SelectItem value="Boleto" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Boleto</SelectItem>
+                <SelectItem value="Outro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Outro</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700">Data do Pagamento</label>
+            <Input
+              type="date"
+              value={novaParcela.data_pagamento}
+              onChange={(e) => setNovaParcela({
+                ...novaParcela,
+                data_pagamento: e.target.value
+              })}
+              className="mt-1"
+            />
           </div>
 
           <div>
