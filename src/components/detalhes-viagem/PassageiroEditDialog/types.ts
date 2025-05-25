@@ -10,3 +10,18 @@ export interface OnibusOption {
   disponivel?: boolean;
   capacidade_total?: number;
 }
+
+export interface Parcela {
+  id?: string;
+  valor_parcela: number;
+  forma_pagamento: string;
+  observacoes?: string;
+  data_pagamento?: string;
+}
+
+export interface PassageiroEditDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  passageiro: any;
+  onSuccess: () => void;
+}
