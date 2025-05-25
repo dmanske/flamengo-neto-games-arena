@@ -10,7 +10,7 @@ import { FonteConhecimento } from "@/types/entities";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useClientValidation } from "@/hooks/useClientValidation";
-import { formatPhone, formatCPF, cleanPhone, cleanCPF } from "@/utils/formatters";
+import { formatPhone, formatCPF, cleanPhone, cleanCPF, formatDate } from "@/utils/formatters";
 import { formSchema as clienteFormSchema } from "@/components/cadastro-publico/FormSchema";
 
 import {
@@ -100,25 +100,23 @@ export function ClienteForm() {
       // Tratar a data de nascimento
       if (dataToSave.data_nascimento && dataToSave.data_nascimento.trim() !== '') {
         try {
-          // Tenta converter a data no formato DD/MM/AAAA
+          // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
           const dateParts = dataToSave.data_nascimento.split('/');
           if (dateParts.length === 3) {
-            const dateObj = new Date(
-              parseInt(dateParts[2]), // year
-              parseInt(dateParts[1]) - 1, // month (0-based)
-              parseInt(dateParts[0]) // day
-            );
-            dateObj.setHours(12, 0, 0, 0);
-            dataToSave.data_nascimento = dateObj.toISOString();
-          } else {
-            // Se não estiver no formato esperado, tenta converter diretamente
-            const date = new Date(dataToSave.data_nascimento);
-            if (!isNaN(date.getTime())) {
-              date.setHours(12, 0, 0, 0);
-              dataToSave.data_nascimento = date.toISOString();
-            } else {
-              dataToSave.data_nascimento = null;
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]);
+            let year = parseInt(dateParts[2]);
+            
+            // Converter anos de 2 dígitos para 4 dígitos
+            if (year < 100) {
+              // Se o ano for menor que 30, assume 20xx, senão 19xx
+              year = year < 30 ? 2000 + year : 1900 + year;
             }
+            
+            // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
+            dataToSave.data_nascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+          } else {
+            dataToSave.data_nascimento = null;
           }
         } catch (error) {
           console.error("Erro ao converter data de nascimento:", error);
@@ -244,8 +242,13 @@ export function ClienteForm() {
                 <FormLabel>Data de Nascimento</FormLabel>
                 <FormControl>
                   <Input 
-                    type="date" 
-                    {...field} 
+                    placeholder="DD/MM/AAAA" 
+                    {...field}
+                    onChange={(e) => {
+                      const formatted = formatDate(e.target.value);
+                      field.onChange(formatted);
+                    }}
+                    maxLength={10}
                     className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                   />
                 </FormControl>

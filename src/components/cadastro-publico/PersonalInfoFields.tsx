@@ -10,6 +10,7 @@ import { format, parse } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import { formatTelefone, formatCPF } from "@/utils/cepUtils";
+import { formatDate } from "@/utils/formatters";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Label } from "@/components/ui/label";
 
@@ -104,6 +105,11 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
                 <Input
                   placeholder="DD/MM/AAAA"
                   {...field}
+                  onChange={(e) => {
+                    const formatted = formatDate(e.target.value);
+                    field.onChange(formatted);
+                  }}
+                  maxLength={10}
                 />
               </FormControl>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>

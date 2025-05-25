@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { UseFormReturn } from "react-hook-form";
 import { FileUpload } from "@/components/ui/file-upload";
 import { formatCPF } from "@/utils/cepUtils";
+import { formatDate } from "@/utils/formatters";
 
 interface PersonalInfoFieldsProps {
   form: UseFormReturn<any>;
@@ -85,6 +86,11 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
                 <Input
                   placeholder="DD/MM/AAAA"
                   {...field}
+                  onChange={(e) => {
+                    const formatted = formatDate(e.target.value);
+                    field.onChange(formatted);
+                  }}
+                  maxLength={10}
                 />
               </FormControl>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>

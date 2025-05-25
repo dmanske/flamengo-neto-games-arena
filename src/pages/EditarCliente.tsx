@@ -102,10 +102,19 @@ const EditarCliente = () => {
           // Formatar a data para o formato do input date
           let formattedData = { ...data };
           if (formattedData.data_nascimento) {
-            // Fix timezone issues by parsing with UTC and formatting for local display
-            const dateObj = new Date(formattedData.data_nascimento);
-            dateObj.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-            formattedData.data_nascimento = format(dateObj, "yyyy-MM-dd");
+            // Se já está no formato YYYY-MM-DD, usar diretamente
+            if (formattedData.data_nascimento.includes('-') && formattedData.data_nascimento.length === 10) {
+              // Já está no formato correto
+            } else {
+              // Converter de timestamp para YYYY-MM-DD
+              const dateObj = new Date(formattedData.data_nascimento);
+              if (!isNaN(dateObj.getTime())) {
+                const year = dateObj.getFullYear();
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                formattedData.data_nascimento = `${year}-${month}-${day}`;
+              }
+            }
           }
           
           // Format phone and CPF for display
@@ -150,22 +159,29 @@ const EditarCliente = () => {
       // Tratar a data de nascimento
       if (formattedValues.data_nascimento && formattedValues.data_nascimento.trim() !== '') {
         try {
-          // Tenta converter a data no formato DD/MM/AAAA
+          // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
           const dateParts = formattedValues.data_nascimento.split('/');
           if (dateParts.length === 3) {
-            const dateObj = new Date(
-              parseInt(dateParts[2]), // year
-              parseInt(dateParts[1]) - 1, // month (0-based)
-              parseInt(dateParts[0]) // day
-            );
-            dateObj.setHours(12, 0, 0, 0);
-            formattedValues.data_nascimento = dateObj.toISOString();
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]);
+            let year = parseInt(dateParts[2]);
+            
+            // Converter anos de 2 dígitos para 4 dígitos
+            if (year < 100) {
+              // Se o ano for menor que 30, assume 20xx, senão 19xx
+              year = year < 30 ? 2000 + year : 1900 + year;
+            }
+            
+            // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
+            formattedValues.data_nascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
           } else {
             // Se não estiver no formato esperado, tenta converter diretamente
             const date = new Date(formattedValues.data_nascimento);
             if (!isNaN(date.getTime())) {
-              date.setHours(12, 0, 0, 0);
-              formattedValues.data_nascimento = date.toISOString();
+              const year = date.getFullYear();
+              const month = (date.getMonth() + 1).toString().padStart(2, '0');
+              const day = date.getDate().toString().padStart(2, '0');
+              formattedValues.data_nascimento = `${year}-${month}-${day}`;
             } else {
               formattedValues.data_nascimento = null;
             }

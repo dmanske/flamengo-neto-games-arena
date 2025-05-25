@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { User, MapPin, CreditCard, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatBirthDate } from "@/utils/formatters";
 
 interface PassageiroDetails {
   viagem_passageiro_id: string;
@@ -107,7 +108,7 @@ export function PassageiroDetailsDialog({
                     <div>
                       <span className="text-sm font-medium text-gray-600">Data de Nascimento:</span>
                       <p className="text-sm">
-                        {format(new Date(passageiro.data_nascimento), 'dd/MM/yyyy', { locale: ptBR })}
+                        {formatBirthDate(passageiro.data_nascimento)}
                       </p>
                     </div>
                   )}

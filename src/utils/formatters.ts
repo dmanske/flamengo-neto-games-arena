@@ -1,4 +1,3 @@
-
 export const formatPhone = (phone: string): string => {
   if (!phone) return '';
   
@@ -27,6 +26,56 @@ export const formatCPF = (cpf: string): string => {
   }
   
   return cpf;
+};
+
+export const formatDate = (date: string): string => {
+  if (!date) return '';
+  
+  // Remove all non-numeric characters
+  const numbers = date.replace(/\D/g, '');
+  
+  // Format as DD/MM/AAAA
+  if (numbers.length <= 2) {
+    return numbers;
+  }
+  if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+  }
+  if (numbers.length <= 6) {
+    // Para anos de 2 dígitos, mostrar como está
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 6)}`;
+  }
+  if (numbers.length <= 8) {
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+  }
+  
+  // Limit to 8 digits (DDMMAAAA)
+  return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+};
+
+export const formatBirthDate = (dateString: string | null): string => {
+  if (!dateString) return 'Data não informada';
+  
+  try {
+    // Se a data está no formato YYYY-MM-DD, converter diretamente
+    if (dateString.includes('-') && dateString.length === 10) {
+      const [year, month, day] = dateString.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Caso contrário, tentar converter usando Date
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    
+    return 'Data inválida';
+  } catch (error) {
+    return 'Data inválida';
+  }
 };
 
 export const cleanPhone = (phone: string): string => {

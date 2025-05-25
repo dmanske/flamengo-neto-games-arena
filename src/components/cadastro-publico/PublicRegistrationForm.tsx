@@ -70,24 +70,24 @@ export function PublicRegistrationForm() {
         let dataNascimento = null;
         if (data.data_nascimento && data.data_nascimento.trim() !== '') {
           try {
-            // Tenta converter a data no formato DD/MM/AAAA
+            // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
             const dateParts = data.data_nascimento.split('/');
             if (dateParts.length === 3) {
-              dataNascimento = new Date(
-                parseInt(dateParts[2]), // year
-                parseInt(dateParts[1]) - 1, // month (0-based)
-                parseInt(dateParts[0]) // day
-              ).toISOString();
-            } else {
-              // Se não estiver no formato esperado, tenta converter diretamente
-              const date = new Date(data.data_nascimento);
-              if (!isNaN(date.getTime())) {
-                dataNascimento = date.toISOString();
+              const day = parseInt(dateParts[0]);
+              const month = parseInt(dateParts[1]);
+              let year = parseInt(dateParts[2]);
+              
+              // Converter anos de 2 dígitos para 4 dígitos
+              if (year < 100) {
+                // Se o ano for menor que 30, assume 20xx, senão 19xx
+                year = year < 30 ? 2000 + year : 1900 + year;
               }
+              
+              // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
+              dataNascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             }
           } catch (error) {
             console.error("Erro ao converter data de nascimento:", error);
-            // Se houver erro na conversão, mantém como null
           }
         }
 

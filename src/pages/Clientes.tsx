@@ -29,7 +29,8 @@ import { Loader2, Search, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
-import { formatPhone, formatCPF } from "@/utils/formatters";
+import { formatPhone, formatCPF, formatBirthDate } from "@/utils/formatters";
+import { fixExistingDates } from "@/utils/fixDates";
 
 // Type for the cliente object
 interface Cliente {
@@ -55,6 +56,7 @@ const Clientes = () => {
   const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showPhotos, setShowPhotos] = useState(true);
+  const [isFixingDates, setIsFixingDates] = useState(false);
 
   // Fetch clientes from Supabase
   const fetchClientes = async () => {
@@ -132,14 +134,26 @@ const Clientes = () => {
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Data não informada';
-    
+  // Handle fix dates
+  const handleFixDates = async () => {
     try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
-    } catch (error) {
-      return 'Data inválida';
+      setIsFixingDates(true);
+      const result = await fixExistingDates();
+      if (result) {
+        const message = `Correção concluída: ${result.corrected} datas corrigidas, ${result.skipped || 0} já estavam corretas`;
+        if (result.errors > 0) {
+          toast.warning(`${message}, ${result.errors} erros encontrados`);
+        } else {
+          toast.success(message);
+        }
+        // Recarregar a lista de clientes
+        await fetchClientes();
+      }
+    } catch (error: any) {
+      console.error('Erro ao corrigir datas:', error);
+      toast.error('Erro ao corrigir datas: ' + error.message);
+    } finally {
+      setIsFixingDates(false);
     }
   };
 
@@ -193,6 +207,21 @@ const Clientes = () => {
               Mostrar fotos
             </label>
           </div>
+          <Button 
+            onClick={handleFixDates}
+            disabled={isFixingDates}
+            variant="outline"
+            className="w-full md:w-auto"
+          >
+            {isFixingDates ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Corrigindo...
+              </>
+            ) : (
+              'Corrigir Datas'
+            )}
+          </Button>
           <Button 
             className="bg-primary hover:bg-primary/90 w-full md:w-auto"
             asChild
@@ -267,7 +296,7 @@ const Clientes = () => {
                       <TableCell className="font-cinzel font-semibold text-center text-black">{(cliente.email || '').toLowerCase()}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.cidade}/{cliente.estado}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{formatCPF(cliente.cpf)}</TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black">{formatDate(cliente.data_nascimento)}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{formatBirthDate(cliente.data_nascimento)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-2">
                           <Button 
