@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,27 +69,29 @@ const Loja = () => {
     }
   };
 
-  const handleAdicionarCarrinho = (item: any, tipo: 'viagem' | 'produto') => {
-    if (tipo === 'viagem') {
-      adicionarAoCarrinho({
-        id: item.id,
-        nome: `Flamengo x ${item.adversario}`,
-        preco: item.valor_padrao,
-        tipo: 'viagem',
-        descricao: item.descricao_loja || item.rota,
-        data: formatDate(item.data_jogo)
-      });
-    } else {
-      adicionarAoCarrinho({
-        id: item.id,
-        nome: item.nome,
-        preco: item.preco,
-        tipo: 'produto',
-        descricao: item.descricao
-      });
-    }
+  const handleAdicionarViagemCarrinho = (viagem: Viagem) => {
+    adicionarAoCarrinho({
+      id: viagem.id,
+      nome: `Flamengo x ${viagem.adversario}`,
+      preco: viagem.valor_padrao,
+      tipo: 'viagem',
+      descricao: viagem.descricao_loja || viagem.rota,
+      data: formatDate(viagem.data_jogo)
+    });
     
-    toast.success(`${tipo === 'viagem' ? 'Viagem' : 'Produto'} adicionado ao carrinho!`);
+    toast.success('Viagem adicionada ao carrinho!');
+  };
+
+  const handleAdicionarProdutoCarrinho = (produto: any) => {
+    adicionarAoCarrinho({
+      id: produto.id,
+      nome: produto.nome,
+      preco: produto.preco,
+      tipo: 'produto',
+      descricao: produto.descricao
+    });
+    
+    toast.success('Produto adicionado ao carrinho!');
   };
 
   const verificarEmail = async () => {
@@ -303,7 +306,7 @@ const Loja = () => {
                           key={viagem.id}
                           viagem={viagem}
                           isDestaque={true}
-                          onAdicionarCarrinho={handleAdicionarCarrinho}
+                          onAdicionarCarrinho={handleAdicionarViagemCarrinho}
                         />
                       ))}
                     </div>
@@ -322,7 +325,7 @@ const Loja = () => {
                           key={viagem.id}
                           viagem={viagem}
                           isDestaque={false}
-                          onAdicionarCarrinho={handleAdicionarCarrinho}
+                          onAdicionarCarrinho={handleAdicionarViagemCarrinho}
                         />
                       ))}
                     </div>
@@ -371,7 +374,7 @@ const Loja = () => {
                         <ProdutoCard
                           key={produto.id}
                           produto={produto}
-                          onAdicionarCarrinho={handleAdicionarCarrinho}
+                          onAdicionarCarrinho={handleAdicionarProdutoCarrinho}
                         />
                       ))}
                     </div>
@@ -389,7 +392,7 @@ const Loja = () => {
                         <ProdutoCard
                           key={produto.id}
                           produto={produto}
-                          onAdicionarCarrinho={handleAdicionarCarrinho}
+                          onAdicionarCarrinho={handleAdicionarProdutoCarrinho}
                         />
                       ))}
                     </div>
@@ -575,7 +578,7 @@ const ProdutoCard = ({
   onAdicionarCarrinho 
 }: { 
   produto: any; 
-  onAdicionarCarrinho: (produto: any, tipo: 'produto') => void;
+  onAdicionarCarrinho: (produto: any) => void;
 }) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -631,7 +634,7 @@ const ProdutoCard = ({
           
           <div className="space-y-2">
             <Button
-              onClick={() => onAdicionarCarrinho(produto, 'produto')}
+              onClick={() => onAdicionarCarrinho(produto)}
               variant="outline"
               disabled={!produto.em_estoque}
               className="w-full border-red-500 text-red-400 hover:bg-red-500 hover:text-white py-3 rounded-xl font-bold text-lg transition-all duration-200 disabled:opacity-50"
