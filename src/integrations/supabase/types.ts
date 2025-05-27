@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      adversarios: {
+        Row: {
+          id: string
+          logo_url: string
+          nome: string
+        }
+        Insert: {
+          id?: string
+          logo_url: string
+          nome: string
+        }
+        Update: {
+          id?: string
+          logo_url?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           bairro: string
@@ -145,6 +163,41 @@ export type Database = {
             columns: ["onibus_id"]
             isOneToOne: false
             referencedRelation: "onibus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passageiro_passeios: {
+        Row: {
+          created_at: string
+          id: string
+          passeio_nome: string
+          status: string
+          updated_at: string
+          viagem_passageiro_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          passeio_nome: string
+          status?: string
+          updated_at?: string
+          viagem_passageiro_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          passeio_nome?: string
+          status?: string
+          updated_at?: string
+          viagem_passageiro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passageiro_passeios_viagem_passageiro_id_fkey"
+            columns: ["viagem_passageiro_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_passageiros"
             referencedColumns: ["id"]
           },
         ]
@@ -363,46 +416,46 @@ export type Database = {
       }
       viagem_passageiros: {
         Row: {
+          cidade_embarque: string
           cliente_id: string
           created_at: string
           desconto: number | null
           forma_pagamento: string
           id: string
+          observacoes: string | null
           onibus_id: string | null
           setor_maracana: string
           status_pagamento: string
           valor: number | null
           viagem_id: string
-          cidade_embarque: string
-          observacoes: string | null
         }
         Insert: {
+          cidade_embarque?: string
           cliente_id: string
           created_at?: string
           desconto?: number | null
           forma_pagamento?: string
           id?: string
+          observacoes?: string | null
           onibus_id?: string | null
           setor_maracana?: string
           status_pagamento?: string
           valor?: number | null
           viagem_id: string
-          cidade_embarque?: string
-          observacoes?: string | null
         }
         Update: {
+          cidade_embarque?: string
           cliente_id?: string
           created_at?: string
           desconto?: number | null
           forma_pagamento?: string
           id?: string
+          observacoes?: string | null
           onibus_id?: string | null
           setor_maracana?: string
           status_pagamento?: string
           valor?: number | null
           viagem_id?: string
-          cidade_embarque?: string
-          observacoes?: string | null
         }
         Relationships: [
           {
@@ -491,13 +544,15 @@ export type Database = {
         Row: {
           adversario: string
           capacidade_onibus: number
+          cidade_embarque: string
           created_at: string
           data_jogo: string
           empresa: string
           id: string
           logo_adversario: string | null
           logo_flamengo: string | null
-          rota: string
+          outro_passeio: string | null
+          passeios_pagos: string[] | null
           setor_padrao: string | null
           status_viagem: string
           tipo_onibus: string
@@ -506,13 +561,15 @@ export type Database = {
         Insert: {
           adversario: string
           capacidade_onibus: number
+          cidade_embarque?: string
           created_at?: string
           data_jogo: string
           empresa: string
           id?: string
           logo_adversario?: string | null
           logo_flamengo?: string | null
-          rota: string
+          outro_passeio?: string | null
+          passeios_pagos?: string[] | null
           setor_padrao?: string | null
           status_viagem?: string
           tipo_onibus: string
@@ -521,13 +578,15 @@ export type Database = {
         Update: {
           adversario?: string
           capacidade_onibus?: number
+          cidade_embarque?: string
           created_at?: string
           data_jogo?: string
           empresa?: string
           id?: string
           logo_adversario?: string | null
           logo_flamengo?: string | null
-          rota?: string
+          outro_passeio?: string | null
+          passeios_pagos?: string[] | null
           setor_padrao?: string | null
           status_viagem?: string
           tipo_onibus?: string
