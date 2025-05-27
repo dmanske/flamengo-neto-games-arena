@@ -232,7 +232,7 @@ const LojaAdmin = () => {
           
           <div className="flex gap-4">
             <ModernButton 
-              variant="outline" 
+              variant="secondary" 
               onClick={() => window.open('/loja', '_blank')}
             >
               <Eye className="mr-2 h-4 w-4" />
@@ -348,7 +348,7 @@ const LojaAdmin = () => {
 
       {/* Status da Loja */}
       <div className="mb-6">
-        <EnhancedCard variant={lojaConfig.ativa ? "success" : "warning"} className="p-4">
+        <EnhancedCard variant={lojaConfig.ativa ? "elevated" : "glass"} className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${lojaConfig.ativa ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
