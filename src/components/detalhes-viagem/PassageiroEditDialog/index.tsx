@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,26 +39,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-interface PassageiroEditDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  passageiro: {
-    viagem_passageiro_id: number;
-    setor_maracana?: string;
-    status_pagamento?: string;
-    forma_pagamento?: string;
-    valor?: number;
-    desconto?: number;
-    onibus_id?: number;
-    cidade_embarque?: string;
-    observacoes?: string;
-    passeios?: { passeio_nome: string; status: string }[];
-  } | null;
-  onSuccess: () => void;
-  passeiosPagos?: string[];
-  outroPasseio?: string | null;
-}
-
 export function PassageiroEditDialog({
   open,
   onOpenChange,
@@ -94,7 +75,7 @@ export function PassageiroEditDialog({
         forma_pagamento: passageiro.forma_pagamento || "",
         valor: passageiro.valor || 0,
         desconto: passageiro.desconto || 0,
-        onibus_id: passageiro.onibus_id || null,
+        onibus_id: passageiro.onibus_id?.toString() || "",
         cidade_embarque: passageiro.cidade_embarque || "",
         observacoes: passageiro.observacoes || "",
         passeios: passageiro.passeios?.map(p => ({
@@ -207,7 +188,7 @@ export function PassageiroEditDialog({
                     control={form.control}
                     form={form}
                     viagemId={passageiro?.viagem_id}
-                    defaultOnibusId={passageiro?.onibus_id}
+                    currentOnibusId={passageiro?.onibus_id}
                     className="bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50"
                     selectClassName="bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50"
                     optionClassName="bg-white text-gray-900 hover:bg-blue-50 focus:bg-blue-100"
@@ -462,7 +443,7 @@ export function PassageiroEditDialog({
 
                 {/* Sistema de Parcelas */}
                 <ParcelasEditManager
-                  passageiroId={passageiro.viagem_passageiro_id}
+                  passageiroId={passageiro.viagem_passageiro_id.toString()}
                   valorTotal={valorTotal}
                   desconto={desconto}
                 />

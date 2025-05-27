@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import {
@@ -27,18 +28,33 @@ import { OnibusOption } from "./types";
 interface OnibusSelectFieldProps {
   control: any;
   form: any;
-  viagemId: string;
+  viagemId?: string;
   currentOnibusId?: string;
+  className?: string;
+  selectClassName?: string;
+  optionClassName?: string;
 }
 
-export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: OnibusSelectFieldProps) {
+export function OnibusSelectField({ 
+  control, 
+  form, 
+  viagemId, 
+  currentOnibusId,
+  className,
+  selectClassName,
+  optionClassName
+}: OnibusSelectFieldProps) {
   const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
 
   useEffect(() => {
-    fetchOnibus();
+    if (viagemId) {
+      fetchOnibus();
+    }
   }, [viagemId]);
 
   const fetchOnibus = async () => {
+    if (!viagemId) return;
+    
     try {
       const { data: onibusData, error: onibusError } = await supabase
         .from("viagem_onibus")
@@ -97,7 +113,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
       name="onibus_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="flex items-center gap-2 text-gray-700">
+          <FormLabel className={`flex items-center gap-2 text-gray-700 ${className || ''}`}>
             Ônibus
             {ocupacaoInfo && !ocupacaoInfo.disponivel && (
               <Tooltip>
@@ -115,7 +131,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
             value={field.value}
           >
             <FormControl>
-              <SelectTrigger className="bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50">
+              <SelectTrigger className={selectClassName || "bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50"}>
                 <SelectValue placeholder="Selecione um ônibus" />
               </SelectTrigger>
             </FormControl>
@@ -125,7 +141,7 @@ export function OnibusSelectField({ control, form, viagemId, currentOnibusId }: 
                   key={onibus.id}
                   value={onibus.id}
                   disabled={!onibus.disponivel}
-                  className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+                  className={optionClassName || "hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"}
                 >
                   <div className="flex items-center justify-between w-full">
                     <span>

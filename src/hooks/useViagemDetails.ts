@@ -17,6 +17,8 @@ export interface Viagem {
   logo_flamengo: string | null;
   valor_padrao: number | null;
   setor_padrao: string | null;
+  passeios_pagos?: string[];
+  outro_passeio?: string | null;
 }
 
 export interface Cliente {
