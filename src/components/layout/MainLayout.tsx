@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -156,8 +156,14 @@ const MainLayout = () => {
           />
           <NavItem 
             icon={<Store className="h-5 w-5" />} 
-            title="Loja" 
+            title="Loja Pública" 
             to="/dashboard/loja" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<Settings className="h-5 w-5" />} 
+            title="Admin Loja" 
+            to="/dashboard/loja-admin" 
             onClick={closeMenu} 
           />
           <NavItem 

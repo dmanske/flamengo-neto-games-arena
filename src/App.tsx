@@ -33,6 +33,7 @@ import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
 import Loja from '@/pages/Loja';
+import LojaAdmin from '@/pages/LojaAdmin';
 
 // Landing Page
 import LandingPage from "@/pages/LandingPage";
@@ -85,6 +86,7 @@ function App() {
                   <Route path="whatsapp" element={<GerenciadorWhatsApp />} />
                   <Route path="pagamentos" element={<Pagamentos />} />
                   <Route path="loja" element={<Loja />} />
+                  <Route path="loja-admin" element={<LojaAdmin />} />
                 </Route>
               </Route>
 
