@@ -12,7 +12,6 @@ import { PagamentosPendentesCard } from "@/components/dashboard/PagamentosPenden
 import { ViagemMaisLotadaCard } from "@/components/dashboard/ViagemMaisLotadaCard";
 import { RankingAdversariosCard } from "@/components/dashboard/RankingAdversariosCard";
 import { DashboardChartsGrid } from "@/components/dashboard/DashboardChartsGrid";
-import { TopClientesCard } from "@/components/dashboard/TopClientesCard";
 import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
 import { Users, Calendar, DollarSign, Bus, TrendingUp } from "lucide-react";
 
@@ -131,7 +130,7 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
       <div className="container py-6">
         {/* Modern Dashboard Header */}
         <DashboardHeader />
@@ -143,7 +142,8 @@ const Dashboard = () => {
             value={isLoading ? "..." : clientCount.toLocaleString()}
             label="Total de Clientes"
             change={{ value: 12, type: 'increase' }}
-            className="group hover:scale-105 transition-all duration-300"
+            gradient="from-pink-500 via-red-400 to-yellow-400"
+            className="group"
           />
           
           <ModernStatCard
@@ -151,7 +151,8 @@ const Dashboard = () => {
             value={isLoading ? "..." : viagemCount.toLocaleString()}
             label="Viagens Cadastradas"
             change={{ value: 8, type: 'increase' }}
-            className="group hover:scale-105 transition-all duration-300"
+            gradient="from-blue-500 via-cyan-400 to-blue-700"
+            className="group"
           />
           
           <ModernStatCard
@@ -159,7 +160,8 @@ const Dashboard = () => {
             value={isLoading ? "..." : `R$ ${monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             label="Receita Mensal"
             change={{ value: 15, type: 'increase' }}
-            className="group hover:scale-105 transition-all duration-300"
+            gradient="from-green-400 via-emerald-500 to-lime-400"
+            className="group"
           />
           
           <ModernStatCard
@@ -167,39 +169,37 @@ const Dashboard = () => {
             value={isLoading ? "..." : (busStats?.totalBuses || 0).toString()}
             label="Ônibus Disponíveis"
             change={{ value: 5, type: 'increase' }}
-            className="group hover:scale-105 transition-all duration-300"
+            gradient="from-purple-500 via-indigo-400 to-blue-500"
+            className="group"
           />
+        </div>
+        
+        {/* Enhanced Interactive Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <ModernCard gradient="from-pink-500 via-red-400 to-yellow-400" variant="interactive" className="p-6">
+            <ClientesNovosCard />
+          </ModernCard>
+          <ModernCard gradient="from-orange-400 via-yellow-400 to-pink-500" variant="interactive" className="p-6">
+            <PagamentosPendentesCard />
+          </ModernCard>
+          <ModernCard gradient="from-green-400 via-emerald-500 to-lime-400" variant="interactive" className="p-6">
+            <ViagemMaisLotadaCard />
+          </ModernCard>
+          <ModernCard gradient="from-purple-500 via-indigo-400 to-blue-500" variant="interactive" className="p-6">
+            <RankingAdversariosCard />
+          </ModernCard>
         </div>
         
         {/* Modern Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6 mb-8">
-          <ModernCard variant="elevated" className="p-6 group hover:scale-[1.02] transition-all duration-300">
+          <ModernCard gradient="from-blue-400 via-cyan-400 to-blue-600" variant="elevated" className="p-6">
             <ProximasViagensCard 
               isLoading={isLoading} 
               proximasViagens={proximasViagens} 
             />
           </ModernCard>
-          <ModernCard variant="elevated" className="p-6 group hover:scale-[1.02] transition-all duration-300">
+          <ModernCard gradient="from-yellow-400 via-orange-400 to-pink-400" variant="elevated" className="p-6">
             <SetoresEstadioMaisEscolhidosChart />
-          </ModernCard>
-        </div>
-        
-        {/* Enhanced Interactive Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500">
-            <ClientesNovosCard />
-          </ModernCard>
-          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-500">
-            <PagamentosPendentesCard />
-          </ModernCard>
-          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500">
-            <ViagemMaisLotadaCard />
-          </ModernCard>
-          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500">
-            <RankingAdversariosCard />
-          </ModernCard>
-          <ModernCard variant="interactive" className="p-6 group hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-500">
-            <TopClientesCard />
           </ModernCard>
         </div>
         
@@ -207,13 +207,6 @@ const Dashboard = () => {
         <ModernCard variant="elevated" className="p-8 mb-8 group hover:scale-[1.01] transition-all duration-300">
           <DashboardChartsGrid />
         </ModernCard>
-        
-        {/* Enhanced Image Section */}
-        <div className="relative">
-          <ModernCard variant="elevated" className="overflow-hidden group">
-            <DashboardImageSection imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRULonro80DLVex706fDQXv1GEjjAhog4ON_g&s" />
-          </ModernCard>
-        </div>
       </div>
     </div>
   );

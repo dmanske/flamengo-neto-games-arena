@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,41 @@ import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard"
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // Verificar se o id é válido
+  useEffect(() => {
+    if (!id || id === "undefined") {
+      console.warn("ID da viagem inválido:", id);
+      navigate("/dashboard/viagens");
+      return;
+    }
+
+    // Verificar se o ID é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.warn("ID da viagem não é um UUID válido:", id);
+      navigate("/dashboard/viagens");
+      return;
+    }
+  }, [id, navigate]);
+
+  // Não renderizar nada se o id for inválido
+  if (!id || id === "undefined") {
+    return null;
+  }
+
   const [addPassageiroOpen, setAddPassageiroOpen] = useState(false);
   const [editPassageiroOpen, setEditPassageiroOpen] = useState(false);
   const [deletePassageiroOpen, setDeletePassageiroOpen] = useState(false);
   const [detailsPassageiroOpen, setDetailsPassageiroOpen] = useState(false);
   const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
+  const [passageiros, setPassageiros] = useState<Passageiro[]>([]);
+  const [isLoadingPassageiros, setIsLoadingPassageiros] = useState(false);
   
   const {
     viagem,
-    passageiros,
+    passageiros: originalPassageiros,
     isLoading,
     totalArrecadado,
     totalPago,
@@ -82,13 +108,13 @@ const DetalhesViagem = () => {
 
   // Efeito que verifica se não há passageiros não alocados e seleciona um ônibus
   useEffect(() => {
-    const totalNaoAlocados = passageiros.filter(p => !p.onibus_id).length;
+    const totalNaoAlocados = originalPassageiros.filter(p => !p.onibus_id).length;
     // Se não temos passageiros não alocados e a seleção atual é "não alocados"
     if (totalNaoAlocados === 0 && selectedOnibusId === null && onibusList.length > 0) {
       // Seleciona automaticamente o primeiro ônibus
       handleSelectOnibus(onibusList[0].id);
     }
-  }, [passageiros, selectedOnibusId, onibusList]);
+  }, [originalPassageiros, selectedOnibusId, onibusList]);
 
   const openEditPassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);
@@ -134,7 +160,7 @@ const DetalhesViagem = () => {
   // Passageiros do ônibus atual
   const passageirosAtuais = getPassageirosDoOnibusAtual();
   const onibusAtual = getOnibusAtual();
-  const totalPassageirosNaoAlocados = passageiros.filter(p => !p.onibus_id).length;
+  const totalPassageirosNaoAlocados = originalPassageiros.filter(p => !p.onibus_id).length;
 
   // Conteúdo principal
   const mainContent = (
@@ -144,7 +170,7 @@ const DetalhesViagem = () => {
         <ViagemReport
           ref={reportRef}
           viagem={viagem}
-          passageiros={passageiros}
+          passageiros={originalPassageiros}
           onibusList={onibusList}
           totalArrecadado={totalArrecadado}
           totalPago={totalPago}
@@ -154,14 +180,14 @@ const DetalhesViagem = () => {
       </div>
 
       {/* Resumo financeiro */}
-      {passageiros.length > 0 && (
+      {originalPassageiros.length > 0 && (
         <div className="mb-6">
           <FinancialSummary
             totalArrecadado={totalArrecadado}
             totalPago={totalPago}
             totalPendente={totalPendente}
             percentualPagamento={Math.round((totalPago / totalArrecadado) * 100) || 0}
-            totalPassageiros={passageiros.length}
+            totalPassageiros={originalPassageiros.length}
             valorPotencialTotal={(viagem.valor_padrao || 0) * viagem.capacidade_onibus}
             capacidadeTotalOnibus={viagem.capacidade_onibus}
           />
@@ -171,7 +197,7 @@ const DetalhesViagem = () => {
       {/* Card de pagamentos pagos */}
       <PaidPaymentsCard
         totalPago={totalPago}
-        countPago={passageiros.filter(p => p.status_pagamento === "Pago").length}
+        countPago={originalPassageiros.filter(p => p.status_pagamento === "Pago").length}
         onShowPaidOnly={handleShowPaidOnly}
       />
       {/* Card de pagamentos pendentes */}
@@ -184,21 +210,27 @@ const DetalhesViagem = () => {
       )}
 
       {/* Lista de Passageiros */}
-      <div ref={passageirosListRef} />
-      <PassageirosCard 
-        passageirosAtuais={passageirosAtuais}
-        passageiros={passageiros}
-        onibusAtual={onibusAtual}
-        selectedOnibusId={selectedOnibusId}
-        totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        setAddPassageiroOpen={setAddPassageiroOpen}
-        onEditPassageiro={openEditPassageiroDialog}
-        onDeletePassageiro={openDeletePassageiroDialog}
-        onViewDetails={openDetailsPassageiroDialog}
-        filterStatus={filterStatus}
-      />
+      <div ref={passageirosListRef}>
+        <PassageirosCard
+          passageirosAtuais={getPassageirosDoOnibusAtual()}
+          passageiros={originalPassageiros}
+          onibusAtual={getOnibusAtual()}
+          selectedOnibusId={selectedOnibusId}
+          totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          setAddPassageiroOpen={setAddPassageiroOpen}
+          onEditPassageiro={openEditPassageiroDialog}
+          onDeletePassageiro={openDeletePassageiroDialog}
+          onViewDetails={openDetailsPassageiroDialog}
+          filterStatus={filterStatus}
+          passeiosPagos={viagem?.passeios_pagos}
+          outroPasseio={viagem?.outro_passeio}
+          viagemId={id || ""}
+          setPassageiros={setPassageiros}
+          setIsLoading={setIsLoadingPassageiros}
+        />
+      </div>
 
       {/* Cards dos ônibus */}
       {onibusList.length > 0 && (
@@ -210,7 +242,7 @@ const DetalhesViagem = () => {
             onSelectOnibus={handleSelectOnibus}
             passageirosCount={contadorPassageiros}
             passageirosNaoAlocados={totalPassageirosNaoAlocados}
-            passageiros={passageiros}
+            passageiros={originalPassageiros}
           />
         </div>
       )}
@@ -230,7 +262,9 @@ const DetalhesViagem = () => {
         open={editPassageiroOpen}
         onOpenChange={setEditPassageiroOpen}
         passageiro={selectedPassageiro}
-        onSuccess={() => id && fetchPassageiros(id)}
+        onSuccess={fetchPassageiros}
+        passeiosPagos={viagem?.passeios_pagos}
+        outroPasseio={viagem?.outro_passeio}
       />
 
       <PassageiroDetailsDialog

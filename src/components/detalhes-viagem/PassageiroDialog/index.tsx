@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -50,15 +50,22 @@ export function PassageiroDialog({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cliente_id: "",
+      cliente_id: [],
       setor_maracana: setorPadrao || "A definir",
       status_pagamento: "Pendente",
       forma_pagamento: "Pix",
       valor: valorPadrao || 0,
       desconto: 0,
       onibus_id: defaultOnibusId || "",
+      cidade_embarque: "Blumenau",
     },
   });
+
+  useEffect(() => {
+    if (valorPadrao) {
+      form.setValue("valor", valorPadrao);
+    }
+  }, [valorPadrao, form]);
 
   const statusPagamento = form.watch("status_pagamento");
   const valorTotal = form.watch("valor");
@@ -69,81 +76,59 @@ export function PassageiroDialog({
 
   const onSubmit = async (values: FormData) => {
     if (!viagemId) return;
-    
-    if (values.status_pagamento === "Pendente" && parcelas.length > 0) {
-      if (totalPago > valorLiquido) {
-        toast.error("O valor total das parcelas não pode exceder o valor líquido");
-        return;
+    setIsLoading(true);
+    let algumErro = false;
+    let algumSucesso = false;
+    for (const clienteId of values.cliente_id) {
+      try {
+        const { data: existingPassageiro } = await supabase
+          .from("viagem_passageiros")
+          .select("id")
+          .eq("viagem_id", viagemId)
+          .eq("cliente_id", clienteId)
+          .single();
+        if (existingPassageiro) {
+          toast.error(`O cliente já está cadastrado nesta viagem.`);
+          algumErro = true;
+          continue;
+        }
+        const { error: passageiroError } = await supabase
+          .from("viagem_passageiros")
+          .insert({
+            viagem_id: viagemId,
+            cliente_id: clienteId,
+            setor_maracana: values.setor_maracana,
+            status_pagamento: values.status_pagamento,
+            forma_pagamento: values.forma_pagamento,
+            valor: values.valor,
+            desconto: values.desconto,
+            onibus_id: values.onibus_id,
+          });
+        if (passageiroError) throw passageiroError;
+        algumSucesso = true;
+      } catch (error) {
+        console.error("Erro ao adicionar passageiro:", error);
+        algumErro = true;
       }
     }
-    
-    setIsLoading(true);
-    try {
-      const { data: existingPassageiro, error: checkError } = await supabase
-        .from("viagem_passageiros")
-        .select("id")
-        .eq("viagem_id", viagemId)
-        .eq("cliente_id", values.cliente_id)
-        .single();
-
-      if (existingPassageiro) {
-        toast.error("Este cliente já está cadastrado nesta viagem");
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: passageiroData, error: passageiroError } = await supabase
-        .from("viagem_passageiros")
-        .insert({
-          viagem_id: viagemId,
-          cliente_id: values.cliente_id,
-          setor_maracana: values.setor_maracana,
-          status_pagamento: values.status_pagamento,
-          forma_pagamento: values.forma_pagamento,
-          valor: values.valor,
-          desconto: values.desconto,
-          onibus_id: values.onibus_id,
-        })
-        .select('id')
-        .single();
-
-      if (passageiroError) throw passageiroError;
-
-      if (parcelas.length > 0 && passageiroData) {
-        const parcelasParaInserir = parcelas.map(parcela => ({
-          viagem_passageiro_id: passageiroData.id,
-          valor_parcela: parcela.valor_parcela,
-          forma_pagamento: parcela.forma_pagamento,
-          observacoes: parcela.observacoes || null,
-          data_pagamento: parcela.data_pagamento
-        }));
-
-        const { error: parcelasError } = await supabase
-          .from("viagem_passageiros_parcelas")
-          .insert(parcelasParaInserir);
-
-        if (parcelasError) throw parcelasError;
-      }
-
-      toast.success("Passageiro adicionado com sucesso!");
+    if (algumSucesso) {
+      toast.success("Passageiro(s) adicionado(s) com sucesso!");
       onSuccess();
       onOpenChange(false);
       form.reset({
-        cliente_id: "",
+        cliente_id: [],
         setor_maracana: setorPadrao || "A definir",
         status_pagamento: "Pendente",
         forma_pagamento: "Pix",
         valor: valorPadrao || 0,
         desconto: 0,
         onibus_id: defaultOnibusId || "",
+        cidade_embarque: "Blumenau",
       });
-      setParcelas([]);
-    } catch (error) {
-      console.error("Erro ao adicionar passageiro:", error);
-      toast.error("Erro ao adicionar passageiro");
-    } finally {
-      setIsLoading(false);
+    } else if (algumErro) {
+      toast.error("Nenhum passageiro foi adicionado.");
     }
+    setIsLoading(false);
   };
 
   return (
@@ -166,6 +151,36 @@ export function PassageiroDialog({
                 form={form}
                 viagemId={viagemId}
                 defaultOnibusId={defaultOnibusId}
+              />
+
+              <FormField
+                control={form.control}
+                name="cidade_embarque"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">Cidade de Embarque</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
+                          <SelectValue placeholder="Selecione uma cidade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                        <SelectItem value="Blumenau" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Blumenau</SelectItem>
+                        <SelectItem value="Gaspar" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Gaspar</SelectItem>
+                        <SelectItem value="Indaial" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Indaial</SelectItem>
+                        <SelectItem value="Timbó" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Timbó</SelectItem>
+                        <SelectItem value="Pomerode" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pomerode</SelectItem>
+                        <SelectItem value="Brusque" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Brusque</SelectItem>
+                        <SelectItem value="Itajaí" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Itajaí</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
               <FormField
@@ -211,28 +226,28 @@ export function PassageiroDialog({
                           type="number"
                           step="0.01"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                          value={valorPadrao || 0}
+                          disabled
+                          className="bg-gray-100 text-gray-900 border-gray-300"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="desconto"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Desconto (R$)</FormLabel>
+                      <FormLabel className="text-gray-700">Desconto (R$) - Opcional</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                          className="bg-white text-gray-900 border-gray-300"
                         />
                       </FormControl>
                       <FormMessage />
@@ -240,71 +255,6 @@ export function PassageiroDialog({
                   )}
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="status_pagamento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">Status do Pagamento</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
-                            <SelectValue placeholder="Selecione um status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                          <SelectItem value="Pendente" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pendente</SelectItem>
-                          <SelectItem value="Pago" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pago</SelectItem>
-                          <SelectItem value="Cancelado" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="forma_pagamento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">Forma de Pagamento</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || "Pix"}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
-                            <SelectValue placeholder="Selecione uma forma" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                          <SelectItem value="Pix" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pix</SelectItem>
-                          <SelectItem value="Cartão" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cartão</SelectItem>
-                          <SelectItem value="Boleto" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Boleto</SelectItem>
-                          <SelectItem value="Paypal" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Paypal</SelectItem>
-                          <SelectItem value="Outro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {statusPagamento === "Pendente" && (
-                <ParcelasManager
-                  valorTotal={valorTotal}
-                  desconto={desconto}
-                  parcelas={parcelas}
-                  setParcelas={setParcelas}
-                />
-              )}
 
               <DialogFooter>
                 <Button

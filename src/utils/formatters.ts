@@ -85,3 +85,22 @@ export const cleanPhone = (phone: string): string => {
 export const cleanCPF = (cpf: string): string => {
   return cpf.replace(/\D/g, '');
 };
+
+export const formatarNomeComPreposicoes = (nome: string): string => {
+  if (!nome) return '';
+  
+  const preposicoes = ['de', 'da', 'do', 'das', 'dos', 'e'];
+  
+  return nome
+    .toLowerCase()
+    .split(' ')
+    .map((palavra, index) => {
+      // Se for a primeira palavra ou não for uma preposição, capitaliza
+      if (index === 0 || !preposicoes.includes(palavra)) {
+        return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+      }
+      // Se for uma preposição e não for a primeira palavra, mantém minúscula
+      return palavra;
+    })
+    .join(' ');
+};

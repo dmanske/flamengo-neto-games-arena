@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Search, Check } from "lucide-react";
 import {
@@ -13,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { ClienteOption } from "./types";
+import { formatarNomeComPreposicoes } from "@/utils/formatters";
 
 interface ClienteSearchWithSuggestionsProps {
   control: any;
@@ -23,8 +23,6 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
   const [filteredClientes, setFilteredClientes] = useState<ClienteOption[]>([]);
   const [clienteSearchTerm, setClienteSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedClienteId, setSelectedClienteId] = useState("");
-  const [selectedClienteName, setSelectedClienteName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,12 +72,18 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
     }
   };
 
-  const handleSelectCliente = (cliente: ClienteOption, onChange: (value: string) => void) => {
-    setSelectedClienteId(cliente.id);
-    setSelectedClienteName(cliente.nome);
-    setClienteSearchTerm(cliente.nome);
-    setShowSuggestions(false);
-    onChange(cliente.id);
+  const handleSelectCliente = (cliente: ClienteOption, selectedIds: string[], onChange: (value: string[]) => void) => {
+    if (!selectedIds.includes(cliente.id)) {
+      const novos = [...selectedIds, cliente.id];
+      onChange(novos);
+      setClienteSearchTerm("");
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleRemoveCliente = (id: string, selectedIds: string[], onChange: (value: string[]) => void) => {
+    const novos = selectedIds.filter(cid => cid !== id);
+    onChange(novos);
   };
 
   return (
@@ -88,9 +92,30 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
       name="cliente_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-gray-700">Cliente</FormLabel>
-          
+          <FormLabel className="text-gray-700">Clientes</FormLabel>
           <div className="relative" ref={containerRef}>
+            {/* Chips dos clientes selecionados */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {Array.isArray(field.value) && field.value.length > 0 &&
+                field.value.map((id: string) => {
+                  const cliente = clientes.find(c => c.id === id);
+                  if (!cliente) return null;
+                  return (
+                    <span key={id} className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm">
+                      {formatarNomeComPreposicoes(cliente.nome)}
+                      <button
+                        type="button"
+                        className="ml-2 text-blue-600 hover:text-red-600"
+                        onClick={() => handleRemoveCliente(id, field.value, field.onChange)}
+                        aria-label="Remover cliente"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })
+              }
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <FormControl>
@@ -99,11 +124,6 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
                   value={clienteSearchTerm}
                   onChange={(e) => {
                     setClienteSearchTerm(e.target.value);
-                    if (e.target.value === "") {
-                      field.onChange("");
-                      setSelectedClienteId("");
-                      setSelectedClienteName("");
-                    }
                   }}
                   onFocus={() => {
                     if (filteredClientes.length > 0) {
@@ -113,11 +133,7 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
                   className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 />
               </FormControl>
-              {selectedClienteId && (
-                <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 h-4 w-4" />
-              )}
             </div>
-            
             {/* Lista de sugestões */}
             {showSuggestions && filteredClientes.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
@@ -125,9 +141,9 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
                   <div
                     key={cliente.id}
                     className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    onClick={() => handleSelectCliente(cliente, field.onChange)}
+                    onClick={() => handleSelectCliente(cliente, field.value || [], field.onChange)}
                   >
-                    <div className="font-medium text-gray-900">{cliente.nome}</div>
+                    <div className="font-medium text-gray-900">{formatarNomeComPreposicoes(cliente.nome)}</div>
                     <div className="text-sm text-gray-500">
                       {cliente.cidade} • {cliente.telefone}
                     </div>
@@ -136,7 +152,6 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
                 ))}
               </div>
             )}
-            
             {/* Mensagem quando não encontrar resultados */}
             {showSuggestions && clienteSearchTerm.length > 0 && filteredClientes.length === 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4">
@@ -146,9 +161,8 @@ export function ClienteSearchWithSuggestions({ control }: ClienteSearchWithSugge
               </div>
             )}
           </div>
-          
           <FormDescription className="text-gray-600">
-            Digite para buscar e selecionar um cliente
+            Digite para buscar e selecione um ou mais clientes
           </FormDescription>
           <FormMessage />
         </FormItem>

@@ -11,6 +11,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useClientValidation } from "@/hooks/useClientValidation";
 import { formatPhone, formatCPF, cleanPhone, cleanCPF, formatDate } from "@/utils/formatters";
+import { convertBRDateToISO, isValidBRDate } from "@/utils/dateUtils";
 import { formSchema as clienteFormSchema } from "@/components/cadastro-publico/FormSchema";
 
 import {
@@ -89,6 +90,17 @@ export function ClienteForm() {
         return;
       }
       
+      // Validar data de nascimento se preenchida
+      if (values.data_nascimento && values.data_nascimento.trim() !== '') {
+        if (!isValidBRDate(values.data_nascimento)) {
+          form.setError("data_nascimento", {
+            type: "manual",
+            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
+          });
+          return;
+        }
+      }
+      
       // Clean phone and CPF before saving
       const dataToSave = {
         ...values,
@@ -97,31 +109,17 @@ export function ClienteForm() {
         email: values.email.toLowerCase()
       };
 
-      // Tratar a data de nascimento
+      // Converter data brasileira para ISO
       if (dataToSave.data_nascimento && dataToSave.data_nascimento.trim() !== '') {
-        try {
-          // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
-          const dateParts = dataToSave.data_nascimento.split('/');
-          if (dateParts.length === 3) {
-            const day = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]);
-            let year = parseInt(dateParts[2]);
-            
-            // Converter anos de 2 dígitos para 4 dígitos
-            if (year < 100) {
-              // Se o ano for menor que 30, assume 20xx, senão 19xx
-              year = year < 30 ? 2000 + year : 1900 + year;
-            }
-            
-            // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
-            dataToSave.data_nascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-          } else {
-            dataToSave.data_nascimento = null;
-          }
-        } catch (error) {
-          console.error("Erro ao converter data de nascimento:", error);
-          dataToSave.data_nascimento = null;
+        const isoDate = convertBRDateToISO(dataToSave.data_nascimento);
+        if (!isoDate) {
+          form.setError("data_nascimento", {
+            type: "manual",
+            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
+          });
+          return;
         }
+        dataToSave.data_nascimento = isoDate;
       } else {
         dataToSave.data_nascimento = null;
       }

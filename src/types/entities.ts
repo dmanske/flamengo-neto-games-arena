@@ -1,4 +1,3 @@
-
 export type TipoOnibus =
   | "46 Semi-Leito"
   | "50 Convencional"
@@ -47,3 +46,18 @@ export type FonteConhecimento =
   | "Facebook" 
   | "Google" 
   | "Outro";
+
+export interface Viagem {
+  id: string;
+  adversario: string;
+  data_jogo: string;
+  cidade_embarque: string;
+  status_viagem: string;
+  valor_padrao: number | null;
+  setor_padrao: string | null;
+  logo_adversario: string | null;
+  logo_flamengo: string;
+  capacidade_onibus: number;
+  passeios_pagos: string[];
+  outro_passeio: string | null;
+}

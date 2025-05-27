@@ -82,7 +82,7 @@ const Viagens = () => {
       let query = supabase
         .from('viagens')
         .select('*')
-        .order('data_jogo', { ascending: false });
+        .order('data_jogo', { ascending: true });
 
       if (filterStatus) {
         query = query.eq('status_viagem', filterStatus);
@@ -350,7 +350,7 @@ const Viagens = () => {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
         <div className="container py-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Viagens</h1>

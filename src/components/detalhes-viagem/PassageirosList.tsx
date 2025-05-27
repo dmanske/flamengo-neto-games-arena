@@ -29,6 +29,7 @@ export function PassageirosList({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">#</TableHead>
             <TableHead>Nome</TableHead>
             <TableHead>Telefone</TableHead>
             <TableHead>Cidade</TableHead>
@@ -45,8 +46,9 @@ export function PassageirosList({
         </TableHeader>
         <TableBody>
           {passageiros.length > 0 ? (
-            passageiros.map((passageiro) => (
+            passageiros.map((passageiro, index) => (
               <TableRow key={passageiro.viagem_passageiro_id}>
+                <TableCell className="text-center">{index + 1}</TableCell>
                 <TableCell>{passageiro.nome}</TableCell>
                 <TableCell>{passageiro.telefone}</TableCell>
                 <TableCell>{passageiro.cidade}</TableCell>

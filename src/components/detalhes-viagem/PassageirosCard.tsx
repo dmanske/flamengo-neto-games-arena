@@ -18,7 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Pencil, Users, Plus, Search, Eye, Bus } from "lucide-react";
+import { Trash2, Pencil, Users, Plus, Search, Eye, Bus, Ticket } from "lucide-react";
+import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -33,6 +37,11 @@ interface PassageirosCardProps {
   onDeletePassageiro: (passageiro: any) => void;
   onViewDetails?: (passageiro: any) => void;
   filterStatus: string;
+  passeiosPagos?: string[];
+  outroPasseio?: string | null;
+  viagemId: string | null;
+  setPassageiros: (passageiros: any[]) => void;
+  setIsLoading: (isLoading: boolean) => void;
 }
 
 export function PassageirosCard({
@@ -48,6 +57,11 @@ export function PassageirosCard({
   onDeletePassageiro,
   onViewDetails,
   filterStatus,
+  passeiosPagos,
+  outroPasseio,
+  viagemId,
+  setPassageiros,
+  setIsLoading,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
 
@@ -63,11 +77,15 @@ export function PassageirosCard({
   }, []);
 
   // Filtrar passageiros por status se necessário
-  const passageirosFiltrados = passageirosAtuais.filter((passageiro) => {
+  const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
+    const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      passageiro.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      passageiro.telefone.includes(searchTerm) ||
-      passageiro.email.toLowerCase().includes(searchTerm.toLowerCase());
+      passageiro.nome.toLowerCase().includes(searchTermLower) ||
+      passageiro.telefone?.includes(searchTerm) ||
+      passageiro.email?.toLowerCase().includes(searchTermLower) ||
+      passageiro.cidade_embarque?.toLowerCase().includes(searchTermLower) ||
+      passageiro.setor_maracana?.toLowerCase().includes(searchTermLower) ||
+      passageiro.status_pagamento?.toLowerCase().includes(searchTermLower);
     
     const matchesStatus = statusFilter === "todos" || passageiro.status_pagamento === statusFilter;
     
@@ -84,6 +102,42 @@ export function PassageirosCard({
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const fetchPassageiros = async () => {
+    try {
+      setIsLoading(true);
+
+      // Verificar se o viagemId é válido
+      if (!viagemId || viagemId === "undefined") {
+        console.warn("ID da viagem inválido:", viagemId);
+        return;
+      }
+
+      // Verificar se o ID é um UUID válido
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(viagemId)) {
+        console.warn("ID da viagem não é um UUID válido:", viagemId);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('passageiros')
+        .select('*')
+        .eq('viagem_id', viagemId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setPassageiros(data || []);
+    } catch (error: any) {
+      console.error('Erro ao buscar passageiros:', error);
+      toast.error("Erro ao carregar passageiros");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,7 +162,7 @@ export function PassageirosCard({
               )}
             </CardTitle>
             <CardDescription>
-              {passageirosFiltrados.length} de {passageirosAtuais.length} passageiros
+              {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
               {onibusAtual && ` • Capacidade: ${onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0)} lugares`}
             </CardDescription>
           </div>
@@ -126,7 +180,7 @@ export function PassageirosCard({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por nome, telefone ou email..."
+              placeholder="Buscar por nome, telefone, setor, status ou cidade de embarque..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -149,56 +203,76 @@ export function PassageirosCard({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">#</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="text-center">Telefone</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead className="text-center">Data Nasc.</TableHead>
+                <TableHead className="text-center">Cidade Embarque</TableHead>
                 <TableHead className="text-center">Setor</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Valor</TableHead>
+                <TableHead className="text-center">Passeios</TableHead>
                 <TableHead className="text-center">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {passageirosFiltrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {searchTerm || statusFilter !== "todos" 
                       ? "Nenhum passageiro encontrado com os filtros aplicados" 
                       : "Nenhum passageiro cadastrado"}
                   </TableCell>
                 </TableRow>
               ) : (
-                passageirosFiltrados.map((passageiro) => {
+                passageirosFiltrados.map((passageiro, index) => {
                   // Calcular valor pago e valor que falta
                   const valorPago = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
                   const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
                   const valorFalta = valorLiquido - valorPago;
                   return (
                     <TableRow key={passageiro.viagem_passageiro_id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="text-center">{index + 1}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-rome-navy">
                         <div className="flex items-center gap-2">
                           {passageiro.foto ? (
-                            <img src={passageiro.foto} alt={passageiro.nome} className="w-8 h-8 rounded-full object-cover border" />
+                            <Avatar className="h-8 w-8 border-2 border-primary/20">
+                              <AvatarImage 
+                                src={passageiro.foto} 
+                                alt={passageiro.nome}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                                {passageiro.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border">
-                              <span className="text-xs">{passageiro.nome[0]}</span>
-                            </div>
+                            <Avatar className="h-8 w-8 border-2 border-primary/20">
+                              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                                {passageiro.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
                           )}
                           {onViewDetails ? (
                             <button
                               onClick={() => onViewDetails(passageiro)}
                               className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                             >
-                              {passageiro.nome}
+                              {formatarNomeComPreposicoes(passageiro.nome)}
                             </button>
                           ) : (
-                            passageiro.nome
+                            formatarNomeComPreposicoes(passageiro.nome)
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">{passageiro.telefone}</TableCell>
-                      <TableCell>{passageiro.email}</TableCell>
-                      <TableCell className="text-center">{passageiro.setor_maracana}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">{passageiro.telefone}</TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">
+                        {formatBirthDate(passageiro.data_nascimento)}
+                      </TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">
+                        {passageiro.cidade_embarque || 'Blumenau'}
+                      </TableCell>
+                      <TableCell className="font-cinzel font-semibold text-center text-black">{passageiro.setor_maracana}</TableCell>
                       <TableCell className="text-center">
                         <Badge className={getStatusColor(passageiro.status_pagamento)}>
                           {passageiro.status_pagamento}
@@ -216,17 +290,28 @@ export function PassageirosCard({
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
+                        {passageiro.passeios?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {passageiro.passeios.map((passeio) => (
+                              <Badge
+                                key={passeio.passeio_nome}
+                                variant={passeio.status === 'Confirmado' ? 'default' : 'secondary'}
+                                className="text-xs flex items-center gap-1"
+                              >
+                                <Ticket className="h-3 w-3" />
+                                {passeio.passeio_nome}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm flex items-center justify-center gap-1">
+                            <Ticket className="h-3 w-3" />
+                            Sem passeios
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
-                          {onViewDetails && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onViewDetails(passageiro)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
                           <Button
                             variant="outline"
                             size="sm"

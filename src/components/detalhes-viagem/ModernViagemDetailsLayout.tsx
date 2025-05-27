@@ -32,6 +32,8 @@ interface Viagem {
   status_viagem: string;
   logo_flamengo: string | null;
   logo_adversario: string | null;
+  passeios_pagos?: string[];
+  outro_passeio?: string;
 }
 
 interface ModernViagemDetailsLayoutProps {
@@ -198,8 +200,20 @@ export function ModernViagemDetailsLayout({
                   <MapPin className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Rota</p>
-                  <p className="text-lg font-bold text-gray-900">{viagem.rota}</p>
+                  <p className="text-sm text-gray-600 font-medium">Passeios Pagos</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Array.isArray(viagem.passeios_pagos) && viagem.passeios_pagos.length > 0 ? (
+                      viagem.passeios_pagos.map((passeio: string) => (
+                        <Badge key={passeio} className="bg-green-200 text-green-800 border-green-300">{passeio}</Badge>
+                      ))
+                    ) : null}
+                    {viagem.outro_passeio && (
+                      <Badge className="bg-blue-200 text-blue-800 border-blue-300">{viagem.outro_passeio}</Badge>
+                    )}
+                    {(!viagem.passeios_pagos || viagem.passeios_pagos.length === 0) && !viagem.outro_passeio && (
+                      <span className="text-gray-500 text-sm">Nenhum passeio selecionado</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

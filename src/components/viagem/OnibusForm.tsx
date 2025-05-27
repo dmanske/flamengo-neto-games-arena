@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +49,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
     };
 
     const newArray = [...onibusArray, onibus];
+    console.log('onibusArray atualizado:', newArray);
     onChange(newArray);
 
     // Notificar sobre o primeiro ônibus (principal)
@@ -175,15 +175,15 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
               Selecionar Ônibus Cadastrado
             </Label>
             <Select onValueChange={handleSelectOnibus} disabled={loadingOnibus}>
-              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white">
+              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900">
                 <SelectValue placeholder={loadingOnibus ? "Carregando..." : "Selecionar ônibus"} />
               </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200 z-50">
+              <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
                 {onibusList.map((onibus) => (
                   <SelectItem 
                     key={onibus.id} 
                     value={onibus.id}
-                    className="bg-white text-gray-900 hover:bg-gray-50"
+                    className="bg-white text-gray-900 hover:bg-blue-50"
                   >
                     {onibus.empresa} - {onibus.tipo_onibus} ({onibus.capacidade} lugares)
                   </SelectItem>

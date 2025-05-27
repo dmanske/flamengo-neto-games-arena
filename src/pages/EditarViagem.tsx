@@ -51,14 +51,12 @@ const viagemFormSchema = z.object({
   data_jogo: z.date({
     required_error: "Data do jogo é obrigatória",
   }),
-  rota: z.string({
-    required_error: "Rota é obrigatória",
-  }),
   status_viagem: z.string().default("Aberta"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default("https://logodetimes.com/wp-content/uploads/flamengo.png"),
   valor_padrao: z.number().min(0, "O valor não pode ser negativo").optional(),
   setor_padrao: z.string().optional(),
+  cidade_embarque: z.string().optional(),
 });
 
 type ViagemFormValues = z.infer<typeof viagemFormSchema>;
@@ -72,6 +70,15 @@ const EditarViagem = () => {
   const [logoFlamengoUrl, setLogoFlamengoUrl] = useState<string>("https://logodetimes.com/wp-content/uploads/flamengo.png");
   const [logoFlamengoDialogOpen, setLogoFlamengoDialogOpen] = useState(false);
   const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
+  const [logosAdversarios, setLogosAdversarios] = useState([]);
+  const [isLoadingAdversarios, setIsLoadingAdversarios] = useState(true);
+  const [showAddAdversario, setShowAddAdversario] = useState(false);
+  const [showEditAdversario, setShowEditAdversario] = useState(false);
+  const [adversarioEditando, setAdversarioEditando] = useState(null);
+  const [novoNomeAdversario, setNovoNomeAdversario] = useState("");
+  const [novaUrlAdversario, setNovaUrlAdversario] = useState("");
+  const [passeiosPagos, setPasseiosPagos] = useState<string[]>([]);
+  const [outroPasseio, setOutroPasseio] = useState<string>("");
   
   // Valores padrão para o formulário
   const defaultValues: Partial<ViagemFormValues> = {
@@ -80,6 +87,7 @@ const EditarViagem = () => {
     logo_flamengo: "https://logodetimes.com/wp-content/uploads/flamengo.png",
     valor_padrao: 0,
     setor_padrao: "Norte",
+    cidade_embarque: "Blumenau",
   };
 
   const form = useForm<ViagemFormValues>({
@@ -140,16 +148,18 @@ const EditarViagem = () => {
           form.reset({
             adversario: viagemData.adversario,
             data_jogo: dataJogo,
-            rota: viagemData.rota,
             status_viagem: viagemData.status_viagem,
             logo_adversario: viagemData.logo_adversario || "",
             logo_flamengo: viagemData.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
             valor_padrao: viagemData.valor_padrao || 0,
             setor_padrao: viagemData.setor_padrao || "Norte",
+            cidade_embarque: viagemData.cidade_embarque || "Blumenau",
           });
           
           setLogoUrl(viagemData.logo_adversario || "");
           setLogoFlamengoUrl(viagemData.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png");
+          setPasseiosPagos(viagemData.passeios_pagos || []);
+          setOutroPasseio(viagemData.outro_passeio || "");
         }
       } catch (err) {
         console.error("Erro ao buscar dados da viagem:", err);
@@ -161,6 +171,18 @@ const EditarViagem = () => {
     
     fetchViagem();
   }, [id, form]);
+
+  useEffect(() => {
+    const fetchAdversarios = async () => {
+      setIsLoadingAdversarios(true);
+      const { data, error } = await supabase.from("adversarios").select("id, nome, logo_url");
+      if (!error && data) {
+        setLogosAdversarios(data.map(item => ({ id: item.id, name: item.nome, url: item.logo_url })));
+      }
+      setIsLoadingAdversarios(false);
+    };
+    fetchAdversarios();
+  }, []);
 
   const onSubmit = async (data: ViagemFormValues) => {
     if (!id || onibusArray.length === 0) {
@@ -182,12 +204,14 @@ const EditarViagem = () => {
         .update({
           adversario: data.adversario,
           data_jogo: dataJogo.toISOString(),
-          rota: data.rota,
           status_viagem: data.status_viagem,
           logo_adversario: data.logo_adversario || null,
           logo_flamengo: data.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png",
           valor_padrao: data.valor_padrao || null,
           setor_padrao: data.setor_padrao || null,
+          cidade_embarque: data.cidade_embarque || null,
+          passeios_pagos: passeiosPagos,
+          outro_passeio: outroPasseio,
           capacidade_onibus: onibusArray.reduce((total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0), 0),
         })
         .eq("id", id);
@@ -299,6 +323,51 @@ const EditarViagem = () => {
     form.setValue("logo_flamengo", defaultLogo);
     setLogoFlamengoUrl(defaultLogo);
   };
+
+  const handleAddAdversario = async (nome, url) => {
+    const { data, error } = await supabase.from("adversarios").insert([{ nome, logo_url: url }]).select();
+    if (!error && data && data[0]) {
+      setLogosAdversarios(prev => [...prev, { id: data[0].id, name: nome, url }]);
+    }
+  };
+  const handleEditAdversario = async (id, nome, url) => {
+    const { error } = await supabase.from("adversarios").update({ nome, logo_url: url }).eq("id", id);
+    if (!error) {
+      setLogosAdversarios(prev => prev.map(a => a.id === id ? { ...a, name: nome, url } : a));
+    }
+  };
+  const handleRemoveAdversario = async (id) => {
+    const { error } = await supabase.from("adversarios").delete().eq("id", id);
+    if (!error) {
+      setLogosAdversarios(prev => prev.filter(a => a.id !== id));
+    }
+  };
+  const openEditAdversario = (adv) => {
+    setAdversarioEditando(adv);
+    setNovoNomeAdversario(adv.name);
+    setNovaUrlAdversario(adv.url);
+    setShowEditAdversario(true);
+  };
+  const openAddAdversario = () => {
+    setNovoNomeAdversario("");
+    setNovaUrlAdversario("");
+    setShowAddAdversario(true);
+  };
+  const salvarEdicaoAdversario = async () => {
+    await handleEditAdversario(adversarioEditando.id, novoNomeAdversario, novaUrlAdversario);
+    setShowEditAdversario(false);
+    setAdversarioEditando(null);
+  };
+  const salvarNovoAdversario = async () => {
+    await handleAddAdversario(novoNomeAdversario, novaUrlAdversario);
+    setShowAddAdversario(false);
+  };
+
+  const logosFlamengo = [
+    { name: "Logo Oficial", url: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png" },
+    { name: "Escudo Clássico", url: "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png" },
+    { name: "Logo Moderno", url: "https://logoeps.com/wp-content/uploads/2013/03/flamengo-vector-logo.png" },
+  ];
 
   if (isLoading) {
     return (
@@ -500,29 +569,25 @@ const EditarViagem = () => {
 
                 <FormField
                   control={form.control}
-                  name="rota"
+                  name="cidade_embarque"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rota da Viagem</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
+                      <FormLabel>Cidade de Embarque</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a rota" />
+                            <SelectValue placeholder="Selecione a cidade" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Rio de Janeiro - Maracanã">Rio de Janeiro - Maracanã</SelectItem>
-                          <SelectItem value="São Paulo - Morumbi">São Paulo - Morumbi</SelectItem>
-                          <SelectItem value="Belo Horizonte - Mineirão">Belo Horizonte - Mineirão</SelectItem>
-                          <SelectItem value="Porto Alegre - Beira-Rio">Porto Alegre - Beira-Rio</SelectItem>
-                          <SelectItem value="Brasília - Mané Garrincha">Brasília - Mané Garrincha</SelectItem>
+                          <SelectItem value="Blumenau">Blumenau</SelectItem>
+                          <SelectItem value="Itajaí">Itajaí</SelectItem>
+                          <SelectItem value="Piçarras">Piçarras</SelectItem>
+                          <SelectItem value="Joinville">Joinville</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Trajeto que o ônibus irá percorrer para o estádio do jogo
+                        Cidade de onde o ônibus irá sair
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -613,6 +678,39 @@ const EditarViagem = () => {
                 />
               </div>
 
+              <div className="mt-4">
+                <label className="text-gray-700 font-medium">Passeios Pagos</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  {["AquaRio", "Rio Star", "Museu de Cera Dreamland", "Cristo Redentor", "Pão de Açúcar"].map((passeio) => (
+                    <div key={passeio} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={passeio}
+                        checked={passeiosPagos.includes(passeio)}
+                        onChange={(e) => {
+                          const newPasseios = e.target.checked
+                            ? [...passeiosPagos, passeio]
+                            : passeiosPagos.filter(p => p !== passeio);
+                          setPasseiosPagos(newPasseios);
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={passeio}>{passeio}</label>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center space-x-2">
+                  <label className="text-gray-700">Outro passeio:</label>
+                  <input
+                    type="text"
+                    value={outroPasseio}
+                    onChange={e => setOutroPasseio(e.target.value)}
+                    className="border border-gray-300 rounded px-2 py-1"
+                    placeholder="Digite outro passeio"
+                  />
+                </div>
+              </div>
+
               <OnibusForm 
                 onibusArray={onibusArray} 
                 onChange={setOnibusArray}
@@ -641,10 +739,82 @@ const EditarViagem = () => {
           <DialogHeader>
             <DialogTitle>Selecionar Logo do Time Adversário</DialogTitle>
             <DialogDescription>
-              Digite o nome do time para buscar ou cole a URL de uma imagem
+              Escolha, edite ou adicione um adversário
             </DialogDescription>
           </DialogHeader>
-          
+          {isLoadingAdversarios ? (
+            <div>Carregando adversários...</div>
+          ) : (
+            <div className="grid grid-cols-5 gap-4 py-4">
+              {logosAdversarios.map((logo) => (
+                <div key={logo.id} className="flex flex-col items-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                  <img src={logo.url} alt={logo.name} className="w-12 h-12 object-contain mb-2" />
+                  <span className="text-xs text-gray-600 text-center">{logo.name}</span>
+                  <div className="flex gap-1 mt-1">
+                    <button onClick={() => openEditAdversario(logo)} className="text-blue-600 text-xs">Editar</button>
+                    <button onClick={() => handleRemoveAdversario(logo.id)} className="text-red-600 text-xs">Remover</button>
+                  </div>
+                  <button onClick={() => handleLogoSelect(logo.url)} className="mt-1 text-xs text-green-700">Usar</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Botão para adicionar novo adversário */}
+          <div className="mt-4">
+            <button onClick={openAddAdversario} className="bg-blue-600 text-white px-3 py-1 rounded">Adicionar novo adversário</button>
+          </div>
+          {/* Modal de adicionar adversário */}
+          {showAddAdversario && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm">
+                <h3 className="text-lg font-bold mb-2">Adicionar novo adversário</h3>
+                <input
+                  type="text"
+                  placeholder="Nome do adversário"
+                  value={novoNomeAdversario}
+                  onChange={e => setNovoNomeAdversario(e.target.value)}
+                  className="border p-2 w-full mb-2"
+                />
+                <input
+                  type="text"
+                  placeholder="URL do logo"
+                  value={novaUrlAdversario}
+                  onChange={e => setNovaUrlAdversario(e.target.value)}
+                  className="border p-2 w-full mb-2"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowAddAdversario(false)} className="px-3 py-1 border rounded">Cancelar</button>
+                  <button onClick={salvarNovoAdversario} className="px-3 py-1 bg-blue-600 text-white rounded">Salvar</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Modal de editar adversário */}
+          {showEditAdversario && adversarioEditando && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm">
+                <h3 className="text-lg font-bold mb-2">Editar adversário</h3>
+                <input
+                  type="text"
+                  placeholder="Nome do adversário"
+                  value={novoNomeAdversario}
+                  onChange={e => setNovoNomeAdversario(e.target.value)}
+                  className="border p-2 w-full mb-2"
+                />
+                <input
+                  type="text"
+                  placeholder="URL do logo"
+                  value={novaUrlAdversario}
+                  onChange={e => setNovaUrlAdversario(e.target.value)}
+                  className="border p-2 w-full mb-2"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowEditAdversario(false)} className="px-3 py-1 border rounded">Cancelar</button>
+                  <button onClick={salvarEdicaoAdversario} className="px-3 py-1 bg-blue-600 text-white rounded">Salvar</button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input 
@@ -705,10 +875,22 @@ const EditarViagem = () => {
           <DialogHeader>
             <DialogTitle>Selecionar Logo do Flamengo</DialogTitle>
             <DialogDescription>
-              Cole a URL de uma imagem ou use o logo padrão
+              Cole a URL de uma imagem ou use um dos logos abaixo
             </DialogDescription>
           </DialogHeader>
-          
+          <div className="grid grid-cols-3 gap-4 py-4">
+            {logosFlamengo.map((logo) => (
+              <button
+                key={logo.name}
+                type="button"
+                onClick={() => handleLogoFlamengoSelect(logo.url)}
+                className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+              >
+                <img src={logo.url} alt={logo.name} className="w-16 h-16 object-contain mb-2" />
+                <span className="text-xs text-gray-600 text-center">{logo.name}</span>
+              </button>
+            ))}
+          </div>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input 

@@ -77,44 +77,6 @@ export function OnibusCards({
 
   return (
     <>
-      {/* Cards de resumo */}
-      {selectedOnibusId && (
-        <div className="flex flex-wrap gap-4 mb-4">
-          <Card className="min-w-[180px] flex-1 border-blue-200 bg-blue-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2 text-blue-700">
-                <Users className="h-5 w-5" />
-                Total no Ônibus
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-800">{totalOnibus}</div>
-            </CardContent>
-          </Card>
-          <Card className="min-w-[180px] flex-1 border-green-200 bg-green-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2 text-green-700">
-                <CheckCircle2 className="h-5 w-5" />
-                Vão ao Cristo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-800">{totalSim}</div>
-            </CardContent>
-          </Card>
-          <Card className="min-w-[180px] flex-1 border-red-200 bg-red-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2 text-red-700">
-                <XCircle className="h-5 w-5" />
-                Não vão ao Cristo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-800">{totalNao}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
       {/* Cards dos ônibus */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 mb-6">
         {onibusList.map((onibus) => {
@@ -139,7 +101,7 @@ export function OnibusCards({
           const pendentes = passageirosOnibus.filter(p => p.status_pagamento === 'Pendente').length;
           const cancelados = passageirosOnibus.filter(p => p.status_pagamento === 'Cancelado').length;
           return (
-            <React.Fragment key={onibus.id}>
+            <div key={onibus.id}>
               <Card 
                 className={`relative cursor-pointer hover:border-primary transition-colors shadow-sm rounded-xl p-2 ${isSelected ? 'border-primary bg-primary/5' : ''}`}
                 onClick={() => onSelectOnibus(onibus.id)}
@@ -199,35 +161,7 @@ export function OnibusCards({
                   </div>
                 </div>
               </Card>
-              {/* Card de resumo ao lado */}
-              <Card className="shadow-md rounded-2xl p-5 flex flex-col justify-start min-h-[180px] border border-blue-100 bg-white/80 h-full">
-                <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch w-full">
-                  {/* Coluna Resumo */}
-                  <div className="flex-1 rounded-xl bg-blue-50/80 p-4 flex flex-col justify-between">
-                    <div>
-                      <div className="text-xl font-bold mb-3 text-blue-700">Resumo da Viagem</div>
-                      <div className="text-base mb-3"><span className="font-semibold text-gray-800">Passageiros:</span> {passageirosOnibus.length} de {totalCapacity}</div>
-                      <div className="mb-3 flex gap-6">
-                        <span className="font-bold text-green-700 text-lg">Pagos: {pagos}</span>
-                        <span className="font-bold text-orange-700 text-lg">Pendentes: {pendentes}</span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2">% Ocupação: {percentualOcupacao}%</div>
-                  </div>
-                  {/* Coluna Setores */}
-                  {isSelected && Object.keys(setores).length > 0 && (
-                    <div className="min-w-[180px] rounded-xl bg-blue-100/60 p-4 flex flex-col justify-start">
-                      <span className="font-semibold text-blue-600 text-lg mb-2">Setores:</span>
-                      <ul className="ml-1 mt-1">
-                        {Object.entries(setores).map(([setor, qtd]) => (
-                          <li key={setor} className="text-lg text-gray-800 font-semibold leading-tight">{setor}: <span className="font-bold">{qtd}</span></li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </React.Fragment>
+            </div>
           );
         })}
         

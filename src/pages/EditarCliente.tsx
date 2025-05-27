@@ -12,7 +12,8 @@ import { FonteConhecimento } from "@/types/entities";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useClientValidation } from "@/hooks/useClientValidation";
-import { formatPhone, formatCPF, cleanPhone, cleanCPF } from "@/utils/formatters";
+import { formatPhone, formatCPF, cleanPhone, cleanCPF, formatDate } from "@/utils/formatters";
+import { convertBRDateToISO, convertISOToBRDate, isValidBRDate } from "@/utils/dateUtils";
 import { formSchema as clienteFormSchema } from "@/components/cadastro-publico/FormSchema";
 
 import {
@@ -81,6 +82,17 @@ const EditarCliente = () => {
     form.setValue("cpf", formatted);
   };
 
+  // Handle date change with automatic formatting
+  const handleDateChange = (value: string) => {
+    const formatted = formatDate(value);
+    form.setValue("data_nascimento", formatted);
+    
+    // Clear error if date becomes valid
+    if (isValidBRDate(formatted)) {
+      form.clearErrors("data_nascimento");
+    }
+  };
+
   // Carregar dados do cliente
   useEffect(() => {
     const fetchCliente = async () => {
@@ -92,29 +104,17 @@ const EditarCliente = () => {
           .from("clientes")
           .select("*")
           .eq("id", id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           throw error;
         }
 
         if (data) {
-          // Formatar a data para o formato do input date
+          // Converter data ISO para formato brasileiro
           let formattedData = { ...data };
           if (formattedData.data_nascimento) {
-            // Se já está no formato YYYY-MM-DD, usar diretamente
-            if (formattedData.data_nascimento.includes('-') && formattedData.data_nascimento.length === 10) {
-              // Já está no formato correto
-            } else {
-              // Converter de timestamp para YYYY-MM-DD
-              const dateObj = new Date(formattedData.data_nascimento);
-              if (!isNaN(dateObj.getTime())) {
-                const year = dateObj.getFullYear();
-                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                const day = dateObj.getDate().toString().padStart(2, '0');
-                formattedData.data_nascimento = `${year}-${month}-${day}`;
-              }
-            }
+            formattedData.data_nascimento = convertISOToBRDate(formattedData.data_nascimento);
           }
           
           // Format phone and CPF for display
@@ -153,43 +153,31 @@ const EditarCliente = () => {
         return;
       }
       
-      // Formatar a data de nascimento para o formato do banco de dados
+      // Validar data de nascimento se preenchida
+      if (values.data_nascimento && values.data_nascimento.trim() !== '') {
+        if (!isValidBRDate(values.data_nascimento)) {
+          form.setError("data_nascimento", {
+            type: "manual",
+            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
+          });
+          return;
+        }
+      }
+      
+      // Formatar os dados para envio
       let formattedValues = { ...values };
       
-      // Tratar a data de nascimento
+      // Converter data brasileira para ISO
       if (formattedValues.data_nascimento && formattedValues.data_nascimento.trim() !== '') {
-        try {
-          // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
-          const dateParts = formattedValues.data_nascimento.split('/');
-          if (dateParts.length === 3) {
-            const day = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]);
-            let year = parseInt(dateParts[2]);
-            
-            // Converter anos de 2 dígitos para 4 dígitos
-            if (year < 100) {
-              // Se o ano for menor que 30, assume 20xx, senão 19xx
-              year = year < 30 ? 2000 + year : 1900 + year;
-            }
-            
-            // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
-            formattedValues.data_nascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-          } else {
-            // Se não estiver no formato esperado, tenta converter diretamente
-            const date = new Date(formattedValues.data_nascimento);
-            if (!isNaN(date.getTime())) {
-              const year = date.getFullYear();
-              const month = (date.getMonth() + 1).toString().padStart(2, '0');
-              const day = date.getDate().toString().padStart(2, '0');
-              formattedValues.data_nascimento = `${year}-${month}-${day}`;
-            } else {
-              formattedValues.data_nascimento = null;
-            }
-          }
-        } catch (error) {
-          console.error("Erro ao converter data de nascimento:", error);
-          formattedValues.data_nascimento = null;
+        const isoDate = convertBRDateToISO(formattedValues.data_nascimento);
+        if (!isoDate) {
+          form.setError("data_nascimento", {
+            type: "manual",
+            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
+          });
+          return;
         }
+        formattedValues.data_nascimento = isoDate;
       } else {
         formattedValues.data_nascimento = null;
       }
@@ -338,7 +326,13 @@ const EditarCliente = () => {
                       <FormItem>
                         <FormLabel>Data de Nascimento</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            placeholder="DD/MM/AAAA" 
+                            value={field.value}
+                            onChange={(e) => handleDateChange(e.target.value)}
+                            maxLength={10}
+                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

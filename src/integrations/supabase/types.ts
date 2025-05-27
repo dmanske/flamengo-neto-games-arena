@@ -373,6 +373,8 @@ export type Database = {
           status_pagamento: string
           valor: number | null
           viagem_id: string
+          cidade_embarque: string
+          observacoes: string | null
         }
         Insert: {
           cliente_id: string
@@ -385,6 +387,8 @@ export type Database = {
           status_pagamento?: string
           valor?: number | null
           viagem_id: string
+          cidade_embarque?: string
+          observacoes?: string | null
         }
         Update: {
           cliente_id?: string
@@ -397,6 +401,8 @@ export type Database = {
           status_pagamento?: string
           valor?: number | null
           viagem_id?: string
+          cidade_embarque?: string
+          observacoes?: string | null
         }
         Relationships: [
           {

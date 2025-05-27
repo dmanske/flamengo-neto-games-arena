@@ -50,59 +50,50 @@ export const normalizeYear = (year: number): number => {
 
 /**
  * Converte data do formato DD/MM/AAAA ou DD/MM/AA para YYYY-MM-DD
- * @param dateString - Data no formato DD/MM/AAAA ou DD/MM/AA
+ * @param dateStr - Data no formato DD/MM/AAAA ou DD/MM/AA
  * @returns String no formato YYYY-MM-DD ou null se inválida
  */
-export const convertBRDateToISO = (dateString: string): string | null => {
-  if (!dateString || dateString.trim() === '') return null;
-  
+export const convertBRDateToISO = (dateStr: string): string | null => {
   try {
-    const dateParts = dateString.split('/');
-    if (dateParts.length === 3) {
-      const day = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]);
-      const year = normalizeYear(parseInt(dateParts[2]));
-      
-      // Validações básicas
-      if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) {
-        return null;
-      }
-      
-      return createDateString(day, month, year);
+    const [day, month, year] = dateStr.split('/').map(Number);
+    
+    // Validar se os números são válidos
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return null;
     }
     
-    return null;
+    // Validar se a data é válida
+    const date = new Date(year, month - 1, day);
+    if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) {
+      return null;
+    }
+    
+    // Formatar para ISO
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   } catch (error) {
-    console.error('Erro ao converter data brasileira:', error);
     return null;
   }
 };
 
 /**
  * Converte data do formato YYYY-MM-DD para DD/MM/AAAA
- * @param isoDateString - Data no formato YYYY-MM-DD
+ * @param isoDate - Data no formato YYYY-MM-DD
  * @returns String no formato DD/MM/AAAA ou 'Data inválida'
  */
-export const convertISOToBRDate = (isoDateString: string | null): string => {
-  if (!isoDateString) return 'Data não informada';
-  
+export const convertISOToBRDate = (isoDate: string): string => {
   try {
-    // Se já está no formato YYYY-MM-DD
-    if (isoDateString.includes('-') && isoDateString.length === 10) {
-      const [year, month, day] = isoDateString.split('-');
-      return `${day}/${month}/${year}`;
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) {
+      return '';
     }
     
-    // Tentar converter timestamp
-    const date = new Date(isoDateString);
-    if (isValid(date)) {
-      return format(date, 'dd/MM/yyyy');
-    }
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
     
-    return 'Data inválida';
+    return `${day}/${month}/${year}`;
   } catch (error) {
-    console.error('Erro ao converter data ISO:', error);
-    return 'Data inválida';
+    return '';
   }
 };
 
@@ -160,31 +151,26 @@ export const formatBrazilianDate = (dateString: string | null, includeTime: bool
 
 /**
  * Valida se uma data está no formato DD/MM/AAAA ou DD/MM/AA e é válida
- * @param dateString - Data no formato DD/MM/AAAA ou DD/MM/AA
+ * @param dateStr - Data no formato DD/MM/AAAA ou DD/MM/AA
  * @returns true se válida, false caso contrário
  */
-export const isValidBRDate = (dateString: string): boolean => {
-  if (!dateString || dateString.trim() === '') return false;
-  
-  const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/;
-  const match = dateString.match(dateRegex);
-  
-  if (!match) return false;
-  
-  const day = parseInt(match[1]);
-  const month = parseInt(match[2]);
-  const year = normalizeYear(parseInt(match[3]));
-  
-  // Validações básicas
-  if (day < 1 || day > 31) return false;
-  if (month < 1 || month > 12) return false;
-  if (year < 1900 || year > new Date().getFullYear()) return false;
-  
-  // Verifica se a data é válida
-  const dateObj = new Date(year, month - 1, day);
-  return dateObj.getDate() === day && 
-         dateObj.getMonth() === month - 1 && 
-         dateObj.getFullYear() === year;
+export const isValidBRDate = (dateStr: string): boolean => {
+  try {
+    const [day, month, year] = dateStr.split('/').map(Number);
+    
+    // Validar se os números são válidos
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return false;
+    }
+    
+    // Validar se a data é válida
+    const date = new Date(year, month - 1, day);
+    return date.getDate() === day && 
+           date.getMonth() === month - 1 && 
+           date.getFullYear() === year;
+  } catch (error) {
+    return false;
+  }
 };
 
 /**

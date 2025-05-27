@@ -53,12 +53,18 @@ export interface PassageiroDisplay {
   viagem_id: string;
   passeio_cristo?: string;
   foto?: string | null;
+  cidade_embarque: string;
+  observacoes?: string | null;
   parcelas?: Array<{
     id: string;
     valor_parcela: number;
     forma_pagamento: string;
     data_pagamento: string;
     observacoes?: string;
+  }>;
+  passeios?: Array<{
+    passeio_nome: string;
+    status: string;
   }>;
 }
 
@@ -97,10 +103,24 @@ export function useViagemDetails(viagemId: string | undefined) {
   });
   const [contadorPassageiros, setContadorPassageiros] = useState<Record<string, number>>({});
 
+  // Verificar se o viagemId é válido
   useEffect(() => {
-    if (!viagemId) return;
+    if (!viagemId || viagemId === "undefined") {
+      console.warn("ID da viagem inválido:", viagemId);
+      navigate("/dashboard/viagens");
+      return;
+    }
+
+    // Verificar se o ID é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(viagemId)) {
+      console.warn("ID da viagem não é um UUID válido:", viagemId);
+      navigate("/dashboard/viagens");
+      return;
+    }
+
     fetchViagemData(viagemId);
-  }, [viagemId]);
+  }, [viagemId, navigate]);
 
   // Efeito para filtrar passageiros quando o termo de busca muda
   useEffect(() => {
@@ -124,38 +144,47 @@ export function useViagemDetails(viagemId: string | undefined) {
   const fetchViagemData = async (id: string) => {
     try {
       setIsLoading(true);
-      
-      // Carregar dados da viagem
-      const { data: viagemData, error: viagemError } = await supabase
-        .from("viagens")
-        .select("*")
-        .eq("id", id)
+      const { data, error } = await supabase
+        .from('viagens')
+        .select('*')
+        .eq('id', id)
         .single();
-      
-      if (viagemError) throw viagemError;
-      setViagem(viagemData);
-      
-      // Calcular valor potencial total (valor padrão * capacidade)
-      if (viagemData.valor_padrao && viagemData.capacidade_onibus) {
-        const valorTotal = viagemData.valor_padrao * viagemData.capacidade_onibus;
-        setValorPotencialTotal(valorTotal);
-      }
-      
-      // Carregar ônibus da viagem
-      await fetchOnibus(id);
 
-      // Carregar passageiros da viagem
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        console.warn("Viagem não encontrada:", id);
+        navigate("/dashboard/viagens");
+        return;
+      }
+
+      setViagem(data);
+      await fetchOnibus(id);
       await fetchPassageiros(id);
-      
-    } catch (err) {
-      console.error("Erro ao buscar detalhes da viagem:", err);
-      toast.error("Erro ao carregar detalhes da viagem");
+    } catch (error: any) {
+      console.error('Erro ao buscar dados da viagem:', error);
+      toast.error("Erro ao carregar dados da viagem");
+      navigate("/dashboard/viagens");
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchOnibus = async (viagemId: string) => {
+    if (!viagemId || viagemId === "undefined") {
+      console.warn("ID da viagem inválido:", viagemId);
+      return;
+    }
+
+    // Verificar se o ID é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(viagemId)) {
+      console.warn("ID da viagem não é um UUID válido:", viagemId);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("viagem_onibus")
@@ -176,6 +205,18 @@ export function useViagemDetails(viagemId: string | undefined) {
   };
 
   const fetchPassageiros = async (viagemId: string) => {
+    if (!viagemId || viagemId === "undefined") {
+      console.warn("ID da viagem inválido:", viagemId);
+      return;
+    }
+
+    // Verificar se o ID é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(viagemId)) {
+      console.warn("ID da viagem não é um UUID válido:", viagemId);
+      return;
+    }
+
     try {
       // Buscar passageiros da viagem com dados do cliente usando a relação específica
       const { data, error } = await supabase
@@ -191,6 +232,8 @@ export function useViagemDetails(viagemId: string | undefined) {
           desconto,
           created_at,
           onibus_id,
+          cidade_embarque,
+          observacoes,
           clientes!viagem_passageiros_cliente_id_fkey (
             id,
             nome,
@@ -214,6 +257,10 @@ export function useViagemDetails(viagemId: string | undefined) {
             forma_pagamento,
             data_pagamento,
             observacoes
+          ),
+          passageiro_passeios (
+            passeio_nome,
+            status
           )
         `)
         .eq("viagem_id", viagemId);
@@ -246,7 +293,10 @@ export function useViagemDetails(viagemId: string | undefined) {
         viagem_id: item.viagem_id,
         passeio_cristo: item.clientes.passeio_cristo,
         foto: item.clientes.foto || null,
-        parcelas: item.viagem_passageiros_parcelas
+        cidade_embarque: item.cidade_embarque,
+        observacoes: item.observacoes,
+        parcelas: item.viagem_passageiros_parcelas,
+        passeios: item.passageiro_passeios || []
       }));
       
       // Sort passengers alphabetically by name
@@ -376,6 +426,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       p.setor_maracana.toLowerCase().includes(termLower) ||
       p.status_pagamento.toLowerCase().includes(termLower) ||
       p.forma_pagamento.toLowerCase().includes(termLower) ||
+      p.cidade_embarque.toLowerCase().includes(termLower) ||
       (p.valor !== null && p.valor.toString().includes(termLower)) ||
       (p.desconto !== null && p.desconto.toString().includes(termLower)) ||
       (p.passeio_cristo && (

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -7,20 +6,22 @@ interface ModernCardProps {
   className?: string;
   variant?: 'default' | 'elevated' | 'interactive';
   onClick?: () => void;
+  gradient?: string;
 }
 
 export const ModernCard = ({ 
   children, 
   className,
   variant = 'default',
-  onClick
+  onClick,
+  gradient
 }: ModernCardProps) => {
-  const baseClasses = "rounded-xl bg-white border border-gray-100 transition-all duration-300";
+  const baseClasses = "rounded-xl border-0 shadow-xl transition-all duration-300 overflow-hidden";
   
   const variantClasses = {
-    default: "shadow-professional",
-    elevated: "shadow-professional-md border-gray-100",
-    interactive: "hover:border-gray-200 hover:shadow-professional-md cursor-pointer transform hover:scale-[1.02]"
+    default: "bg-white shadow-professional",
+    elevated: "bg-white shadow-professional-md border-gray-100",
+    interactive: "cursor-pointer hover:scale-105 hover:shadow-2xl"
   };
 
   return (
@@ -28,11 +29,13 @@ export const ModernCard = ({
       className={cn(
         baseClasses,
         variantClasses[variant],
+        gradient ? `bg-gradient-to-br ${gradient}` : "bg-white",
         className
       )}
       onClick={onClick}
+      style={gradient ? { background: `linear-gradient(135deg, var(--tw-gradient-stops))` } : {}}
     >
-      {children}
+      <div className="relative z-10">{children}</div>
     </div>
   );
 };
