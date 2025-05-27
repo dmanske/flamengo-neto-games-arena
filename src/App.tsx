@@ -40,6 +40,10 @@ import LandingPage from "@/pages/LandingPage";
 import CadastroPublico from "@/pages/CadastroPublico";
 import Index from "@/pages/Index";
 
+// Galeria Pages
+import GaleriaFotos from "@/pages/GaleriaFotos";
+import GaleriaVideos from "@/pages/GaleriaVideos";
+
 // Import novas páginas
 import PagamentoSucesso from "@/pages/PagamentoSucesso";
 import Pagamentos from "@/pages/Pagamentos";
@@ -58,6 +62,10 @@ function App() {
               
               {/* Loja pública */}
               <Route path="/loja" element={<Loja />} />
+              
+              {/* Galeria pública */}
+              <Route path="/galeria-fotos" element={<GaleriaFotos />} />
+              <Route path="/galeria-videos" element={<GaleriaVideos />} />
               
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />
