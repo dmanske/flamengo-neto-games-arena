@@ -1,368 +1,244 @@
+
 import React, { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { fetchAddressByCEP } from "@/utils/cepUtils";
+import { useClientValidation } from "@/hooks/useClientValidation";
+import { publicRegistrationSchema, type PublicRegistrationFormData } from "./FormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
-import { formSchema, FormValues, estadosBrasileiros } from "./FormSchema";
-import { FileUpload } from "@/components/ui/file-upload";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export function PublicRegistrationForm() {
-  const [loading, setLoading] = useState(false);
-  const [loadingCep, setLoadingCep] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const fonte = searchParams.get('fonte') || 'site';
+export const PublicRegistrationForm = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [debugMode] = useState(process.env.NODE_ENV === 'development');
+  
+  const { validateClient, isValidating } = useClientValidation();
 
-  // Set up react-query mutation for adding client
-  const addClientMutation = useMutation({
-    mutationFn: async (data: FormValues) => {
-      console.log("Starting form submission with data:", data);
-      
-      try {
-        // Verificar duplicidade de CPF apenas se CPF foi fornecido
-        if (data.cpf) {
-          const { data: existingCPF, error: cpfError } = await supabase
-            .from('clientes')
-            .select('id')
-            .eq('cpf', data.cpf)
-            .single();
-
-          if (existingCPF) {
-            throw new Error("CPF já cadastrado no sistema");
-          }
-        }
-
-        // Verificar duplicidade de telefone
-        const { data: existingPhone, error: phoneError } = await supabase
-          .from('clientes')
-          .select('id')
-          .eq('telefone', data.telefone)
-          .single();
-
-        if (existingPhone) {
-          throw new Error("Telefone já cadastrado no sistema");
-        }
-
-        // Convert string date to Date object for API
-        let dataNascimento = null;
-        if (data.data_nascimento && data.data_nascimento.trim() !== '') {
-          try {
-            // Tenta converter a data no formato DD/MM/AAAA ou DD/MM/AA
-            const dateParts = data.data_nascimento.split('/');
-            if (dateParts.length === 3) {
-              const day = parseInt(dateParts[0]);
-              const month = parseInt(dateParts[1]);
-              let year = parseInt(dateParts[2]);
-              
-              // Converter anos de 2 dígitos para 4 dígitos
-              if (year < 100) {
-                // Se o ano for menor que 30, assume 20xx, senão 19xx
-                year = year < 30 ? 2000 + year : 1900 + year;
-              }
-              
-              // Criar data no formato YYYY-MM-DD para evitar problemas de timezone
-              dataNascimento = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            }
-          } catch (error) {
-            console.error("Erro ao converter data de nascimento:", error);
-          }
-        }
-
-        const clientData = {
-          nome: data.nome,
-          endereco: data.endereco || null,
-          numero: data.numero || null,
-          complemento: data.complemento || null,
-          bairro: data.bairro || null,
-          telefone: data.telefone,
-          cep: data.cep || null,
-          cidade: data.cidade || null,
-          estado: data.estado || null,
-          cpf: data.cpf || null,
-          data_nascimento: dataNascimento,
-          email: data.email,
-          como_conheceu: data.como_conheceu || null,
-          indicacao_nome: data.indicacao_nome || null,
-          observacoes: data.observacoes || null,
-          fonte_cadastro: data.fonte_cadastro || fonte,
-          foto: data.foto || null,
-        };
-
-        console.log("Inserting client data:", clientData);
-
-        // Insert client into Supabase
-        const { data: client, error } = await supabase
-          .from('clientes')
-          .insert([clientData])
-          .select();
-          
-        console.log("Supabase response:", { client, error });
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-        
-        return client;
-      } catch (error: any) {
-        console.error("Error in mutation function:", error);
-        if (error.message === "CPF já cadastrado no sistema" || error.message === "Telefone já cadastrado no sistema") {
-          throw error;
-        }
-        throw new Error("Erro ao cadastrar cliente. Tente novamente.");
-      }
-    },
-    onSuccess: () => {
-      console.log("Form submission successful");
-      // Send WhatsApp message (in production you'd use a proper API/service)
-      console.log(`Enviando mensagem para ${form.getValues().telefone}: 🎟️ Olá, ${form.getValues().nome}! Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. 🔴⚫ Em breve, você poderá escolher sua caravana para o próximo jogo!`);
-      
-      // Show success dialog
-      setSuccessDialogOpen(true);
-    },
-    onError: (error: any) => {
-      console.error("Erro ao cadastrar cliente:", error);
-      if (error.message === "CPF já cadastrado no sistema") {
-        toast.error("Este CPF já está cadastrado no sistema. Por favor, verifique os dados ou entre em contato conosco.");
-      } else if (error.message === "Telefone já cadastrado no sistema") {
-        toast.error("Este telefone já está cadastrado no sistema. Por favor, verifique os dados ou entre em contato conosco.");
-      } else {
-        toast.error("Erro ao cadastrar cliente. Tente novamente.");
-      }
-    }
-  });
-
-  // Define form
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<PublicRegistrationFormData>({
+    resolver: zodResolver(publicRegistrationSchema),
     defaultValues: {
       nome: "",
+      cpf: "",
+      data_nascimento: "",
+      telefone: "",
+      email: "",
       cep: "",
       endereco: "",
       numero: "",
       complemento: "",
       bairro: "",
-      telefone: "",
       cidade: "",
-      estado: "SC",
-      cpf: "",
-      data_nascimento: "",
-      email: "",
-      como_conheceu: fonte === 'whatsapp' ? "WhatsApp" : undefined,
+      estado: "",
+      como_conheceu: "",
       indicacao_nome: "",
       observacoes: "",
-      fonte_cadastro: fonte,
       foto: null,
+      passeio_cristo: "sim",
+      fonte_cadastro: "publico",
     },
   });
 
-  const handleCepBlur = async (cep: string) => {
-    if (cep.length < 8) return;
+  const onSubmit = async (data: PublicRegistrationFormData) => {
+    console.log('🚀 Iniciando processo de cadastro...', debugMode ? data : 'dados ocultos');
     
-    setLoadingCep(true);
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+
     try {
-      const addressData = await fetchAddressByCEP(cep);
-      if (addressData) {
-        form.setValue("endereco", addressData.logradouro);
-        form.setValue("cidade", addressData.localidade);
-        form.setValue("estado", addressData.uf);
-        form.setValue("bairro", addressData.bairro || "");
-        form.trigger();
-        
-        if (addressData.complemento) {
-          form.setValue("complemento", addressData.complemento);
-        }
-        
-        toast.success("Endereço encontrado com sucesso!", {
-          duration: 2000,
-          position: "top-right"
-        });
+      // Etapa 1: Validação de duplicidade
+      console.log('📋 Etapa 1: Validando duplicidade...');
+      toast.loading("Verificando se já existe cadastro...", { id: "validation" });
+      
+      const validation = await validateClient(data.cpf, data.telefone, data.email);
+      
+      toast.dismiss("validation");
+      
+      if (!validation.isValid) {
+        console.log('⚠️ Validação falhou:', validation.message);
+        setSubmitError(validation.message || "Cliente já cadastrado");
+        toast.error(validation.message || "Cliente já cadastrado");
+        return;
       }
-    } catch (error) {
-      toast.error("Erro ao buscar endereço. Verifique o CEP informado.", {
-        duration: 3000,
-        position: "top-right"
-      });
-    } finally {
-      setLoadingCep(false);
-    }
-  };
 
-  const watchComoConheceu = form.watch("como_conheceu");
+      console.log('✅ Etapa 1 concluída: Validação passou');
 
-  // Handle form submission
-  const onSubmit = async (values: FormValues) => {
-    console.log("Form submitted with values:", values);
-    setLoading(true);
-    try {
-      await addClientMutation.mutateAsync(values);
-    } catch (error) {
-      console.error("Error during submission:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
-        a[href*="lovable.dev"],
-        iframe[src*="lovable.dev"],
-        div[style*="Edit with Lovable"],
-        .lovable-badge {
-          display: none !important;
-          opacity: 0 !important;
-          visibility: hidden !important;
-          pointer-events: none !important;
-          position: absolute !important;
-          z-index: -9999 !important;
+      // Etapa 2: Preparação dos dados
+      console.log('📝 Etapa 2: Preparando dados para inserção...');
+      toast.loading("Preparando dados...", { id: "preparation" });
+
+      // Converter data para formato ISO
+      let formattedDate: string;
+      try {
+        const [year, month, day] = data.data_nascimento.split('-');
+        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        
+        if (isNaN(dateObj.getTime())) {
+          throw new Error('Data inválida');
         }
-      `}</style>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PersonalInfoFields 
-              control={form.control} 
-              calendarOpen={calendarOpen} 
-              setCalendarOpen={setCalendarOpen} 
-            />
-            
-            <AddressFields 
-              control={form.control} 
-              loadingCep={loadingCep} 
-              onCepBlur={handleCepBlur} 
-              estadosBrasileiros={estadosBrasileiros}
-            />
+        
+        formattedDate = dateObj.toISOString().split('T')[0];
+        console.log('📅 Data formatada:', { original: data.data_nascimento, formatted: formattedDate });
+      } catch (error) {
+        console.error('❌ Erro ao formatar data:', error);
+        throw new Error('Erro ao processar data de nascimento');
+      }
 
-            <ReferralFields 
-              control={form.control} 
-              watchComoConheceu={watchComoConheceu} 
-            />
+      const clientData = {
+        nome: data.nome,
+        cpf: data.cpf.replace(/\D/g, ''),
+        data_nascimento: formattedDate,
+        telefone: data.telefone.replace(/\D/g, ''),
+        email: data.email,
+        endereco: data.endereco,
+        numero: data.numero,
+        complemento: data.complemento,
+        bairro: data.bairro,
+        cep: data.cep.replace(/\D/g, ''),
+        cidade: data.cidade,
+        estado: data.estado,
+        como_conheceu: data.como_conheceu,
+        indicacao_nome: data.indicacao_nome,
+        observacoes: data.observacoes,
+        foto: data.foto,
+        passeio_cristo: data.passeio_cristo,
+        fonte_cadastro: data.fonte_cadastro,
+      };
 
-            <div className="col-span-1 md:col-span-2">
-              <FormField
-                control={form.control}
-                name="fonte_cadastro"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fonte do Cadastro</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      console.log('✅ Etapa 2 concluída: Dados preparados');
+      toast.dismiss("preparation");
 
-            <div className="col-span-1 md:col-span-2">
-              <FormField
-                control={form.control}
-                name="observacoes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      // Etapa 3: Inserção no banco
+      console.log('💾 Etapa 3: Inserindo no banco de dados...');
+      toast.loading("Salvando cadastro...", { id: "saving" });
 
-            <div className="col-span-1 md:col-span-2">
-              <FormField
-                control={form.control}
-                name="foto"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col w-full">
-                    <FormLabel className="mb-2">Foto do Cliente (opcional)</FormLabel>
-                    <FormControl>
-                      <FileUpload
-                        value={field.value || null}
-                        onChange={field.onChange}
-                        bucketName="client-photos"
-                        folderPath="cadastro-publico"
-                        maxSizeInMB={2}
-                        showPreview={true}
-                        previewClassName="h-32 w-32 md:h-48 md:w-48 object-cover rounded-lg shadow-md"
-                        uploadText="Clique ou arraste para enviar uma foto (máx. 2MB)"
-                      />
-                    </FormControl>
-                    {field.value && (
-                      <span className="text-xs text-gray-500 mt-1 truncate max-w-xs">
-                        {field.value.split('/').pop()}
-                      </span>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+      const { data: insertedClient, error } = await supabase
+        .from('clientes')
+        .insert([clientData])
+        .select()
+        .single();
 
-          <div className="flex justify-center md:justify-end mt-6">
+      toast.dismiss("saving");
+
+      if (error) {
+        console.error('❌ Erro ao inserir cliente:', error);
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Erro ao salvar cadastro: ${error.message}`);
+      }
+
+      console.log('✅ Etapa 3 concluída: Cliente inserido com sucesso', insertedClient);
+
+      // Sucesso
+      setSubmitSuccess(true);
+      toast.success("Cadastro realizado com sucesso! Bem-vindo(a) ao Neto Tours!");
+      
+      // Reset form
+      form.reset();
+      
+      console.log('🎉 Processo de cadastro concluído com sucesso!');
+
+    } catch (error) {
+      console.error('💥 Erro durante o cadastro:', error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Erro inesperado. Tente novamente em alguns minutos.';
+      
+      setSubmitError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isLoading = isSubmitting || isValidating;
+
+  if (submitSuccess) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h3 className="text-lg font-semibold text-green-700">
+              Cadastro Realizado com Sucesso!
+            </h3>
+            <p className="text-gray-600">
+              Bem-vindo(a) ao Neto Tours! Entraremos em contato em breve.
+            </p>
             <Button 
-              type="submit" 
-              variant="default"
-              className="w-full md:w-auto"
-              disabled={loading || addClientMutation.isPending}
+              onClick={() => {
+                setSubmitSuccess(false);
+                form.reset();
+              }}
+              variant="outline"
             >
-              {(loading || addClientMutation.isPending) ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Cadastrando...
-                </>
-              ) : "Cadastrar"}
+              Fazer Novo Cadastro
             </Button>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {submitError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
+      )}
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4">Dados Pessoais</h3>
+              <PersonalInfoFields form={form} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4">Endereço</h3>
+              <AddressFields form={form} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4">Como nos conheceu?</h3>
+              <ReferralFields form={form} />
+            </CardContent>
+          </Card>
+
+          <Button 
+            type="submit" 
+            className="w-full bg-red-600 hover:bg-red-700" 
+            size="lg"
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? "Salvando cadastro..." : 
+             isValidating ? "Verificando dados..." : 
+             "Finalizar Cadastro"}
+          </Button>
         </form>
       </Form>
-
-      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cadastro realizado com sucesso!</AlertDialogTitle>
-            <AlertDialogDescription>
-              Seu cadastro foi realizado com sucesso para as caravanas do Flamengo. Em breve entraremos em contato com mais informações sobre as próximas caravanas.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => {
-              form.reset();
-              setSuccessDialogOpen(false);
-            }} className="bg-[#e40016] hover:bg-[#c20012]">
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    </div>
   );
-}
-
+};

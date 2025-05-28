@@ -21,8 +21,12 @@ export const useClientValidation = () => {
     setIsValidating(true);
     
     try {
+      console.log('🔍 Iniciando validação de cliente...', { cpf: cpf?.substring(0, 3) + '***', telefone: telefone?.substring(0, 3) + '***', email });
+      
       const cleanedCPF = cleanCPF(cpf);
       const cleanedPhone = cleanPhone(telefone);
+      
+      console.log('🧹 Dados limpos:', { cleanedCPF: cleanedCPF?.substring(0, 3) + '***', cleanedPhone: cleanedPhone?.substring(0, 3) + '***' });
       
       // Check for existing client by CPF, phone or email
       let query = supabase
@@ -35,15 +39,25 @@ export const useClientValidation = () => {
         query = query.neq('id', excludeId);
       }
       
-      const { data: existingClients, error } = await query;
+      console.log('📡 Executando query de validação...');
+      const { data: existingClients, error } = await query.maybeSingle();
       
       if (error) {
-        console.error('Erro ao validar cliente:', error);
+        console.error('❌ Erro ao validar cliente:', error);
+        // Log mais detalhado do erro
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return { isValid: true }; // Allow creation if validation fails
       }
       
-      if (existingClients && existingClients.length > 0) {
-        const existingClient = existingClients[0];
+      console.log('✅ Query executada com sucesso, clientes encontrados:', existingClients ? 1 : 0);
+      
+      if (existingClients) {
+        const existingClient = existingClients;
         let conflictType = '';
         
         if (cleanCPF(existingClient.cpf) === cleanedCPF) {
@@ -54,6 +68,8 @@ export const useClientValidation = () => {
           conflictType = 'email';
         }
         
+        console.log('⚠️ Cliente duplicado encontrado:', { conflictType, existingClientName: existingClient.nome });
+        
         return {
           isValid: false,
           existingClient,
@@ -61,9 +77,10 @@ export const useClientValidation = () => {
         };
       }
       
+      console.log('✅ Validação concluída - cliente não encontrado, pode prosseguir');
       return { isValid: true };
     } catch (error) {
-      console.error('Erro ao validar cliente:', error);
+      console.error('💥 Erro inesperado ao validar cliente:', error);
       return { isValid: true }; // Allow creation if validation fails
     } finally {
       setIsValidating(false);

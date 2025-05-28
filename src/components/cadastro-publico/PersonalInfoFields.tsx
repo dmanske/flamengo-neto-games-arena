@@ -1,69 +1,35 @@
+
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { UseFormReturn } from "react-hook-form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { Control } from "react-hook-form";
-import { format, parse } from "date-fns";
-import { cn } from "@/lib/utils";
-import { ptBR } from "date-fns/locale";
-import { formatTelefone, formatCPF } from "@/utils/cepUtils";
-import { formatDate } from "@/utils/formatters";
 import { FileUpload } from "@/components/ui/file-upload";
-import { Label } from "@/components/ui/label";
+import { PublicRegistrationFormData } from "./FormSchema";
 
 interface PersonalInfoFieldsProps {
-  control: Control<any>;
-  calendarOpen: boolean;
-  setCalendarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  form: UseFormReturn<PublicRegistrationFormData>;
 }
 
-export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: PersonalInfoFieldsProps) {
+export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormField
-        control={control}
+        control={form.control}
         name="nome"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nome Completo*</FormLabel>
-            <FormControl>
-              <Input placeholder="Nome completo" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      <FormField
-        control={control}
-        name="email"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email*</FormLabel>
-            <FormControl>
-              <Input placeholder="email@exemplo.com" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
-        name="telefone"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Telefone (WhatsApp)*</FormLabel>
+          <FormItem className="md:col-span-2">
+            <FormLabel>Nome Completo *</FormLabel>
             <FormControl>
               <Input 
-                placeholder="(00) 0 0000-0000" 
+                placeholder="Digite seu nome completo" 
                 {...field} 
-                onChange={(e) => {
-                  field.onChange(formatTelefone(e.target.value));
-                }}
+                maxLength={100}
               />
             </FormControl>
             <FormMessage />
@@ -72,21 +38,21 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
       />
 
       <FormField
-        control={control}
+        control={form.control}
         name="cpf"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>CPF*</FormLabel>
+            <FormLabel>CPF *</FormLabel>
             <FormControl>
               <Input 
                 placeholder="000.000.000-00" 
                 {...field}
                 onChange={(e) => {
-                  const formatted = formatCPF(e.target.value);
+                  const value = e.target.value.replace(/\D/g, '');
+                  const formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
                   field.onChange(formatted);
                 }}
                 maxLength={14}
-                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
             </FormControl>
             <FormMessage />
@@ -95,57 +61,93 @@ export function PersonalInfoFields({ control, calendarOpen, setCalendarOpen }: P
       />
 
       <FormField
-        control={control}
+        control={form.control}
         name="data_nascimento"
         render={({ field }) => (
-          <FormItem className="flex flex-col">
-            <FormLabel>Data de Nascimento*</FormLabel>
-            <div className="flex">
-              <FormControl>
-                <Input
-                  placeholder="DD/MM/AAAA"
-                  {...field}
-                  onChange={(e) => {
-                    const formatted = formatDate(e.target.value);
-                    field.onChange(formatted);
-                  }}
-                  maxLength={10}
-                />
-              </FormControl>
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="ml-2 px-2"
-                    type="button"
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value ? parse(field.value, 'dd/MM/yyyy', new Date()) : undefined}
-                    onSelect={(date) => {
-                      if (date) {
-                        field.onChange(format(date, 'dd/MM/yyyy'));
-                        setCalendarOpen(false);
-                      }
-                    }}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    locale={ptBR}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <FormItem>
+            <FormLabel>Data de Nascimento *</FormLabel>
+            <FormControl>
+              <Input 
+                type="date" 
+                {...field}
+                max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-    </>
+
+      <FormField
+        control={form.control}
+        name="telefone"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Telefone *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="(00) 00000-0000" 
+                {...field}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  let formatted = value;
+                  if (value.length > 2) {
+                    formatted = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+                  }
+                  if (value.length > 7) {
+                    formatted = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7, 11)}`;
+                  }
+                  field.onChange(formatted);
+                }}
+                maxLength={15}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email *</FormLabel>
+            <FormControl>
+              <Input 
+                type="email" 
+                placeholder="seu@email.com" 
+                {...field} 
+                maxLength={100}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="foto"
+        render={({ field }) => (
+          <FormItem className="md:col-span-2">
+            <FormLabel>Foto (Opcional)</FormLabel>
+            <FormControl>
+              <FileUpload
+                value={field.value}
+                onChange={field.onChange}
+                bucketName="client-photos"
+                folderPath="uploads"
+                maxSizeInMB={5}
+                showPreview={true}
+                previewClassName="w-32 h-32 object-cover rounded-lg"
+                uploadText="Clique ou arraste para enviar sua foto (máx. 5MB)"
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
-}
+};
