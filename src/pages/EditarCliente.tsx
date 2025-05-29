@@ -1,555 +1,260 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { FonteConhecimento } from "@/types/entities";
-import { FileUpload } from "@/components/ui/file-upload";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useClientValidation } from "@/hooks/useClientValidation";
-import { formatPhone, formatCPF, cleanPhone, cleanCPF, formatDate } from "@/utils/formatters";
-import { convertBRDateToISO, convertISOToBRDate, isValidBRDate } from "@/utils/dateUtils";
-import { formSchema as clienteFormSchema } from "@/components/cadastro-publico/FormSchema";
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
-
-// Schema de validação do formulário - corrigido para aceitar string vazia ou null nas observações
-const formSchema = clienteFormSchema;
-
-type FormValues = z.infer<typeof formSchema>;
+import { Form } from "@/components/ui/form";
+import { toast } from "sonner";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useClientValidation } from "@/hooks/useClientValidation";
+import { cleanCPF, cleanPhone } from "@/utils/formatters";
+import { formSchema, type ClienteFormData } from "@/components/cliente/ClienteFormSchema";
+import { PersonalInfoFields } from "@/components/cliente/PersonalInfoFields";
+import { ContactInfoFields } from "@/components/cliente/ContactInfoFields";
+import { AddressFields } from "@/components/cliente/AddressFields";
+import { ReferralFields } from "@/components/cliente/ReferralFields";
 
 const EditarCliente = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { validateClient, isValidating } = useClientValidation();
 
-  // Inicializar o formulário
-  const form = useForm<FormValues>({
+  const form = useForm<ClienteFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: "",
-      email: "",
-      telefone: "",
       cpf: "",
       data_nascimento: "",
-      endereco: "",
+      telefone: "",
+      email: "",
       cep: "",
-      cidade: "",
-      estado: "",
-      bairro: "",
+      endereco: "",
       numero: "",
       complemento: "",
-      observacoes: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
       como_conheceu: "",
       indicacao_nome: "",
-      foto: null,
+      observacoes: "",
+      foto: "",
+      passeio_cristo: "sim",
+      fonte_cadastro: "admin",
     },
+    mode: "onChange",
   });
 
-  // Obter o valor atual do campo "como_conheceu"
-  const comoConheceu = form.watch("como_conheceu");
-  const clienteFoto = form.watch("foto");
-  const nomeCliente = form.watch("nome");
-
-  // Format phone on change
-  const handlePhoneChange = (value: string) => {
-    const formatted = formatPhone(value);
-    form.setValue("telefone", formatted);
-  };
-
-  // Format CPF on change
-  const handleCPFChange = (value: string) => {
-    const formatted = formatCPF(value);
-    form.setValue("cpf", formatted);
-  };
-
-  // Handle date change with automatic formatting
-  const handleDateChange = (value: string) => {
-    const formatted = formatDate(value);
-    form.setValue("data_nascimento", formatted);
-    
-    // Clear error if date becomes valid
-    if (isValidBRDate(formatted)) {
-      form.clearErrors("data_nascimento");
-    }
-  };
-
-  // Carregar dados do cliente
   useEffect(() => {
     const fetchCliente = async () => {
+      setIsLoading(true);
       try {
-        if (!id) return;
-        
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("clientes")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
+        const { data: cliente, error } = await supabase
+          .from('clientes')
+          .select('*')
+          .eq('id', id)
+          .single();
 
         if (error) {
-          throw error;
+          console.error("Erro ao buscar cliente:", error);
+          toast.error("Erro ao buscar cliente.");
+          return;
         }
 
-        if (data) {
-          // Converter data ISO para formato brasileiro
-          let formattedData = { ...data };
-          if (formattedData.data_nascimento) {
-            formattedData.data_nascimento = convertISOToBRDate(formattedData.data_nascimento);
-          }
-          
-          // Format phone and CPF for display
-          formattedData.telefone = formatPhone(formattedData.telefone);
-          formattedData.cpf = formatCPF(formattedData.cpf);
-          
-          // Garantir que observacoes e indicacao_nome sejam strings vazias se for null
-          formattedData.observacoes = formattedData.observacoes || "";
-          formattedData.indicacao_nome = formattedData.indicacao_nome || "";
-          
-          // Preencher o formulário com os dados do cliente
-          form.reset(formattedData);
+        if (cliente) {
+          // Formatando a data para o formato de input date (YYYY-MM-DD)
+          const formattedDate = cliente.data_nascimento
+            ? new Date(cliente.data_nascimento).toISOString().split('T')[0]
+            : '';
+
+          form.setValue({
+            nome: cliente.nome || "",
+            cpf: cliente.cpf || "",
+            data_nascimento: formattedDate,
+            telefone: cliente.telefone || "",
+            email: cliente.email || "",
+            cep: cliente.cep || "",
+            endereco: cliente.endereco || "",
+            numero: cliente.numero || "",
+            complemento: cliente.complemento || "",
+            bairro: cliente.bairro || "",
+            cidade: cliente.cidade || "",
+            estado: cliente.estado || "",
+            como_conheceu: cliente.como_conheceu || "",
+            indicacao_nome: cliente.indicacao_nome || "",
+            observacoes: cliente.observacoes || "",
+            foto: cliente.foto || "",
+            passeio_cristo: cliente.passeio_cristo || "sim",
+            fonte_cadastro: cliente.fonte_cadastro || "admin",
+          });
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Erro ao buscar cliente:", error);
-        toast.error("Erro ao carregar dados do cliente");
-        navigate("/dashboard/clientes");
+        toast.error("Erro ao buscar cliente.");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchCliente();
-  }, [id, form, navigate]);
+    if (id) {
+      fetchCliente();
+    }
+  }, [id, form]);
 
-  // Enviar o formulário
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (data: ClienteFormData) => {
+    setIsSubmitting(true);
     try {
-      setSubmitting(true);
-      
-      // Validate for duplicates (excluding current client)
-      const validation = await validateClient(values.cpf, values.telefone, values.email, id);
-      
-      if (!validation.isValid) {
-        toast.error(validation.message);
+      // Validar cliente
+      const validation = await validateClient(data.cpf, data.telefone, data.email, id);
+
+      if (!validation.isValid && validation.existingClient) {
+        toast.error(validation.message || "Cliente já cadastrado");
+        setIsSubmitting(false);
         return;
       }
-      
-      // Validar data de nascimento se preenchida
-      if (values.data_nascimento && values.data_nascimento.trim() !== '') {
-        if (!isValidBRDate(values.data_nascimento)) {
-          form.setError("data_nascimento", {
-            type: "manual",
-            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
-          });
-          return;
-        }
-      }
-      
-      // Formatar os dados para envio
-      let formattedValues = { ...values };
-      
-      // Converter data brasileira para ISO
-      if (formattedValues.data_nascimento && formattedValues.data_nascimento.trim() !== '') {
-        const isoDate = convertBRDateToISO(formattedValues.data_nascimento);
-        if (!isoDate) {
-          form.setError("data_nascimento", {
-            type: "manual",
-            message: "Data de nascimento inválida. Use o formato DD/MM/AAAA"
-          });
-          return;
-        }
-        formattedValues.data_nascimento = isoDate;
-      } else {
-        formattedValues.data_nascimento = null;
-      }
-      
-      // Clean phone and CPF before saving
-      formattedValues.telefone = cleanPhone(formattedValues.telefone);
-      formattedValues.cpf = cleanCPF(formattedValues.cpf);
-      formattedValues.email = formattedValues.email.toLowerCase();
-      
-      // Garantir que observacoes e indicacao_nome sejam strings vazias e não null
-      formattedValues.observacoes = formattedValues.observacoes || "";
-      formattedValues.indicacao_nome = formattedValues.indicacao_nome || "";
-      
-      // Remover campos que não devem ser atualizados
-      delete formattedValues.foto;
-      
+
+      const clienteData = {
+        nome: data.nome.trim(),
+        cpf: cleanCPF(data.cpf),
+        data_nascimento: data.data_nascimento,
+        telefone: cleanPhone(data.telefone),
+        email: data.email.toLowerCase().trim(),
+        cep: data.cep.replace(/\D/g, ''),
+        endereco: data.endereco.trim(),
+        numero: data.numero.trim(),
+        complemento: data.complemento?.trim() || null,
+        bairro: data.bairro.trim(),
+        cidade: data.cidade.trim(),
+        estado: data.estado.toUpperCase().trim(),
+        como_conheceu: data.como_conheceu,
+        indicacao_nome: data.indicacao_nome?.trim() || null,
+        observacoes: data.observacoes?.trim() || null,
+        foto: data.foto || null,
+        passeio_cristo: data.passeio_cristo,
+        fonte_cadastro: data.fonte_cadastro,
+        updated_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
-        .from("clientes")
-        .update(formattedValues)
-        .eq("id", id);
+        .from('clientes')
+        .update(clienteData)
+        .eq('id', id);
 
       if (error) {
-        throw error;
+        console.error("Erro ao atualizar cliente:", error);
+        toast.error("Erro ao atualizar cliente.");
+        return;
       }
 
-      toast.success("Cliente atualizado com sucesso");
-      navigate("/dashboard/clientes");
-    } catch (error: any) {
+      toast.success("Cliente atualizado com sucesso!");
+      navigate('/clientes');
+    } catch (error) {
       console.error("Erro ao atualizar cliente:", error);
-      toast.error(`Erro ao atualizar cliente: ${error.message}`);
+      toast.error("Erro ao atualizar cliente.");
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const fontesConhecimento: FonteConhecimento[] = [
-    "Instagram", 
-    "Indicação", 
-    "Facebook", 
-    "Google", 
-    "Outro"
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Carregando informações do cliente...
+      </div>
+    );
+  }
 
   return (
     <div className="container py-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Button 
-          variant="ghost"
-          onClick={() => navigate("/dashboard/clientes")}
-          className="p-0 h-auto"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-3xl font-bold">Editar Cliente</h1>
-      </div>
+      <Button variant="ghost" onClick={() => navigate('/clientes')} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Voltar para a lista de clientes
+      </Button>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Informações do Cliente</CardTitle>
+        <CardHeader>
+          <CardTitle>Editar Cliente</CardTitle>
+          <CardDescription>
+            Altere os dados do cliente
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Carregando dados do cliente...</span>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="flex flex-col items-center gap-4 mb-6">
-                  <FormField
-                    control={form.control}
-                    name="foto"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col items-center">
-                        <FormLabel>Foto do Cliente (opcional)</FormLabel>
-                        
-                        {/* Preview da foto */}
-                        <div className="flex flex-col items-center gap-3">
-                          <Avatar className="h-24 w-24 border-2 border-gray-200">
-                            {clienteFoto ? (
-                              <AvatarImage 
-                                src={clienteFoto} 
-                                alt={nomeCliente || "Preview"}
-                                className="object-cover"
-                              />
-                            ) : (
-                              <AvatarFallback className="bg-gray-100 text-gray-400 text-lg">
-                                {nomeCliente ? nomeCliente.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "FT"}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          
-                          <FormControl>
-                            <FileUpload
-                              value={field.value}
-                              onChange={field.onChange}
-                              bucketName="client-photos"
-                              folderPath="clientes"
-                              maxSizeInMB={5}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* Dados Pessoais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dados Pessoais</CardTitle>
+                  <CardDescription>
+                    Informações básicas do cliente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PersonalInfoFields form={form} />
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Completo *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome completo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cpf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CPF</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="000.000.000-00 (opcional)" 
-                            value={field.value}
-                            onChange={(e) => handleCPFChange(e.target.value)}
-                            className="bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="data_nascimento"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Nascimento</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="DD/MM/AAAA" 
-                            value={field.value}
-                            onChange={(e) => handleDateChange(e.target.value)}
-                            maxLength={10}
-                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email *</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="exemplo@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="telefone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telefone *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="(00) 00000-0000" 
-                            value={field.value}
-                            onChange={(e) => handlePhoneChange(e.target.value)}
-                            className="bg-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cep"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CEP</FormLabel>
-                        <FormControl>
-                          <Input placeholder="00000-000 (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="endereco"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Endereço</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Rua, Avenida, etc. (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="numero"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Número (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="complemento"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Complemento</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Apartamento, bloco, etc. (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="bairro"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bairro</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Bairro (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cidade"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cidade</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Cidade (opcional)" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="estado"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado</FormLabel>
-                        <FormControl>
-                          <Input placeholder="UF (opcional)" maxLength={2} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {comoConheceu === "Indicação" && (
-                    <FormField
-                      control={form.control}
-                      name="indicacao_nome"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome da indicação</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Nome de quem indicou (opcional)" {...field} className="bg-white" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {/* Contato */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contato</CardTitle>
+                  <CardDescription>
+                    Informações de contato do cliente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ContactInfoFields form={form} />
+                </CardContent>
+              </Card>
+
+              {/* Endereço */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Endereço</CardTitle>
+                  <CardDescription>
+                    Informações do endereço do cliente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AddressFields form={form} />
+                </CardContent>
+              </Card>
+
+              {/* Como conheceu e observações */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Adicionais</CardTitle>
+                  <CardDescription>
+                    Como o cliente conheceu a empresa e observações
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ReferralFields form={form} />
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || isValidating}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isSubmitting || isValidating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar Alterações"
                   )}
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="como_conheceu"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Como conheceu *</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-wrap gap-4"
-                        >
-                          {fontesConhecimento.map((fonte) => (
-                            <FormItem key={fonte} className="flex items-center space-x-2 space-y-0">
-                              <FormControl>
-                                <RadioGroupItem value={fonte} checked={field.value === fonte} />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                {fonte}
-                              </FormLabel>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="observacoes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Observações (opcional)" 
-                          {...field} 
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-3">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => navigate("/dashboard/clientes")}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={submitting || isValidating}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {submitting || isValidating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {isValidating ? "Validando..." : "Salvando..."}
-                      </>
-                    ) : (
-                      'Salvar Alterações'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          )}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

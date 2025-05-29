@@ -2,26 +2,26 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClientValidation } from "@/hooks/useClientValidation";
+import { cleanCPF, cleanPhone } from "@/utils/formatters";
 import { publicRegistrationSchema, type PublicRegistrationFormData } from "./FormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
-import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const PublicRegistrationForm = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [debugMode] = useState(process.env.NODE_ENV === 'development');
-  
   const { validateClient, isValidating } = useClientValidation();
+  
+  const fonte = searchParams.get('fonte') || 'publico';
 
   const form = useForm<PublicRegistrationFormData>({
     resolver: zodResolver(publicRegistrationSchema),
@@ -38,127 +38,92 @@ export const PublicRegistrationForm = () => {
       bairro: "",
       cidade: "",
       estado: "",
-      como_conheceu: "",
+      como_conheceu: fonte === 'whatsapp' ? 'whatsapp' : '',
       indicacao_nome: "",
       observacoes: "",
-      foto: null,
+      foto: "",
       passeio_cristo: "sim",
-      fonte_cadastro: "publico",
+      fonte_cadastro: fonte,
     },
   });
 
   const onSubmit = async (data: PublicRegistrationFormData) => {
-    console.log('🚀 Iniciando processo de cadastro...', debugMode ? data : 'dados ocultos');
+    console.log('🚀 Iniciando submissão do formulário público...', { fonte });
     
     setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(false);
-
+    
     try {
-      // Etapa 1: Validação de duplicidade
-      console.log('📋 Etapa 1: Validando duplicidade...');
-      toast.loading("Verificando se já existe cadastro...", { id: "validation" });
-      
+      // Validar cliente
+      console.log('🔍 Validando cliente...');
       const validation = await validateClient(data.cpf, data.telefone, data.email);
       
-      toast.dismiss("validation");
-      
-      if (!validation.isValid) {
-        console.log('⚠️ Validação falhou:', validation.message);
-        setSubmitError(validation.message || "Cliente já cadastrado");
+      if (!validation.isValid && validation.existingClient) {
         toast.error(validation.message || "Cliente já cadastrado");
+        setIsSubmitting(false);
         return;
       }
 
-      console.log('✅ Etapa 1 concluída: Validação passou');
-
-      // Etapa 2: Preparação dos dados
-      console.log('📝 Etapa 2: Preparando dados para inserção...');
-      toast.loading("Preparando dados...", { id: "preparation" });
-
-      // Converter data para formato ISO
-      let formattedDate: string;
-      try {
-        const [year, month, day] = data.data_nascimento.split('-');
-        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        
-        if (isNaN(dateObj.getTime())) {
-          throw new Error('Data inválida');
-        }
-        
-        formattedDate = dateObj.toISOString().split('T')[0];
-        console.log('📅 Data formatada:', { original: data.data_nascimento, formatted: formattedDate });
-      } catch (error) {
-        console.error('❌ Erro ao formatar data:', error);
-        throw new Error('Erro ao processar data de nascimento');
-      }
-
-      const clientData = {
-        nome: data.nome,
-        cpf: data.cpf.replace(/\D/g, ''),
-        data_nascimento: formattedDate,
-        telefone: data.telefone.replace(/\D/g, ''),
-        email: data.email,
-        endereco: data.endereco,
-        numero: data.numero,
-        complemento: data.complemento,
-        bairro: data.bairro,
+      // Preparar dados para inserção
+      const clienteData = {
+        nome: data.nome.trim(),
+        cpf: cleanCPF(data.cpf),
+        data_nascimento: data.data_nascimento,
+        telefone: cleanPhone(data.telefone),
+        email: data.email.toLowerCase().trim(),
         cep: data.cep.replace(/\D/g, ''),
-        cidade: data.cidade,
-        estado: data.estado,
+        endereco: data.endereco.trim(),
+        numero: data.numero.trim(),
+        complemento: data.complemento?.trim() || null,
+        bairro: data.bairro.trim(),
+        cidade: data.cidade.trim(),
+        estado: data.estado.toUpperCase().trim(),
         como_conheceu: data.como_conheceu,
-        indicacao_nome: data.indicacao_nome,
-        observacoes: data.observacoes,
-        foto: data.foto,
-        passeio_cristo: data.passeio_cristo,
-        fonte_cadastro: data.fonte_cadastro,
+        indicacao_nome: data.indicacao_nome?.trim() || null,
+        observacoes: data.observacoes?.trim() || null,
+        foto: data.foto || null,
+        passeio_cristo: "sim",
+        fonte_cadastro: fonte,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      console.log('✅ Etapa 2 concluída: Dados preparados');
-      toast.dismiss("preparation");
+      console.log('💾 Inserindo cliente no banco...', { nome: clienteData.nome, fonte });
 
-      // Etapa 3: Inserção no banco
-      console.log('💾 Etapa 3: Inserindo no banco de dados...');
-      toast.loading("Salvando cadastro...", { id: "saving" });
-
-      const { data: insertedClient, error } = await supabase
+      const { data: novoCliente, error } = await supabase
         .from('clientes')
-        .insert([clientData])
+        .insert([clienteData])
         .select()
         .single();
 
-      toast.dismiss("saving");
-
       if (error) {
-        console.error('❌ Erro ao inserir cliente:', error);
-        console.error('Detalhes do erro:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw new Error(`Erro ao salvar cadastro: ${error.message}`);
+        console.error('❌ Erro ao cadastrar cliente:', error);
+        throw error;
       }
 
-      console.log('✅ Etapa 3 concluída: Cliente inserido com sucesso', insertedClient);
+      console.log('✅ Cliente cadastrado com sucesso!', { id: novoCliente?.id, nome: novoCliente?.nome });
 
-      // Sucesso
-      setSubmitSuccess(true);
-      toast.success("Cadastro realizado com sucesso! Bem-vindo(a) ao Neto Tours!");
+      // Feedback de sucesso
+      toast.success("Cadastro realizado com sucesso! Entraremos em contato em breve.");
       
-      // Reset form
+      // Reset do formulário
       form.reset();
       
-      console.log('🎉 Processo de cadastro concluído com sucesso!');
+      // Redirecionar para página de sucesso ou inicial
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 2000);
 
-    } catch (error) {
-      console.error('💥 Erro durante o cadastro:', error);
+    } catch (error: any) {
+      console.error('💥 Erro no cadastro público:', error);
       
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Erro inesperado. Tente novamente em alguns minutos.';
+      let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
       
-      setSubmitError(errorMessage);
+      if (error?.code === '23505') {
+        errorMessage = "Já existe um cliente cadastrado com estes dados.";
+      } else if (error?.message) {
+        errorMessage = `Erro: ${error.message}`;
+      }
+      
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -167,78 +132,60 @@ export const PublicRegistrationForm = () => {
 
   const isLoading = isSubmitting || isValidating;
 
-  if (submitSuccess) {
-    return (
-      <Card className="max-w-md mx-auto">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h3 className="text-lg font-semibold text-green-700">
-              Cadastro Realizado com Sucesso!
-            </h3>
-            <p className="text-gray-600">
-              Bem-vindo(a) ao Neto Tours! Entraremos em contato em breve.
-            </p>
-            <Button 
-              onClick={() => {
-                setSubmitSuccess(false);
-                form.reset();
-              }}
-              variant="outline"
-            >
-              Fazer Novo Cadastro
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {submitError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{submitError}</AlertDescription>
-        </Alert>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* Dados Pessoais */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados Pessoais</CardTitle>
+            <CardDescription>
+              Preencha seus dados pessoais para o cadastro
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PersonalInfoFields form={form} />
+          </CardContent>
+        </Card>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Dados Pessoais</h3>
-              <PersonalInfoFields form={form} />
-            </CardContent>
-          </Card>
+        {/* Endereço */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Endereço</CardTitle>
+            <CardDescription>
+              Informações do seu endereço
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AddressFields form={form} />
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Endereço</h3>
-              <AddressFields form={form} />
-            </CardContent>
-          </Card>
+        {/* Como conheceu e observações */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Adicionais</CardTitle>
+            <CardDescription>
+              Como nos conheceu e observações
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReferralFields form={form} />
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Como nos conheceu?</h3>
-              <ReferralFields form={form} />
-            </CardContent>
-          </Card>
-
+        {/* Botão de submit */}
+        <div className="flex justify-center pt-4">
           <Button 
             type="submit" 
-            className="w-full bg-red-600 hover:bg-red-700" 
-            size="lg"
+            size="lg" 
             disabled={isLoading}
+            className="w-full md:w-auto bg-red-600 hover:bg-red-700"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Salvando cadastro..." : 
-             isValidating ? "Verificando dados..." : 
-             "Finalizar Cadastro"}
+            {isLoading ? "Cadastrando..." : "Realizar Cadastro"}
           </Button>
-        </form>
-      </Form>
-    </div>
+        </div>
+      </form>
+    </Form>
   );
 };

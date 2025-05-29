@@ -1,118 +1,60 @@
+
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { UseFormReturn } from "react-hook-form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { Control } from "react-hook-form";
-import { formatCEP } from "@/utils/cepUtils";
+import { buscarCEP } from "@/utils/cepUtils";
+import { PublicRegistrationFormData } from "./FormSchema";
 
 interface AddressFieldsProps {
-  control: Control<any>;
-  loadingCep: boolean;
-  onCepBlur: (cep: string) => void;
-  estadosBrasileiros: string[];
+  form: UseFormReturn<PublicRegistrationFormData>;
 }
 
-export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileiros }: AddressFieldsProps) {
+export const AddressFields = ({ form }: AddressFieldsProps) => {
+  const handleCEPChange = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '');
+    
+    if (cleanCEP.length === 8) {
+      try {
+        const endereco = await buscarCEP(cleanCEP);
+        if (endereco) {
+          form.setValue('endereco', endereco.logradouro);
+          form.setValue('bairro', endereco.bairro);
+          form.setValue('cidade', endereco.localidade);
+          form.setValue('estado', endereco.uf);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+      }
+    }
+  };
+
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormField
-        control={control}
+        control={form.control}
         name="cep"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>CEP*</FormLabel>
-            <div className="relative">
-              <FormControl>
-                <Input 
-                  placeholder="00000-000" 
-                  {...field} 
-                  onChange={(e) => {
-                    const formattedCEP = formatCEP(e.target.value);
-                    field.onChange(formattedCEP);
-                  }}
-                  onBlur={() => onCepBlur(field.value)}
-                />
-              </FormControl>
-              {loadingCep && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <FormField
-          control={control}
-          name="endereco"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Endereço*</FormLabel>
-              <FormControl>
-                <Input placeholder="Rua, Avenida, etc." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="numero"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Número*</FormLabel>
-              <FormControl>
-                <Input placeholder="123" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <FormField
-          control={control}
-          name="cidade"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cidade*</FormLabel>
-              <FormControl>
-                <Input placeholder="Cidade" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={control}
-          name="bairro"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bairro*</FormLabel>
-              <FormControl>
-                <Input placeholder="Bairro" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      <FormField
-        control={control}
-        name="complemento"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Complemento</FormLabel>
+            <FormLabel>CEP *</FormLabel>
             <FormControl>
-              <Input placeholder="Apto, bloco, etc." {...field} />
+              <Input 
+                placeholder="00000-000" 
+                {...field}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  const formatted = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+                  field.onChange(formatted);
+                  handleCEPChange(formatted);
+                }}
+                maxLength={9}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -120,33 +62,116 @@ export function AddressFields({ control, loadingCep, onCepBlur, estadosBrasileir
       />
 
       <FormField
-        control={control}
-        name="estado"
+        control={form.control}
+        name="endereco"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Estado*</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o estado" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {estadosBrasileiros.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
-                    {estado}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormLabel>Endereço *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="Rua, avenida..." 
+                {...field} 
+                maxLength={200}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-    </>
+
+      <FormField
+        control={form.control}
+        name="numero"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Número *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="123" 
+                {...field} 
+                maxLength={10}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="complemento"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Complemento</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="Apto, casa..." 
+                {...field} 
+                maxLength={50}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="bairro"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Bairro *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="Nome do bairro" 
+                {...field} 
+                maxLength={100}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="cidade"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cidade *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="Nome da cidade" 
+                {...field} 
+                maxLength={100}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="estado"
+        render={({ field }) => (
+          <FormItem className="md:col-span-2">
+            <FormLabel>Estado *</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="UF" 
+                {...field}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  field.onChange(value);
+                }}
+                maxLength={2}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
-}
+};
