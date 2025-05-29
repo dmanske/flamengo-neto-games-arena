@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -51,7 +50,7 @@ const EditarCliente = () => {
 
   return (
     <div className="container py-6">
-      <Button variant="ghost" onClick={() => navigate('/clientes')} className="mb-4">
+      <Button variant="ghost" onClick={() => navigate('/dashboard/clientes')} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Voltar para a lista de clientes
       </Button>
