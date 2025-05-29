@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Função para validar CPF
@@ -41,43 +40,49 @@ const isAdult = (birthDate: string) => {
 };
 
 export const formSchema = z.object({
-  // Dados pessoais - OBRIGATÓRIOS conforme banco
+  // Dados pessoais - APENAS NOME OBRIGATÓRIO
   nome: z.string()
-    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .min(1, "Nome é obrigatório")
     .max(100, "Nome muito longo")
+    .refine(val => {
+      const words = val.trim().split(/\s+/);
+      return words.length >= 2;
+    }, "Digite nome e sobrenome")
     .transform(val => val.trim()),
   
   cpf: z.string()
-    .min(1, "CPF é obrigatório")
-    .refine(isValidCPF, "CPF inválido"),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   data_nascimento: z.string()
-    .min(1, "Data de nascimento é obrigatória")
-    .refine(isAdult, "Deve ser maior de idade (18 anos)"),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   telefone: z.string()
-    .min(10, "Telefone deve ter pelo menos 10 dígitos")
-    .max(15, "Telefone muito longo"),
+    .transform(val => val?.replace(/\D/g, '') || "") // remove tudo que não for número
+    .optional(),
   
   email: z.string()
-    .min(1, "Email é obrigatório")
     .email("Email inválido")
-    .transform(val => val.toLowerCase().trim()),
+    .optional()
+    .or(z.literal(""))
+    .transform(val => val?.toLowerCase().trim() || ""),
 
-  // Endereço - OBRIGATÓRIOS conforme banco
+  // Endereço - TODOS OPCIONAIS
   cep: z.string()
-    .min(8, "CEP deve ter 8 dígitos")
-    .max(9, "CEP inválido"),
+    .max(9, "CEP inválido")
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   endereco: z.string()
-    .min(1, "Endereço é obrigatório")
     .max(200, "Endereço muito longo")
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   numero: z.string()
-    .min(1, "Número é obrigatório")
     .max(10, "Número muito longo")
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   complemento: z.string()
     .max(50, "Complemento muito longo")
@@ -85,23 +90,24 @@ export const formSchema = z.object({
     .transform(val => val?.trim() || null),
   
   bairro: z.string()
-    .min(1, "Bairro é obrigatório")
     .max(100, "Bairro muito longo")
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   cidade: z.string()
-    .min(1, "Cidade é obrigatória")
     .max(100, "Cidade muito longa")
-    .transform(val => val.trim()),
+    .optional()
+    .transform(val => val?.trim() || ""),
   
   estado: z.string()
-    .min(2, "Estado é obrigatório")
-    .max(2, "Estado deve ter 2 caracteres")
-    .transform(val => val.toUpperCase().trim()),
+    .max(2, "Estado deve ter no máximo 2 caracteres")
+    .optional()
+    .transform(val => val?.toUpperCase().trim() || ""),
 
-  // Como conheceu - OBRIGATÓRIO conforme banco
+  // Como conheceu - OPCIONAL
   como_conheceu: z.string()
-    .min(1, "Selecione como conheceu o Neto Tours"),
+    .optional()
+    .transform(val => val?.trim() || ""),
 
   // Campos opcionais
   indicacao_nome: z.string()
