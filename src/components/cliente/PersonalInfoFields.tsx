@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { format, parse } from "date-fns";
@@ -16,15 +16,11 @@ import { formatDate } from "@/utils/formatters";
 
 interface PersonalInfoFieldsProps {
   form: UseFormReturn<any>;
-  calendarOpen: boolean;
-  setCalendarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
-  form,
-  calendarOpen,
-  setCalendarOpen,
-}) => {
+export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) => {
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
   return (
     <>
       <FormField

@@ -1,3 +1,4 @@
+
 export type TipoOnibus =
   | "46 Semi-Leito"
   | "50 Convencional"
@@ -46,6 +47,30 @@ export type FonteConhecimento =
   | "Facebook" 
   | "Google" 
   | "Outro";
+
+export interface Cliente {
+  id: string;
+  nome: string;
+  cpf: string;
+  data_nascimento: string;
+  telefone: string;
+  email: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  como_conheceu: string;
+  indicacao_nome?: string | null;
+  observacoes?: string | null;
+  foto?: string | null;
+  passeio_cristo: string;
+  fonte_cadastro: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface Viagem {
   id: string;

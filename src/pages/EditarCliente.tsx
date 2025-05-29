@@ -70,7 +70,7 @@ const EditarCliente = () => {
             ? new Date(cliente.data_nascimento).toISOString().split('T')[0]
             : '';
 
-          form.setValue({
+          form.reset({
             nome: cliente.nome || "",
             cpf: cliente.cpf || "",
             data_nascimento: formattedDate,

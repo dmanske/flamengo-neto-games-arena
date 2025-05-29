@@ -1,17 +1,18 @@
+
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-import { FonteConhecimento } from "@/types/entities";
 
 interface ReferralFieldsProps {
   form: UseFormReturn<any>;
-  watchComoConheceu: FonteConhecimento | undefined;
 }
 
-export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form, watchComoConheceu }) => {
+export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
+  const watchComoConheceu = form.watch("como_conheceu");
+
   return (
     <>
       <FormField

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
@@ -9,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { buscarCEP } from "@/utils/cepUtils";
+import { fetchAddressByCEP } from "@/utils/cepUtils";
 import { PublicRegistrationFormData } from "./FormSchema";
 
 interface AddressFieldsProps {
@@ -22,7 +21,7 @@ export const AddressFields = ({ form }: AddressFieldsProps) => {
     
     if (cleanCEP.length === 8) {
       try {
-        const endereco = await buscarCEP(cleanCEP);
+        const endereco = await fetchAddressByCEP(cleanCEP);
         if (endereco) {
           form.setValue('endereco', endereco.logradouro);
           form.setValue('bairro', endereco.bairro);
