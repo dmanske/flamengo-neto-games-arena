@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -43,7 +42,6 @@ export const useClientFormSubmit = (clienteId?: string) => {
         foto: data.foto || null,
         passeio_cristo: data.passeio_cristo,
         fonte_cadastro: data.fonte_cadastro,
-        updated_at: new Date().toISOString()
       };
 
       const { error } = await supabase
