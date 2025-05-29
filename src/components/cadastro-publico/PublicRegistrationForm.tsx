@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,7 +41,6 @@ export const PublicRegistrationForm = () => {
       indicacao_nome: "",
       observacoes: "",
       foto: "",
-      passeio_cristo: "sim",
       fonte_cadastro: fonte,
     },
   });
@@ -81,10 +79,8 @@ export const PublicRegistrationForm = () => {
         indicacao_nome: data.indicacao_nome?.trim() || null,
         observacoes: data.observacoes?.trim() || null,
         foto: data.foto || null,
-        passeio_cristo: "sim",
         fonte_cadastro: fonte,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
       };
 
       console.log('💾 Inserindo cliente no banco...', { nome: clienteData.nome, fonte });

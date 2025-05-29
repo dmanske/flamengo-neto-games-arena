@@ -127,11 +127,6 @@ export const formSchema = z.object({
     .or(z.literal(""))
     .transform(val => val || null),
 
-  // Campo padrão para passeio cristo
-  passeio_cristo: z.string()
-    .default("sim")
-    .transform(() => "sim"),
-
   // Campo para identificar fonte do cadastro
   fonte_cadastro: z.string()
     .default("admin")

@@ -42,7 +42,6 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
       indicacao_nome: cliente?.indicacao_nome || "",
       observacoes: cliente?.observacoes || "",
       foto: cliente?.foto || "",
-      passeio_cristo: cliente?.passeio_cristo || "sim",
       fonte_cadastro: cliente?.fonte_cadastro || "admin",
     },
   });
@@ -77,9 +76,7 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
         indicacao_nome: data.indicacao_nome?.trim() || null,
         observacoes: data.observacoes?.trim() || null,
         foto: data.foto || null,
-        passeio_cristo: data.passeio_cristo,
         fonte_cadastro: data.fonte_cadastro,
-        updated_at: new Date().toISOString()
       };
 
       if (cliente) {
