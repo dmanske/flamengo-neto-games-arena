@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
@@ -65,12 +64,24 @@ export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
         name="data_nascimento"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Data de Nascimento *</FormLabel>
+            <FormLabel>Data de Nascimento</FormLabel>
             <FormControl>
               <Input 
-                type="date" 
+                type="text" 
+                placeholder="DD/MM/AAAA"
                 {...field}
-                max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  let formatted = value;
+                  if (value.length >= 2) {
+                    formatted = `${value.slice(0, 2)}/${value.slice(2)}`;
+                  }
+                  if (value.length >= 4) {
+                    formatted = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4, 8)}`;
+                  }
+                  field.onChange(formatted);
+                }}
+                maxLength={10}
               />
             </FormControl>
             <FormMessage />
