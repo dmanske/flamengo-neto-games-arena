@@ -56,7 +56,7 @@ export const useClientFormSubmit = (clienteId?: string) => {
       }
 
       toast.success("Cliente atualizado com sucesso!");
-      navigate('/clientes');
+      navigate('/dashboard/clientes');
     } catch (error) {
       console.error("Erro ao atualizar cliente:", error);
       toast.error("Erro ao atualizar cliente.");
