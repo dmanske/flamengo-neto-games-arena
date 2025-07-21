@@ -11,7 +11,7 @@ const CadastroPublico = () => {
         <div className="container py-8 max-w-4xl mx-auto">
           <div className="flex justify-center mb-8">
             <div className="flex flex-col justify-center items-center text-center">
-              <h1 className="text-4xl font-bold text-red-600 mb-2">Neto Turs</h1>
+              <h1 className="text-4xl font-bold text-red-600 mb-2">Neto Tours Viagens</h1>
               <p className="text-lg text-gray-700 font-medium">Caravanas Rubro-Negras</p>
               <p className="text-sm text-gray-600 mt-1">Sua paixão pelo Flamengo em cada viagem</p>
             </div>

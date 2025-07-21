@@ -29,7 +29,7 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
     { value: "tiktok", label: "TikTok" },
     { value: "indicacao_amigo", label: "Indicação de Amigo/Familiar" },
     { value: "indicacao_cliente", label: "Indicação de Cliente Antigo" },
-    { value: "site_neto_turs", label: "Site da Neto Turs" },
+    { value: "site_neto_turs", label: "Site da Neto Tours Viagens" },
     { value: "panfleto_flyer", label: "Panfleto/Flyer" },
     { value: "radio", label: "Rádio" },
     { value: "televisao", label: "Televisão" },
@@ -47,11 +47,11 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
         name="como_conheceu"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Como conheceu a Neto Turs?</FormLabel>
+            <FormLabel>Como conheceu a Neto Tours Viagens?</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione como conheceu a Neto Turs" />
+                  <SelectValue placeholder="Selecione como conheceu a Neto Tours Viagens" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -91,7 +91,7 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
             <FormItem>
               <FormLabel>Especifique como conheceu</FormLabel>
               <FormControl>
-                <Input placeholder="Descreva como conheceu a Neto Turs" {...field} />
+                <Input placeholder="Descreva como conheceu a Neto Tours Viagens" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

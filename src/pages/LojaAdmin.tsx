@@ -42,7 +42,7 @@ interface LojaConfig {
 const LojaAdmin = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [lojaConfig, setLojaConfig] = useState<LojaConfig>({
-    titulo_loja: "Neto Tours - Caravanas Rubro-Negras",
+    titulo_loja: "Neto Tours Viagens - Caravanas Rubro-Negras",
     descricao_loja: "As melhores viagens para acompanhar o Mengão! Pagamento seguro e confirmação imediata.",
     cor_primaria: "#dc2626",
     cor_secundaria: "#000000",
