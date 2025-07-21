@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton-loader";
 import {
   Table,
   TableBody,
@@ -31,7 +30,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid, CalendarCheck, History, Archive } from "lucide-react";
+import { Loader2, Search, Trash2, Pencil, Eye, PlusCircle, List, LayoutGrid, CalendarCheck, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
@@ -62,11 +61,10 @@ const Viagens = () => {
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [viagemToDelete, setViagemToDelete] = useState<Viagem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  const [activeTab, setActiveTab] = useState<'ativas' | 'em_andamento' | 'historico'>('ativas');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
   const navigate = useNavigate();
 
@@ -79,16 +77,10 @@ const Viagens = () => {
     try {
       setLoading(true);
 
-      let query = supabase
+      const { data, error } = await supabase
         .from('viagens')
         .select('*')
         .order('data_jogo', { ascending: true });
-
-      if (filterStatus) {
-        query = query.eq('status_viagem', filterStatus);
-      }
-
-      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -134,9 +126,13 @@ const Viagens = () => {
     viagens.map(viagem => viagem.id)
   );
 
-  // Separar viagens ativas e históricas
+  // Separar viagens por status
   const viagensAtivas = viagens.filter(viagem =>
     viagem.status_viagem === 'Aberta' || viagem.status_viagem === 'Fechada'
+  );
+
+  const viagensEmAndamento = viagens.filter(viagem =>
+    viagem.status_viagem === 'Em andamento'
   );
 
   const viagensHistoricas = viagens.filter(viagem =>
@@ -169,20 +165,64 @@ const Viagens = () => {
     });
   };
 
-  // Apply filters
+  // Apply filters - busca global em todos os campos
   const filterViagens = (viagensList: Viagem[]) => {
     if (!searchTerm) return viagensList;
 
     const term = searchTerm.toLowerCase();
 
-    return viagensList.filter((viagem) =>
-      viagem.adversario.toLowerCase().includes(term) ||
-      viagem.rota.toLowerCase().includes(term) ||
-      format(new Date(viagem.data_jogo), 'dd/MM/yyyy', { locale: ptBR }).includes(term)
-    );
+    return viagensList.filter((viagem) => {
+      // Busca por adversário/time
+      const adversarioMatch = viagem.adversario?.toLowerCase().includes(term) || false;
+      
+      // Busca por rota/cidade
+      const rotaMatch = viagem.rota?.toLowerCase().includes(term) || false;
+      
+      // Busca por empresa
+      const empresaMatch = viagem.empresa?.toLowerCase().includes(term) || false;
+      
+      // Busca por tipo de ônibus
+      const tipoOnibusMatch = viagem.tipo_onibus?.toLowerCase().includes(term) || false;
+      
+      // Busca por status
+      const statusMatch = viagem.status_viagem?.toLowerCase().includes(term) || false;
+      
+      // Busca por data (múltiplos formatos)
+      let dataMatch = false;
+      try {
+        const dataJogo = new Date(viagem.data_jogo);
+        const formattedDate = format(dataJogo, 'dd/MM/yyyy', { locale: ptBR });
+        const formattedDateShort = format(dataJogo, 'dd/MM', { locale: ptBR });
+        const monthYear = format(dataJogo, 'MM/yyyy', { locale: ptBR });
+        const year = format(dataJogo, 'yyyy', { locale: ptBR });
+        const monthName = format(dataJogo, 'MMMM', { locale: ptBR });
+        
+        dataMatch = formattedDate.includes(term) || 
+                   formattedDateShort.includes(term) ||
+                   monthYear.includes(term) ||
+                   year.includes(term) ||
+                   monthName.toLowerCase().includes(term);
+      } catch (dateError) {
+        dataMatch = false;
+      }
+      
+      // Busca por valor (se o termo for numérico)
+      let valorMatch = false;
+      if (viagem.valor_padrao && !isNaN(Number(term))) {
+        const valorString = viagem.valor_padrao.toString();
+        valorMatch = valorString.includes(term);
+      }
+
+      return adversarioMatch || rotaMatch || empresaMatch || tipoOnibusMatch || 
+             statusMatch || dataMatch || valorMatch;
+    });
   };
 
+  // Se há busca ativa, buscar em todas as viagens
+  const todasViagensFiltradas = searchTerm ? filterViagens(viagens) : [];
+  
   const viagensAtivasFiltradas = filterViagens(viagensAtivas);
+  const viagensEmAndamentoFiltradas = filterViagens(viagensEmAndamento);
   const viagensHistoricasFiltradas = filterViagens(getViagensPorPeriodo(viagensHistoricas));
 
   // Delete viagem
@@ -264,6 +304,8 @@ const Viagens = () => {
         return 'text-red-700 bg-red-100';
       case 'concluída':
         return 'text-blue-700 bg-blue-100';
+      case 'em andamento':
+        return 'text-amber-700 bg-amber-100';
       default:
         return 'text-gray-700 bg-gray-100';
     }
@@ -417,11 +459,15 @@ const Viagens = () => {
             </Button>
           </div>
 
-          <Tabs defaultValue="ativas" className="w-full" onValueChange={(value) => setActiveTab(value as 'ativas' | 'historico')}>
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+          <Tabs defaultValue="ativas" className="w-full" onValueChange={(value) => setActiveTab(value as 'ativas' | 'em_andamento' | 'historico')}>
+            <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
               <TabsTrigger value="ativas" className="flex items-center gap-2">
                 <CalendarCheck className="h-4 w-4" />
-                Viagens Ativas
+                Ativas
+              </TabsTrigger>
+              <TabsTrigger value="em_andamento" className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4" />
+                Em Andamento
               </TabsTrigger>
               <TabsTrigger value="historico" className="flex items-center gap-2">
                 <Archive className="h-4 w-4" />
@@ -434,7 +480,7 @@ const Viagens = () => {
                 <div className="relative w-full md:w-64">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Buscar viagem..."
+                    placeholder="Buscar por time, cidade, data, empresa, status..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8"
@@ -497,11 +543,35 @@ const Viagens = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
                     <CalendarCheck className="h-5 w-5" />
-                    Viagens Ativas ({viagensAtivasFiltradas.length})
+                    {searchTerm ? `Resultados da Busca (${todasViagensFiltradas.length})` : `Viagens Ativas (${viagensAtivasFiltradas.length})`}
                   </CardTitle>
+                  {searchTerm && (
+                    <p className="text-sm text-gray-600">
+                      Buscando por "{searchTerm}" em todas as viagens
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  {renderViagensContent(viagensAtivasFiltradas)}
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensAtivasFiltradas)}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="em_andamento">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 text-amber-600" />
+                    {searchTerm ? `Resultados da Busca (${todasViagensFiltradas.length})` : `Viagens Em Andamento (${viagensEmAndamentoFiltradas.length})`}
+                  </CardTitle>
+                  {searchTerm && (
+                    <p className="text-sm text-gray-600">
+                      Buscando por "{searchTerm}" em todas as viagens
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensEmAndamentoFiltradas)}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -511,11 +581,16 @@ const Viagens = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
                     <Archive className="h-5 w-5" />
-                    Histórico de Viagens ({viagensHistoricasFiltradas.length})
+                    {searchTerm ? `Resultados da Busca (${todasViagensFiltradas.length})` : `Histórico de Viagens (${viagensHistoricasFiltradas.length})`}
                   </CardTitle>
+                  {searchTerm && (
+                    <p className="text-sm text-gray-600">
+                      Buscando por "{searchTerm}" em todas as viagens
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  {renderViagensContent(viagensHistoricasFiltradas)}
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensHistoricasFiltradas)}
                 </CardContent>
               </Card>
             </TabsContent>

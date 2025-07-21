@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Bus, Users, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+
+
+import { fetchPassageiros } from './PassageirosCard';
 
 interface Onibus {
   id: string;
@@ -24,6 +27,10 @@ interface OnibusCardsProps {
   passageirosCount?: Record<string, number>;
   passageirosNaoAlocados?: number;
   passageiros?: any[];
+  viagemId: string;
+  setPassageiros: (p: any[]) => void;
+  setIsLoading: (b: boolean) => void;
+  toast: any;
 }
 
 export function OnibusCards({ 
@@ -32,20 +39,18 @@ export function OnibusCards({
   onSelectOnibus, 
   passageirosCount = {},
   passageirosNaoAlocados = 0,
-  passageiros = []
+  passageiros = [],
+  viagemId,
+  setPassageiros,
+  setIsLoading,
+  toast
 }: OnibusCardsProps) {
   const [busImages, setBusImages] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   
-  // Calcular totais para o ônibus selecionado
-  let totalOnibus = 0;
-  let totalSim = 0;
-  let totalNao = 0;
-  if (selectedOnibusId) {
-    const passageirosOnibus = passageiros.filter(p => p.onibus_id === selectedOnibusId);
-    totalOnibus = passageirosOnibus.length;
-    totalSim = passageirosOnibus.filter(p => p.passeio_cristo === 'sim').length;
-    totalNao = passageirosOnibus.filter(p => p.passeio_cristo === 'nao').length;
-  }
+  // Variáveis removidas - não utilizadas
 
   // Buscar imagens dos ônibus
   useEffect(() => {
@@ -75,6 +80,65 @@ export function OnibusCards({
     fetchBusImages();
   }, []);
 
+  // Responsáveis do ônibus selecionado
+  const responsaveisOnibus = selectedOnibusId
+    ? passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === selectedOnibusId)
+    : [];
+  const passageirosOnibus = selectedOnibusId
+    ? passageiros.filter(p => p.onibus_id === selectedOnibusId)
+    : [];
+    
+  // Configurar Realtime para atualizações em tempo real
+  useEffect(() => {
+    if (!viagemId) return;
+
+    console.log('🔄 Configurando Realtime para viagem:', viagemId);
+    
+    // Criar canal do Supabase Realtime
+    const channel = supabase
+      .channel(`viagem-passageiros-${viagemId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuta INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'viagem_passageiros',
+          filter: `viagem_id=eq.${viagemId}` // Apenas mudanças desta viagem
+        },
+        (payload) => {
+          console.log('🔔 Mudança detectada na tabela viagem_passageiros:', payload);
+          
+          // Atualizar timestamp da última mudança
+          setLastUpdate(new Date());
+          
+          // Recarregar dados quando houver mudanças
+          fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+          
+          // Mostrar notificação discreta sobre a atualização
+          if (payload.eventType === 'UPDATE' && payload.new?.is_responsavel_onibus !== payload.old?.is_responsavel_onibus) {
+            const isAdding = payload.new?.is_responsavel_onibus;
+            toast.info(isAdding ? '✅ Responsável adicionado em tempo real' : '❌ Responsável removido em tempo real');
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Status do Realtime:', status);
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
+      });
+
+    // Cleanup: remover subscription quando componente desmontar
+    return () => {
+      console.log('🔌 Desconectando Realtime');
+      supabase.removeChannel(channel);
+    };
+  }, [viagemId, setPassageiros, setIsLoading, toast]);
+
+  // Debug para verificar os responsáveis
+  console.log('Responsáveis do ônibus:', responsaveisOnibus);
+  console.log('Passageiros do ônibus:', passageirosOnibus);
+
+
+
   return (
     <>
       {/* Cards dos ônibus */}
@@ -95,13 +159,9 @@ export function OnibusCards({
               }
             });
           }
-          // Resumo de status
-          const passageirosOnibus = passageiros.filter(p => p.onibus_id === onibus.id);
-          const pagos = passageirosOnibus.filter(p => p.status_pagamento === 'Pago').length;
-          const pendentes = passageirosOnibus.filter(p => p.status_pagamento === 'Pendente').length;
-          const cancelados = passageirosOnibus.filter(p => p.status_pagamento === 'Cancelado').length;
+          // Resumo de status (removido variáveis não utilizadas)
           return (
-            <div key={onibus.id}>
+            <div key={onibus.id} className="flex gap-4 items-stretch">
               <Card 
                 className={`relative cursor-pointer hover:border-primary transition-colors shadow-sm rounded-xl p-2 ${isSelected ? 'border-primary bg-primary/5' : ''}`}
                 onClick={() => onSelectOnibus(onibus.id)}
@@ -156,11 +216,179 @@ export function OnibusCards({
                             className={`h-2 ${percentualOcupacao > 90 ? 'bg-red-200' : percentualOcupacao > 70 ? 'bg-yellow-200' : ''}`}
                           />
                         </div>
+                        
+                        {/* Responsáveis do ônibus */}
+                        {passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id).length > 0 && (
+                          <div className="mt-2">
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="text-xs text-gray-500">Responsáveis:</span>
+                              {passageiros
+                                .filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id)
+                                .map(responsavel => (
+                                  <Badge 
+                                    key={responsavel.viagem_passageiro_id || responsavel.id} 
+                                    className="bg-blue-100 text-blue-800 text-xs"
+                                  >
+                                    {responsavel.nome ? responsavel.nome.split(' ')[0] : 
+                                     responsavel.clientes?.nome ? responsavel.clientes.nome.split(' ')[0] : 'Responsável'}
+                                  </Badge>
+                                ))
+                              }
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </div>
                 </div>
               </Card>
+              {/* Card dos responsáveis selecionados */}
+              {isSelected && (
+                <Card className="min-w-[280px] flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-600" />
+                        Responsáveis
+                        {/* Indicador de conexão em tempo real */}
+                        <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-gray-400'}`} 
+                             title={isRealtimeConnected ? 'Conectado - Atualizações em tempo real' : 'Desconectado'} />
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-blue-700 border-blue-300">
+                          {responsaveisOnibus.length}
+                        </Badge>
+                        {lastUpdate && (
+                          <span className="text-xs text-slate-500" title={`Última atualização: ${lastUpdate.toLocaleTimeString()}`}>
+                            {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0 space-y-4">
+                    {/* Lista dos responsáveis atuais */}
+                    <div className="space-y-3">
+                      {responsaveisOnibus.length === 0 && (
+                        <div className="text-center py-6 text-slate-500">
+                          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Nenhum responsável definido</p>
+                        </div>
+                      )}
+                      
+                      {responsaveisOnibus.map(responsavel => {
+                        const nome = responsavel.nome || (responsavel.clientes ? responsavel.clientes.nome : 'Responsável');
+                        const foto = responsavel.foto || (responsavel.clientes ? responsavel.clientes.foto : null);
+                        const iniciais = nome.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                        const responsavelId = responsavel.viagem_passageiro_id || responsavel.id;
+                        
+                        return (
+                          <div key={responsavelId} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 shadow-sm">
+                            <Avatar className="h-10 w-10 border-2 border-blue-300">
+                              {foto ? (
+                                <AvatarImage src={foto} alt={nome} className="object-cover" />
+                              ) : null}
+                              <AvatarFallback className="bg-blue-100 text-blue-800 text-sm font-semibold">
+                                {iniciais}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm text-blue-900 truncate">{nome}</h4>
+                              <Badge className="bg-green-600 text-white text-xs mt-1">Responsável</Badge>
+                            </div>
+                            
+                            {/* Botão para remover responsável */}
+                            <button
+                              onClick={async () => {
+                                if (isSaving) return;
+                                
+                                try {
+                                  setIsSaving(true);
+                                  const { error } = await supabase
+                                    .from('viagem_passageiros')
+                                    .update({ is_responsavel_onibus: false })
+                                    .eq('id', responsavelId);
+                                    
+                                  if (error) throw error;
+                                  
+                                  await fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+                                  toast.success('Responsável removido!');
+                                } catch (e) {
+                                  console.error('Erro ao remover responsável:', e);
+                                  toast.error('Erro ao remover responsável!');
+                                } finally {
+                                  setIsSaving(false);
+                                }
+                              }}
+                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Remover responsável"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Dropdown para adicionar novos responsáveis */}
+                    <div className="border-t border-blue-200 pt-4">
+                      <label className="block text-sm font-medium text-blue-900 mb-2">
+                        Adicionar responsável:
+                      </label>
+                      <select
+                        className="w-full p-2 border border-blue-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value=""
+                        onChange={async (e) => {
+                          const passageiroId = e.target.value;
+                          if (!passageiroId || isSaving) return;
+                          
+                          try {
+                            setIsSaving(true);
+                            const { error } = await supabase
+                              .from('viagem_passageiros')
+                              .update({ is_responsavel_onibus: true })
+                              .eq('id', passageiroId);
+                              
+                            if (error) throw error;
+                            
+                            await fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+                            toast.success('Responsável adicionado!');
+                          } catch (e) {
+                            console.error('Erro ao adicionar responsável:', e);
+                            toast.error('Erro ao adicionar responsável!');
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }}
+                        disabled={isSaving}
+                      >
+                        <option value="">Selecione um passageiro...</option>
+                        {passageirosOnibus
+                          .filter(p => !p.is_responsavel_onibus)
+                          .map(p => {
+                            const passageiroId = p.viagem_passageiro_id || p.id;
+                            const nome = p.nome || (p.clientes ? p.clientes.nome : 'Passageiro');
+                            return (
+                              <option key={passageiroId} value={passageiroId}>
+                                {nome}
+                              </option>
+                            );
+                          })}
+                      </select>
+                      
+                      {passageirosOnibus.filter(p => !p.is_responsavel_onibus).length === 0 && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Todos os passageiros já são responsáveis
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           );
         })}

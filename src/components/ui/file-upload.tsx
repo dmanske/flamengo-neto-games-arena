@@ -79,16 +79,30 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (!value) return;
 
     try {
-      // Extrair o caminho do arquivo da URL
-      const filePath = value.split('/').pop();
-      if (!filePath) return;
-
+      console.log("Removendo arquivo:", value);
+      
+      // Extrair o caminho do arquivo da URL do Supabase
+      // A URL tem o formato: https://xxxx.supabase.co/storage/v1/object/public/bucket-name/folder/filename.jpg
+      
+      // Primeiro, encontrar a parte após o nome do bucket
+      const bucketIndex = value.indexOf(bucketName);
+      if (bucketIndex === -1) {
+        console.error("Bucket não encontrado na URL:", value);
+        return;
+      }
+      
+      // Extrair o caminho após o nome do bucket (incluindo a barra)
+      const pathAfterBucket = value.substring(bucketIndex + bucketName.length + 1);
+      
+      console.log("Caminho após bucket:", pathAfterBucket);
+      
       // Remover do storage
       const { error } = await supabase.storage
         .from(bucketName)
-        .remove([`${folderPath}/${filePath}`]);
+        .remove([pathAfterBucket]);
 
       if (error) {
+        console.error("Erro ao remover do storage:", error);
         throw error;
       }
 
@@ -100,6 +114,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }
   };
 
+  console.log("FileUpload - value:", value, "showPreview:", showPreview);
+  
   return (
     <div className="space-y-4 flex flex-col items-center">
       <div
@@ -121,6 +137,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               src={value}
               alt="Preview"
               className={previewClassName || "w-48 h-48 object-cover rounded-lg shadow-md"}
+              onError={(e) => {
+                console.error("Erro ao carregar imagem:", e);
+                e.currentTarget.src = "https://via.placeholder.com/150?text=Erro+na+imagem";
+              }}
             />
           )}
           <Button

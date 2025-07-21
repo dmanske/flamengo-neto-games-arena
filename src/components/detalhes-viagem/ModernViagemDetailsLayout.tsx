@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { ResponsaveisCard } from "./ResponsaveisCard";
 import { formatCurrency } from "@/lib/utils";
 import {
   AlertDialog,
@@ -43,6 +44,7 @@ interface ModernViagemDetailsLayoutProps {
   onPrint?: () => void;
   onExportPDF?: () => void;
   onibusList: Array<any>;
+  passageiros?: Array<any>;
   children: React.ReactNode;
 }
 
@@ -52,6 +54,7 @@ export function ModernViagemDetailsLayout({
   onPrint, 
   onExportPDF, 
   onibusList,
+  passageiros = [],
   children 
 }: ModernViagemDetailsLayoutProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -211,6 +214,11 @@ export function ModernViagemDetailsLayout({
 
       {/* Quick Info Cards */}
       <div className="container py-6">
+        {/* Responsáveis Card - Exibido apenas se houver responsáveis */}
+        {passageiros.filter(p => p.is_responsavel_onibus === true).length > 0 && (
+          <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
             <CardContent className="p-6">

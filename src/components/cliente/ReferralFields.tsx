@@ -84,7 +84,7 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
             <FormItem>
               <FormLabel>Especifique como conheceu</FormLabel>
               <FormControl>
-                <Input placeholder="Descreva como conheceu a Neto Turs" {...field} />
+                <Input placeholder="Descreva como conheceu a Neto Tours Viagens" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,10 +99,10 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
           <FormItem>
             <FormLabel>Observações</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder="Informações adicionais sobre o cliente" 
+              <Textarea
+                placeholder="Informações adicionais sobre o cliente"
                 className="min-h-[80px]"
-                {...field} 
+                {...field}
               />
             </FormControl>
             <FormMessage />

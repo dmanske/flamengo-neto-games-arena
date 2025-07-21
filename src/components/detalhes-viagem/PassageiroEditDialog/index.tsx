@@ -38,6 +38,7 @@ import { ParcelasEditManager } from "./ParcelasEditManager";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function PassageiroEditDialog({
   open,
@@ -168,14 +169,15 @@ export function PassageiroEditDialog({
   if (!passageiro) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1100px] w-full max-h-[95vh] overflow-y-auto bg-white">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-gray-900">Editar Passageiro</DialogTitle>
-          <DialogDescription className="text-gray-600">
-            Editando: <span className="font-semibold text-gray-900">{passageiro?.nome}</span>
-          </DialogDescription>
-        </DialogHeader>
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[1100px] w-full max-h-[95vh] overflow-y-auto bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-gray-900">Editar Passageiro</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Editando: <span className="font-semibold text-gray-900">{passageiro?.nome}</span>
+            </DialogDescription>
+          </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -471,5 +473,6 @@ export function PassageiroEditDialog({
         </Form>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 }

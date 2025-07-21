@@ -26,6 +26,8 @@ import Viagens from "@/pages/Viagens";
 import CadastrarViagem from "@/pages/CadastrarViagem";
 import EditarViagem from "@/pages/EditarViagem";
 import DetalhesViagem from '@/pages/DetalhesViagem';
+import ListaPresenca from '@/pages/ListaPresenca';
+import DashboardPresenca from '@/pages/DashboardPresenca';
 import Onibus from '@/pages/Onibus';
 import CadastrarOnibus from '@/pages/CadastrarOnibus';
 import EditarOnibus from '@/pages/EditarOnibus';
@@ -87,6 +89,7 @@ function App() {
                   <Route path="viagem/:id" element={<DetalhesViagem />} />
                   <Route path="viagem/:id/editar" element={<EditarViagem />} />
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
+                  <Route path="presenca/:viagemId" element={<ListaPresenca />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="onibus" element={<Onibus />} />
                   <Route path="onibus/:id" element={<DetalhesOnibus />} />

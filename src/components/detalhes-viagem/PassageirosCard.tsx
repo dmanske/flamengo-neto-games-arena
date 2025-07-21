@@ -23,6 +23,7 @@ import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -43,6 +44,56 @@ interface PassageirosCardProps {
   setPassageiros: (passageiros: any[]) => void;
   setIsLoading: (isLoading: boolean) => void;
 }
+
+export const fetchPassageiros = async (viagemId: string, setPassageiros: (p: any[]) => void, setIsLoading: (b: boolean) => void, toast: any) => {
+  try {
+    setIsLoading(true);
+    if (!viagemId || viagemId === "undefined") {
+      console.warn("ID da viagem inválido:", viagemId);
+      return;
+    }
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(viagemId)) {
+      console.warn("ID da viagem não é um UUID válido:", viagemId);
+      return;
+    }
+    
+    // Consulta explicitamente o campo is_responsavel_onibus
+    const { data, error } = await supabase
+      .from('viagem_passageiros')
+      .select(`
+        id, 
+        viagem_id, 
+        cliente_id, 
+        onibus_id, 
+        is_responsavel_onibus,
+        status_pagamento,
+        setor_maracana,
+        cidade_embarque,
+        clientes:clientes!viagem_passageiros_cliente_id_fkey(*)
+      `)
+      .eq('viagem_id', viagemId)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    // Mapear os dados para garantir que viagem_passageiro_id seja definido
+    const passageirosFormatados = (data || []).map(p => ({
+      ...p,
+      viagem_passageiro_id: p.id, // Garantir que viagem_passageiro_id seja definido
+      nome: p.clientes.nome,
+      is_responsavel_onibus: p.is_responsavel_onibus || false
+    }));
+    
+    console.log('Passageiros carregados:', passageirosFormatados);
+    setPassageiros(passageirosFormatados);
+  } catch (error: any) {
+    console.error('Erro ao buscar passageiros:', error);
+    toast.error("Erro ao carregar passageiros");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 export function PassageirosCard({
   passageirosAtuais,
@@ -102,42 +153,6 @@ export function PassageirosCard({
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const fetchPassageiros = async () => {
-    try {
-      setIsLoading(true);
-
-      // Verificar se o viagemId é válido
-      if (!viagemId || viagemId === "undefined") {
-        console.warn("ID da viagem inválido:", viagemId);
-        return;
-      }
-
-      // Verificar se o ID é um UUID válido
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(viagemId)) {
-        console.warn("ID da viagem não é um UUID válido:", viagemId);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('passageiros')
-        .select('*')
-        .eq('viagem_id', viagemId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setPassageiros(data || []);
-    } catch (error: any) {
-      console.error('Erro ao buscar passageiros:', error);
-      toast.error("Erro ao carregar passageiros");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -231,7 +246,7 @@ export function PassageirosCard({
                   const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
                   const valorFalta = valorLiquido - valorPago;
                   return (
-                    <TableRow key={passageiro.viagem_passageiro_id}>
+                    <TableRow key={passageiro.viagem_passageiro_id} className={passageiro.is_responsavel_onibus ? "bg-blue-50" : ""}>
                       <TableCell className="text-center">{index + 1}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-rome-navy">
                         <div className="flex items-center gap-2">
@@ -315,7 +330,9 @@ export function PassageirosCard({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onEditPassageiro(passageiro)}
+                            onClick={() => {
+                              onEditPassageiro(passageiro);
+                            }}
                             className="h-8 w-8 p-0"
                           >
                             <Pencil className="h-4 w-4" />

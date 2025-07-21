@@ -152,21 +152,26 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
       <FormField
         control={form.control}
         name="foto"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Foto do Cliente (opcional)</FormLabel>
-            <FormControl>
-              <FileUpload
-                value={field.value}
-                onChange={field.onChange}
-                bucketName="client-photos"
-                folderPath="clientes"
-                maxSizeInMB={5}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+        render={({ field }) => {
+          console.log("Valor da foto:", field.value);
+          return (
+            <FormItem>
+              <FormLabel>Foto do Cliente (opcional)</FormLabel>
+              <FormControl>
+                <FileUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  bucketName="client-photos"
+                  folderPath="clientes"
+                  maxSizeInMB={5}
+                  showPreview={true}
+                  previewClassName="w-32 h-32 object-cover rounded-lg shadow-md"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
     </div>
   );

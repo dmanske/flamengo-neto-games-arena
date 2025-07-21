@@ -206,7 +206,7 @@ export function CleanViagemCard({
         </div>
         
         {/* Actions footer */}
-        <div className="grid grid-cols-3 border-t border-gray-100">
+        <div className={`grid ${viagem.status_viagem === 'Em andamento' ? 'grid-cols-4' : 'grid-cols-3'} border-t border-gray-100`}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -223,6 +223,26 @@ export function CleanViagemCard({
             </TooltipTrigger>
             <TooltipContent>Ver detalhes</TooltipContent>
           </Tooltip>
+          
+          {/* Botão de Lista de Presença - só aparece quando a viagem está em andamento */}
+          {viagem.status_viagem === 'Em andamento' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="rounded-none border-r border-gray-100 h-12 hover:bg-amber-500 hover:text-white transition-colors"
+                  asChild
+                >
+                  <Link to={`/dashboard/presenca/${viagem.id}`}>
+                    <Users className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Presença</span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Lista de Presença</TooltipContent>
+            </Tooltip>
+          )}
           
           <Tooltip>
             <TooltipTrigger asChild>

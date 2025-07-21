@@ -48,6 +48,7 @@ export interface PassageiroDisplay {
   status_pagamento: string;
   forma_pagamento: string;
   cliente_id: string;
+  is_responsavel_onibus?: boolean;
   viagem_passageiro_id: string;
   valor: number | null;
   desconto: number | null;
@@ -236,6 +237,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           onibus_id,
           cidade_embarque,
           observacoes,
+          is_responsavel_onibus,
           clientes!viagem_passageiros_cliente_id_fkey (
             id,
             nome,
@@ -297,6 +299,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         foto: item.clientes.foto || null,
         cidade_embarque: item.cidade_embarque,
         observacoes: item.observacoes,
+        is_responsavel_onibus: item.is_responsavel_onibus || false,
         parcelas: item.viagem_passageiros_parcelas,
         passeios: item.passageiro_passeios || []
       }));

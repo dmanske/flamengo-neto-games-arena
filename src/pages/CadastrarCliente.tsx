@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClienteForm } from "@/components/cliente/ClienteForm";
 
@@ -12,7 +11,7 @@ const CadastrarCliente = () => {
               Cadastro de Cliente
             </CardTitle>
             <CardDescription className="text-base text-gray-600">
-              Cadastre um novo cliente para as viagens da Neto Tours Viagens. 
+              Cadastre um novo cliente para as viagens da Neto Tours Viagens.
               Apenas o nome completo é obrigatório, os demais campos são opcionais.
             </CardDescription>
           </CardHeader>

@@ -6,14 +6,21 @@ import { ModernStatCard } from "@/components/ui/modern-stat-card";
 import { ModernCard } from "@/components/ui/modern-card";
 import { ProximasViagensCard } from "@/components/dashboard/ProximasViagensCard";
 import { UltimosPaymentsCard } from "@/components/dashboard/UltimosPagamentosCard";
-import { DashboardImageSection } from "@/components/dashboard/DashboardImageSection";
 import { ClientesNovosCard } from "@/components/dashboard/ClientesNovosCard";
 import { PagamentosPendentesCard } from "@/components/dashboard/PagamentosPendentesCard";
 import { ViagemMaisLotadaCard } from "@/components/dashboard/ViagemMaisLotadaCard";
 import { RankingAdversariosCard } from "@/components/dashboard/RankingAdversariosCard";
 import { DashboardChartsGrid } from "@/components/dashboard/DashboardChartsGrid";
+import { DashboardPerformanceSummary } from "@/components/dashboard/DashboardPerformanceSummary";
+import { RecentActivitiesCard } from "@/components/dashboard/RecentActivitiesCard";
 import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
-import { Users, Calendar, DollarSign, Bus, TrendingUp } from "lucide-react";
+import { Users, Calendar, DollarSign, Bus, TrendingUp, Activity, BarChart3, Clock, Zap } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OcupacaoViagensChart } from "@/components/dashboard/graficos/OcupacaoViagensChart";
+import { ClientesPorCidadePieChart } from "@/components/dashboard/graficos/ClientesPorCidadePieChart";
+import { ClientesPorMesChart } from "@/components/dashboard/graficos/ClientesPorMesChart";
 
 interface Viagem {
   id: string;
@@ -36,6 +43,12 @@ const Dashboard = () => {
   const [flamengoLogo, setFlamengoLogo] = useState<string>("https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png");
   const [proximasViagens, setProximasViagens] = useState<Viagem[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [filteredData, setFilteredData] = useState({
+    clientesCount: 0,
+    viagensCount: 0,
+    totalReceita: 0
+  });
   
   // Use the BusStats hook to get bus data
   const { stats: busStats } = useBusStats();
@@ -129,84 +142,337 @@ const Dashboard = () => {
     fetchCounts();
   }, []);
 
+  // Função para lidar com mudanças nos filtros
+  const handleFiltersChange = async (filters: any) => {
+    try {
+      setIsLoading(true);
+      
+      // Aqui você pode implementar a lógica para aplicar os filtros
+      // Por enquanto, vamos manter os dados originais
+      const { startDate, endDate } = getDateRange(filters.dateRange);
+      
+      // Buscar dados filtrados
+      let clientesQuery = supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true });
+      
+      if (startDate && endDate) {
+        clientesQuery = clientesQuery.gte('created_at', startDate).lte('created_at', endDate);
+      }
+      if (filters.cidade) {
+        clientesQuery = clientesQuery.eq('cidade', filters.cidade);
+      }
+
+      let viagensQuery = supabase
+        .from('viagens')
+        .select('*', { count: 'exact', head: true });
+      
+      if (startDate && endDate) {
+        viagensQuery = viagensQuery.gte('created_at', startDate).lte('created_at', endDate);
+      }
+      if (filters.adversario) {
+        viagensQuery = viagensQuery.eq('adversario', filters.adversario);
+      }
+
+      let receitaQuery = supabase
+        .from('viagem_passageiros')
+        .select('valor, desconto');
+      
+      if (startDate && endDate) {
+        receitaQuery = receitaQuery.gte('created_at', startDate).lte('created_at', endDate);
+      }
+      if (filters.statusPagamento) {
+        receitaQuery = receitaQuery.eq('status_pagamento', filters.statusPagamento);
+      } else {
+        receitaQuery = receitaQuery.eq('status_pagamento', 'Pago');
+      }
+
+      const [
+        { count: clientesCount },
+        { count: viagensCount },
+        { data: receitaData }
+      ] = await Promise.all([
+        clientesQuery,
+        viagensQuery,
+        receitaQuery
+      ]);
+
+      const totalReceita = receitaData?.reduce((sum, item) => {
+        const valor = item.valor || 0;
+        const desconto = item.desconto || 0;
+        return sum + (valor - desconto);
+      }, 0) || 0;
+
+      setFilteredData({
+        clientesCount: clientesCount || 0,
+        viagensCount: viagensCount || 0,
+        totalReceita
+      });
+
+    } catch (error) {
+      console.error('Erro ao aplicar filtros:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getDateRange = (range: string) => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate = new Date(now);
+
+    switch (range) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+        startDate = new Date(now.getFullYear(), quarterStart, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    };
+  };
+
+  // Função para renderizar o conteúdo do card com skeleton loading
+  const renderCardContent = (isLoading: boolean, content: React.ReactNode) => {
+    if (isLoading) {
+      return (
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      );
+    }
+    return content;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
-      <div className="container py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="container py-6 px-4 sm:px-6">
         {/* Modern Dashboard Header */}
-        <DashboardHeader />
+        <DashboardHeader onFiltersChange={handleFiltersChange} />
         
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <ModernStatCard
-            icon={Users}
-            value={isLoading ? "..." : clientCount.toLocaleString()}
-            label="Total de Clientes"
-            change={{ value: 12, type: 'increase' }}
-            gradient="from-pink-500 via-red-400 to-yellow-400"
-            className="group"
-          />
+        {/* Tabs Navigation */}
+        <Tabs defaultValue="overview" className="mb-8" onValueChange={setActiveTab}>
+          <div className="flex justify-between items-center mb-4">
+            <TabsList className="bg-white shadow-sm border border-gray-100">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+                <Activity className="w-4 h-4 mr-2" />
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Análises
+              </TabsTrigger>
+              <TabsTrigger value="upcoming" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+                <Clock className="w-4 h-4 mr-2" />
+                Próximas Viagens
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
-          <ModernStatCard
-            icon={Calendar}
-            value={isLoading ? "..." : viagemCount.toLocaleString()}
-            label="Viagens Cadastradas"
-            change={{ value: 8, type: 'increase' }}
-            gradient="from-blue-500 via-cyan-400 to-blue-700"
-            className="group"
-          />
+          {/* Overview Tab Content */}
+          <TabsContent value="overview" className="mt-0">
+            {/* Enhanced Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <ModernStatCard
+                icon={Users}
+                value={isLoading ? "..." : (filteredData.clientesCount || clientCount).toLocaleString()}
+                label="Total de Clientes"
+                change={{ value: 12, type: 'increase' }}
+                gradient="from-blue-600 to-blue-800"
+                className="group"
+              />
+              
+              <ModernStatCard
+                icon={Calendar}
+                value={isLoading ? "..." : (filteredData.viagensCount || viagemCount).toLocaleString()}
+                label="Viagens Cadastradas"
+                change={{ value: 8, type: 'increase' }}
+                gradient="from-indigo-600 to-violet-700"
+                className="group"
+              />
+              
+              <ModernStatCard
+                icon={DollarSign}
+                value={isLoading ? "..." : `R$ ${(filteredData.totalReceita || monthlyRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                label="Receita Mensal"
+                change={{ value: 15, type: 'increase' }}
+                gradient="from-emerald-600 to-green-700"
+                className="group"
+              />
+              
+              <ModernStatCard
+                icon={Bus}
+                value={isLoading ? "..." : (busStats?.totalBuses || 0).toString()}
+                label="Ônibus Disponíveis"
+                change={{ value: 5, type: 'increase' }}
+                gradient="from-amber-500 to-orange-600"
+                className="group"
+              />
+            </div>
+            
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              {/* Left Column - 2/3 width */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="shadow-md border-0 overflow-hidden">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white pb-4">
+                    <CardTitle className="flex items-center text-xl">
+                      <Zap className="w-5 h-5 mr-2" />
+                      Desempenho Recente
+                    </CardTitle>
+                    <CardDescription className="text-blue-100">
+                      Análise dos últimos 30 dias
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    {renderCardContent(isLoading, <DashboardChartsGrid />)}
+                  </CardContent>
+                </Card>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="shadow-md border-0">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Clientes Novos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderCardContent(isLoading, <ClientesNovosCard />)}
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="shadow-md border-0">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold">Pagamentos Pendentes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderCardContent(isLoading, <PagamentosPendentesCard />)}
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Recent Activities Card */}
+                <RecentActivitiesCard />
+              </div>
+              
+              {/* Right Column - 1/3 width */}
+              <div className="space-y-6">
+                <Card className="shadow-md border-0">
+                  <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white pb-3">
+                    <CardTitle className="text-lg">Próximas Viagens</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {renderCardContent(isLoading, 
+                      <ProximasViagensCard 
+                        isLoading={isLoading} 
+                        proximasViagens={proximasViagens} 
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Performance Summary Card */}
+                <Card className="shadow-md border-0">
+                  <CardContent className="p-4">
+                    {renderCardContent(isLoading, <DashboardPerformanceSummary />)}
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-md border-0">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Ranking de Adversários</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderCardContent(isLoading, <RankingAdversariosCard />)}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
           
-          <ModernStatCard
-            icon={DollarSign}
-            value={isLoading ? "..." : `R$ ${monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-            label="Receita Mensal"
-            change={{ value: 15, type: 'increase' }}
-            gradient="from-green-400 via-emerald-500 to-lime-400"
-            className="group"
-          />
+          {/* Analytics Tab Content */}
+          <TabsContent value="analytics" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <Card className="shadow-md border-0">
+                <CardHeader>
+                  <CardTitle>Clientes por Mês</CardTitle>
+                  <CardDescription>Crescimento mensal de novos clientes</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 h-[350px]">
+                  {renderCardContent(isLoading, <ClientesPorMesChart />)}
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-md border-0">
+                <CardHeader>
+                  <CardTitle>Distribuição por Cidade</CardTitle>
+                  <CardDescription>Origem dos clientes por cidade</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 h-[350px]">
+                  {renderCardContent(isLoading, <ClientesPorCidadePieChart />)}
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-md border-0">
+                <CardHeader>
+                  <CardTitle>Ocupação de Viagens</CardTitle>
+                  <CardDescription>Taxa de ocupação por viagem</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 h-[350px]">
+                  {renderCardContent(isLoading, <OcupacaoViagensChart />)}
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-md border-0">
+                <CardHeader>
+                  <CardTitle>Setores Mais Escolhidos</CardTitle>
+                  <CardDescription>Preferência de setores no estádio</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 h-[350px]">
+                  {renderCardContent(isLoading, <SetoresEstadioMaisEscolhidosChart />)}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
           
-          <ModernStatCard
-            icon={Bus}
-            value={isLoading ? "..." : (busStats?.totalBuses || 0).toString()}
-            label="Ônibus Disponíveis"
-            change={{ value: 5, type: 'increase' }}
-            gradient="from-purple-500 via-indigo-400 to-blue-500"
-            className="group"
-          />
-        </div>
-        
-        {/* Enhanced Interactive Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <ModernCard gradient="from-pink-500 via-red-400 to-yellow-400" variant="interactive" className="p-6">
-            <ClientesNovosCard />
-          </ModernCard>
-          <ModernCard gradient="from-orange-400 via-yellow-400 to-pink-500" variant="interactive" className="p-6">
-            <PagamentosPendentesCard />
-          </ModernCard>
-          <ModernCard gradient="from-green-400 via-emerald-500 to-lime-400" variant="interactive" className="p-6">
-            <ViagemMaisLotadaCard />
-          </ModernCard>
-          <ModernCard gradient="from-purple-500 via-indigo-400 to-blue-500" variant="interactive" className="p-6">
-            <RankingAdversariosCard />
-          </ModernCard>
-        </div>
-        
-        {/* Modern Cards Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6 mb-8">
-          <ModernCard gradient="from-blue-400 via-cyan-400 to-blue-600" variant="elevated" className="p-6">
-            <ProximasViagensCard 
-              isLoading={isLoading} 
-              proximasViagens={proximasViagens} 
-            />
-          </ModernCard>
-          <ModernCard gradient="from-yellow-400 via-orange-400 to-pink-400" variant="elevated" className="p-6">
-            <SetoresEstadioMaisEscolhidosChart />
-          </ModernCard>
-        </div>
-        
-        {/* Modern Charts Section */}
-        <ModernCard variant="elevated" className="p-8 mb-8 group hover:scale-[1.01] transition-all duration-300">
-          <DashboardChartsGrid />
-        </ModernCard>
+          {/* Upcoming Trips Tab Content */}
+          <TabsContent value="upcoming" className="mt-0">
+            <Card className="shadow-md border-0">
+              <CardHeader>
+                <CardTitle>Próximas Viagens Detalhadas</CardTitle>
+                <CardDescription>Planejamento completo das próximas caravanas</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {renderCardContent(isLoading, 
+                  <div className="space-y-6">
+                    <ProximasViagensCard 
+                      isLoading={isLoading} 
+                      proximasViagens={proximasViagens} 
+                      expanded={true}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

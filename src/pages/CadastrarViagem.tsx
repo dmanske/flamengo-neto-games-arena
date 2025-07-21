@@ -672,6 +672,7 @@ const CadastrarViagem = () => {
                         <SelectContent>
                           <SelectItem value="Aberta">Aberta</SelectItem>
                           <SelectItem value="Fechada">Fechada</SelectItem>
+                          <SelectItem value="Em andamento">Em andamento</SelectItem>
                           <SelectItem value="Concluída">Concluída</SelectItem>
                         </SelectContent>
                       </Select>

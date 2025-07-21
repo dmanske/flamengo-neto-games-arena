@@ -31,6 +31,9 @@ export const useClientData = (id: string | undefined, form: UseFormReturn<Client
             ? convertISOToBrazilianDate(cliente.data_nascimento)
             : '';
 
+          console.log("Cliente carregado do banco:", cliente);
+          console.log("URL da foto do cliente:", cliente.foto);
+          
           form.reset({
             nome: cliente.nome || "",
             cpf: cliente.cpf || "",

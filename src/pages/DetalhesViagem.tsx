@@ -18,6 +18,7 @@ import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernVi
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
+import { toast } from "sonner";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -229,6 +230,10 @@ const DetalhesViagem = () => {
             passageirosCount={contadorPassageiros}
             passageirosNaoAlocados={totalPassageirosNaoAlocados}
             passageiros={originalPassageiros}
+            viagemId={id || ""}
+            setPassageiros={setPassageiros}
+            setIsLoading={setIsLoadingPassageiros}
+            toast={toast}
           />
         </div>
       )}
@@ -277,6 +282,7 @@ const DetalhesViagem = () => {
       onPrint={handlePrint}
       onExportPDF={handleExportPDF}
       onibusList={onibusList}
+      passageiros={originalPassageiros}
     >
       {mainContent}
     </ModernViagemDetailsLayout>

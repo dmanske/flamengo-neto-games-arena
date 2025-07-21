@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, FileText, Printer } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, FileText, Printer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -113,6 +113,16 @@ export function ViagemHeader({ viagem, onDelete, statusColors, onPrint, onExport
           </CardTitle>
         </div>
         <div className="flex gap-2">
+          {/* Botão de Lista de Presença - só aparece quando a viagem está em andamento */}
+          {viagem.status_viagem === "Em andamento" && (
+            <Button variant="outline" asChild className="text-amber-600 border-amber-600 hover:bg-amber-50">
+              <Link to={`/dashboard/presenca/${viagem.id}`}>
+                <Users className="h-4 w-4 mr-2" />
+                Lista de Presença
+              </Link>
+            </Button>
+          )}
+          
           {/* Botões de Relatório */}
           {onPrint && (
             <Button variant="outline" onClick={onPrint} className="text-blue-600 border-blue-600 hover:bg-blue-50">
