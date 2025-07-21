@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Bus, Users, CheckCircle2 } from "lucide-react";
 import {
   FormControl,
   FormDescription,
@@ -118,6 +118,7 @@ export function OnibusSelectField({ control, form, viagemId, defaultOnibusId }: 
       render={({ field }) => (
         <FormItem>
           <FormLabel className="flex items-center gap-2 text-gray-700">
+            <Bus className="h-4 w-4 text-blue-600" />
             Ônibus
             {ocupacaoInfo && !ocupacaoInfo.disponivel && (
               <Tooltip>
@@ -146,23 +147,45 @@ export function OnibusSelectField({ control, form, viagemId, defaultOnibusId }: 
                   key={onibus.id} 
                   value={onibus.id}
                   disabled={!onibus.disponivel}
+                  className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span>
-                      {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
-                    </span>
-                    <span className={`text-xs ${!onibus.disponivel ? 'text-red-500' : 'text-green-600'}`}>
+                    <div className="flex items-center gap-2">
+                      <Bus className="h-4 w-4" />
+                      <span>
+                        {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
+                      </span>
+                    </div>
+                    <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${!onibus.disponivel ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      <Users className="h-3 w-3" />
                       {onibus.passageiros_count || 0}/{onibus.capacidade_total || onibus.capacidade_onibus}
-                    </span>
+                    </div>
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <FormDescription className="text-gray-600">
-            {ocupacaoInfo 
-              ? `Ocupação atual: ${ocupacaoInfo.atual}/${ocupacaoInfo.total} passageiros` 
-              : "Selecione o ônibus para o passageiro"}
+          <FormDescription className="text-gray-600 flex items-center gap-2">
+            {ocupacaoInfo ? (
+              <>
+                <Users className="h-4 w-4 text-blue-500" />
+                <span>Ocupação atual: <strong>{ocupacaoInfo.atual}</strong> de <strong>{ocupacaoInfo.total}</strong> passageiros</span>
+                {ocupacaoInfo.disponivel ? (
+                  <span className="text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Disponível
+                  </span>
+                ) : (
+                  <span className="text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Lotado
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <Bus className="h-4 w-4 text-blue-500" />
+                <span>Selecione o ônibus para o passageiro</span>
+              </>
+            )}
           </FormDescription>
           <FormMessage />
         </FormItem>

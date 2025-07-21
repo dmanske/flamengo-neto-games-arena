@@ -34,6 +34,7 @@ import { OnibusSelectField } from "./OnibusSelectField";
 import { ParcelasManager } from "./ParcelasManager";
 import { formSchema, FormData } from "./formSchema";
 import { PassageiroDialogProps, Parcela } from "./types";
+import { Users, MapPin, CreditCard, Ticket, Bus, Home } from "lucide-react";
 
 export function PassageiroDialog({
   open,
@@ -136,9 +137,12 @@ export function PassageiroDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Adicionar Passageiro</DialogTitle>
+            <DialogTitle className="text-gray-900 flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              Adicionar Passageiro
+            </DialogTitle>
             <DialogDescription className="text-gray-600">
-              Adicione um passageiro à esta viagem.
+              Adicione um ou mais passageiros à esta viagem.
             </DialogDescription>
           </DialogHeader>
 
@@ -158,7 +162,10 @@ export function PassageiroDialog({
                 name="cidade_embarque"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Cidade de Embarque</FormLabel>
+                    <FormLabel className="text-gray-700 flex items-center gap-2">
+                      <Home className="h-4 w-4 text-blue-600" />
+                      Cidade de Embarque
+                    </FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -188,7 +195,10 @@ export function PassageiroDialog({
                 name="setor_maracana"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Setor do Maracanã</FormLabel>
+                    <FormLabel className="text-gray-700 flex items-center gap-2">
+                      <Ticket className="h-4 w-4 text-blue-600" />
+                      Setor do Maracanã
+                    </FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -220,7 +230,10 @@ export function PassageiroDialog({
                   name="valor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Valor (R$)</FormLabel>
+                      <FormLabel className="text-gray-700 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        Valor (R$)
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -240,7 +253,10 @@ export function PassageiroDialog({
                   name="desconto"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700">Desconto (R$) - Opcional</FormLabel>
+                      <FormLabel className="text-gray-700 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                        Desconto (R$) - Opcional
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -267,10 +283,24 @@ export function PassageiroDialog({
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isLoading || !form.watch("cliente_id") || form.watch("cliente_id").length === 0}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                 >
-                  {isLoading ? "Salvando..." : "Salvar Passageiro"}
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Salvando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Users className="h-4 w-4" />
+                      <span>
+                        {form.watch("cliente_id") && form.watch("cliente_id").length > 1 
+                          ? `Salvar ${form.watch("cliente_id").length} Passageiros` 
+                          : "Salvar Passageiro"}
+                      </span>
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>
