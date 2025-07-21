@@ -3,7 +3,7 @@ import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
-import { formatTelefone } from "@/utils/cepUtils";
+import { formatPhone } from "@/utils/formatters";
 
 interface ContactInfoFieldsProps {
   form: UseFormReturn<any>;
@@ -11,24 +11,28 @@ interface ContactInfoFieldsProps {
 
 export const ContactInfoFields: React.FC<ContactInfoFieldsProps> = ({ form }) => {
   return (
-    <FormField
-      control={form.control}
-      name="telefone"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Telefone (WhatsApp)*</FormLabel>
-          <FormControl>
-            <Input 
-              placeholder="(00) 0 0000-0000" 
-              {...field} 
-              onChange={(e) => {
-                field.onChange(formatTelefone(e.target.value));
-              }}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="space-y-4">
+      <FormField
+        control={form.control}
+        name="telefone"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Telefone/WhatsApp</FormLabel>
+            <FormControl>
+              <Input 
+                placeholder="(11) 99999-9999" 
+                {...field} 
+                onChange={(e) => {
+                  const formatted = formatPhone(e.target.value);
+                  field.onChange(formatted);
+                }}
+                maxLength={15}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };

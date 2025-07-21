@@ -29,6 +29,7 @@ import DetalhesViagem from '@/pages/DetalhesViagem';
 import Onibus from '@/pages/Onibus';
 import CadastrarOnibus from '@/pages/CadastrarOnibus';
 import EditarOnibus from '@/pages/EditarOnibus';
+import DetalhesOnibus from '@/pages/DetalhesOnibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
@@ -88,6 +89,7 @@ function App() {
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="onibus" element={<Onibus />} />
+                  <Route path="onibus/:id" element={<DetalhesOnibus />} />
                   <Route path="editar-onibus/:id" element={<EditarOnibus />} />
                   <Route path="cadastrar-onibus" element={<CadastrarOnibus />} />
                   <Route path="passageiros" element={<Passageiros />} />

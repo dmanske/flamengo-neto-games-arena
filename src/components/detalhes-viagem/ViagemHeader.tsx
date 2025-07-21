@@ -20,6 +20,7 @@ import {
 interface Viagem {
   id: string;
   adversario: string;
+  local_jogo?: string;
   logo_flamengo: string | null;
   logo_adversario: string | null;
   status_viagem: string;
@@ -55,27 +56,59 @@ export function ViagemHeader({ viagem, onDelete, statusColors, onPrint, onExport
           <CardTitle className="text-2xl mt-2">
             <div className="flex items-center gap-4">
               <div className="flex -space-x-4">
-                <Avatar className="h-12 w-12 border-2 border-white">
-                  <AvatarImage 
-                    src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
-                    alt="Flamengo" 
-                  />
-                  <AvatarFallback>FLA</AvatarFallback>
-                </Avatar>
-                <Avatar className="h-12 w-12 border-2 border-white">
-                  <AvatarImage 
-                    src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
-                    alt={viagem.adversario}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
-                    }}
-                  />
-                  <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
-                </Avatar>
+                {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+                  <>
+                    <Avatar className="h-12 w-12 border-2 border-white">
+                      <AvatarImage 
+                        src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                        alt={viagem.adversario}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+                        }}
+                      />
+                      <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-12 w-12 border-2 border-white">
+                      <AvatarImage 
+                        src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                        alt="Flamengo" 
+                      />
+                      <AvatarFallback>FLA</AvatarFallback>
+                    </Avatar>
+                  </>
+                ) : (
+                  <>
+                    <Avatar className="h-12 w-12 border-2 border-white">
+                      <AvatarImage 
+                        src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                        alt="Flamengo" 
+                      />
+                      <AvatarFallback>FLA</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-12 w-12 border-2 border-white">
+                      <AvatarImage 
+                        src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                        alt={viagem.adversario}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+                        }}
+                      />
+                      <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </>
+                )}
               </div>
-              <span>Flamengo x {viagem.adversario}</span>
+              <span>
+                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+                  `${viagem.adversario} x Flamengo` : 
+                  `Flamengo x ${viagem.adversario}`
+                }
+              </span>
             </div>
           </CardTitle>
         </div>

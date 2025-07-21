@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormControl,
@@ -8,164 +8,211 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { fetchAddressByCEP } from "@/utils/cepUtils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { fetchAddressByCEP, formatCEP } from "@/utils/cepUtils";
+import { toast } from "sonner";
 import { PublicRegistrationFormData } from "./FormSchema";
+
+// Lista de estados brasileiros com nomes completos
+const estadosBrasileiros = [
+  { sigla: "AC", nome: "Acre" },
+  { sigla: "AL", nome: "Alagoas" },
+  { sigla: "AP", nome: "Amapá" },
+  { sigla: "AM", nome: "Amazonas" },
+  { sigla: "BA", nome: "Bahia" },
+  { sigla: "CE", nome: "Ceará" },
+  { sigla: "DF", nome: "Distrito Federal" },
+  { sigla: "ES", nome: "Espírito Santo" },
+  { sigla: "GO", nome: "Goiás" },
+  { sigla: "MA", nome: "Maranhão" },
+  { sigla: "MT", nome: "Mato Grosso" },
+  { sigla: "MS", nome: "Mato Grosso do Sul" },
+  { sigla: "MG", nome: "Minas Gerais" },
+  { sigla: "PA", nome: "Pará" },
+  { sigla: "PB", nome: "Paraíba" },
+  { sigla: "PR", nome: "Paraná" },
+  { sigla: "PE", nome: "Pernambuco" },
+  { sigla: "PI", nome: "Piauí" },
+  { sigla: "RJ", nome: "Rio de Janeiro" },
+  { sigla: "RN", nome: "Rio Grande do Norte" },
+  { sigla: "RS", nome: "Rio Grande do Sul" },
+  { sigla: "RO", nome: "Rondônia" },
+  { sigla: "RR", nome: "Roraima" },
+  { sigla: "SC", nome: "Santa Catarina" },
+  { sigla: "SP", nome: "São Paulo" },
+  { sigla: "SE", nome: "Sergipe" },
+  { sigla: "TO", nome: "Tocantins" }
+];
 
 interface AddressFieldsProps {
   form: UseFormReturn<PublicRegistrationFormData>;
 }
 
 export const AddressFields = ({ form }: AddressFieldsProps) => {
-  const handleCEPChange = async (cep: string) => {
-    const cleanCEP = cep.replace(/\D/g, '');
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  const handleCepBlur = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
     
-    if (cleanCEP.length === 8) {
-      try {
-        const endereco = await fetchAddressByCEP(cleanCEP);
-        if (endereco) {
-          form.setValue('endereco', endereco.logradouro);
-          form.setValue('bairro', endereco.bairro);
-          form.setValue('cidade', endereco.localidade);
-          form.setValue('estado', endereco.uf);
+    setLoadingCep(true);
+    try {
+      const addressData = await fetchAddressByCEP(cleanCep);
+      if (addressData) {
+        form.setValue("endereco", addressData.logradouro || "");
+        form.setValue("cidade", addressData.localidade || "");
+        form.setValue("estado", addressData.uf || "");
+        form.setValue("bairro", addressData.bairro || "");
+        
+        // Trigger a re-render of the form
+        form.trigger();
+        
+        // Se tiver complemento, adiciona ao campo complemento
+        if (addressData.complemento) {
+          form.setValue("complemento", addressData.complemento);
         }
-      } catch (error) {
-        console.error('Erro ao buscar CEP:', error);
+        
+        toast.success("Endereço encontrado automaticamente!");
       }
+    } catch (error) {
+      toast.error("CEP não encontrado. Preencha o endereço manualmente.");
+    } finally {
+      setLoadingCep(false);
     }
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <FormField
-        control={form.control}
-        name="cep"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>CEP *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="00000-000" 
-                {...field}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  const formatted = value.replace(/(\d{5})(\d{3})/, '$1-$2');
-                  field.onChange(formatted);
-                  handleCEPChange(formatted);
-                }}
-                maxLength={9}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="cep"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CEP</FormLabel>
+              <div className="relative">
+                <FormControl>
+                  <Input 
+                    placeholder="00000-000" 
+                    {...field} 
+                    onChange={(e) => {
+                      const formattedCEP = formatCEP(e.target.value);
+                      field.onChange(formattedCEP);
+                    }}
+                    onBlur={() => handleCepBlur(field.value)}
+                    maxLength={9}
+                  />
+                </FormControl>
+                {loadingCep && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        control={form.control}
-        name="endereco"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Endereço *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="Rua, avenida..." 
-                {...field} 
-                maxLength={200}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+        <FormField
+          control={form.control}
+          name="cidade"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cidade</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Rio de Janeiro" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormField
-        control={form.control}
-        name="numero"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Número *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="123" 
-                {...field} 
-                maxLength={10}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+        <FormField
+          control={form.control}
+          name="estado"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estado</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {estadosBrasileiros.map((estado) => (
+                    <SelectItem key={estado.sigla} value={estado.sigla}>
+                      {estado.nome} ({estado.sigla})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-2">
+          <FormField
+            control={form.control}
+            name="endereco"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Logradouro</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Rua das Flores, Av. Brasil" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="numero"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número</FormLabel>
+              <FormControl>
+                <Input placeholder="123" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="bairro"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bairro</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Copacabana" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       <FormField
         control={form.control}
         name="complemento"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Complemento</FormLabel>
+            <FormLabel>Complemento (opcional)</FormLabel>
             <FormControl>
-              <Input 
-                placeholder="Apto, casa..." 
-                {...field} 
-                maxLength={50}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="bairro"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Bairro *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="Nome do bairro" 
-                {...field} 
-                maxLength={100}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="cidade"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cidade *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="Nome da cidade" 
-                {...field} 
-                maxLength={100}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="estado"
-        render={({ field }) => (
-          <FormItem className="md:col-span-2">
-            <FormLabel>Estado *</FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="UF" 
-                {...field}
-                onChange={(e) => {
-                  const value = e.target.value.toUpperCase();
-                  field.onChange(value);
-                }}
-                maxLength={2}
-              />
+              <Input placeholder="Ex: Apto 101, Bloco A, Casa dos fundos" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

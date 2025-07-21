@@ -18,16 +18,27 @@ interface ReferralFieldsProps {
 }
 
 export const ReferralFields = ({ form }: ReferralFieldsProps) => {
-  const comoConheceuOptions = [
-    { value: "amigo", label: "Indicação de amigo" },
-    { value: "redes_sociais", label: "Redes sociais" },
-    { value: "google", label: "Google" },
-    { value: "whatsapp", label: "WhatsApp" },
-    { value: "site", label: "Site" },
-    { value: "outros", label: "Outros" }
-  ];
+  const watchComoConheceu = form.watch("como_conheceu");
 
-  const showIndicacaoField = form.watch("como_conheceu") === "amigo";
+  const opcoesComoConheceu = [
+    { value: "instagram", label: "Instagram" },
+    { value: "facebook", label: "Facebook" },
+    { value: "whatsapp", label: "WhatsApp" },
+    { value: "google", label: "Google / Pesquisa na Internet" },
+    { value: "youtube", label: "YouTube" },
+    { value: "tiktok", label: "TikTok" },
+    { value: "indicacao_amigo", label: "Indicação de Amigo/Familiar" },
+    { value: "indicacao_cliente", label: "Indicação de Cliente Antigo" },
+    { value: "site_neto_turs", label: "Site da Neto Turs" },
+    { value: "panfleto_flyer", label: "Panfleto/Flyer" },
+    { value: "radio", label: "Rádio" },
+    { value: "televisao", label: "Televisão" },
+    { value: "jornal_revista", label: "Jornal/Revista" },
+    { value: "evento_feira", label: "Evento/Feira" },
+    { value: "parceiro_comercial", label: "Parceiro Comercial" },
+    { value: "ja_era_cliente", label: "Já era Cliente" },
+    { value: "outro", label: "Outro" }
+  ];
 
   return (
     <div className="space-y-4">
@@ -36,17 +47,17 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
         name="como_conheceu"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Como conheceu o Neto Tours? *</FormLabel>
+            <FormLabel>Como conheceu a Neto Turs?</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione como nos conheceu" />
+                  <SelectValue placeholder="Selecione como conheceu a Neto Turs" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {comoConheceuOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {opcoesComoConheceu.map((opcao) => (
+                  <SelectItem key={opcao.value} value={opcao.value}>
+                    {opcao.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -56,7 +67,7 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
         )}
       />
 
-      {showIndicacaoField && (
+      {(watchComoConheceu === "indicacao_amigo" || watchComoConheceu === "indicacao_cliente") && (
         <FormField
           control={form.control}
           name="indicacao_nome"
@@ -64,11 +75,23 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
             <FormItem>
               <FormLabel>Nome de quem indicou</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Nome da pessoa que indicou" 
-                  {...field} 
-                  maxLength={100}
-                />
+                <Input placeholder="Digite o nome de quem indicou" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
+      {watchComoConheceu === "outro" && (
+        <FormField
+          control={form.control}
+          name="indicacao_nome"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Especifique como conheceu</FormLabel>
+              <FormControl>
+                <Input placeholder="Descreva como conheceu a Neto Turs" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -81,13 +104,12 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
         name="observacoes"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Observações (Opcional)</FormLabel>
+            <FormLabel>Observações (opcional)</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Alguma observação adicional..." 
+                placeholder="Informações adicionais que gostaria de compartilhar" 
+                className="min-h-[80px]"
                 {...field} 
-                maxLength={500}
-                rows={3}
               />
             </FormControl>
             <FormMessage />

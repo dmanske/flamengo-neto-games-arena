@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useClientValidation } from "./useClientValidation";
-import { cleanCPF, cleanPhone } from "@/utils/formatters";
+import { cleanCPF, cleanPhone, convertBrazilianDateToISO } from "@/utils/formatters";
 import { ClienteFormData } from "@/components/cliente/ClienteFormSchema";
 
 export const useClientFormSubmit = (clienteId?: string) => {
@@ -26,7 +26,7 @@ export const useClientFormSubmit = (clienteId?: string) => {
       const clienteData = {
         nome: data.nome.trim(),
         cpf: cleanCPF(data.cpf),
-        data_nascimento: data.data_nascimento,
+        data_nascimento: data.data_nascimento ? convertBrazilianDateToISO(data.data_nascimento) : null,
         telefone: cleanPhone(data.telefone),
         email: data.email.toLowerCase().trim(),
         cep: data.cep.replace(/\D/g, ''),

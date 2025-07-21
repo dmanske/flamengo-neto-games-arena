@@ -19,6 +19,8 @@ interface OnibusFiltersProps {
   empresaFilter: string;
   setEmpresaFilter: (empresa: string) => void;
   clearFilters: () => void;
+  empresas?: string[];
+  tipos?: string[];
 }
 
 export function OnibusFilters({
@@ -28,9 +30,11 @@ export function OnibusFilters({
   setTipoFilter,
   empresaFilter,
   setEmpresaFilter,
-  clearFilters
+  clearFilters,
+  empresas = [],
+  tipos = []
 }: OnibusFiltersProps) {
-  const hasActiveFilters = searchTerm || tipoFilter !== "all" || empresaFilter !== "all";
+  const hasActiveFilters = searchTerm.trim() !== "" || (tipoFilter && tipoFilter !== "all") || (empresaFilter && empresaFilter !== "all");
 
   return (
     <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl p-4 shadow-professional">
@@ -54,7 +58,7 @@ export function OnibusFilters({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Buscar ônibus..."
+            placeholder="Buscar por tipo, empresa, capacidade..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
@@ -67,10 +71,11 @@ export function OnibusFilters({
           </SelectTrigger>
           <SelectContent className="bg-white border-gray-200">
             <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="Leito">Leito</SelectItem>
-            <SelectItem value="Semi-Leito">Semi-Leito</SelectItem>
-            <SelectItem value="Executivo">Executivo</SelectItem>
-            <SelectItem value="Convencional">Convencional</SelectItem>
+            {tipos && tipos.length > 0 && tipos.map((tipo) => (
+              <SelectItem key={tipo} value={tipo}>
+                {tipo}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -80,10 +85,11 @@ export function OnibusFilters({
           </SelectTrigger>
           <SelectContent className="bg-white border-gray-200">
             <SelectItem value="all">Todas as empresas</SelectItem>
-            <SelectItem value="Viação 1001">Viação 1001</SelectItem>
-            <SelectItem value="Kaissara">Kaissara</SelectItem>
-            <SelectItem value="Cometa">Cometa</SelectItem>
-            <SelectItem value="Penha">Penha</SelectItem>
+            {empresas && empresas.length > 0 && empresas.map((empresa) => (
+              <SelectItem key={empresa} value={empresa}>
+                {empresa}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

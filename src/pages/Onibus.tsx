@@ -82,6 +82,8 @@ const Onibus = () => {
             empresaFilter={filterEmpresa || "all"}
             setEmpresaFilter={setFilterEmpresa}
             clearFilters={clearFilters}
+            empresas={empresas}
+            tipos={tipos}
           />
 
           <Card className="bg-white/95 backdrop-blur-sm border-gray-200 shadow-professional">

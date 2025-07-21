@@ -73,8 +73,10 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
         <div className="flex gap-2 pt-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="sm" variant="outline" className="flex-1">
-                <Eye className="h-4 w-4" />
+              <Button size="sm" variant="outline" asChild className="flex-1">
+                <Link to={`/dashboard/onibus/${onibus.id}`}>
+                  <Eye className="h-4 w-4" />
+                </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -85,7 +87,7 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button size="sm" variant="outline" asChild className="flex-1">
-                <Link to={`/dashboard/onibus/${onibus.id}/editar`}>
+                <Link to={`/dashboard/editar-onibus/${onibus.id}`}>
                   <Pencil className="h-4 w-4" />
                 </Link>
               </Button>

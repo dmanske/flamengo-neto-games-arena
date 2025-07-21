@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -8,14 +7,14 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarDays, MapPin, Users, DollarSign, Plus, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { CalendarDays, MapPin, Users, Plus, Trash2 } from "lucide-react";
 
+// Definir os passeios disponíveis
 const passeiosDisponiveis = [
   "Cristo Redentor",
   "Pão de Açúcar",
@@ -24,80 +23,145 @@ const passeiosDisponiveis = [
   "Ipanema"
 ];
 
+// Logo padrão do Flamengo
+const LOGO_FLAMENGO_PADRAO = "https://logodetimes.com/times/flamengo/logo-flamengo-256.png";
+
+// Definir o schema de validação
 const viagemSchema = z.object({
   adversario: z.string().min(1, "Adversário é obrigatório"),
   data_jogo: z.string().min(1, "Data do jogo é obrigatória"),
-  rota: z.string().min(1, "Rota é obrigatória"),
-  valor_padrao: z.string().min(1, "Valor padrão é obrigatório"),
+  data_saida: z.string().min(1, "Data e hora da saída é obrigatória"),
+  local_jogo: z.string().default("Rio de Janeiro"),
+  valor_padrao: z.string().optional(),
   capacidade_onibus: z.string().min(1, "Capacidade do ônibus é obrigatória"),
   status_viagem: z.string().default("Aberta"),
   setor_padrao: z.string().optional(),
   cidade_embarque: z.string().default("Blumenau"),
   logo_adversario: z.string().optional(),
+  logo_flamengo: z.string().default(LOGO_FLAMENGO_PADRAO),
   passeios_pagos: z.array(z.string()).default([]),
   outro_passeio: z.string().optional(),
 });
 
-type ViagemFormData = z.infer<typeof viagemSchema>;
+type ViagemFormData = z.infer<typeof viagemSchema> & {
+  _isCustomAdversario?: boolean; // Campo auxiliar para controlar o estado do adversário personalizado
+  _isCustomLocal?: boolean; // Campo auxiliar para controlar o estado do local personalizado
+};
 
+// Interface para os dados do ônibus
 interface OnibusFormData {
   tipo_onibus: string;
   empresa: string;
   capacidade_onibus: string;
   lugares_extras: string;
   numero_identificacao: string;
+  onibus_id: string;
+  cor_onibus?: string;
+  image_path?: string;
 }
 
 const CadastrarViagem = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Estado para os ônibus
   const [onibusItems, setOnibusItems] = useState<OnibusFormData[]>([{
     tipo_onibus: "",
     empresa: "",
     capacidade_onibus: "",
     lugares_extras: "0",
-    numero_identificacao: ""
+    numero_identificacao: "",
+    onibus_id: "",
+    cor_onibus: "",
+    image_path: ""
   }]);
+  
+  // Estado para os ônibus cadastrados
+  const [onibusCadastrados, setOnibusCadastrados] = useState<any[]>([]);
+  
+  // Estado para os adversários
+  const [adversarios, setAdversarios] = useState<any[]>([]);
+  const [isLoadingAdversarios, setIsLoadingAdversarios] = useState(true);
+  const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>("");
 
+  // Cidades e setores
+  const cidadesEmbarque = ["Blumenau", "Joinville", "Florianópolis", "Itajaí", "Balneário Camboriú"];
+  const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Brasília", "Salvador", "Recife", "Fortaleza"];
+  const setoresEstadio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Setor padrão do estádio visitante", "Sem ingresso"];
+
+  // Inicializar o formulário
   const form = useForm<ViagemFormData>({
     resolver: zodResolver(viagemSchema),
     defaultValues: {
       adversario: "",
       data_jogo: "",
-      rota: "",
+      data_saida: "",
+      local_jogo: "Rio de Janeiro",
       valor_padrao: "",
-      capacidade_onibus: "",
+      capacidade_onibus: "46",
       status_viagem: "Aberta",
-      setor_padrao: "",
+      setor_padrao: "Norte",
       cidade_embarque: "Blumenau",
       logo_adversario: "",
+      logo_flamengo: LOGO_FLAMENGO_PADRAO,
       passeios_pagos: [],
       outro_passeio: "",
+      _isCustomAdversario: false,
+      _isCustomLocal: false,
     },
   });
+  
+  // Carregar adversários
+  useEffect(() => {
+    const fetchAdversarios = async () => {
+      try {
+        setIsLoadingAdversarios(true);
+        console.log("Iniciando carregamento de adversários...");
+        
+        // Usar uma consulta mais simples para testar
+        const { data, error } = await supabase
+          .from("adversarios")
+          .select("*")
+          .neq("nome", "Flamengo") // Excluir o Flamengo da lista
+          .order("nome");
+          
+        if (error) {
+          console.error("Erro ao carregar adversários:", error);
+          toast.error("Erro ao carregar adversários");
+        } else if (data) {
+          console.log("Adversários carregados:", data);
+          setAdversarios(data);
+        } else {
+          console.log("Nenhum adversário encontrado");
+        }
+      } catch (err) {
+        console.error("Exceção ao carregar adversários:", err);
+      } finally {
+        setIsLoadingAdversarios(false);
+      }
+    };
+    
+    fetchAdversarios();
+  }, []);
+  
+  // Carregar ônibus cadastrados
+  useEffect(() => {
+    const fetchOnibus = async () => {
+      const { data, error } = await supabase
+        .from('onibus')
+        .select('*')
+        .order('tipo_onibus');
+      
+      if (!error && data) {
+        setOnibusCadastrados(data);
+      }
+    };
+    
+    fetchOnibus();
+  }, []);
 
-  const addOnibusItem = () => {
-    setOnibusItems([...onibusItems, {
-      tipo_onibus: "",
-      empresa: "",
-      capacidade_onibus: "",
-      lugares_extras: "0",
-      numero_identificacao: ""
-    }]);
-  };
-
-  const removeOnibusItem = (index: number) => {
-    if (onibusItems.length > 1) {
-      setOnibusItems(onibusItems.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateOnibusItem = (index: number, field: keyof OnibusFormData, value: string) => {
-    const updated = [...onibusItems];
-    updated[index] = { ...updated[index], [field]: value };
-    setOnibusItems(updated);
-  };
-
+  // Atualizar a capacidade total quando os ônibus mudam
   useEffect(() => {
     const totalCapacidade = onibusItems.reduce((total, onibus) => {
       const capacidade = parseInt(onibus.capacidade_onibus) || 0;
@@ -108,33 +172,104 @@ const CadastrarViagem = () => {
     form.setValue("capacidade_onibus", totalCapacidade.toString());
   }, [onibusItems, form]);
 
+  // Atualizar setor padrão baseado no local do jogo
+  useEffect(() => {
+    const localJogo = form.watch("local_jogo");
+    const setorAtual = form.watch("setor_padrao");
+    
+    if (localJogo && localJogo !== "Rio de Janeiro") {
+      // Se não é no Rio de Janeiro e o setor ainda é um setor do Maracanã, mudar para setor visitante
+      if (["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais"].includes(setorAtual)) {
+        form.setValue("setor_padrao", "Setor padrão do estádio visitante");
+      }
+    } else if (localJogo === "Rio de Janeiro") {
+      // Se é no Rio de Janeiro e o setor é visitante, mudar para Norte
+      if (setorAtual === "Setor padrão do estádio visitante") {
+        form.setValue("setor_padrao", "Norte");
+      }
+    }
+  }, [form.watch("local_jogo"), form]);
+
+  // Adicionar um novo ônibus
+  const addOnibusItem = () => {
+    setOnibusItems([...onibusItems, {
+      tipo_onibus: "",
+      empresa: "",
+      capacidade_onibus: "",
+      lugares_extras: "0",
+      numero_identificacao: "",
+      onibus_id: "",
+      cor_onibus: "",
+      image_path: ""
+    }]);
+  };
+
+  // Remover um ônibus
+  const removeOnibusItem = (index: number) => {
+    if (onibusItems.length > 1) {
+      setOnibusItems(onibusItems.filter((_, i) => i !== index));
+    }
+  };
+
+  // Atualizar um ônibus
+  const updateOnibusItem = (index: number, field: keyof OnibusFormData, value: string) => {
+    const updated = [...onibusItems];
+    updated[index] = { ...updated[index], [field]: value };
+    
+    // Se selecionou um ônibus existente, preencher os outros campos automaticamente
+    if (field === 'onibus_id' && value) {
+      const onibusSelected = onibusCadastrados.find(o => o.id === value);
+      if (onibusSelected) {
+        updated[index] = {
+          ...updated[index],
+          onibus_id: value,
+          tipo_onibus: onibusSelected.tipo_onibus,
+          empresa: onibusSelected.empresa,
+          capacidade_onibus: onibusSelected.capacidade.toString(),
+          numero_identificacao: onibusSelected.numero_identificacao || "",
+          cor_onibus: onibusSelected.cor || "",
+          image_path: onibusSelected.image_path || ""
+        };
+      }
+    }
+    
+    setOnibusItems(updated);
+  };
+
+  // Enviar o formulário
   const onSubmit = async (data: ViagemFormData) => {
     try {
       setIsLoading(true);
+      
+      console.log("Dados do formulário:", data);
+      console.log("Passeios selecionados:", data.passeios_pagos);
 
-      // Validate onibus data
+      // Validar dados dos ônibus
       for (const onibus of onibusItems) {
-        if (!onibus.tipo_onibus || !onibus.empresa || !onibus.capacidade_onibus) {
-          toast.error("Todos os campos de ônibus são obrigatórios");
+        if (!onibus.onibus_id) {
+          toast.error("Selecione um ônibus para cada item");
+          setIsLoading(false);
           return;
         }
       }
 
       const dataJogoFormatted = new Date(data.data_jogo).toISOString();
       
-      // Create viagem
+      // Criar a viagem
       const { data: viagemData, error: viagemError } = await supabase
         .from("viagens")
         .insert({
           adversario: data.adversario,
           data_jogo: dataJogoFormatted,
-          rota: data.rota,
-          valor_padrao: parseFloat(data.valor_padrao),
+          data_saida: new Date(data.data_saida).toISOString(),
+          local_jogo: data.local_jogo,
+          valor_padrao: data.valor_padrao ? parseFloat(data.valor_padrao) : null,
           capacidade_onibus: parseInt(data.capacidade_onibus),
           status_viagem: data.status_viagem,
           setor_padrao: data.setor_padrao,
           cidade_embarque: data.cidade_embarque,
           logo_adversario: data.logo_adversario,
+          logo_flamengo: data.logo_flamengo || LOGO_FLAMENGO_PADRAO,
           passeios_pagos: data.passeios_pagos,
           outro_passeio: data.outro_passeio,
           tipo_onibus: onibusItems[0]?.tipo_onibus || "",
@@ -145,7 +280,7 @@ const CadastrarViagem = () => {
 
       if (viagemError) throw viagemError;
 
-      // Create onibus entries
+      // Criar entradas de ônibus
       for (const onibus of onibusItems) {
         const { error: onibusError } = await supabase
           .from("viagem_onibus")
@@ -154,7 +289,7 @@ const CadastrarViagem = () => {
             tipo_onibus: onibus.tipo_onibus,
             empresa: onibus.empresa,
             capacidade_onibus: parseInt(onibus.capacidade_onibus),
-            lugares_extras: parseInt(onibus.lugares_extras),
+            lugares_extras: parseInt(onibus.lugares_extras) || 0,
             numero_identificacao: onibus.numero_identificacao,
           });
 
@@ -162,10 +297,10 @@ const CadastrarViagem = () => {
       }
 
       toast.success("Viagem cadastrada com sucesso!");
-      navigate("/dashboard/viagens");
+      navigate(`/dashboard/viagem/${viagemData.id}`);
     } catch (error: any) {
       console.error("Erro ao cadastrar viagem:", error);
-      toast.error("Erro ao cadastrar viagem: " + error.message);
+      toast.error(`Erro ao cadastrar viagem: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -177,6 +312,55 @@ const CadastrarViagem = () => {
         <h1 className="text-3xl font-bold text-gray-900">Cadastrar Nova Viagem</h1>
         <p className="text-gray-600 mt-2">Preencha as informações da viagem e configure os ônibus</p>
       </div>
+      
+      {/* Diálogo para selecionar logo do adversário */}
+      <Dialog open={logoDialogOpen} onOpenChange={setLogoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <CardTitle>Selecionar Adversário e Logo</CardTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            {isLoadingAdversarios ? (
+              <div className="col-span-full text-center py-4">Carregando logos...</div>
+            ) : (
+              adversarios && adversarios.length > 0 ? (
+                <>
+                  <div className="col-span-full mb-4">
+                    <h3 className="font-medium text-sm mb-1">Selecione um adversário para usar seu logo oficial</h3>
+                    <p className="text-xs text-gray-500">Clique em um time para selecionar</p>
+                  </div>
+                  {adversarios.map((adv) => (
+                    <div 
+                      key={adv.id} 
+                      className="flex flex-col items-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
+                      onClick={() => {
+                        form.setValue("adversario", adv.nome);
+                        form.setValue("logo_adversario", adv.logo_url);
+                        setLogoUrl(adv.logo_url);
+                        setLogoDialogOpen(false);
+                      }}
+                    >
+                      <img 
+                        src={adv.logo_url} 
+                        alt={adv.nome} 
+                        className="w-16 h-16 object-contain mb-2"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "https://via.placeholder.com/64?text=?";
+                        }}
+                      />
+                      <span className="text-xs text-center font-medium">{adv.nome}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="col-span-full text-center py-4">Nenhum adversário encontrado</div>
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -196,9 +380,97 @@ const CadastrarViagem = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Adversário</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Santos" {...field} />
-                      </FormControl>
+                      <div className="space-y-4">
+                        {!form.watch("_isCustomAdversario") ? (
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Select
+                                value={field.value}
+                                onValueChange={(value) => {
+                                  if (value === "outro") {
+                                    // Marcar um estado especial para indicar entrada manual
+                                    field.onChange(""); // Limpar o campo para permitir entrada manual
+                                    form.setValue("_isCustomAdversario", true); // Campo auxiliar para controlar o estado
+                                  } else {
+                                    field.onChange(value);
+                                    form.setValue("_isCustomAdversario", false);
+                                    // Encontrar o logo do adversário selecionado
+                                    const adversario = adversarios.find(a => a.nome === value);
+                                    if (adversario && adversario.logo_url) {
+                                      setLogoUrl(adversario.logo_url);
+                                      form.setValue("logo_adversario", adversario.logo_url);
+                                    }
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o adversário" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="outro">Outro (digitar manualmente)</SelectItem>
+                                  {adversarios && adversarios.length > 0 ? (
+                                    adversarios.map((adv) => (
+                                      <SelectItem key={adv.id} value={adv.nome}>
+                                        <div className="flex items-center gap-2">
+                                          {adv.logo_url && (
+                                            <img 
+                                              src={adv.logo_url} 
+                                              alt={adv.nome} 
+                                              className="w-5 h-5 object-contain"
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.onerror = null;
+                                                target.src = "https://via.placeholder.com/20?text=?";
+                                              }}
+                                            />
+                                          )}
+                                          {adv.nome}
+                                        </div>
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="carregando" disabled>Carregando adversários...</SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setLogoDialogOpen(true)}
+                              className="flex-shrink-0"
+                            >
+                              Ver Logos
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <FormLabel>Nome do Adversário</FormLabel>
+                                <Input 
+                                  placeholder="Digite o nome do adversário" 
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  form.setValue("_isCustomAdversario", false);
+                                  field.onChange("");
+                                }}
+                                className="flex-shrink-0 mt-6"
+                              >
+                                Voltar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -220,13 +492,82 @@ const CadastrarViagem = () => {
 
                 <FormField
                   control={form.control}
-                  name="rota"
+                  name="data_saida"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rota</FormLabel>
+                      <FormLabel>Data e Hora da Saída</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Rio de Janeiro - Maracanã" {...field} />
+                        <Input type="datetime-local" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="local_jogo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Local do Jogo</FormLabel>
+                      <div className="space-y-4">
+                        {!form.watch("_isCustomLocal") ? (
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Select
+                                value={field.value}
+                                onValueChange={(value) => {
+                                  if (value === "outro") {
+                                    field.onChange("");
+                                    form.setValue("_isCustomLocal", true);
+                                  } else {
+                                    field.onChange(value);
+                                    form.setValue("_isCustomLocal", false);
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione a cidade do jogo" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="outro">Outra cidade (digitar manualmente)</SelectItem>
+                                  {cidadesJogo.map((cidade) => (
+                                    <SelectItem key={cidade} value={cidade}>
+                                      {cidade}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <FormLabel>Nome da Cidade</FormLabel>
+                                <Input 
+                                  placeholder="Digite a cidade do jogo" 
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  form.setValue("_isCustomLocal", false);
+                                  field.onChange("Rio de Janeiro");
+                                }}
+                                className="flex-shrink-0 mt-6"
+                              >
+                                Voltar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -248,41 +589,69 @@ const CadastrarViagem = () => {
 
                 <FormField
                   control={form.control}
-                  name="setor_padrao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Setor Padrão do Estádio</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Norte" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="cidade_embarque"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cidade de Embarque</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Blumenau" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="logo_adversario"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL do Logo do Adversário</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://exemplo.com/logo.png" {...field} />
-                      </FormControl>
+                      <FormLabel>Logo do Adversário</FormLabel>
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center gap-4 mb-2 p-3 border rounded-md">
+                          <div className="relative w-16 h-16">
+                            <img 
+                              src={LOGO_FLAMENGO_PADRAO} 
+                              alt="Logo do Flamengo" 
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = "https://via.placeholder.com/64?text=FLA";
+                              }} 
+                            />
+                          </div>
+                          <span className="text-lg font-bold text-gray-600">X</span>
+                          <div className="relative w-16 h-16">
+                            <img 
+                              src={logoUrl || "https://via.placeholder.com/64?text=?"} 
+                              alt="Logo do adversário" 
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = "https://via.placeholder.com/64?text=?";
+                              }} 
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">Flamengo x {form.watch("adversario") || "Adversário"}</span>
+                            <span className="text-xs text-gray-500">Preview do confronto</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input 
+                              placeholder="URL do logo (opcional)" 
+                              {...field} 
+                              value={field.value || ""}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                setLogoUrl(e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-xs text-gray-500">
+                            Digite a URL do logo ou selecione um adversário para usar seu logo oficial
+                          </p>
+                          <a 
+                            href="https://logodetimes.com/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            Buscar logos em logodetimes.com
+                          </a>
+                        </div>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -303,7 +672,7 @@ const CadastrarViagem = () => {
                         <SelectContent>
                           <SelectItem value="Aberta">Aberta</SelectItem>
                           <SelectItem value="Fechada">Fechada</SelectItem>
-                          <SelectItem value="Cancelada">Cancelada</SelectItem>
+                          <SelectItem value="Concluída">Concluída</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -313,30 +682,90 @@ const CadastrarViagem = () => {
               </CardContent>
             </Card>
 
-            {/* Passeios */}
+            {/* Configurações */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Passeios Inclusos
+                  Configurações
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="passeios_pagos"
-                  render={() => (
+                  name="setor_padrao"
+                  render={({ field }) => (
                     <FormItem>
-                      <div className="mb-4">
-                        <FormLabel className="text-base">Passeios Pagos Inclusos</FormLabel>
+                      <FormLabel>Setor Padrão do Estádio</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o setor padrão" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {setoresEstadio.map((setor) => (
+                            <SelectItem key={setor} value={setor}>
+                              {setor}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {form.watch("local_jogo") === "Rio de Janeiro" ? 
+                          "Para jogos no Rio de Janeiro, use os setores do Maracanã" : 
+                          "Para jogos fora do Rio, recomendamos 'Setor padrão do estádio visitante' ou 'Sem ingresso'"
+                        }
                       </div>
-                      {passeiosDisponiveis.map((passeio) => (
-                        <FormField
-                          key={passeio}
-                          control={form.control}
-                          name="passeios_pagos"
-                          render={({ field }) => {
-                            return (
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cidade_embarque"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade de Embarque</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a cidade de embarque" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cidadesEmbarque.map((cidade) => (
+                            <SelectItem key={cidade} value={cidade}>
+                              {cidade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="passeios_pagos"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Passeios Inclusos</FormLabel>
+                      <div className="grid grid-cols-2 gap-2">
+                        {passeiosDisponiveis.map((passeio) => (
+                          <FormField
+                            key={passeio}
+                            control={form.control}
+                            name="passeios_pagos"
+                            render={({ field }) => (
                               <FormItem
                                 key={passeio}
                                 className="flex flex-row items-start space-x-3 space-y-0"
@@ -360,10 +789,10 @@ const CadastrarViagem = () => {
                                   {passeio}
                                 </FormLabel>
                               </FormItem>
-                            );
-                          }}
-                        />
-                      ))}
+                            )}
+                          />
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -374,9 +803,9 @@ const CadastrarViagem = () => {
                   name="outro_passeio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Outro Passeio (opcional)</FormLabel>
+                      <FormLabel>Outro Passeio</FormLabel>
                       <FormControl>
-                        <Input placeholder="Descreva outro passeio incluso" {...field} />
+                        <Input placeholder="Ex: Museu do Amanhã" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -413,59 +842,91 @@ const CadastrarViagem = () => {
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor={`tipo_onibus_${index}`}>Tipo de Ônibus</Label>
-                        <Input
-                          id={`tipo_onibus_${index}`}
-                          value={onibus.tipo_onibus}
-                          onChange={(e) => updateOnibusItem(index, 'tipo_onibus', e.target.value)}
-                          placeholder="Ex: Executivo"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`empresa_${index}`}>Empresa</Label>
-                        <Input
-                          id={`empresa_${index}`}
-                          value={onibus.empresa}
-                          onChange={(e) => updateOnibusItem(index, 'empresa', e.target.value)}
-                          placeholder="Ex: Auto Viação"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`capacidade_${index}`}>Capacidade</Label>
-                        <Input
-                          id={`capacidade_${index}`}
-                          type="number"
-                          value={onibus.capacidade_onibus}
-                          onChange={(e) => updateOnibusItem(index, 'capacidade_onibus', e.target.value)}
-                          placeholder="40"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor={`lugares_extras_${index}`}>Lugares Extras</Label>
-                        <Input
-                          id={`lugares_extras_${index}`}
-                          type="number"
-                          value={onibus.lugares_extras}
-                          onChange={(e) => updateOnibusItem(index, 'lugares_extras', e.target.value)}
-                          placeholder="0"
-                        />
-                      </div>
-                      
-                      <div className="md:col-span-2">
-                        <Label htmlFor={`numero_identificacao_${index}`}>Número de Identificação</Label>
-                        <Input
-                          id={`numero_identificacao_${index}`}
-                          value={onibus.numero_identificacao}
-                          onChange={(e) => updateOnibusItem(index, 'numero_identificacao', e.target.value)}
-                          placeholder="Ex: Ônibus 001"
-                        />
-                      </div>
+                    <div className="mb-4">
+                      <FormLabel htmlFor={`onibus_id_${index}`}>Selecionar Ônibus</FormLabel>
+                      <Select
+                        value={onibus.onibus_id}
+                        onValueChange={(value) => updateOnibusItem(index, 'onibus_id', value)}
+                      >
+                        <SelectTrigger id={`onibus_id_${index}`}>
+                          <SelectValue placeholder="Selecione um ônibus cadastrado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {onibusCadastrados.map((o) => (
+                            <SelectItem key={o.id} value={o.id}>
+                              {o.tipo_onibus} - {o.empresa} {o.numero_identificacao ? `(${o.numero_identificacao})` : ''} 
+                              {o.cor ? `- Cor: ${o.cor}` : ''} - {o.capacidade} passageiros
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    
+                    {onibus.onibus_id && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white p-4 rounded-lg shadow-sm border" style={{ 
+                          borderColor: onibus.cor_onibus ? onibus.cor_onibus : '#e5e7eb',
+                          borderWidth: onibus.cor_onibus ? '2px' : '1px'
+                        }}>
+                          {onibus.image_path && (
+                            <div className="mb-3 flex justify-center">
+                              <img 
+                                src={onibus.image_path} 
+                                alt={`${onibus.tipo_onibus} - ${onibus.empresa}`} 
+                                className="h-32 object-contain rounded-md"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.onerror = null;
+                                  target.src = "https://via.placeholder.com/300x200?text=Sem+Imagem";
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-gray-500">Tipo de Ônibus:</span>
+                            <span className="ml-2 text-gray-900">{onibus.tipo_onibus}</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-gray-500">Empresa:</span>
+                            <span className="ml-2 text-gray-900">{onibus.empresa}</span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-gray-500">Capacidade:</span>
+                            <span className="ml-2 text-gray-900">{onibus.capacidade_onibus} lugares</span>
+                          </div>
+                          {onibus.numero_identificacao && (
+                            <div className="mb-2">
+                              <span className="text-sm font-medium text-gray-500">Identificação:</span>
+                              <span className="ml-2 text-gray-900">{onibus.numero_identificacao}</span>
+                            </div>
+                          )}
+                          {onibus.cor_onibus && (
+                            <div className="mb-2">
+                              <span className="text-sm font-medium text-gray-500">Cor:</span>
+                              <span className="ml-2 text-gray-900">{onibus.cor_onibus}</span>
+                              <div 
+                                className="inline-block ml-2 w-4 h-4 rounded-full border border-gray-300" 
+                                style={{ backgroundColor: onibus.cor_onibus }}
+                              ></div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <FormLabel htmlFor={`lugares_extras_${index}`}>Lugares Extras</FormLabel>
+                          <Input
+                            id={`lugares_extras_${index}`}
+                            type="number"
+                            value={onibus.lugares_extras}
+                            onChange={(e) => updateOnibusItem(index, 'lugares_extras', e.target.value)}
+                            placeholder="Ex: 0"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            Capacidade total: {parseInt(onibus.capacidade_onibus || "0") + parseInt(onibus.lugares_extras || "0")} lugares
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 
@@ -485,8 +946,8 @@ const CadastrarViagem = () => {
                   <Users className="h-5 w-5" />
                   <span className="font-medium">
                     Capacidade Total: {onibusItems.reduce((total, onibus) => {
-                      const capacidade = parseInt(onibus.capacidade_onibus) || 0;
-                      const extras = parseInt(onibus.lugares_extras) || 0;
+                      const capacidade = parseInt(onibus.capacidade_onibus || "0");
+                      const extras = parseInt(onibus.lugares_extras || "0");
                       return total + capacidade + extras;
                     }, 0)} passageiros
                   </span>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 
@@ -34,8 +34,8 @@ export function useOnibusData() {
   const [onibusImages, setOnibusImages] = useState<OnibusImage[]>([]);
   const [onibusList, setOnibusList] = useState<Onibus[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterEmpresa, setFilterEmpresa] = useState<string | null>(null);
-  const [filterTipo, setFilterTipo] = useState<string | null>(null);
+  const [filterEmpresa, setFilterEmpresa] = useState<string>("all");
+  const [filterTipo, setFilterTipo] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [onibusToDelete, setOnibusToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -167,21 +167,37 @@ export function useOnibusData() {
   
   // Filtrar onibus
   const filteredOnibus = onibusDisplayData.filter((onibus) => {
-    const matchesTerm =
-      !searchTerm ||
+    // Filtro de busca por termo
+    const matchesTerm = !searchTerm || 
       onibus.tipo_onibus.toLowerCase().includes(searchTerm.toLowerCase()) ||
       onibus.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (onibus.numero_identificacao && onibus.numero_identificacao.toLowerCase().includes(searchTerm.toLowerCase()));
+      onibus.capacidade.toString().includes(searchTerm) ||
+      (onibus.numero_identificacao && onibus.numero_identificacao.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (onibus.description && onibus.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesEmpresa = !filterEmpresa || onibus.empresa === filterEmpresa;
-    const matchesTipo = !filterTipo || onibus.tipo_onibus === filterTipo;
+    // Filtro por empresa
+    const matchesEmpresa = !filterEmpresa || filterEmpresa === "all" || onibus.empresa === filterEmpresa;
+    
+    // Filtro por tipo
+    const matchesTipo = !filterTipo || filterTipo === "all" || onibus.tipo_onibus === filterTipo;
 
     return matchesTerm && matchesEmpresa && matchesTipo;
   });
 
   // Extrair valores únicos para filtros
-  const empresas = [...new Set(onibusList.map((o) => o.empresa))];
-  const tipos = [...new Set(onibusList.map((o) => o.tipo_onibus))];
+  const empresas = [...new Set(onibusList.map((o) => o.empresa))].filter(Boolean);
+  const tipos = [...new Set(onibusList.map((o) => o.tipo_onibus))].filter(Boolean);
+
+  // Debug dos filtros
+  console.log("Filtros Debug:", {
+    searchTerm,
+    filterEmpresa,
+    filterTipo,
+    empresas,
+    tipos,
+    totalOnibus: onibusList.length,
+    filteredCount: filteredOnibus.length
+  });
 
   return {
     loading,

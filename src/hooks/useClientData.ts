@@ -4,6 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { ClienteFormData } from "@/components/cliente/ClienteFormSchema";
+import { convertISOToBrazilianDate } from "@/utils/formatters";
 
 export const useClientData = (id: string | undefined, form: UseFormReturn<ClienteFormData>) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -25,9 +26,9 @@ export const useClientData = (id: string | undefined, form: UseFormReturn<Client
         }
 
         if (cliente) {
-          // Formatando a data para o formato de input date (YYYY-MM-DD)
+          // Formatando a data para o formato brasileiro (DD/MM/AAAA)
           const formattedDate = cliente.data_nascimento
-            ? new Date(cliente.data_nascimento).toISOString().split('T')[0]
+            ? convertISOToBrazilianDate(cliente.data_nascimento)
             : '';
 
           form.reset({

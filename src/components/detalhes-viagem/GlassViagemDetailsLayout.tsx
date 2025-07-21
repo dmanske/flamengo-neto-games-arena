@@ -23,6 +23,7 @@ interface Viagem {
   id: string;
   adversario: string;
   data_jogo: string;
+  local_jogo?: string;
   rota: string;
   setor_padrao: string | null;
   valor_padrao: number | null;
@@ -110,29 +111,60 @@ export function GlassViagemDetailsLayout({
             <div className="flex items-center gap-8">
               {/* Team Logos with Glow Effect */}
               <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
-                  <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
-                    <AvatarImage 
-                      src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
-                      alt="Flamengo" 
-                    />
-                    <AvatarFallback className="bg-red-600/80 text-white font-bold text-xl backdrop-blur-sm">FLA</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="text-4xl font-bold text-white/70">×</div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gray-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
-                  <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
-                    <AvatarImage 
-                      src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
-                      alt={viagem.adversario}
-                    />
-                    <AvatarFallback className="bg-gray-600/80 text-white font-bold text-xl backdrop-blur-sm">
-                      {viagem.adversario.substring(0, 3).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gray-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
+                      <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
+                        <AvatarImage 
+                          src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                          alt={viagem.adversario}
+                        />
+                        <AvatarFallback className="bg-gray-600/80 text-white font-bold text-xl backdrop-blur-sm">
+                          {viagem.adversario.substring(0, 3).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="text-4xl font-bold text-white/70">×</div>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-red-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
+                      <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
+                        <AvatarImage 
+                          src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                          alt="Flamengo" 
+                        />
+                        <AvatarFallback className="bg-red-600/80 text-white font-bold text-xl backdrop-blur-sm">FLA</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-red-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
+                      <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
+                        <AvatarImage 
+                          src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                          alt="Flamengo" 
+                        />
+                        <AvatarFallback className="bg-red-600/80 text-white font-bold text-xl backdrop-blur-sm">FLA</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="text-4xl font-bold text-white/70">×</div>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gray-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
+                      <Avatar className="h-24 w-24 border-4 border-white/30 shadow-2xl relative backdrop-blur-sm">
+                        <AvatarImage 
+                          src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                          alt={viagem.adversario}
+                        />
+                        <AvatarFallback className="bg-gray-600/80 text-white font-bold text-xl backdrop-blur-sm">
+                          {viagem.adversario.substring(0, 3).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Title and Info */}
@@ -142,7 +174,10 @@ export function GlassViagemDetailsLayout({
                   {viagem.status_viagem}
                 </Badge>
                 <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">
-                  Flamengo × {viagem.adversario}
+                  {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+                    `${viagem.adversario} × Flamengo` : 
+                    `Flamengo × ${viagem.adversario}`
+                  }
                 </h1>
                 <p className="text-white/80 text-xl font-medium">Caravana Rubro-Negra</p>
               </div>

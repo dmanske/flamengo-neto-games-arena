@@ -3,15 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton-loader";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -78,7 +78,7 @@ const Viagens = () => {
   const fetchViagens = async () => {
     try {
       setLoading(true);
-      
+
       let query = supabase
         .from('viagens')
         .select('*')
@@ -87,13 +87,16 @@ const Viagens = () => {
       if (filterStatus) {
         query = query.eq('status_viagem', filterStatus);
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         throw error;
       }
-      
+
+      console.log(`Viagens carregadas do servidor: ${data?.length || 0}`);
+      console.log('IDs das viagens:', data?.map(v => `${v.id} - ${v.adversario}`) || []);
+
       setViagens(data || []);
     } catch (error: any) {
       console.error('Erro ao buscar viagens:', error);
@@ -103,33 +106,56 @@ const Viagens = () => {
     }
   };
 
+  // Função de teste para debug (você pode chamar no console do navegador)
+  (window as any).testDeleteViagem = async (viagemId: string) => {
+    console.log(`Testando exclusão da viagem: ${viagemId}`);
+
+    const { error } = await supabase.rpc('delete_viagem', { viagem_id: viagemId });
+
+    if (error) {
+      console.error('Erro na exclusão:', error);
+      return false;
+    }
+
+    console.log('Exclusão executada, verificando...');
+
+    const { data } = await supabase
+      .from('viagens')
+      .select('id, adversario')
+      .eq('id', viagemId);
+
+    console.log(`Viagem ainda existe no banco: ${data && data.length > 0}`);
+
+    return data && data.length === 0;
+  };
+
   // Buscar contagem de passageiros para cada viagem
   const { passageirosCount } = useMultiplePassageirosCount(
     viagens.map(viagem => viagem.id)
   );
 
   // Separar viagens ativas e históricas
-  const viagensAtivas = viagens.filter(viagem => 
+  const viagensAtivas = viagens.filter(viagem =>
     viagem.status_viagem === 'Aberta' || viagem.status_viagem === 'Fechada'
   );
-  
-  const viagensHistoricas = viagens.filter(viagem => 
+
+  const viagensHistoricas = viagens.filter(viagem =>
     viagem.status_viagem === 'Concluída'
   );
 
   // Filtrar viagens históricas por período
   const getViagensPorPeriodo = (viagens: Viagem[]) => {
     if (periodoFiltro === "todos") return viagens;
-    
+
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth();
-    
+
     return viagens.filter(viagem => {
       const dataJogo = new Date(viagem.data_jogo);
       const anoViagem = dataJogo.getFullYear();
       const mesViagem = dataJogo.getMonth();
-      
+
       switch (periodoFiltro) {
         case "mes_atual":
           return anoViagem === anoAtual && mesViagem === mesAtual;
@@ -146,10 +172,10 @@ const Viagens = () => {
   // Apply filters
   const filterViagens = (viagensList: Viagem[]) => {
     if (!searchTerm) return viagensList;
-    
+
     const term = searchTerm.toLowerCase();
-    
-    return viagensList.filter((viagem) => 
+
+    return viagensList.filter((viagem) =>
       viagem.adversario.toLowerCase().includes(term) ||
       viagem.rota.toLowerCase().includes(term) ||
       format(new Date(viagem.data_jogo), 'dd/MM/yyyy', { locale: ptBR }).includes(term)
@@ -162,21 +188,49 @@ const Viagens = () => {
   // Delete viagem
   const handleDeleteViagem = async () => {
     if (!viagemToDelete) return;
-    
+
+    const viagemId = viagemToDelete.id;
+    const viagemNome = viagemToDelete.adversario;
+
     try {
       setIsDeleting(true);
-      
+
+      console.log(`Iniciando exclusão da viagem: ${viagemId} - ${viagemNome}`);
+
+      // Usar a função RPC delete_viagem para garantir exclusão em cascata
       const { error } = await supabase
-        .from('viagens')
-        .delete()
-        .eq('id', viagemToDelete.id);
-      
+        .rpc('delete_viagem', { viagem_id: viagemId });
+
       if (error) {
         throw error;
       }
-      
-      setViagens(viagens.filter(v => v.id !== viagemToDelete.id));
-      toast.success(`Viagem contra ${viagemToDelete.adversario} removida com sucesso`);
+
+      console.log(`Viagem excluída com sucesso no banco: ${viagemId}`);
+
+      // Verificar se a viagem ainda existe no banco
+      const { data: verificacao, error: errorVerificacao } = await supabase
+        .from('viagens')
+        .select('id')
+        .eq('id', viagemId);
+
+      if (errorVerificacao) {
+        console.error('Erro ao verificar exclusão:', errorVerificacao);
+      } else {
+        console.log(`Verificação pós-exclusão - viagens encontradas:`, verificacao?.length || 0);
+      }
+
+      // Aguardar um pouco antes de recarregar para garantir que a transação foi commitada
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Recarregar a lista de viagens do servidor para garantir sincronização
+      console.log('Recarregando lista de viagens...');
+      await fetchViagens();
+
+      // Verificar se a viagem ainda aparece na lista local
+      const viagemAindaExiste = viagens.some(v => v.id === viagemId);
+      console.log(`Viagem ainda existe na lista local após reload: ${viagemAindaExiste}`);
+
+      toast.success(`Viagem contra ${viagemNome} removida com sucesso`);
       setViagemToDelete(null);
     } catch (err: any) {
       console.error('Erro ao excluir viagem:', err);
@@ -260,10 +314,10 @@ const Viagens = () => {
                     <div className="flex items-center gap-2">
                       {viagem.logo_adversario && (
                         <div className="w-6 h-6 flex items-center justify-center">
-                          <img 
-                            src={viagem.logo_adversario} 
-                            alt={viagem.adversario} 
-                            className="w-full h-full object-contain" 
+                          <img
+                            src={viagem.logo_adversario}
+                            alt={viagem.adversario}
+                            className="w-full h-full object-contain"
                           />
                         </div>
                       )}
@@ -294,7 +348,7 @@ const Viagens = () => {
                           <p>Ver detalhes da viagem</p>
                         </TooltipContent>
                       </Tooltip>
-                      
+
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button size="sm" variant="outline" asChild>
@@ -307,12 +361,12 @@ const Viagens = () => {
                           <p>Editar viagem</p>
                         </TooltipContent>
                       </Tooltip>
-                      
+
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => setViagemToDelete(viagem)}
                             className="text-red-500 hover:bg-red-50"
                           >
@@ -337,9 +391,9 @@ const Viagens = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {viagensList.map((viagem) => (
-          <CleanViagemCard 
+          <CleanViagemCard
             key={viagem.id}
-            viagem={viagem} 
+            viagem={viagem}
             passageirosCount={passageirosCount[viagem.id] || 0}
             onDeleteClick={(v) => setViagemToDelete(v)}
           />
@@ -354,7 +408,7 @@ const Viagens = () => {
         <div className="container py-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Viagens</h1>
-            <Button 
+            <Button
               onClick={() => navigate("/dashboard/cadastrar-viagem")}
               className="bg-primary hover:bg-primary/90"
             >
@@ -386,7 +440,7 @@ const Viagens = () => {
                     className="pl-8"
                   />
                 </div>
-                
+
                 {activeTab === 'historico' && (
                   <Select
                     value={periodoFiltro}
@@ -419,7 +473,7 @@ const Viagens = () => {
                       <p>Visualização em tabela</p>
                     </TooltipContent>
                   </Tooltip>
-                  
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -480,7 +534,7 @@ const Viagens = () => {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="hover:text-gray-700">Cancelar</AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   onClick={handleDeleteViagem}
                   className="bg-red-600 hover:bg-red-700"
                   disabled={isDeleting}

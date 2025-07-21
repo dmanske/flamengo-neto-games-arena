@@ -16,6 +16,7 @@ import {
 interface Viagem {
   id: string;
   data_jogo: string;
+  local_jogo?: string;
   adversario: string;
   rota: string;
   valor_padrao: number | null;
@@ -66,22 +67,47 @@ export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCa
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              {viagem.logo_flamengo && (
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img 
-                    src={viagem.logo_flamengo} 
-                    alt="Flamengo" 
-                    className="w-full h-full object-contain" 
-                  />
-                </div>
-              )}
-              <span className="text-sm font-medium">vs</span>
-              {viagem.logo_adversario && (
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img 
-                    src={viagem.logo_adversario} 
-                    alt={viagem.adversario} 
-                    className="w-full h-full object-contain" 
+              {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+              {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+                <>
+                  {viagem.logo_adversario && (
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <img 
+                        src={viagem.logo_adversario} 
+                        alt={viagem.adversario} 
+                        className="w-full h-full object-contain" 
+                      />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">vs</span>
+                  {viagem.logo_flamengo && (
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <img 
+                        src={viagem.logo_flamengo} 
+                        alt="Flamengo" 
+                        className="w-full h-full object-contain" 
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {viagem.logo_flamengo && (
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <img 
+                        src={viagem.logo_flamengo} 
+                        alt="Flamengo" 
+                        className="w-full h-full object-contain" 
+                      />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">vs</span>
+                  {viagem.logo_adversario && (
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      <img 
+                        src={viagem.logo_adversario} 
+                        alt={viagem.adversario} 
+                        className="w-full h-full object-contain" 
                   />
                 </div>
               )}
@@ -91,7 +117,12 @@ export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCa
             {viagem.status_viagem}
           </Badge>
         </div>
-        <CardTitle className="text-lg">{viagem.adversario}</CardTitle>
+        <CardTitle className="text-lg">
+          {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+            `${viagem.adversario} vs Flamengo` : 
+            `Flamengo vs ${viagem.adversario}`
+          }
+        </CardTitle>
         <p className="text-sm text-gray-600">{formatDate(viagem.data_jogo)}</p>
       </CardHeader>
       

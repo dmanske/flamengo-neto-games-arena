@@ -11,6 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface Viagem {
   id: string;
   data_jogo: string;
+  data_saida?: string;
+  local_jogo?: string;
   adversario: string;
   rota: string;
   valor_padrao: number | null;
@@ -36,6 +38,14 @@ export function CleanViagemCard({
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd 'de' MMMM", { locale: ptBR });
+    } catch (error) {
+      return 'Data inválida';
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     } catch (error) {
       return 'Data inválida';
     }
@@ -83,27 +93,53 @@ export function CleanViagemCard({
         
         {/* Team logos section */}
         <div className="flex items-center justify-center gap-6 py-6 bg-professional-light">
-          <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
-            <img 
-              src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
-              alt="Flamengo" 
-              className="h-12 w-12 object-contain" 
-            />
-          </div>
-          <div className="text-2xl font-bold text-professional-navy">×</div>
-          <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
-            <img 
-              src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
-              alt={viagem.adversario} 
-              className="h-12 w-12 object-contain" 
-            />
-          </div>
+          {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+          {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+            <>
+              <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <img 
+                  src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
+                  alt={viagem.adversario} 
+                  className="h-12 w-12 object-contain" 
+                />
+              </div>
+              <div className="text-2xl font-bold text-professional-navy">×</div>
+              <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <img 
+                  src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                  alt="Flamengo" 
+                  className="h-12 w-12 object-contain" 
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <img 
+                  src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                  alt="Flamengo" 
+                  className="h-12 w-12 object-contain" 
+                />
+              </div>
+              <div className="text-2xl font-bold text-professional-navy">×</div>
+              <div className="h-16 w-16 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-200">
+                <img 
+                  src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
+                  alt={viagem.adversario} 
+                  className="h-12 w-12 object-contain" 
+                />
+              </div>
+            </>
+          )}
         </div>
         
         {/* Content section */}
         <div className="p-6 space-y-4">
           <h4 className="font-bold text-xl text-professional-navy text-center mb-4">
-            Flamengo × {viagem.adversario}
+            {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+              `${viagem.adversario} × Flamengo` : 
+              `Flamengo × ${viagem.adversario}`
+            }
           </h4>
           
           {/* Details list */}
@@ -112,28 +148,42 @@ export function CleanViagemCard({
               <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
                 <Calendar className="h-5 w-5" />
               </div>
-              <span className="text-professional-navy font-medium">{formatDate(viagem.data_jogo)}</span>
+              <div className="flex flex-col">
+                <span className="text-professional-navy font-medium text-sm">Data do Jogo</span>
+                <span className="text-professional-slate text-xs">{formatDateTime(viagem.data_jogo)}</span>
+              </div>
             </div>
+            
+            {viagem.data_saida && (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
+                  <Bus className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-professional-navy font-medium text-sm">Saída da Viagem</span>
+                  <span className="text-professional-slate text-xs">{formatDateTime(viagem.data_saida)}</span>
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
                 <MapPin className="h-5 w-5" />
               </div>
-              <span className="text-professional-slate">{viagem.rota}</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
-                <Bus className="h-5 w-5" />
+              <div className="flex flex-col">
+                <span className="text-professional-navy font-medium text-sm">Local do Jogo</span>
+                <span className="text-professional-slate text-xs">{viagem.local_jogo || viagem.rota || 'Rio de Janeiro'}</span>
               </div>
-              <span className="text-professional-slate">{viagem.tipo_onibus}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
                 <DollarSign className="h-5 w-5" />
               </div>
-              <span className="font-bold text-professional-navy text-lg">{formatValue(viagem.valor_padrao)}</span>
+              <div className="flex flex-col">
+                <span className="text-professional-navy font-medium text-sm">Valor</span>
+                <span className="font-bold text-professional-navy text-lg">{formatValue(viagem.valor_padrao)}</span>
+              </div>
             </div>
           </div>
           

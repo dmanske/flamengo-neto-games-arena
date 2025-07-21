@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useClientValidation } from "@/hooks/useClientValidation";
-import { cleanCPF, cleanPhone } from "@/utils/formatters";
+import { cleanCPF, cleanPhone, convertBrazilianDateToISO, convertISOToBrazilianDate } from "@/utils/formatters";
 import { formSchema, type ClienteFormData } from "./ClienteFormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { ContactInfoFields } from "./ContactInfoFields";
@@ -23,12 +23,14 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { validateClient, isValidating } = useClientValidation();
 
+
+
   const form = useForm<ClienteFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: cliente?.nome || "",
       cpf: cliente?.cpf || "",
-      data_nascimento: cliente?.data_nascimento || "",
+      data_nascimento: convertISOToBrazilianDate(cliente?.data_nascimento || ""),
       telefone: cliente?.telefone || "",
       email: cliente?.email || "",
       cep: cliente?.cep || "",
@@ -59,10 +61,12 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
         return;
       }
 
+
+
       const clienteData = {
         nome: data.nome.trim(),
         cpf: cleanCPF(data.cpf),
-        data_nascimento: data.data_nascimento,
+        data_nascimento: data.data_nascimento ? convertBrazilianDateToISO(data.data_nascimento) : null,
         telefone: cleanPhone(data.telefone),
         email: data.email.toLowerCase().trim(),
         cep: data.cep.replace(/\D/g, ''),
@@ -132,21 +136,51 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* Dados Pessoais */}
-        <PersonalInfoFields form={form} />
+        <div className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Dados Pessoais</h3>
+            <p className="text-sm text-gray-600">Informações básicas do cliente</p>
+          </div>
+          <PersonalInfoFields form={form} />
+        </div>
 
         {/* Informações de Contato */}
-        <ContactInfoFields form={form} />
+        <div className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Contato</h3>
+            <p className="text-sm text-gray-600">Telefone e informações de contato</p>
+          </div>
+          <ContactInfoFields form={form} />
+        </div>
 
         {/* Endereço */}
-        <AddressFields form={form} />
+        <div className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Endereço</h3>
+            <p className="text-sm text-gray-600">Informações de localização (opcional)</p>
+          </div>
+          <AddressFields form={form} />
+        </div>
 
         {/* Como conheceu e observações */}
-        <ReferralFields form={form} />
+        <div className="space-y-4">
+          <div className="border-b pb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Informações Adicionais</h3>
+            <p className="text-sm text-gray-600">Como conheceu a Neto Tours Viagens e observações</p>
+          </div>
+          <ReferralFields form={form} />
+        </div>
 
         {/* Botão de submit */}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Enviando..." : "Salvar"}
-        </Button>
+        <div className="flex justify-end pt-6 border-t">
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+          >
+            {isLoading ? "Salvando..." : cliente ? "Atualizar Cliente" : "Cadastrar Cliente"}
+          </Button>
+        </div>
       </form>
     </Form>
   );

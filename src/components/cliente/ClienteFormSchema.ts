@@ -47,32 +47,34 @@ export const formSchema = z.object({
     .refine(val => {
       const words = val.trim().split(/\s+/);
       return words.length >= 2;
-    }, "Digite nome e sobrenome")
+    }, "Digite nome e sobrenome completo")
     .transform(val => val.trim()),
   
   cpf: z.string()
     .optional()
-    .transform(val => val?.trim() || ""),
+    .transform(val => val?.replace(/\D/g, '') || "")
+    .refine(val => !val || val.length === 0 || isValidCPF(val), "CPF inválido"),
   
   data_nascimento: z.string()
     .optional()
-    .transform(val => val?.trim() || ""),
+    .transform(val => val?.trim() || "")
+    .refine(val => !val || val.length === 0 || /^\d{2}\/\d{2}\/\d{4}$/.test(val), "Data deve estar no formato DD/MM/AAAA"),
   
   telefone: z.string()
-    .transform(val => val?.replace(/\D/g, '') || "") // remove tudo que não for número
-    .optional(),
+    .optional()
+    .transform(val => val?.replace(/\D/g, '') || "")
+    .refine(val => !val || val.length === 0 || val.length >= 10, "Telefone deve ter pelo menos 10 dígitos"),
   
   email: z.string()
-    .email("Email inválido")
     .optional()
-    .or(z.literal(""))
-    .transform(val => val?.toLowerCase().trim() || ""),
+    .transform(val => val?.toLowerCase().trim() || "")
+    .refine(val => !val || val.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email inválido"),
 
   // Endereço - TODOS OPCIONAIS
   cep: z.string()
-    .max(9, "CEP inválido")
     .optional()
-    .transform(val => val?.trim() || ""),
+    .transform(val => val?.replace(/\D/g, '') || "")
+    .refine(val => !val || val.length === 0 || val.length === 8, "CEP deve ter 8 dígitos"),
   
   endereco: z.string()
     .max(200, "Endereço muito longo")
@@ -85,7 +87,7 @@ export const formSchema = z.object({
     .transform(val => val?.trim() || ""),
   
   complemento: z.string()
-    .max(50, "Complemento muito longo")
+    .max(100, "Complemento muito longo")
     .optional()
     .transform(val => val?.trim() || null),
   
@@ -104,7 +106,7 @@ export const formSchema = z.object({
     .optional()
     .transform(val => val?.toUpperCase().trim() || ""),
 
-  // Como conheceu - OPCIONAL
+  // Como conheceu - OPCIONAL com valores específicos
   como_conheceu: z.string()
     .optional()
     .transform(val => val?.trim() || ""),
@@ -116,16 +118,15 @@ export const formSchema = z.object({
     .transform(val => val?.trim() || null),
   
   observacoes: z.string()
-    .max(500, "Observações muito longas")
+    .max(1000, "Observações muito longas")
     .optional()
     .transform(val => val?.trim() || null),
 
   // Campo para foto (opcional)
   foto: z.string()
-    .url("URL da foto inválida")
     .optional()
-    .or(z.literal(""))
-    .transform(val => val || null),
+    .transform(val => val || null)
+    .refine(val => !val || val.length === 0 || /^https?:\/\//.test(val), "URL da foto inválida"),
 
   // Campo para identificar fonte do cadastro
   fonte_cadastro: z.string()

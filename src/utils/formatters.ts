@@ -104,3 +104,38 @@ export const formatarNomeComPreposicoes = (nome: string): string => {
     })
     .join(' ');
 };
+
+// Função para converter data brasileira DD/MM/AAAA para formato ISO AAAA-MM-DD
+export const convertBrazilianDateToISO = (brazilianDate: string): string => {
+  if (!brazilianDate || brazilianDate.length !== 10) return "";
+  
+  const [day, month, year] = brazilianDate.split('/');
+  if (!day || !month || !year) return "";
+  
+  // Validar se são números válidos
+  const dayNum = parseInt(day, 10);
+  const monthNum = parseInt(month, 10);
+  const yearNum = parseInt(year, 10);
+  
+  if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900) {
+    return "";
+  }
+  
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
+// Função para converter data ISO AAAA-MM-DD para formato brasileiro DD/MM/AAAA
+export const convertISOToBrazilianDate = (isoDate: string): string => {
+  if (!isoDate) return "";
+  
+  // Se já está no formato brasileiro, retorna como está
+  if (isoDate.includes('/')) return isoDate;
+  
+  // Se está no formato ISO AAAA-MM-DD
+  if (isoDate.includes('-') && isoDate.length === 10) {
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  
+  return "";
+};

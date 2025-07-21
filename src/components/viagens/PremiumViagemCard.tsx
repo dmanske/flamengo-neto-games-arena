@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface Viagem {
   id: string;
   data_jogo: string;
+  local_jogo?: string;
   adversario: string;
   rota: string;
   valor_padrao: number | null;
@@ -84,31 +85,63 @@ export function PremiumViagemCard({
         
         {/* Team logos com efeito glass */}
         <div className="flex items-center justify-center gap-6 py-4 bg-professional-light/50 backdrop-blur-sm">
-          <div className="relative group">
-            <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
-              <img 
-                src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
-                alt="Flamengo" 
-                className="h-10 w-10 object-contain" 
-              />
-            </div>
-          </div>
-          <div className="text-xl font-bold text-professional-navy/80 drop-shadow">×</div>
-          <div className="relative group">
-            <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
-              <img 
-                src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
-                alt={viagem.adversario} 
-                className="h-10 w-10 object-contain" 
-              />
-            </div>
+          {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+          {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+            <>
+              <div className="relative group">
+                <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
+                  <img 
+                    src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
+                    alt={viagem.adversario} 
+                    className="h-10 w-10 object-contain" 
+                  />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-professional-navy/80 drop-shadow">×</div>
+              <div className="relative group">
+                <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
+                  <img 
+                    src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                    alt="Flamengo" 
+                    className="h-10 w-10 object-contain" 
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative group">
+                <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
+                  <img 
+                    src={viagem.logo_flamengo || "https://upload.wikimedia.org/wikipedia/commons/4/43/Flamengo_logo.png"} 
+                    alt="Flamengo" 
+                    className="h-10 w-10 object-contain" 
+                  />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-professional-navy/80 drop-shadow">×</div>
+              <div className="relative group">
+                <div className="h-12 w-12 rounded-full border-2 border-professional-blue/30 bg-white/80 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-professional group-hover:scale-110 transition-transform duration-200">
+                  <img 
+                    src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`} 
+                    alt={viagem.adversario} 
+                    className="h-10 w-10 object-contain" 
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
           </div>
         </div>
         
         {/* Details section com glass effect */}
         <div className="p-4 space-y-4">
           <h4 className="font-bold text-lg text-professional-navy mb-3 text-center">
-            Flamengo × {viagem.adversario}
+            {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+              `${viagem.adversario} × Flamengo` : 
+              `Flamengo × ${viagem.adversario}`
+            }
           </h4>
           
           {/* Info grid com glass containers */}

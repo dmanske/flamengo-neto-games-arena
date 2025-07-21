@@ -23,6 +23,7 @@ interface Viagem {
   id: string;
   adversario: string;
   data_jogo: string;
+  local_jogo?: string;
   rota: string;
   setor_padrao: string | null;
   valor_padrao: number | null;
@@ -105,27 +106,56 @@ export function ModernViagemDetailsLayout({
             <div className="flex items-center gap-6">
               {/* Team Logos */}
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
-                    <AvatarImage 
-                      src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
-                      alt="Flamengo" 
-                    />
-                    <AvatarFallback className="bg-red-600 text-white font-bold text-lg">FLA</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="text-3xl font-bold text-gray-400">×</div>
-                <div className="relative">
-                  <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
-                    <AvatarImage 
-                      src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
-                      alt={viagem.adversario}
-                    />
-                    <AvatarFallback className="bg-gray-600 text-white font-bold text-lg">
-                      {viagem.adversario.substring(0, 3).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+                  <>
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                        <AvatarImage 
+                          src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                          alt={viagem.adversario}
+                        />
+                        <AvatarFallback className="bg-gray-600 text-white font-bold text-lg">
+                          {viagem.adversario.substring(0, 3).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-400">×</div>
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                        <AvatarImage 
+                          src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                          alt="Flamengo" 
+                        />
+                        <AvatarFallback className="bg-red-600 text-white font-bold text-lg">FLA</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                        <AvatarImage 
+                          src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
+                          alt="Flamengo" 
+                        />
+                        <AvatarFallback className="bg-red-600 text-white font-bold text-lg">FLA</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-400">×</div>
+                    <div className="relative">
+                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                        <AvatarImage 
+                          src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
+                          alt={viagem.adversario}
+                        />
+                        <AvatarFallback className="bg-gray-600 text-white font-bold text-lg">
+                          {viagem.adversario.substring(0, 3).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Title and Info */}
@@ -134,7 +164,10 @@ export function ModernViagemDetailsLayout({
                   {viagem.status_viagem}
                 </Badge>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Flamengo × {viagem.adversario}
+                  {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+                    `${viagem.adversario} × Flamengo` : 
+                    `Flamengo × ${viagem.adversario}`
+                  }
                 </h1>
                 <p className="text-gray-600 text-lg">Caravana Rubro-Negra</p>
               </div>

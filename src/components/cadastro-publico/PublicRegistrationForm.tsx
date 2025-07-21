@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useClientValidation } from "@/hooks/useClientValidation";
-import { cleanCPF, cleanPhone } from "@/utils/formatters";
+import { cleanCPF, cleanPhone, convertBrazilianDateToISO } from "@/utils/formatters";
 import { publicRegistrationSchema, type PublicRegistrationFormData } from "./FormSchema";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
@@ -65,7 +65,7 @@ export const PublicRegistrationForm = () => {
       const clienteData = {
         nome: data.nome.trim(),
         cpf: cleanCPF(data.cpf),
-        data_nascimento: data.data_nascimento,
+        data_nascimento: data.data_nascimento ? convertBrazilianDateToISO(data.data_nascimento) : null,
         telefone: cleanPhone(data.telefone),
         email: data.email.toLowerCase().trim(),
         cep: data.cep.replace(/\D/g, ''),

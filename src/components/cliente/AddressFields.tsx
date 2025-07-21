@@ -8,11 +8,35 @@ import { UseFormReturn } from "react-hook-form";
 import { formatCEP, fetchAddressByCEP } from "@/utils/cepUtils";
 import { toast } from "sonner";
 
-// Lista de estados brasileiros para o dropdown
+// Lista de estados brasileiros com nomes completos
 const estadosBrasileiros = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", 
-  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", 
-  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+  { sigla: "AC", nome: "Acre" },
+  { sigla: "AL", nome: "Alagoas" },
+  { sigla: "AP", nome: "Amapá" },
+  { sigla: "AM", nome: "Amazonas" },
+  { sigla: "BA", nome: "Bahia" },
+  { sigla: "CE", nome: "Ceará" },
+  { sigla: "DF", nome: "Distrito Federal" },
+  { sigla: "ES", nome: "Espírito Santo" },
+  { sigla: "GO", nome: "Goiás" },
+  { sigla: "MA", nome: "Maranhão" },
+  { sigla: "MT", nome: "Mato Grosso" },
+  { sigla: "MS", nome: "Mato Grosso do Sul" },
+  { sigla: "MG", nome: "Minas Gerais" },
+  { sigla: "PA", nome: "Pará" },
+  { sigla: "PB", nome: "Paraíba" },
+  { sigla: "PR", nome: "Paraná" },
+  { sigla: "PE", nome: "Pernambuco" },
+  { sigla: "PI", nome: "Piauí" },
+  { sigla: "RJ", nome: "Rio de Janeiro" },
+  { sigla: "RN", nome: "Rio Grande do Norte" },
+  { sigla: "RS", nome: "Rio Grande do Sul" },
+  { sigla: "RO", nome: "Rondônia" },
+  { sigla: "RR", nome: "Roraima" },
+  { sigla: "SC", nome: "Santa Catarina" },
+  { sigla: "SP", nome: "São Paulo" },
+  { sigla: "SE", nome: "Sergipe" },
+  { sigla: "TO", nome: "Tocantins" }
 ];
 
 interface AddressFieldsProps {
@@ -23,17 +47,16 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
   const [loadingCep, setLoadingCep] = React.useState(false);
 
   const handleCepBlur = async (cep: string) => {
-    if (cep.length < 8) return;
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
     
     setLoadingCep(true);
     try {
-      const addressData = await fetchAddressByCEP(cep);
+      const addressData = await fetchAddressByCEP(cleanCep);
       if (addressData) {
-        form.setValue("endereco", addressData.logradouro);
-        form.setValue("cidade", addressData.localidade);
-        
-        // Set the state correctly by directly using setValue with the state from the API
-        form.setValue("estado", addressData.uf);
+        form.setValue("endereco", addressData.logradouro || "");
+        form.setValue("cidade", addressData.localidade || "");
+        form.setValue("estado", addressData.uf || "");
         form.setValue("bairro", addressData.bairro || "");
         
         // Trigger a re-render of the form
@@ -44,55 +67,56 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           form.setValue("complemento", addressData.complemento);
         }
         
-        toast.success("Endereço encontrado com sucesso!");
+        toast.success("Endereço encontrado automaticamente!");
       }
     } catch (error) {
-      toast.error("Erro ao buscar endereço. Verifique o CEP informado.");
+      toast.error("CEP não encontrado. Preencha o endereço manualmente.");
     } finally {
       setLoadingCep(false);
     }
   };
 
   return (
-    <>
-      <FormField
-        control={form.control}
-        name="cep"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>CEP*</FormLabel>
-            <div className="relative">
-              <FormControl>
-                <Input 
-                  placeholder="00000-000" 
-                  {...field} 
-                  onChange={(e) => {
-                    const formattedCEP = formatCEP(e.target.value);
-                    field.onChange(formattedCEP);
-                  }}
-                  onBlur={() => handleCepBlur(field.value)}
-                />
-              </FormControl>
-              {loadingCep && (
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="grid grid-cols-2 gap-2">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
           control={form.control}
-          name="endereco"
+          name="cep"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Endereço*</FormLabel>
+              <FormLabel>CEP</FormLabel>
+              <div className="relative">
+                <FormControl>
+                  <Input 
+                    placeholder="00000-000" 
+                    {...field} 
+                    onChange={(e) => {
+                      const formattedCEP = formatCEP(e.target.value);
+                      field.onChange(formattedCEP);
+                    }}
+                    onBlur={() => handleCepBlur(field.value)}
+                    maxLength={9}
+                  />
+                </FormControl>
+                {loadingCep && (
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="cidade"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cidade</FormLabel>
               <FormControl>
-                <Input placeholder="Rua, Avenida, etc." {...field} />
+                <Input placeholder="Ex: Rio de Janeiro" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -101,28 +125,59 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
 
         <FormField
           control={form.control}
-          name="numero"
+          name="estado"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número*</FormLabel>
-              <FormControl>
-                <Input placeholder="123" {...field} />
-              </FormControl>
+              <FormLabel>Estado</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {estadosBrasileiros.map((estado) => (
+                    <SelectItem key={estado.sigla} value={estado.sigla}>
+                      {estado.nome} ({estado.sigla})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-2">
+          <FormField
+            control={form.control}
+            name="endereco"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Logradouro</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Rua das Flores, Av. Brasil" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
-          name="cidade"
+          name="numero"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cidade*</FormLabel>
+              <FormLabel>Número</FormLabel>
               <FormControl>
-                <Input placeholder="Cidade" {...field} />
+                <Input placeholder="123" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,9 +189,9 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="bairro"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bairro*</FormLabel>
+              <FormLabel>Bairro</FormLabel>
               <FormControl>
-                <Input placeholder="Bairro" {...field} />
+                <Input placeholder="Ex: Copacabana" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,43 +204,14 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
         name="complemento"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Complemento</FormLabel>
+            <FormLabel>Complemento (opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Apto, bloco, etc." {...field} />
+              <Input placeholder="Ex: Apto 101, Bloco A, Casa dos fundos" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
-      <FormField
-        control={form.control}
-        name="estado"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Estado*</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o estado" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {estadosBrasileiros.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
-                    {estado}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
+    </div>
   );
 };
