@@ -1,5 +1,4 @@
 
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -9,7 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, PlusCircle, Bus, BarChart3, TrendingUp, Users } from "lucide-react";
 import { OnibusFilters } from "@/components/onibus/OnibusFilters";
 import { OnibusCard } from "@/components/onibus/OnibusCard";
 import { useOnibusData } from "@/hooks/useOnibusData";
@@ -54,24 +54,97 @@ const Onibus = () => {
     handleDelete(onibus.id);
   };
 
+  // Calcular estatísticas
+  const totalOnibus = filteredOnibus.length;
+  const totalCapacidade = filteredOnibus.reduce((sum, onibus) => sum + onibus.capacidade, 0);
+  const empresasUnicas = new Set(filteredOnibus.map(onibus => onibus.empresa)).size;
+  const tiposUnicos = new Set(filteredOnibus.map(onibus => onibus.tipo_onibus)).size;
+
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
-        <div className="container mx-auto py-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent">
-                Catálogo de Ônibus
-              </h1>
-              <p className="text-gray-600 mt-2">Gerencie todos os modelos de ônibus da sua frota</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+        <div className="container mx-auto py-8 space-y-8">
+          {/* Header Modernizado */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                  <Bus className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                    Dashboard de Ônibus
+                  </h1>
+                  <p className="text-slate-600 text-lg">Gerencie sua frota de forma inteligente</p>
+                </div>
+              </div>
             </div>
             <Button 
               onClick={() => navigate("/dashboard/cadastrar-onibus")}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-professional hover:shadow-professional-md transition-all duration-300"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6 py-3 text-base font-medium"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Cadastrar Ônibus
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Novo Ônibus
             </Button>
+          </div>
+
+          {/* Cards de Estatísticas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Total de Ônibus</p>
+                    <p className="text-3xl font-bold text-slate-900">{totalOnibus}</p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                    <Bus className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Capacidade Total</p>
+                    <p className="text-3xl font-bold text-slate-900">{totalCapacidade}</p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Empresas</p>
+                    <p className="text-3xl font-bold text-slate-900">{empresasUnicas}</p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Tipos</p>
+                    <p className="text-3xl font-bold text-slate-900">{tiposUnicos}</p>
+                  </div>
+                  <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <OnibusFilters

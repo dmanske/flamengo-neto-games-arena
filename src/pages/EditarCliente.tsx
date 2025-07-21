@@ -49,44 +49,64 @@ const EditarCliente = () => {
   }
 
   return (
-    <div className="container py-6">
-      <Button variant="ghost" onClick={() => navigate('/dashboard/clientes')} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar para a lista de clientes
-      </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
+      <div className="container py-6">
+        {/* Navigation */}
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/dashboard/clientes')} 
+          className="mb-6 hover:bg-white/80"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para a lista de clientes
+        </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Editar Cliente</CardTitle>
-          <CardDescription>
-            Altere os dados do cliente
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(submitForm)} className="space-y-8">
-              <ClienteFormSections form={form} />
+        {/* Modern Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Editar Cliente</h1>
+          <p className="text-gray-600">
+            Altere as informações do cliente conforme necessário.
+          </p>
+        </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || isValidating}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {isSubmitting || isValidating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    "Salvar Alterações"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+        <Card className="max-w-4xl mx-auto border-0 shadow-lg bg-white/90 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
+            <CardTitle className="text-2xl font-bold flex items-center">
+              <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Editar Cliente
+            </CardTitle>
+            <CardDescription className="text-blue-100 text-base">
+              Atualize as informações do cliente. Os campos marcados com * são obrigatórios.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(submitForm)} className="space-y-8">
+                <ClienteFormSections form={form} />
+
+                <div className="flex justify-end pt-6 border-t border-gray-200">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isValidating}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-2 shadow-lg"
+                  >
+                    {isSubmitting || isValidating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Salvando alterações...
+                      </>
+                    ) : (
+                      "Salvar Alterações"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

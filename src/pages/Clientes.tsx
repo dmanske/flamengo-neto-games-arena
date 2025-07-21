@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
+import { 
+  Loader2, 
+  UserPlus, 
+  Search,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Edit,
+  Trash2,
+  MoreVertical,
+  Users,
+  Clock,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Link } from "react-router-dom";
+import { formatPhone, formatCPF, formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,27 +38,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Search, Trash2, Pencil } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
-import { Link } from "react-router-dom";
-import { formatPhone, formatCPF, formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
 
-// Type for the cliente object
 interface Cliente {
   id: number;
   nome: string;
-  email: string;
-  telefone: string;
-  cpf: string;
-  data_nascimento: string | null;
-  endereco: string;
   cidade: string;
   estado: string;
+  telefone: string;
+  email: string;
+  cpf: string;
+  data_nascimento: string | null;
   created_at: string;
   foto: string | null;
 }
@@ -51,58 +61,63 @@ const Clientes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState<"nome" | "cidade" | "cpf">("nome");
+  const [currentPage, setCurrentPage] = useState(1);
   const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showPhotos, setShowPhotos] = useState(true);
+  const ITEMS_PER_PAGE = 30;
 
-  // Fetch clientes from Supabase
-  const fetchClientes = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('*')
-        .order('nome', { ascending: true }); // Changed to order by 'nome' ascending
-      
-      if (error) {
-        throw error;
-      }
-      
-      setClientes(data || []);
-    } catch (err: any) {
-      console.error('Erro ao buscar clientes:', err);
-      setError(err.message || 'Erro ao carregar os clientes');
-      toast.error('Erro ao carregar dados de clientes');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Load clientes on component mount
   useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        console.log('Buscando clientes...');
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase
+          .from('clientes')
+          .select('*')
+          .order('nome', { ascending: true }); // Ordem alfabética
+        
+        console.log('Resultado:', { data, error });
+        
+        if (error) {
+          throw error;
+        }
+        
+        setClientes(data || []);
+      } catch (err: any) {
+        console.error('Erro ao buscar clientes:', err);
+        setError(err.message || 'Erro ao carregar os clientes');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchClientes();
   }, []);
-  
-  // Search functionality
-  const filteredClientes = clientes.filter((cliente) => {
+
+  // Filter clients
+  const filteredClientes = clientes.filter(cliente => {
     if (!searchTerm) return true;
-    
     const term = searchTerm.toLowerCase();
-    
-    switch (searchField) {
-      case "nome":
-        return cliente.nome.toLowerCase().includes(term);
-      case "cidade":
-        return cliente.cidade.toLowerCase().includes(term);
-      case "cpf":
-        return cliente.cpf.replace(/[^\d]/g, '').includes(term.replace(/[^\d]/g, ''));
-      default:
-        return true;
-    }
+    return (
+      cliente.nome.toLowerCase().includes(term) ||
+      cliente.cidade.toLowerCase().includes(term) ||
+      cliente.telefone.includes(term) ||
+      cliente.email.toLowerCase().includes(term)
+    );
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredClientes.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentClientes = filteredClientes.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Handle delete cliente
   const handleDeleteCliente = async () => {
@@ -132,193 +147,325 @@ const Clientes = () => {
     }
   };
 
+  // Get time ago
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 24) {
+      return diffInHours === 0 ? 'Agora' : `${diffInHours}h`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays}d`;
+      } else {
+        return format(date, "dd/MM", { locale: ptBR });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Carregando clientes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro: {error}</p>
+          <Button onClick={() => window.location.reload()}>Tentar Novamente</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
-      <div className="container py-6">
-        <h1 className="text-3xl font-bold mb-6">Clientes Cadastrados</h1>
-        
-        <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-start">
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder={`Buscar por ${searchField === "nome" ? "nome" : searchField === "cidade" ? "cidade" : "CPF"}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+    <div className="min-h-screen bg-gray-100">
+      {/* Mobile-style Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Clientes</h1>
+              <p className="text-sm text-gray-500">
+                {filteredClientes.length} contatos
+                {totalPages > 1 && (
+                  <span className="ml-2">• Página {currentPage} de {totalPages}</span>
+                )}
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                variant={searchField === "nome" ? "default" : "outline"} 
-                onClick={() => setSearchField("nome")}
-                size="sm"
-              >
-                Nome
-              </Button>
-              <Button 
-                variant={searchField === "cidade" ? "default" : "outline"} 
-                onClick={() => setSearchField("cidade")}
-                size="sm"
-              >
-                Cidade
-              </Button>
-              <Button 
-                variant={searchField === "cpf" ? "default" : "outline"} 
-                onClick={() => setSearchField("cpf")}
-                size="sm"
-              >
-                CPF
-              </Button>
-            </div>
-          </div>
-          <div className="flex gap-4 items-center w-full md:w-auto">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="show-photos"
-                checked={showPhotos}
-                onCheckedChange={setShowPhotos}
-              />
-              <label htmlFor="show-photos" className="text-sm font-medium cursor-pointer">
-                Mostrar fotos
-              </label>
-            </div>
+            
             <Button 
-              className="bg-primary hover:bg-primary/90 w-full md:w-auto"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4"
               asChild
             >
               <Link to="/dashboard/cadastrar-cliente">
-                Cadastrar Novo Cliente
+                <UserPlus className="h-4 w-4 mr-1" />
+                Novo
               </Link>
             </Button>
           </div>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar contatos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-gray-50 border-gray-200 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="section-title mb-0">Lista de Clientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2">Carregando clientes...</span>
-              </div>
-            ) : error ? (
-              <div className="py-8 text-center">
-                <p className="text-red-500">{error}</p>
-                <Button onClick={fetchClientes} className="mt-4">Tentar Novamente</Button>
-              </div>
-            ) : filteredClientes.length === 0 ? (
-              <div className="py-8 text-center">
-                {searchTerm ? (
-                  <p className="text-gray-500">Nenhum cliente encontrado com esses critérios de busca.</p>
-                ) : (
-                  <p className="text-gray-500">Nenhum cliente cadastrado ainda.</p>
-                )}
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {filteredClientes.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            {searchTerm ? (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum contato encontrado
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Tente buscar por outro termo ou adicione um novo cliente.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm("")}
+                  className="mr-2"
+                >
+                  Limpar busca
+                </Button>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link to="/dashboard/cadastrar-cliente">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Novo cliente
+                  </Link>
+                </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {showPhotos && <TableHead className="text-center">Foto</TableHead>}
-                      <TableHead className="text-center">Nome</TableHead>
-                      <TableHead className="text-center">Telefone</TableHead>
-                      <TableHead className="text-center">Email</TableHead>
-                      <TableHead className="text-center">Cidade/Estado</TableHead>
-                      <TableHead className="text-center">CPF</TableHead>
-                      <TableHead className="text-center">Data Nasc.</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredClientes.map((cliente) => (
-                      <TableRow key={cliente.id}>
-                        {showPhotos && (
-                          <TableCell className="text-center">
-                            <Avatar className="mx-auto h-12 w-12 border-2 border-primary/20">
-                              {cliente.foto ? (
-                                <AvatarImage 
-                                  src={cliente.foto} 
-                                  alt={cliente.nome}
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-                                  {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                          </TableCell>
-                        )}
-                        <TableCell className="font-cinzel font-semibold text-center text-rome-navy">{formatarNomeComPreposicoes(cliente.nome)}</TableCell>
-                        <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">{formatPhone(cliente.telefone)}</TableCell>
-                        <TableCell className="font-cinzel font-semibold text-center text-black">{(cliente.email || '').toLowerCase()}</TableCell>
-                        <TableCell className="font-cinzel font-semibold text-center text-black">{cliente.cidade}/{cliente.estado}</TableCell>
-                        <TableCell className="font-cinzel font-semibold text-center text-black">{formatCPF(cliente.cpf)}</TableCell>
-                        <TableCell className="font-cinzel font-semibold text-center text-black">{formatBirthDate(cliente.data_nascimento)}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              asChild
-                            >
-                              <Link to={`/dashboard/clientes/${cliente.id}/editar`}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Editar</span>
-                              </Link>
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => setClienteToDelete(cliente)}
-                                  className="text-red-500 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Excluir</span>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja excluir o cliente {clienteToDelete?.nome}? Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={handleDeleteCliente}
-                                    className="bg-red-600 hover:bg-red-700"
-                                    disabled={isDeleting}
-                                  >
-                                    {isDeleting ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Excluindo...
-                                      </>
-                                    ) : (
-                                      'Excluir'
-                                    )}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Nenhum cliente ainda
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Comece adicionando seu primeiro cliente.
+                </p>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link to="/dashboard/cadastrar-cliente">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Adicionar cliente
+                  </Link>
+                </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {currentClientes.map((cliente) => (
+              <Card key={cliente.id} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-4">
+                    {/* Avatar */}
+                    <div className="relative">
+                      <Avatar className="h-14 w-14">
+                        {cliente.foto ? (
+                          <AvatarImage 
+                            src={cliente.foto} 
+                            alt={cliente.nome}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-lg">
+                            {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      {/* Online indicator (fake for demo) */}
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {formatarNomeComPreposicoes(cliente.nome)}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {getTimeAgo(cliente.created_at)}
+                          </span>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/dashboard/clientes/${cliente.id}/editar`} className="flex items-center">
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => setClienteToDelete(cliente)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Info */}
+                      <div className="space-y-1">
+                        {cliente.telefone && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="h-3 w-3 mr-2 text-green-600" />
+                            <span>{formatPhone(cliente.telefone)}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="h-3 w-3 mr-2 text-blue-600" />
+                            <span>{cliente.cidade}, {cliente.estado}</span>
+                          </div>
+                          
+                          {cliente.email && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Mail className="h-3 w-3 mr-1" />
+                              Email
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {cliente.data_nascimento && (
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="h-3 w-3 mr-2" />
+                            <span>Nascimento: {formatBirthDate(cliente.data_nascimento)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-8 px-4 py-3 bg-white rounded-lg border border-gray-200">
+                <div className="flex items-center text-sm text-gray-500">
+                  Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClientes.length)} de {filteredClientes.length} clientes
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber: number;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={currentPage === pageNumber ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`h-8 w-8 p-0 ${
+                            currentPage === pageNumber 
+                              ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                              : ""
+                          }`}
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!clienteToDelete} onOpenChange={() => setClienteToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente <strong>{clienteToDelete?.nome}</strong>? 
+              Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteCliente}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir Cliente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

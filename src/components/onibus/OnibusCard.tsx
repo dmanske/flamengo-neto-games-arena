@@ -1,9 +1,7 @@
-
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2, Users, Building2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Users, Building2, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Tooltip,
@@ -26,56 +24,68 @@ interface OnibusCardProps {
 
 export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg">{onibus.tipo_onibus}</CardTitle>
-            <p className="text-sm text-gray-600">{onibus.empresa}</p>
-          </div>
-          {onibus.numero_identificacao && (
-            <Badge variant="outline">
-              #{onibus.numero_identificacao}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {onibus.image_path && (
-          <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+    <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+      <div className="relative">
+        {/* Imagem do Ônibus */}
+        <div className="w-full h-48 bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
+          {onibus.image_path ? (
             <img 
               src={onibus.image_path} 
               alt={`${onibus.tipo_onibus} - ${onibus.empresa}`}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain p-2"
             />
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Users className="h-4 w-4" />
-            <span>Capacidade: {onibus.capacidade} passageiros</span>
-          </div>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Building2 className="h-4 w-4" />
-            <span>{onibus.empresa}</span>
-          </div>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+              <Info className="h-12 w-12 mb-2" />
+              <span className="text-sm">Sem imagem</span>
+            </div>
+          )}
         </div>
-
-        {onibus.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
+        
+        {/* Badge de Identificação */}
+        {onibus.numero_identificacao && (
+          <Badge className="absolute top-3 right-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-md">
+            #{onibus.numero_identificacao}
+          </Badge>
+        )}
+      </div>
+      
+      <CardHeader className="pb-2 pt-4 px-4 bg-gradient-to-r from-slate-50 to-blue-50/30">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg font-bold text-slate-900">{onibus.tipo_onibus}</CardTitle>
+            <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
+              <Building2 className="h-3 w-3" />
+              {onibus.empresa}
+            </p>
+          </div>
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+            <Users className="h-3 w-3 mr-1" />
+            {onibus.capacidade}
+          </Badge>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="px-4 py-3">
+        {onibus.description ? (
+          <p className="text-sm text-slate-600 line-clamp-2">
             {onibus.description}
           </p>
+        ) : (
+          <p className="text-sm text-slate-400 italic">
+            Sem descrição disponível
+          </p>
         )}
-        
-        <div className="flex gap-2 pt-2">
+      </CardContent>
+      
+      <CardFooter className="px-4 py-3 bg-gradient-to-r from-slate-50 to-blue-50/30 border-t border-slate-100">
+        <div className="flex gap-2 w-full">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="sm" variant="outline" asChild className="flex-1">
+              <Button size="sm" variant="ghost" asChild className="flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
                 <Link to={`/dashboard/onibus/${onibus.id}`}>
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 mr-1" />
+                  Ver
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -86,9 +96,10 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
           
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="sm" variant="outline" asChild className="flex-1">
+              <Button size="sm" variant="ghost" asChild className="flex-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
                 <Link to={`/dashboard/editar-onibus/${onibus.id}`}>
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Editar
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -101,11 +112,12 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
             <TooltipTrigger asChild>
               <Button 
                 size="sm" 
-                variant="outline" 
+                variant="ghost" 
                 onClick={() => onDeleteClick(onibus)}
-                className="flex-1 text-red-500 hover:bg-red-50"
+                className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -113,7 +125,7 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
             </TooltipContent>
           </Tooltip>
         </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }

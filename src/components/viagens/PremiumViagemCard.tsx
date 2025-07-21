@@ -132,8 +132,6 @@ export function PremiumViagemCard({
             </>
           )}
         </div>
-          </div>
-        </div>
         
         {/* Details section com glass effect */}
         <div className="p-4 space-y-4">
