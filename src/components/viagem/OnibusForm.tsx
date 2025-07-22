@@ -114,7 +114,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       <div>
                         <Label className="text-sm font-medium text-gray-700">Empresa</Label>
                         <p className="text-sm text-gray-900">{onibus.empresa}</p>
@@ -124,12 +124,33 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
                         <p className="text-sm text-gray-900">{onibus.tipo_onibus}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-gray-700">Capacidade</Label>
-                        <p className="text-sm text-gray-900">{onibus.capacidade_onibus} passageiros</p>
+                        <Label className="text-sm font-medium text-gray-700">Capacidade Base</Label>
+                        <p className="text-sm text-gray-900">{onibus.capacidade_onibus} lugares</p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-gray-700">Lugares Extras</Label>
-                        <p className="text-sm text-gray-900">{onibus.lugares_extras || 0} lugares</p>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={onibus.lugares_extras || 0}
+                            onChange={(e) => {
+                              const newLugaresExtras = parseInt(e.target.value) || 0;
+                              const updatedArray = onibusArray.map((o, i) => 
+                                i === index ? { ...o, lugares_extras: newLugaresExtras } : o
+                              );
+                              onChange(updatedArray);
+                            }}
+                            className="w-20 h-8 text-sm border-gray-300 focus:border-blue-500"
+                          />
+                          <span className="text-xs text-gray-500">lugares</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Total</Label>
+                        <p className="text-sm font-bold text-blue-600">
+                          {onibus.capacidade_onibus + (onibus.lugares_extras || 0)} lugares
+                        </p>
                       </div>
                     </div>
                     {index === 0 && (
@@ -172,11 +193,11 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="onibus-select" className="text-gray-700 font-medium">
-              Selecionar Ônibus Cadastrado
+              Selecionar Ônibus Cadastrado *
             </Label>
             <Select onValueChange={handleSelectOnibus} disabled={loadingOnibus}>
               <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900">
-                <SelectValue placeholder={loadingOnibus ? "Carregando..." : "Selecionar ônibus"} />
+                <SelectValue placeholder={loadingOnibus ? "Carregando..." : "Selecionar ônibus cadastrado"} />
               </SelectTrigger>
               <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
                 {onibusList.map((onibus) => (
@@ -190,45 +211,44 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-sm text-gray-500 mt-1">
+              Apenas ônibus pré-cadastrados podem ser selecionados
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="empresa" className="text-gray-700 font-medium">Empresa *</Label>
+              <Label htmlFor="empresa" className="text-gray-700 font-medium">Empresa</Label>
               <Input
                 id="empresa"
                 value={newOnibus.empresa || ""}
-                onChange={(e) => setNewOnibus(prev => ({ ...prev, empresa: e.target.value }))}
-                placeholder="Nome da empresa"
-                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                readOnly
+                placeholder="Selecione um ônibus acima"
+                className="border-gray-300 bg-gray-50 text-gray-600"
               />
             </div>
             <div>
-              <Label htmlFor="tipo_onibus" className="text-gray-700 font-medium">Tipo do Ônibus *</Label>
+              <Label htmlFor="tipo_onibus" className="text-gray-700 font-medium">Tipo do Ônibus</Label>
               <Input
                 id="tipo_onibus"
                 value={newOnibus.tipo_onibus || ""}
-                onChange={(e) => setNewOnibus(prev => ({ ...prev, tipo_onibus: e.target.value }))}
-                placeholder="Ex: Leito Total, Executivo"
-                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                readOnly
+                placeholder="Selecione um ônibus acima"
+                className="border-gray-300 bg-gray-50 text-gray-600"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="capacidade" className="text-gray-700 font-medium">Capacidade *</Label>
+              <Label htmlFor="capacidade" className="text-gray-700 font-medium">Capacidade Base</Label>
               <Input
                 id="capacidade"
                 type="number"
-                min="1"
                 value={newOnibus.capacidade_onibus || ""}
-                onChange={(e) => setNewOnibus(prev => ({ 
-                  ...prev, 
-                  capacidade_onibus: parseInt(e.target.value) || 0 
-                }))}
-                placeholder="Número de assentos"
-                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                readOnly
+                placeholder="Selecione um ônibus acima"
+                className="border-gray-300 bg-gray-50 text-gray-600"
               />
             </div>
             <div>
@@ -242,9 +262,12 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
                   ...prev, 
                   lugares_extras: parseInt(e.target.value) || 0 
                 }))}
-                placeholder="Lugares adicionais"
+                placeholder="0"
                 className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Assentos extras além da capacidade base
+              </p>
             </div>
           </div>
 
@@ -255,7 +278,7 @@ export const OnibusForm: React.FC<OnibusFormProps> = ({
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Ônibus
+            Adicionar Ônibus Selecionado
           </Button>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -85,13 +85,17 @@ const MainLayout = () => {
   
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col bg-white border-r border-gray-200 shadow-sm">
-      {/* Header */}
+      {/* Header with Logout */}
       <div className="p-4 flex flex-col items-center justify-center border-b border-gray-200 bg-gray-50/50">
+        {/* Logout Button at top */}
+        <div className="w-full flex justify-end mb-3">
+          <LogoutButton />
+        </div>
+        
         {!collapsed && (
           <div className="text-center">
             <div className="font-bold text-gray-900">
               <span className="text-lg">Neto Tours</span>
-              <div className="text-xs text-gray-600 mt-1">Caravanas Rubro-Negras</div>
             </div>
           </div>
         )}
@@ -168,6 +172,12 @@ const MainLayout = () => {
             onClick={closeMenu} 
           />
           <NavItem 
+            icon={<DollarSign className="h-5 w-5" />} 
+            title="Financeiro" 
+            to="/dashboard/financeiro" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
             icon={<CreditCard className="h-5 w-5" />} 
             title="Pagamentos" 
             to="/dashboard/pagamentos" 
@@ -182,9 +192,9 @@ const MainLayout = () => {
         </div>
       </ScrollArea>
       
-      {/* Footer (Logout) */}
+      {/* Footer */}
       <div className="border-t border-gray-200 px-3 py-4 bg-gray-50/30">
-        {!collapsed && <LogoutButton />}
+        {/* Footer content can be added here if needed */}
       </div>
     </div>
   );
@@ -213,10 +223,6 @@ const MainLayout = () => {
               <div className="flex items-center gap-3">
                 <span className="text-lg font-bold text-gray-900">Neto Tours</span>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <LogoutButton />
             </div>
           </div>
         )}

@@ -18,6 +18,7 @@ import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernVi
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
+import { ViagemFinancialDetails } from "@/components/detalhes-viagem/ViagemFinancialDetails";
 import { toast } from "sonner";
 
 const DetalhesViagem = () => {
@@ -59,6 +60,10 @@ const DetalhesViagem = () => {
     totalPago,
     totalPendente,
     valorPotencialTotal,
+    totalReceitas,
+    totalDespesas,
+    totalDescontos,
+    valorBrutoTotal,
     onibusList,
     selectedOnibusId,
     contadorPassageiros,
@@ -71,6 +76,7 @@ const DetalhesViagem = () => {
     getPassageirosDoOnibusAtual,
     getOnibusAtual,
     fetchPassageiros,
+    fetchFinancialData,
     togglePendingPayments,
     filterStatus
   } = useViagemDetails(id);
@@ -176,10 +182,14 @@ const DetalhesViagem = () => {
             totalArrecadado={totalArrecadado}
             totalPago={totalPago}
             totalPendente={totalPendente}
-            percentualPagamento={Math.round((totalPago / totalArrecadado) * 100) || 0}
+            percentualPagamento={totalArrecadado > 0 ? Math.round((totalPago / totalArrecadado) * 100) : 0}
             totalPassageiros={originalPassageiros.length}
-            valorPotencialTotal={(viagem.valor_padrao || 0) * viagem.capacidade_onibus}
-            capacidadeTotalOnibus={viagem.capacidade_onibus}
+            valorPotencialTotal={(viagem?.valor_padrao || 0) * (viagem?.capacidade_onibus || 0)}
+            capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
+            totalReceitas={totalReceitas}
+            totalDespesas={totalDespesas}
+            totalDescontos={totalDescontos}
+            valorBrutoTotal={valorBrutoTotal}
           />
         </div>
       )}
@@ -217,6 +227,8 @@ const DetalhesViagem = () => {
           viagemId={id || ""}
           setPassageiros={setPassageiros}
           setIsLoading={setIsLoadingPassageiros}
+          capacidadeTotal={viagem?.capacidade_onibus}
+          totalPassageiros={originalPassageiros.length}
         />
       </div>
 
@@ -237,6 +249,14 @@ const DetalhesViagem = () => {
           />
         </div>
       )}
+      
+      {/* Detalhes Financeiros da Viagem */}
+      <div className="mb-6">
+        <ViagemFinancialDetails 
+          viagemId={id || ""} 
+          viagemNome={viagem.adversario || ""}
+        />
+      </div>
 
       <PassageiroDialog 
         open={addPassageiroOpen} 

@@ -36,6 +36,38 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
   const totalPago = parcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
   const saldoRestante = valorLiquido - totalPago;
 
+  // Função para verificar e atualizar o status do pagamento
+  const verificarEAtualizarStatus = async (totalPagoAtual: number) => {
+    try {
+      let novoStatus = "Pendente";
+      
+      // Se o valor pago é igual ou maior que o valor líquido (com margem de 1 centavo)
+      if (Math.abs(totalPagoAtual - valorLiquido) < 0.01) {
+        novoStatus = "Pago";
+      } else if (totalPagoAtual > 0) {
+        novoStatus = "Pendente";
+      }
+
+      // Atualizar o status no banco de dados
+      const { error } = await supabase
+        .from("viagem_passageiros")
+        .update({ status_pagamento: novoStatus })
+        .eq("id", passageiroId);
+
+      if (error) throw error;
+
+      // Mostrar notificação se o status mudou para "Pago"
+      if (novoStatus === "Pago" && totalPagoAtual >= valorLiquido) {
+        toast.success("🎉 Pagamento completado! Status atualizado para 'Pago'");
+      } else if (novoStatus === "Pendente" && totalPagoAtual < valorLiquido) {
+        toast.info("Status atualizado para 'Pendente' - pagamento parcial");
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Erro ao atualizar status do pagamento");
+    }
+  };
+
   useEffect(() => {
     fetchParcelas();
   }, [passageiroId]);
@@ -84,7 +116,13 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
 
       if (error) throw error;
 
-      setParcelas([...parcelas, data]);
+      const novasParcelas = [...parcelas, data];
+      setParcelas(novasParcelas);
+      
+      // Verificar se o pagamento foi completado
+      const novoTotalPago = novasParcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+      await verificarEAtualizarStatus(novoTotalPago);
+      
       setNovaParcela({
         valor_parcela: 0,
         forma_pagamento: "Pix",
@@ -108,7 +146,13 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
 
       if (error) throw error;
 
-      setParcelas(parcelas.filter(p => p.id !== parcelaId));
+      const novasParcelas = parcelas.filter(p => p.id !== parcelaId);
+      setParcelas(novasParcelas);
+      
+      // Verificar se o status precisa ser atualizado após remoção
+      const novoTotalPago = novasParcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+      await verificarEAtualizarStatus(novoTotalPago);
+      
       toast.success("Parcela removida com sucesso!");
     } catch (error) {
       console.error("Erro ao remover parcela:", error);
@@ -125,16 +169,31 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
         </CardTitle>
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-gray-600">Valor Total:</span>
-            <p className="font-semibold text-blue-600">{formatCurrency(valorTotal)}</p>
+            <span className="text-gray-600">Valor Líquido:</span>
+            <p className="font-semibold text-blue-600">{formatCurrency(valorLiquido)}</p>
+            {desconto > 0 && (
+              <p className="text-xs text-gray-500">
+                (Original: {formatCurrency(valorTotal)} - Desconto: {formatCurrency(desconto)})
+              </p>
+            )}
           </div>
           <div>
             <span className="text-gray-600">Valor Pago:</span>
             <p className="font-semibold text-green-600">{formatCurrency(totalPago)}</p>
+            <p className="text-xs text-gray-500">
+              {valorLiquido > 0 ? Math.round((totalPago / valorLiquido) * 100) : 0}% do total
+            </p>
           </div>
           <div>
             <span className="text-gray-600">Saldo Restante:</span>
-            <p className="font-semibold text-orange-600">{formatCurrency(saldoRestante)}</p>
+            <p className={`font-semibold ${
+              Math.abs(saldoRestante) < 0.01 ? 'text-green-600' : 'text-orange-600'
+            }`}>
+              {formatCurrency(saldoRestante)}
+            </p>
+            {Math.abs(saldoRestante) < 0.01 && (
+              <p className="text-xs text-green-600 font-medium">✓ Pagamento Completo</p>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -222,16 +281,33 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={adicionarParcela}
-          className="w-full mt-3 border-blue-300 text-blue-700 hover:bg-blue-50"
-          disabled={novaParcela.valor_parcela <= 0 || totalPago + novaParcela.valor_parcela > valorLiquido}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Parcela
-        </Button>
+        <div className="flex gap-2 mt-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={adicionarParcela}
+            className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50"
+            disabled={novaParcela.valor_parcela <= 0 || totalPago + novaParcela.valor_parcela > valorLiquido}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Parcela
+          </Button>
+          
+          {saldoRestante > 0.01 && (
+            <Button
+              type="button"
+              onClick={() => {
+                setNovaParcela({
+                  ...novaParcela,
+                  valor_parcela: saldoRestante
+                });
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Quitar Restante ({formatCurrency(saldoRestante)})
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

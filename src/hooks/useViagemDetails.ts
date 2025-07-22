@@ -97,6 +97,10 @@ export function useViagemDetails(viagemId: string | undefined) {
   const [totalPendente, setTotalPendente] = useState<number>(0);
   const [valorPotencialTotal, setValorPotencialTotal] = useState<number>(0);
   const [countPendentePayment, setCountPendentePayment] = useState<number>(0);
+  const [totalReceitas, setTotalReceitas] = useState<number>(0);
+  const [totalDespesas, setTotalDespesas] = useState<number>(0);
+  const [totalDescontos, setTotalDescontos] = useState<number>(0);
+  const [valorBrutoTotal, setValorBrutoTotal] = useState<number>(0);
 
   // Ônibus
   const [onibusList, setOnibusList] = useState<Onibus[]>([]);
@@ -166,6 +170,7 @@ export function useViagemDetails(viagemId: string | undefined) {
       setViagem(data);
       await fetchOnibus(id);
       await fetchPassageiros(id);
+      await fetchFinancialData(id);
     } catch (error: any) {
       console.error('Erro ao buscar dados da viagem:', error);
       toast.error("Erro ao carregar dados da viagem");
@@ -320,15 +325,26 @@ export function useViagemDetails(viagemId: string | undefined) {
       let pago = 0;
       let pendente = 0;
       let countPendente = 0;
+      let descontos = 0;
+      let valorBruto = 0;
       
       formattedPassageiros.forEach(passageiro => {
-        const valor = (passageiro.valor || 0) - (passageiro.desconto || 0);
-        arrecadado += valor;
+        const valorOriginal = passageiro.valor || 0;
+        const desconto = passageiro.desconto || 0;
+        const valorLiquido = valorOriginal - desconto;
         
-        if (passageiro.status_pagamento === "Pago") {
-          pago += valor;
-        } else {
-          pendente += valor;
+        // Calcular valor efetivamente pago através das parcelas
+        const valorPagoParcelas = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
+        
+        valorBruto += valorOriginal;
+        descontos += desconto;
+        arrecadado += valorLiquido;
+        pago += valorPagoParcelas;
+        
+        // Pendente é a diferença entre o valor líquido e o que foi pago
+        const valorPendente = valorLiquido - valorPagoParcelas;
+        if (valorPendente > 0.01) { // margem para centavos
+          pendente += valorPendente;
           countPendente++;
         }
       });
@@ -337,6 +353,8 @@ export function useViagemDetails(viagemId: string | undefined) {
       setTotalPago(pago);
       setTotalPendente(pendente);
       setCountPendentePayment(countPendente);
+      setTotalDescontos(descontos);
+      setValorBrutoTotal(valorBruto);
       
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
@@ -442,6 +460,37 @@ export function useViagemDetails(viagemId: string | undefined) {
     ).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   };
 
+  // Buscar dados financeiros da viagem (receitas e despesas)
+  const fetchFinancialData = async (viagemId: string) => {
+    try {
+      // Buscar receitas da viagem
+      const { data: receitasData, error: receitasError } = await supabase
+        .from('receitas')
+        .select('valor')
+        .eq('viagem_id', viagemId);
+
+      if (receitasError) throw receitasError;
+
+      // Buscar despesas da viagem
+      const { data: despesasData, error: despesasError } = await supabase
+        .from('despesas')
+        .select('valor')
+        .eq('viagem_id', viagemId);
+
+      if (despesasError) throw despesasError;
+
+      // Calcular totais
+      const totalReceitasValue = receitasData?.reduce((sum, r) => sum + Number(r.valor), 0) || 0;
+      const totalDespesasValue = despesasData?.reduce((sum, d) => sum + Number(d.valor), 0) || 0;
+
+      setTotalReceitas(totalReceitasValue);
+      setTotalDespesas(totalDespesasValue);
+
+    } catch (error) {
+      console.error('Erro ao buscar dados financeiros:', error);
+    }
+  };
+
   return {
     viagem,
     passageiros,
@@ -453,6 +502,10 @@ export function useViagemDetails(viagemId: string | undefined) {
     totalPago,
     totalPendente,
     valorPotencialTotal,
+    totalReceitas,
+    totalDespesas,
+    totalDescontos,
+    valorBrutoTotal,
     onibusList,
     selectedOnibusId,
     passageiroPorOnibus,
@@ -464,6 +517,7 @@ export function useViagemDetails(viagemId: string | undefined) {
     getPassageirosDoOnibusAtual,
     getOnibusAtual,
     fetchPassageiros,
+    fetchFinancialData,
     togglePendingPayments
   };
 }

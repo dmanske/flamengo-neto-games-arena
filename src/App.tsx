@@ -1,10 +1,8 @@
 
-import React from 'react';
 import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -27,7 +25,6 @@ import CadastrarViagem from "@/pages/CadastrarViagem";
 import EditarViagem from "@/pages/EditarViagem";
 import DetalhesViagem from '@/pages/DetalhesViagem';
 import ListaPresenca from '@/pages/ListaPresenca';
-import DashboardPresenca from '@/pages/DashboardPresenca';
 import Onibus from '@/pages/Onibus';
 import CadastrarOnibus from '@/pages/CadastrarOnibus';
 import EditarOnibus from '@/pages/EditarOnibus';
@@ -39,9 +36,9 @@ import Loja from '@/pages/Loja';
 import LojaAdmin from '@/pages/LojaAdmin';
 
 // Landing Page
-import LandingPage from "@/pages/LandingPage";
 import CadastroPublico from "@/pages/CadastroPublico";
 import Index from "@/pages/Index";
+import Homepage from "@/pages/Homepage";
 
 // Galeria Pages
 import GaleriaFotos from "@/pages/GaleriaFotos";
@@ -50,6 +47,14 @@ import GaleriaVideos from "@/pages/GaleriaVideos";
 // Import novas páginas
 import PagamentoSucesso from "@/pages/PagamentoSucesso";
 import Pagamentos from "@/pages/Pagamentos";
+
+// Import páginas financeiras
+import DashboardFinanceiro from "@/pages/financeiro/DashboardFinanceiro";
+import Receitas from "@/pages/financeiro/Receitas";
+import Despesas from "@/pages/financeiro/Despesas";
+import ContasPagarSimples from "@/pages/financeiro/ContasPagarSimples";
+import Relatorios from "@/pages/financeiro/Relatorios";
+import FluxoCaixa from "@/pages/financeiro/FluxoCaixa";
 
 const queryClient = new QueryClient()
 
@@ -62,6 +67,9 @@ function App() {
             <Routes>
               {/* Landing Page como página inicial */}
               <Route path="/" element={<Index />} />
+              
+              {/* Homepage completa */}
+              <Route path="/homepage" element={<Homepage />} />
               
               {/* Loja pública */}
               <Route path="/loja" element={<Loja />} />
@@ -100,6 +108,14 @@ function App() {
                   <Route path="pagamentos" element={<Pagamentos />} />
                   <Route path="loja" element={<Loja />} />
                   <Route path="loja-admin" element={<LojaAdmin />} />
+                  
+                  {/* Rotas Financeiras */}
+                  <Route path="financeiro" element={<DashboardFinanceiro />} />
+                  <Route path="financeiro/receitas" element={<Receitas />} />
+                  <Route path="financeiro/despesas" element={<Despesas />} />
+                  <Route path="financeiro/contas-pagar" element={<ContasPagarSimples />} />
+                  <Route path="financeiro/relatorios" element={<Relatorios />} />
+                  <Route path="financeiro/fluxo-caixa" element={<FluxoCaixa />} />
                 </Route>
               </Route>
 

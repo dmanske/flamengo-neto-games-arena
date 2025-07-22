@@ -4,20 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ArrowLeft, 
-  Pencil, 
-  Trash2, 
-  Users, 
-  Building2, 
-  Bus, 
-  Calendar, 
-  Image, 
-  MapPin, 
-  Clock, 
-  Info, 
-  CheckCircle2, 
-  AlertCircle 
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  Users,
+  Building2,
+  Bus,
+  Calendar,
+  Image,
+  MapPin,
+  Clock,
+  Info,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -147,7 +147,7 @@ const DetalhesOnibus = () => {
               <Skeleton className="h-4 w-40" />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-8">
               <Skeleton className="h-[400px] w-full rounded-xl" />
@@ -199,7 +199,7 @@ const DetalhesOnibus = () => {
               <span>/</span>
               <span className="text-slate-900 font-medium">Detalhes</span>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-md">
                 <Bus className="h-6 w-6 text-white" />
@@ -215,10 +215,10 @@ const DetalhesOnibus = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               asChild
               className="border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700"
             >
@@ -227,9 +227,9 @@ const DetalhesOnibus = () => {
                 Voltar
               </Link>
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               asChild
               className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 text-indigo-700"
             >
@@ -238,9 +238,9 @@ const DetalhesOnibus = () => {
                 Editar
               </Link>
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               onClick={() => setDeleteDialogOpen(true)}
               className="border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600"
             >
@@ -266,7 +266,7 @@ const DetalhesOnibus = () => {
               Histórico
             </TabsTrigger>
           </TabsList>
-          
+
           {/* Tab de Detalhes */}
           <TabsContent value="detalhes" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -282,8 +282,8 @@ const DetalhesOnibus = () => {
                   <CardContent className="p-0">
                     {onibus.image_path ? (
                       <div className="aspect-video bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-                        <img 
-                          src={onibus.image_path} 
+                        <img
+                          src={onibus.image_path}
                           alt={`${onibus.tipo_onibus} - ${onibus.empresa}`}
                           className="w-full h-full object-contain rounded-lg shadow-sm"
                         />
@@ -314,7 +314,7 @@ const DetalhesOnibus = () => {
                       Detalhes principais do veículo
                     </CardDescription>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
@@ -326,7 +326,7 @@ const DetalhesOnibus = () => {
                         </div>
                         <span className="font-semibold text-slate-900">{onibus.tipo_onibus}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-indigo-100 rounded-md">
@@ -336,7 +336,7 @@ const DetalhesOnibus = () => {
                         </div>
                         <span className="font-semibold text-slate-900">{onibus.empresa}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-green-100 rounded-md">
@@ -346,7 +346,7 @@ const DetalhesOnibus = () => {
                         </div>
                         <span className="font-semibold text-slate-900">{onibus.capacidade} passageiros</span>
                       </div>
-                      
+
                       {onibus.numero_identificacao && (
                         <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                           <div className="flex items-center gap-3">
@@ -372,7 +372,7 @@ const DetalhesOnibus = () => {
                       Status do Sistema
                     </CardTitle>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
@@ -382,7 +382,7 @@ const DetalhesOnibus = () => {
                         </div>
                         <span className="text-sm font-medium">{formatDate(onibus.created_at)}</span>
                       </div>
-                      
+
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <div className="h-2 w-2 rounded-full bg-blue-500"></div>
@@ -411,7 +411,7 @@ const DetalhesOnibus = () => {
               </Card>
             )}
           </TabsContent>
-          
+
           {/* Tab de Especificações */}
           <TabsContent value="especificacoes">
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -426,18 +426,18 @@ const DetalhesOnibus = () => {
                       <h3 className="text-sm font-medium text-slate-500 mb-1">Tipo de Ônibus</h3>
                       <p className="font-semibold text-slate-900">{onibus.tipo_onibus}</p>
                     </div>
-                    
+
                     <div className="p-4 bg-slate-50 rounded-lg">
                       <h3 className="text-sm font-medium text-slate-500 mb-1">Empresa</h3>
                       <p className="font-semibold text-slate-900">{onibus.empresa}</p>
                     </div>
-                    
+
                     <div className="p-4 bg-slate-50 rounded-lg">
                       <h3 className="text-sm font-medium text-slate-500 mb-1">Capacidade</h3>
                       <p className="font-semibold text-slate-900">{onibus.capacidade} passageiros</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {onibus.numero_identificacao && (
                       <div className="p-4 bg-slate-50 rounded-lg">
@@ -447,14 +447,14 @@ const DetalhesOnibus = () => {
                         </Badge>
                       </div>
                     )}
-                    
+
                     <div className="p-4 bg-slate-50 rounded-lg">
                       <h3 className="text-sm font-medium text-slate-500 mb-1">ID do Sistema</h3>
                       <p className="font-mono text-xs bg-slate-100 p-1 rounded inline-block">{onibus.id}</p>
                     </div>
                   </div>
                 </div>
-                
+
                 {onibus.description && (
                   <div className="mt-6 p-4 bg-slate-50 rounded-lg">
                     <h3 className="text-sm font-medium text-slate-500 mb-2">Descrição Completa</h3>
@@ -464,7 +464,7 @@ const DetalhesOnibus = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           {/* Tab de Histórico */}
           <TabsContent value="historico">
             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -490,7 +490,7 @@ const DetalhesOnibus = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {onibus.created_at !== onibus.updated_at && (
                   <div className="p-6">
                     <div className="flex items-start gap-4">
@@ -524,7 +524,7 @@ const DetalhesOnibus = () => {
                 Confirmar exclusão
               </AlertDialogTitle>
               <AlertDialogDescription className="text-slate-600">
-                Tem certeza que deseja excluir o ônibus <span className="font-semibold text-slate-900">"{onibus.tipo_onibus}"</span> da empresa <span className="font-semibold text-slate-900">{onibus.empresa}</span>? 
+                Tem certeza que deseja excluir o ônibus <span className="font-semibold text-slate-900">"{onibus.tipo_onibus}"</span> da empresa <span className="font-semibold text-slate-900">{onibus.empresa}</span>?
                 <br />Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -532,7 +532,7 @@ const DetalhesOnibus = () => {
               <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50">
                 Cancelar
               </AlertDialogCancel>
-              <AlertDialogAction 
+              <AlertDialogAction
                 onClick={handleDelete}
                 className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0"
               >

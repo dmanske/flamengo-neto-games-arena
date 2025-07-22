@@ -148,7 +148,7 @@ export function PassageiroDialog({
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <ClienteSearchWithSuggestions control={form.control} />
+              <ClienteSearchWithSuggestions control={form.control} viagemId={viagemId} />
 
               <OnibusSelectField 
                 control={form.control} 

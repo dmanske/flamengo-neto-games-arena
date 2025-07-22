@@ -16,7 +16,7 @@ const CadastroPublico = () => {
               <p className="text-sm text-gray-600 mt-1">Sua paixão pelo Flamengo em cada viagem</p>
             </div>
           </div>
-          
+
           <Card className="shadow-lg">
             <CardHeader className="text-center bg-gradient-to-r from-red-600 to-red-700 text-white rounded-t-lg">
               <CardTitle className="text-2xl font-bold">
@@ -32,7 +32,7 @@ const CadastroPublico = () => {
               <PublicRegistrationForm />
             </CardContent>
           </Card>
-          
+
           <div className="text-center mt-6 text-sm text-gray-600">
             <p>Dúvidas? Entre em contato conosco pelo WhatsApp</p>
           </div>

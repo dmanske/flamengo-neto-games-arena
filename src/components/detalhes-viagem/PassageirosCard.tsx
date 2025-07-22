@@ -43,6 +43,8 @@ interface PassageirosCardProps {
   viagemId: string | null;
   setPassageiros: (passageiros: any[]) => void;
   setIsLoading: (isLoading: boolean) => void;
+  capacidadeTotal?: number;
+  totalPassageiros?: number;
 }
 
 export const fetchPassageiros = async (viagemId: string, setPassageiros: (p: any[]) => void, setIsLoading: (b: boolean) => void, toast: any) => {
@@ -113,6 +115,8 @@ export function PassageirosCard({
   viagemId,
   setPassageiros,
   setIsLoading,
+  capacidadeTotal,
+  totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
 
@@ -156,6 +160,9 @@ export function PassageirosCard({
     }
   };
 
+  // Verificar se a capacidade está completa
+  const isCapacidadeCompleta = capacidadeTotal && totalPassageiros ? totalPassageiros >= capacidadeTotal : false;
+
   return (
     <Card>
       <CardHeader>
@@ -179,14 +186,28 @@ export function PassageirosCard({
             <CardDescription>
               {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
               {onibusAtual && ` • Capacidade: ${onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0)} lugares`}
+              {capacidadeTotal && totalPassageiros && (
+                <span className={`ml-2 font-medium ${
+                  isCapacidadeCompleta ? 'text-red-600' : totalPassageiros / capacidadeTotal > 0.8 ? 'text-orange-600' : 'text-green-600'
+                }`}>
+                  • Total da viagem: {totalPassageiros}/{capacidadeTotal}
+                  {isCapacidadeCompleta && ' (COMPLETA)'}
+                </span>
+              )}
             </CardDescription>
           </div>
           <Button 
             onClick={() => setAddPassageiroOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isCapacidadeCompleta}
+            className={`${
+              isCapacidadeCompleta 
+                ? "bg-gray-400 cursor-not-allowed" 
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+            title={isCapacidadeCompleta ? "Capacidade da viagem completa" : "Adicionar novo passageiro"}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Passageiro
+            {isCapacidadeCompleta ? "Capacidade Completa" : "Adicionar Passageiro"}
           </Button>
         </div>
       </CardHeader>
