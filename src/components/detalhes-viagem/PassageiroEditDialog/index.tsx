@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -30,10 +30,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { formatCurrency } from "@/lib/utils";
 import { formSchema, FormData } from "./formSchema";
 import { PassageiroEditDialogProps } from "./types";
 import { OnibusSelectField } from "./OnibusSelectField";
-import { SetorSelectField } from "./SetorSelectField";
 import { ParcelasEditManager } from "./ParcelasEditManager";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -67,6 +67,77 @@ export function PassageiroEditDialog({
   const statusPagamento = form.watch("status_pagamento");
   const valorTotal = form.watch("valor");
   const desconto = form.watch("desconto");
+  
+  // Estado para controlar se o pagamento está completo
+  const [totalPago, setTotalPago] = useState(0);
+  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
+  
+  // Calcular valor líquido
+  const valorLiquido = valorTotal - desconto;
+  
+  // Função para buscar e calcular total pago
+  const calcularTotalPago = async () => {
+    if (!passageiro?.viagem_passageiro_id) return;
+    
+    try {
+      const { data: parcelas, error } = await supabase
+        .from("viagem_passageiros_parcelas")
+        .select("valor_parcela")
+        .eq("viagem_passageiro_id", passageiro.viagem_passageiro_id);
+      
+      if (error) throw error;
+      
+      const total = parcelas?.reduce((sum, p) => sum + p.valor_parcela, 0) || 0;
+      setTotalPago(total);
+      const isComplete = total >= valorLiquido;
+      setIsPaymentComplete(isComplete);
+      
+      // Atualizar o status no formulário automaticamente
+      if (isComplete && statusPagamento !== "Pago") {
+        form.setValue("status_pagamento", "Pago");
+      } else if (!isComplete && total > 0 && statusPagamento !== "Pendente") {
+        form.setValue("status_pagamento", "Pendente");
+      }
+    } catch (error) {
+      console.error("Erro ao calcular total pago:", error);
+    }
+  };
+
+  // Função chamada quando o status de pagamento muda
+  const handlePaymentComplete = (isComplete: boolean) => {
+    setIsPaymentComplete(isComplete);
+    if (isComplete) {
+      form.setValue("status_pagamento", "Pago");
+    }
+  };
+
+  // Função para quitar o restante automaticamente
+  const handleQuitarRestante = async () => {
+    if (!passageiro?.viagem_passageiro_id) return;
+    
+    try {
+      const valorRestante = valorLiquido - totalPago;
+      if (valorRestante <= 0) return;
+
+      const { error } = await supabase
+        .from("viagem_passageiros_parcelas")
+        .insert({
+          viagem_passageiro_id: passageiro.viagem_passageiro_id,
+          valor_parcela: valorRestante,
+          forma_pagamento: "Pix",
+          data_pagamento: new Date().toISOString().slice(0, 10),
+          observacoes: "Quitação do valor restante"
+        });
+
+      if (error) throw error;
+
+      toast.success("Valor restante quitado com sucesso!");
+      calcularTotalPago();
+    } catch (error) {
+      console.error("Erro ao quitar restante:", error);
+      toast.error("Erro ao quitar valor restante");
+    }
+  };
 
   useEffect(() => {
     if (passageiro) {
@@ -84,38 +155,54 @@ export function PassageiroEditDialog({
           status: p.status
         })) || []
       });
+      
+      // Calcular total pago
+      calcularTotalPago();
     }
-  }, [passageiro, form]);
+  }, [passageiro, form, valorTotal, desconto]);
 
   const onSubmit = async (values: FormData) => {
     if (!passageiro?.viagem_passageiro_id) return;
     setIsLoading(true);
     try {
-      // Se o status for 'Pago', garantir quitação automática
-      if (values.status_pagamento === "Pago") {
-        // Buscar parcelas atuais do passageiro
-        const { data: parcelas, error: parcelasError } = await supabase
-          .from("viagem_passageiros_parcelas")
-          .select("*")
-          .eq("viagem_passageiro_id", passageiro.viagem_passageiro_id);
-        if (parcelasError) throw parcelasError;
-        const valorPago = (parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
-        const valorLiquido = (values.valor || 0) - (values.desconto || 0);
-        const valorFalta = valorLiquido - valorPago;
-        if (valorFalta > 0.009) { // margem para centavos
-          // Criar parcela faltante
-          const { error: parcelaInsertError } = await supabase
-            .from("viagem_passageiros_parcelas")
-            .insert({
-              viagem_passageiro_id: passageiro.viagem_passageiro_id,
-              valor_parcela: valorFalta,
-              forma_pagamento: "Pix",
-              data_pagamento: new Date().toISOString().slice(0, 10),
-              observacoes: "Quitação automática ao marcar como Pago"
-            });
-          if (parcelaInsertError) throw parcelaInsertError;
+      // Verificar se o pagamento está completo automaticamente
+      const valorLiquidoAtual = (values.valor || 0) - (values.desconto || 0);
+      
+      // Se o usuário marcou como 'Pago' mas o pagamento não está completo, fazer quitação automática
+      if (values.status_pagamento === "Pago" && !isPaymentComplete) {
+        console.log('🔄 Usuário marcou como Pago - fazendo quitação automática');
+        
+        // Confirmar com o usuário se ele quer fazer a quitação automática
+        const valorRestante = valorLiquidoAtual - totalPago;
+        if (valorRestante > 0.01) {
+          const confirmar = window.confirm(
+            `Há um valor pendente de ${formatCurrency(valorRestante)}. Deseja quitar automaticamente?`
+          );
+          
+          if (!confirmar) {
+            // Se o usuário não confirmar, manter como Pendente
+            values.status_pagamento = "Pendente";
+            form.setValue("status_pagamento", "Pendente");
+            toast.info("Status mantido como Pendente");
+          } else {
+            // Fazer quitação automática
+            const { error: parcelaInsertError } = await supabase
+              .from("viagem_passageiros_parcelas")
+              .insert({
+                viagem_passageiro_id: passageiro.viagem_passageiro_id,
+                valor_parcela: valorRestante,
+                forma_pagamento: "Pix",
+                data_pagamento: new Date().toISOString().slice(0, 10),
+                observacoes: "Quitação automática ao marcar como Pago"
+              });
+            
+            if (parcelaInsertError) throw parcelaInsertError;
+            toast.success("Quitação automática realizada com sucesso!");
+          }
         }
       }
+
+
 
       // Atualizar passeios do passageiro
       if (values.passeios) {
@@ -394,13 +481,25 @@ export function PassageiroEditDialog({
                     name="status_pagamento"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700">Status do Pagamento</FormLabel>
+                        <FormLabel className="text-gray-700">
+                          Status do Pagamento
+                          {isPaymentComplete && (
+                            <span className="ml-2 text-xs text-green-600 font-medium">
+                              (Controlado automaticamente)
+                            </span>
+                          )}
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          disabled={isPaymentComplete}
                         >
                           <FormControl>
-                            <SelectTrigger className="bg-white text-gray-900 border-gray-300">
+                            <SelectTrigger className={`text-gray-900 border-gray-300 ${
+                              isPaymentComplete 
+                                ? 'bg-green-50 border-green-300 cursor-not-allowed' 
+                                : 'bg-white'
+                            }`}>
                               <SelectValue placeholder="Selecione um status" />
                             </SelectTrigger>
                           </FormControl>
@@ -410,6 +509,31 @@ export function PassageiroEditDialog({
                             <SelectItem value="Cancelado" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cancelado</SelectItem>
                           </SelectContent>
                         </Select>
+                        {isPaymentComplete && (
+                          <p className="text-xs text-green-600 mt-1">
+                            ✅ Pagamento completo: {formatCurrency(totalPago)} de {formatCurrency(valorLiquido)}
+                          </p>
+                        )}
+                        {!isPaymentComplete && totalPago > 0 && (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-orange-600">
+                              💰 Pago: {formatCurrency(totalPago)} de {formatCurrency(valorLiquido)} (Restante: {formatCurrency(valorLiquido - totalPago)})
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={handleQuitarRestante}
+                              className="bg-green-600 hover:bg-green-700 text-white text-xs h-6 px-2"
+                            >
+                              Quitar Restante ({formatCurrency(valorLiquido - totalPago)})
+                            </Button>
+                          </div>
+                        )}
+                        {!isPaymentComplete && totalPago === 0 && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            ℹ️ Adicione parcelas abaixo ou marque como "Pago" para quitação automática
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -448,6 +572,11 @@ export function PassageiroEditDialog({
                   passageiroId={passageiro.viagem_passageiro_id.toString()}
                   valorTotal={valorTotal}
                   desconto={desconto}
+                  onStatusUpdate={() => {
+                    calcularTotalPago();
+                    if (onSuccess) onSuccess();
+                  }}
+                  onPaymentComplete={handlePaymentComplete}
                 />
               </div>
             </div>

@@ -96,7 +96,7 @@ export function ModernViagemDetailsLayout({
         <div className="container py-6">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-4">
-            <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-gray-900">
+            <Button variant="ghost" size="sm" asChild className="text-gray-600 hover:text-gray-700 hover:bg-gray-100">
               <Link to="/dashboard/viagens" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Voltar às Viagens
@@ -214,10 +214,8 @@ export function ModernViagemDetailsLayout({
 
       {/* Quick Info Cards */}
       <div className="container py-6">
-        {/* Responsáveis Card - Exibido apenas se houver responsáveis */}
-        {passageiros.filter(p => p.is_responsavel_onibus === true).length > 0 && (
-          <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
-        )}
+        {/* Responsáveis Card - Sempre exibido com todos os responsáveis */}
+        <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">

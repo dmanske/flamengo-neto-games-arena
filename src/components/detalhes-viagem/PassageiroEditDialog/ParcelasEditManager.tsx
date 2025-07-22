@@ -21,9 +21,11 @@ interface ParcelasEditManagerProps {
   passageiroId: string;
   valorTotal: number;
   desconto: number;
+  onStatusUpdate?: () => void;
+  onPaymentComplete?: (isComplete: boolean) => void;
 }
 
-export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: ParcelasEditManagerProps) {
+export function ParcelasEditManager({ passageiroId, valorTotal, desconto, onStatusUpdate, onPaymentComplete }: ParcelasEditManagerProps) {
   const [parcelas, setParcelas] = useState<Parcela[]>([]);
   const [novaParcela, setNovaParcela] = useState({
     valor_parcela: 0,
@@ -39,14 +41,25 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
   // Função para verificar e atualizar o status do pagamento
   const verificarEAtualizarStatus = async (totalPagoAtual: number) => {
     try {
+      console.log('🔄 Verificando status do pagamento:', {
+        totalPagoAtual,
+        valorLiquido,
+        passageiroId,
+        diferenca: Math.abs(totalPagoAtual - valorLiquido)
+      });
+
       let novoStatus = "Pendente";
       
-      // Se o valor pago é igual ou maior que o valor líquido (com margem de 1 centavo)
-      if (Math.abs(totalPagoAtual - valorLiquido) < 0.01) {
+      // Determinar o novo status baseado no valor pago
+      if (totalPagoAtual >= valorLiquido) {
         novoStatus = "Pago";
       } else if (totalPagoAtual > 0) {
         novoStatus = "Pendente";
+      } else {
+        novoStatus = "Pendente";
       }
+
+      console.log('📝 Atualizando status para:', novoStatus);
 
       // Atualizar o status no banco de dados
       const { error } = await supabase
@@ -54,13 +67,33 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
         .update({ status_pagamento: novoStatus })
         .eq("id", passageiroId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao atualizar status:', error);
+        throw error;
+      }
 
-      // Mostrar notificação se o status mudou para "Pago"
-      if (novoStatus === "Pago" && totalPagoAtual >= valorLiquido) {
+      console.log('✅ Status atualizado com sucesso no banco de dados');
+
+      // Mostrar notificação baseada no novo status
+      if (novoStatus === "Pago") {
         toast.success("🎉 Pagamento completado! Status atualizado para 'Pago'");
-      } else if (novoStatus === "Pendente" && totalPagoAtual < valorLiquido) {
-        toast.info("Status atualizado para 'Pendente' - pagamento parcial");
+      } else if (novoStatus === "Pendente" && totalPagoAtual > 0) {
+        toast.info("💰 Pagamento parcial registrado - Status: Pendente");
+      }
+
+      // Notificar se o pagamento foi completado
+      if (onPaymentComplete) {
+        onPaymentComplete(novoStatus === "Pago");
+      }
+
+      // Chamar callback para atualizar a interface pai
+      if (onStatusUpdate) {
+        console.log('🔄 Chamando callback para atualizar interface');
+        setTimeout(() => {
+          onStatusUpdate();
+        }, 500); // Pequeno delay para garantir que o banco foi atualizado
+      } else {
+        console.warn('⚠️ Callback onStatusUpdate não fornecido');
       }
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
@@ -102,6 +135,13 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
     }
 
     try {
+      console.log('💰 Adicionando parcela:', {
+        valor: novaParcela.valor_parcela,
+        totalAtual: totalPago,
+        valorLiquido,
+        novoTotal: totalPago + novaParcela.valor_parcela
+      });
+
       const { data, error } = await supabase
         .from("viagem_passageiros_parcelas")
         .insert({
@@ -119,10 +159,19 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
       const novasParcelas = [...parcelas, data];
       setParcelas(novasParcelas);
       
-      // Verificar se o pagamento foi completado
+      // Calcular novo total pago
       const novoTotalPago = novasParcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+      
+      console.log('📊 Novo total calculado:', {
+        novoTotalPago,
+        valorLiquido,
+        statusDeveSer: novoTotalPago >= valorLiquido ? 'Pago' : 'Pendente'
+      });
+      
+      // Verificar e atualizar status
       await verificarEAtualizarStatus(novoTotalPago);
       
+      // Reset do formulário
       setNovaParcela({
         valor_parcela: 0,
         forma_pagamento: "Pix",
@@ -132,13 +181,15 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
       
       toast.success("Parcela adicionada com sucesso!");
     } catch (error) {
-      console.error("Erro ao adicionar parcela:", error);
+      console.error("❌ Erro ao adicionar parcela:", error);
       toast.error("Erro ao adicionar parcela");
     }
   };
 
   const removerParcela = async (parcelaId: string) => {
     try {
+      console.log('🗑️ Removendo parcela:', parcelaId);
+
       const { error } = await supabase
         .from("viagem_passageiros_parcelas")
         .delete()
@@ -149,13 +200,21 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto }: Parc
       const novasParcelas = parcelas.filter(p => p.id !== parcelaId);
       setParcelas(novasParcelas);
       
-      // Verificar se o status precisa ser atualizado após remoção
+      // Calcular novo total após remoção
       const novoTotalPago = novasParcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+      
+      console.log('📊 Total após remoção:', {
+        novoTotalPago,
+        valorLiquido,
+        statusDeveSer: novoTotalPago >= valorLiquido ? 'Pago' : 'Pendente'
+      });
+      
+      // Verificar se o status precisa ser atualizado após remoção
       await verificarEAtualizarStatus(novoTotalPago);
       
       toast.success("Parcela removida com sucesso!");
     } catch (error) {
-      console.error("Erro ao remover parcela:", error);
+      console.error("❌ Erro ao remover parcela:", error);
       toast.error("Erro ao remover parcela");
     }
   };

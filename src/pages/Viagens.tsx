@@ -136,7 +136,7 @@ const Viagens = () => {
   );
 
   const viagensHistoricas = viagens.filter(viagem =>
-    viagem.status_viagem === 'Concluída'
+    viagem.status_viagem === 'Concluída' || viagem.status_viagem === 'Cancelada' || viagem.status_viagem === 'Finalizada'
   );
 
   // Filtrar viagens históricas por período
@@ -155,6 +155,18 @@ const Viagens = () => {
       switch (periodoFiltro) {
         case "mes_atual":
           return anoViagem === anoAtual && mesViagem === mesAtual;
+        case "mes_anterior":
+          const mesAnterior = mesAtual === 0 ? 11 : mesAtual - 1;
+          const anoMesAnterior = mesAtual === 0 ? anoAtual - 1 : anoAtual;
+          return anoViagem === anoMesAnterior && mesViagem === mesAnterior;
+        case "ultimos_3_meses":
+          const tresMesesAtras = new Date(hoje);
+          tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
+          return dataJogo >= tresMesesAtras;
+        case "ultimos_6_meses":
+          const seisMesesAtras = new Date(hoje);
+          seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+          return dataJogo >= seisMesesAtras;
         case "ano_atual":
           return anoViagem === anoAtual;
         case "ano_anterior":
@@ -303,7 +315,10 @@ const Viagens = () => {
       case 'fechada':
         return 'text-red-700 bg-red-100';
       case 'concluída':
+      case 'finalizada':
         return 'text-blue-700 bg-blue-100';
+      case 'cancelada':
+        return 'text-red-700 bg-red-100 border-red-200';
       case 'em andamento':
         return 'text-amber-700 bg-amber-100';
       default:
@@ -311,7 +326,32 @@ const Viagens = () => {
     }
   };
 
-  const renderViagensContent = (viagensList: Viagem[]) => {
+  // Agrupar viagens por mês para o histórico
+  const agruparViagensPorMes = (viagens: Viagem[]) => {
+    const grupos: { [key: string]: Viagem[] } = {};
+    
+    viagens.forEach(viagem => {
+      const data = new Date(viagem.data_jogo);
+      const chave = format(data, 'yyyy-MM', { locale: ptBR });
+      const mesAno = format(data, 'MMMM yyyy', { locale: ptBR });
+      
+      if (!grupos[chave]) {
+        grupos[chave] = [];
+      }
+      grupos[chave].push(viagem);
+    });
+
+    // Ordenar por data (mais recente primeiro)
+    const chavesOrdenadas = Object.keys(grupos).sort((a, b) => b.localeCompare(a));
+    
+    return chavesOrdenadas.map(chave => ({
+      chave,
+      mesAno: format(new Date(chave + '-01'), 'MMMM yyyy', { locale: ptBR }),
+      viagens: grupos[chave].sort((a, b) => new Date(b.data_jogo).getTime() - new Date(a.data_jogo).getTime())
+    }));
+  };
+
+  const renderViagensContent = (viagensList: Viagem[], isHistorico = false) => {
     if (loading) {
       return (
         <div className="flex items-center justify-center py-8">
@@ -333,6 +373,140 @@ const Viagens = () => {
       );
     }
 
+    // Para histórico, agrupar por mês se não houver busca ativa
+    if (isHistorico && !searchTerm) {
+      const gruposPorMes = agruparViagensPorMes(viagensList);
+      
+      if (viewMode === 'table') {
+        return (
+          <div className="space-y-6">
+            {gruposPorMes.map(grupo => (
+              <div key={grupo.chave}>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 capitalize">
+                  {grupo.mesAno} ({grupo.viagens.length} viagens)
+                </h3>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Adversário</TableHead>
+                        <TableHead>Rota</TableHead>
+                        <TableHead>Valor Padrão</TableHead>
+                        <TableHead>Ocupação</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {grupo.viagens.map((viagem) => (
+                        <TableRow key={viagem.id}>
+                          <TableCell className="font-medium">{formatDate(viagem.data_jogo)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {viagem.logo_adversario && (
+                                <div className="w-6 h-6 flex items-center justify-center">
+                                  <img
+                                    src={viagem.logo_adversario}
+                                    alt={viagem.adversario}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                              )}
+                              {viagem.adversario}
+                            </div>
+                          </TableCell>
+                          <TableCell>{viagem.rota}</TableCell>
+                          <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
+                          <TableCell>
+                            {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
+                              {viagem.status_viagem}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="outline" asChild>
+                                    <Link to={`/dashboard/viagem/${viagem.id}`}>
+                                      <Eye className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Ver detalhes da viagem</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="outline" asChild>
+                                    <Link to={`/dashboard/viagem/${viagem.id}/editar`}>
+                                      <Pencil className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Editar viagem</p>
+                                </TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setViagemToDelete(viagem)}
+                                    className="text-red-500 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excluir viagem</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      // Grid view agrupado por mês
+      return (
+        <div className="space-y-6">
+          {gruposPorMes.map(grupo => (
+            <div key={grupo.chave}>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 capitalize">
+                {grupo.mesAno} ({grupo.viagens.length} viagens)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {grupo.viagens.map((viagem) => (
+                  <CleanViagemCard
+                    key={viagem.id}
+                    viagem={viagem}
+                    passageirosCount={passageirosCount[viagem.id] || 0}
+                    onDeleteClick={(v) => setViagemToDelete(v)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Visualização normal (não agrupada)
     if (viewMode === 'table') {
       return (
         <div className="overflow-x-auto">
@@ -429,7 +603,7 @@ const Viagens = () => {
       );
     }
 
-    // Grid view with clean cards only
+    // Grid view normal
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {viagensList.map((viagem) => (
@@ -498,6 +672,9 @@ const Viagens = () => {
                     <SelectContent className="bg-white border-gray-200 z-50">
                       <SelectItem value="todos" className="bg-white text-gray-900 hover:bg-gray-50">Todos os períodos</SelectItem>
                       <SelectItem value="mes_atual" className="bg-white text-gray-900 hover:bg-gray-50">Mês atual</SelectItem>
+                      <SelectItem value="mes_anterior" className="bg-white text-gray-900 hover:bg-gray-50">Mês anterior</SelectItem>
+                      <SelectItem value="ultimos_3_meses" className="bg-white text-gray-900 hover:bg-gray-50">Últimos 3 meses</SelectItem>
+                      <SelectItem value="ultimos_6_meses" className="bg-white text-gray-900 hover:bg-gray-50">Últimos 6 meses</SelectItem>
                       <SelectItem value="ano_atual" className="bg-white text-gray-900 hover:bg-gray-50">Ano atual</SelectItem>
                       <SelectItem value="ano_anterior" className="bg-white text-gray-900 hover:bg-gray-50">Ano anterior</SelectItem>
                     </SelectContent>
@@ -552,7 +729,7 @@ const Viagens = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensAtivasFiltradas)}
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensAtivasFiltradas, false)}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -571,7 +748,7 @@ const Viagens = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensEmAndamentoFiltradas)}
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensEmAndamentoFiltradas, false)}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -590,7 +767,7 @@ const Viagens = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensHistoricasFiltradas)}
+                  {renderViagensContent(searchTerm ? todasViagensFiltradas : viagensHistoricasFiltradas, true)}
                 </CardContent>
               </Card>
             </TabsContent>

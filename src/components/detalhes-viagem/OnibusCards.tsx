@@ -80,6 +80,9 @@ export function OnibusCards({
     fetchBusImages();
   }, []);
 
+  // Responsáveis de todos os ônibus (para exibição mesmo quando nenhum ônibus está selecionado)
+  const todosResponsaveis = passageiros.filter(p => p.is_responsavel_onibus === true);
+  
   // Responsáveis do ônibus selecionado
   const responsaveisOnibus = selectedOnibusId
     ? passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === selectedOnibusId)
@@ -160,6 +163,10 @@ export function OnibusCards({
             });
           }
           // Resumo de status (removido variáveis não utilizadas)
+          // Responsáveis deste ônibus específico
+          const responsaveisDesteOnibus = passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id);
+          const passageirosDesteOnibus = passageiros.filter(p => p.onibus_id === onibus.id);
+          
           return (
             <div key={onibus.id} className="flex gap-4 items-stretch">
               <Card 
@@ -242,64 +249,65 @@ export function OnibusCards({
                   </div>
                 </div>
               </Card>
-              {/* Card dos responsáveis selecionados */}
-              {isSelected && (
-                <Card className="min-w-[280px] flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-bold text-blue-900 flex items-center gap-2">
-                        <Users className="h-5 w-5 text-blue-600" />
-                        Responsáveis
-                        {/* Indicador de conexão em tempo real */}
+              {/* Card dos responsáveis - sempre visível para cada ônibus */}
+              <Card className={`min-w-[280px] flex flex-col ${isSelected ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200' : 'bg-gray-50 border-gray-200'} shadow-lg`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className={`text-lg font-bold flex items-center gap-2 ${isSelected ? 'text-blue-900' : 'text-gray-700'}`}>
+                      <Users className={`h-5 w-5 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
+                      Responsáveis
+                      {isSelected && (
                         <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-gray-400'}`} 
                              title={isRealtimeConnected ? 'Conectado - Atualizações em tempo real' : 'Desconectado'} />
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-blue-700 border-blue-300">
-                          {responsaveisOnibus.length}
-                        </Badge>
-                        {lastUpdate && (
-                          <span className="text-xs text-slate-500" title={`Última atualização: ${lastUpdate.toLocaleTimeString()}`}>
-                            {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0 space-y-4">
-                    {/* Lista dos responsáveis atuais */}
-                    <div className="space-y-3">
-                      {responsaveisOnibus.length === 0 && (
-                        <div className="text-center py-6 text-slate-500">
-                          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Nenhum responsável definido</p>
-                        </div>
                       )}
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={isSelected ? "text-blue-700 border-blue-300" : "text-gray-600 border-gray-300"}>
+                        {responsaveisDesteOnibus.length}
+                      </Badge>
+                      {isSelected && lastUpdate && (
+                        <span className="text-xs text-slate-500" title={`Última atualização: ${lastUpdate.toLocaleTimeString()}`}>
+                          {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0 space-y-4">
+                  {/* Lista dos responsáveis atuais */}
+                  <div className="space-y-3">
+                    {responsaveisDesteOnibus.length === 0 && (
+                      <div className="text-center py-6 text-slate-500">
+                        <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhum responsável definido</p>
+                      </div>
+                    )}
+                    
+                    {responsaveisDesteOnibus.map(responsavel => {
+                      const nome = responsavel.nome || (responsavel.clientes ? responsavel.clientes.nome : 'Responsável');
+                      const foto = responsavel.foto || (responsavel.clientes ? responsavel.clientes.foto : null);
+                      const iniciais = nome.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                      const responsavelId = responsavel.viagem_passageiro_id || responsavel.id;
                       
-                      {responsaveisOnibus.map(responsavel => {
-                        const nome = responsavel.nome || (responsavel.clientes ? responsavel.clientes.nome : 'Responsável');
-                        const foto = responsavel.foto || (responsavel.clientes ? responsavel.clientes.foto : null);
-                        const iniciais = nome.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-                        const responsavelId = responsavel.viagem_passageiro_id || responsavel.id;
-                        
-                        return (
-                          <div key={responsavelId} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 shadow-sm">
-                            <Avatar className="h-10 w-10 border-2 border-blue-300">
-                              {foto ? (
-                                <AvatarImage src={foto} alt={nome} className="object-cover" />
-                              ) : null}
-                              <AvatarFallback className="bg-blue-100 text-blue-800 text-sm font-semibold">
-                                {iniciais}
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm text-blue-900 truncate">{nome}</h4>
-                              <Badge className="bg-green-600 text-white text-xs mt-1">Responsável</Badge>
-                            </div>
-                            
-                            {/* Botão para remover responsável */}
+                      return (
+                        <div key={responsavelId} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-blue-200 shadow-sm">
+                          <Avatar className="h-10 w-10 border-2 border-blue-300">
+                            {foto ? (
+                              <AvatarImage src={foto} alt={nome} className="object-cover" />
+                            ) : null}
+                            <AvatarFallback className="bg-blue-100 text-blue-800 text-sm font-semibold">
+                              {iniciais}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm text-blue-900 truncate">{nome}</h4>
+                            <Badge className="bg-green-600 text-white text-xs mt-1">Responsável</Badge>
+                          </div>
+                          
+                          {/* Botão para remover responsável - só aparece quando ônibus está selecionado */}
+                          {isSelected && (
                             <button
                               onClick={async () => {
                                 if (isSaving) return;
@@ -329,12 +337,14 @@ export function OnibusCards({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                               </svg>
                             </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Dropdown para adicionar novos responsáveis */}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Dropdown para adicionar novos responsáveis - só aparece quando ônibus está selecionado */}
+                  {isSelected && (
                     <div className="border-t border-blue-200 pt-4">
                       <label className="block text-sm font-medium text-blue-900 mb-2">
                         Adicionar responsável:
@@ -367,7 +377,7 @@ export function OnibusCards({
                         disabled={isSaving}
                       >
                         <option value="">Selecione um passageiro...</option>
-                        {passageirosOnibus
+                        {passageirosDesteOnibus
                           .filter(p => !p.is_responsavel_onibus)
                           .map(p => {
                             const passageiroId = p.viagem_passageiro_id || p.id;
@@ -380,15 +390,15 @@ export function OnibusCards({
                           })}
                       </select>
                       
-                      {passageirosOnibus.filter(p => !p.is_responsavel_onibus).length === 0 && (
+                      {passageirosDesteOnibus.filter(p => !p.is_responsavel_onibus).length === 0 && (
                         <p className="text-xs text-slate-500 mt-2">
                           Todos os passageiros já são responsáveis
                         </p>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </div>
           );
         })}

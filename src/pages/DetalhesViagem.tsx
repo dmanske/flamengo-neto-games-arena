@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Users } from "lucide-react";
+import { Users, DollarSign } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
@@ -18,8 +19,10 @@ import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernVi
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
-import { ViagemFinancialDetails } from "@/components/detalhes-viagem/ViagemFinancialDetails";
+import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
+
 import { toast } from "sonner";
+import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/FinanceiroViagem";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -176,87 +179,109 @@ const DetalhesViagem = () => {
         />
       </div>
 
-      {originalPassageiros.length > 0 && (
-        <div className="mb-6">
-          <FinancialSummary
-            totalArrecadado={totalArrecadado}
+      <Tabs defaultValue="passageiros" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="passageiros" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Passageiros
+          </TabsTrigger>
+          <TabsTrigger value="financeiro" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Financeiro
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="passageiros" className="space-y-6">
+          {originalPassageiros.length > 0 && (
+            <div className="mb-6">
+              <FinancialSummary
+                totalArrecadado={totalArrecadado}
+                totalPago={totalPago}
+                totalPendente={totalPendente}
+                percentualPagamento={totalArrecadado > 0 ? Math.round((totalPago / totalArrecadado) * 100) : 0}
+                totalPassageiros={originalPassageiros.length}
+                valorPotencialTotal={(viagem?.valor_padrao || 0) * (viagem?.capacidade_onibus || 0)}
+                capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
+                totalReceitas={totalReceitas}
+                totalDespesas={totalDespesas}
+                totalDescontos={totalDescontos}
+                valorBrutoTotal={valorBrutoTotal}
+              />
+            </div>
+          )}
+
+          {originalPassageiros.length > 0 && (
+            <ResumoCards passageiros={originalPassageiros} />
+          )}
+
+          <PaidPaymentsCard
             totalPago={totalPago}
-            totalPendente={totalPendente}
-            percentualPagamento={totalArrecadado > 0 ? Math.round((totalPago / totalArrecadado) * 100) : 0}
-            totalPassageiros={originalPassageiros.length}
-            valorPotencialTotal={(viagem?.valor_padrao || 0) * (viagem?.capacidade_onibus || 0)}
-            capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
-            totalReceitas={totalReceitas}
-            totalDespesas={totalDespesas}
-            totalDescontos={totalDescontos}
-            valorBrutoTotal={valorBrutoTotal}
+            countPago={originalPassageiros.filter(p => p.status_pagamento === "Pago").length}
+            onShowPaidOnly={handleShowPaidOnly}
           />
-        </div>
-      )}
+          
+          {countPendentePayment > 0 && (
+            <PendingPaymentsCard 
+              totalPendente={totalPendente}
+              countPendente={countPendentePayment}
+              onShowPendingOnly={handleShowPendingOnly}
+            />
+          )}
 
-      <PaidPaymentsCard
-        totalPago={totalPago}
-        countPago={originalPassageiros.filter(p => p.status_pagamento === "Pago").length}
-        onShowPaidOnly={handleShowPaidOnly}
-      />
-      
-      {countPendentePayment > 0 && (
-        <PendingPaymentsCard 
-          totalPendente={totalPendente}
-          countPendente={countPendentePayment}
-          onShowPendingOnly={handleShowPendingOnly}
-        />
-      )}
+          <div ref={passageirosListRef}>
+            <PassageirosCard
+              passageirosAtuais={getPassageirosDoOnibusAtual()}
+              passageiros={originalPassageiros}
+              onibusAtual={getOnibusAtual()}
+              selectedOnibusId={selectedOnibusId}
+              totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              setAddPassageiroOpen={setAddPassageiroOpen}
+              onEditPassageiro={openEditPassageiroDialog}
+              onDeletePassageiro={openDeletePassageiroDialog}
+              onViewDetails={openDetailsPassageiroDialog}
+              filterStatus={filterStatus}
+              passeiosPagos={viagem?.passeios_pagos}
+              outroPasseio={viagem?.outro_passeio}
+              viagemId={id || ""}
+              setPassageiros={setPassageiros}
+              setIsLoading={setIsLoadingPassageiros}
+              capacidadeTotal={viagem?.capacidade_onibus}
+              totalPassageiros={originalPassageiros.length}
+            />
+          </div>
 
-      <div ref={passageirosListRef}>
-        <PassageirosCard
-          passageirosAtuais={getPassageirosDoOnibusAtual()}
-          passageiros={originalPassageiros}
-          onibusAtual={getOnibusAtual()}
-          selectedOnibusId={selectedOnibusId}
-          totalPassageirosNaoAlocados={totalPassageirosNaoAlocados}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          setAddPassageiroOpen={setAddPassageiroOpen}
-          onEditPassageiro={openEditPassageiroDialog}
-          onDeletePassageiro={openDeletePassageiroDialog}
-          onViewDetails={openDetailsPassageiroDialog}
-          filterStatus={filterStatus}
-          passeiosPagos={viagem?.passeios_pagos}
-          outroPasseio={viagem?.outro_passeio}
-          viagemId={id || ""}
-          setPassageiros={setPassageiros}
-          setIsLoading={setIsLoadingPassageiros}
-          capacidadeTotal={viagem?.capacidade_onibus}
-          totalPassageiros={originalPassageiros.length}
-        />
-      </div>
+          {onibusList.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-medium mb-3">Ônibus da Viagem</h2>
+              <OnibusCards
+                onibusList={onibusList}
+                selectedOnibusId={selectedOnibusId}
+                onSelectOnibus={handleSelectOnibus}
+                passageirosCount={contadorPassageiros}
+                passageirosNaoAlocados={totalPassageirosNaoAlocados}
+                passageiros={originalPassageiros}
+                viagemId={id || ""}
+                setPassageiros={setPassageiros}
+                setIsLoading={setIsLoadingPassageiros}
+                toast={toast}
+              />
+            </div>
+          )}
 
-      {onibusList.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-medium mb-3">Ônibus da Viagem</h2>
-          <OnibusCards
-            onibusList={onibusList}
-            selectedOnibusId={selectedOnibusId}
-            onSelectOnibus={handleSelectOnibus}
-            passageirosCount={contadorPassageiros}
-            passageirosNaoAlocados={totalPassageirosNaoAlocados}
-            passageiros={originalPassageiros}
-            viagemId={id || ""}
-            setPassageiros={setPassageiros}
-            setIsLoading={setIsLoadingPassageiros}
-            toast={toast}
-          />
-        </div>
-      )}
-      
-      {/* Detalhes Financeiros da Viagem */}
-      <div className="mb-6">
-        <ViagemFinancialDetails 
-          viagemId={id || ""} 
-          viagemNome={viagem.adversario || ""}
-        />
-      </div>
+        </TabsContent>
+
+        <TabsContent value="financeiro">
+          {id ? (
+            <FinanceiroViagem viagemId={id} />
+          ) : (
+            <div className="p-4 bg-red-50 rounded-lg">
+              <p className="text-red-700">❌ Erro: ID da viagem não encontrado</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <PassageiroDialog 
         open={addPassageiroOpen} 

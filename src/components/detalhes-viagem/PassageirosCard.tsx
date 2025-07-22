@@ -119,6 +119,8 @@ export function PassageirosCard({
   totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [passeioFilter, setPasseioFilter] = useState<string>("todos");
+  const [setorFilter, setSetorFilter] = useState<string>("todos");
 
   // Permitir controle externo do filtro de status
   useEffect(() => {
@@ -131,7 +133,7 @@ export function PassageirosCard({
     return () => document.removeEventListener("setPassageirosStatusFilter", handler);
   }, []);
 
-  // Filtrar passageiros por status se necessário
+  // Filtrar passageiros por status e passeios
   const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
     const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
@@ -144,7 +146,23 @@ export function PassageirosCard({
     
     const matchesStatus = statusFilter === "todos" || passageiro.status_pagamento === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    // Filtro de passeios
+    let matchesPasseio = true;
+    if (passeioFilter !== "todos") {
+      if (passeioFilter === "sem_passeios") {
+        matchesPasseio = !passageiro.passeios || passageiro.passeios.length === 0;
+      } else if (passeioFilter === "com_passeios") {
+        matchesPasseio = passageiro.passeios && passageiro.passeios.length > 0;
+      } else {
+        // Filtro por passeio específico
+        matchesPasseio = passageiro.passeios && passageiro.passeios.some(p => p.passeio_nome === passeioFilter);
+      }
+    }
+    
+    // Filtro de setores
+    const matchesSetor = setorFilter === "todos" || passageiro.setor_maracana === setorFilter;
+    
+    return matchesSearch && matchesStatus && matchesPasseio && matchesSetor;
   });
 
   const getStatusColor = (status: string) => {
@@ -162,6 +180,13 @@ export function PassageirosCard({
 
   // Verificar se a capacidade está completa
   const isCapacidadeCompleta = capacidadeTotal && totalPassageiros ? totalPassageiros >= capacidadeTotal : false;
+
+  // Obter setores únicos dos passageiros
+  const setoresUnicos = Array.from(new Set(
+    (passageirosAtuais || [])
+      .map(p => p.setor_maracana)
+      .filter(setor => setor && setor !== "")
+  )).sort();
 
   return (
     <Card>
@@ -231,6 +256,39 @@ export function PassageirosCard({
               <SelectItem value="Pago">Pago</SelectItem>
               <SelectItem value="Pendente">Pendente</SelectItem>
               <SelectItem value="Cancelado">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={passeioFilter} onValueChange={setPasseioFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por passeios" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-gray-200 z-50">
+              <SelectItem value="todos">Todos os passeios</SelectItem>
+              <SelectItem value="com_passeios">Com passeios</SelectItem>
+              <SelectItem value="sem_passeios">Sem passeios</SelectItem>
+              {passeiosPagos && passeiosPagos.map((passeio) => (
+                <SelectItem key={passeio} value={passeio}>
+                  {passeio}
+                </SelectItem>
+              ))}
+              {outroPasseio && (
+                <SelectItem value={outroPasseio}>
+                  {outroPasseio}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <Select value={setorFilter} onValueChange={setSetorFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filtrar por setor" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-gray-200 z-50">
+              <SelectItem value="todos">Todos os setores</SelectItem>
+              {setoresUnicos.map((setor) => (
+                <SelectItem key={setor} value={setor}>
+                  {setor}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

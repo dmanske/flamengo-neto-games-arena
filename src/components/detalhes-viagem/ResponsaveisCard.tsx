@@ -16,6 +16,8 @@ export function ResponsaveisCard({ passageiros, onibusList = [] }: ResponsaveisC
   if (responsaveis.length === 0) {
     return null;
   }
+  
+  // Sempre mostrar todos os responsáveis, independentemente do ônibus selecionado
 
   // Agrupar responsáveis por ônibus
   const responsaveisPorOnibus: Record<string, any[]> = {};
