@@ -55,6 +55,7 @@ import Despesas from "@/pages/financeiro/Despesas";
 import ContasPagarSimples from "@/pages/financeiro/ContasPagarSimples";
 import Relatorios from "@/pages/financeiro/Relatorios";
 import FluxoCaixa from "@/pages/financeiro/FluxoCaixa";
+import FinanceiroGeral from "@/pages/FinanceiroGeral";
 
 const queryClient = new QueryClient()
 
@@ -111,6 +112,7 @@ function App() {
                   
                   {/* Rotas Financeiras */}
                   <Route path="financeiro" element={<DashboardFinanceiro />} />
+                  <Route path="financeiro/geral" element={<FinanceiroGeral />} />
                   <Route path="financeiro/receitas" element={<Receitas />} />
                   <Route path="financeiro/despesas" element={<Despesas />} />
                   <Route path="financeiro/contas-pagar" element={<ContasPagarSimples />} />

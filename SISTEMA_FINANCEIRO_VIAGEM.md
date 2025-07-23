@@ -280,7 +280,7 @@ CREATE TABLE viagem_orcamento (
 ### 🚀 8. Plano de Implementação
 
 #### **FASE 1 - Fundação (Semana 1-2)** ✅ CONCLUÍDA
-- [x] Criar estrutura de banco de dados
+- [x] Criar estrutura de banco de dados ✅ TABELAS CRIADAS
 - [x] Dashboard básico de pendências
 - [x] Sistema de cobrança via WhatsApp
 - [x] Cadastro básico de despesas
@@ -288,17 +288,97 @@ CREATE TABLE viagem_orcamento (
 - [x] Sistema de gestão de receitas
 - [x] Dashboard financeiro completo
 
-#### **FASE 2 - Expansão (Semana 3-4)**
-- [ ] Gestão completa de receitas
-- [ ] Categorização avançada de despesas
-- [ ] Relatórios financeiros básicos
-- [ ] Templates de cobrança personalizáveis
+**📋 STATUS DAS TABELAS:**
+- ✅ `viagem_receitas` - CRIADA E FUNCIONANDO (4 índices + FK)
+- ✅ `viagem_despesas` - CRIADA E FUNCIONANDO (4 índices + FK)
+- ✅ `viagem_cobranca_historico` - CRIADA E FUNCIONANDO (3 índices + FK)
+- ✅ `viagem_orcamento` - CRIADA E FUNCIONANDO (3 índices + FK)
 
-#### **FASE 3 - Otimização (Semana 5-6)**
-- [ ] Automações de cobrança
-- [ ] Análises comparativas entre viagens
-- [ ] Sistema de orçamento vs realizado
-- [ ] Integração com módulo financeiro geral
+**🔗 FOREIGN KEYS CONFIRMADAS:**
+- ✅ viagem_receitas → viagens (CASCADE)
+- ✅ viagem_despesas → viagens (CASCADE)
+- ✅ viagem_cobranca_historico → viagem_passageiros (CASCADE)
+- ✅ viagem_orcamento → viagens (CASCADE)
+
+**🎯 HOOK CORRIGIDO PARA DADOS REAIS:**
+✅ Hook `useFinanceiroGeral` prioriza dados que JÁ EXISTEM
+✅ Busca receitas de passageiros (dados reais do sistema)
+✅ Busca pagamentos existentes (parcelas já pagas)
+✅ Calcula pendências dos dados reais
+✅ Adiciona receitas/despesas extras SE existirem
+✅ Não quebra se tabelas novas estiverem vazias
+
+**📊 O QUE APARECE AGORA NO FINANCEIRO GERAL:**
+- ✅ Receitas dos passageiros das suas viagens
+- ✅ Pagamentos já recebidos (parcelas)
+- ✅ Pendências reais de cada passageiro
+- ✅ Performance por viagem com dados reais
+- ✅ Fluxo de caixa com pagamentos existentes
+
+**🔧 CORREÇÃO COMPLETA DE RELACIONAMENTOS:**
+✅ Corrigido erro de múltiplos relacionamentos viagens ↔ viagem_passageiros
+✅ Corrigido erro de múltiplos relacionamentos clientes ↔ viagem_passageiros  
+✅ Todas as consultas separadas em etapas independentes
+✅ Busca IDs primeiro, depois detalhes em queries separadas
+✅ Zero dependência de JOINs complexos do Supabase
+✅ Tratamento robusto de erros
+
+**📊 VISUALIZAÇÃO MENSAL IMPLEMENTADA:**
+✅ Navegação por mês/trimestre/ano
+✅ Botões de navegação anterior/próximo
+✅ Navegação rápida por meses do ano
+✅ Indicadores visuais do período atual
+✅ Comparação automática com período anterior
+✅ Interface intuitiva e profissional
+
+**🎯 FUNCIONALIDADES ADICIONADAS:**
+- **Visualização Mensal**: Navega mês a mês facilmente
+- **Visualização Anual**: Vê performance do ano todo
+- **Navegação Rápida**: Clica em qualquer mês para ir direto
+- **Comparação Inteligente**: Mostra crescimento vs período anterior
+- **Interface Responsiva**: Funciona bem em qualquer tela
+
+**📅 CALENDÁRIO VISUAL IMPLEMENTADO:**
+✅ Calendário popup com grid de meses
+✅ Navegação visual por ano
+✅ Botões "Hoje" e "Mês Passado"
+✅ Interface intuitiva e profissional
+
+**🔧 CORREÇÃO CONTAS A RECEBER:**
+✅ Corrigido filtro por período de vencimento
+✅ Mostra TODAS as pendências (não filtra por mês)
+✅ Coluna de vencimento com mês/ano
+✅ Cálculo correto de dias de atraso
+✅ Status baseado na data real de vencimento
+
+**🎯 MELHORIAS IMPLEMENTADAS:**
+- **Calendário Real**: Clique e escolha qualquer mês visualmente
+- **Contas Corretas**: Pendências aparecem no contexto certo
+- **Navegação Intuitiva**: Anterior/Próximo + calendário popup
+- **Informações Claras**: Data de vencimento e mês de referência
+
+**🚀 TESTE AGORA:**
+Acesse "Financeiro Geral" - use o calendário e veja as contas organizadas corretamente!
+
+#### **FASE 2 - Expansão (Semana 3-4)** 🚧 EM ANDAMENTO
+- [x] Gestão completa de receitas ✅ IMPLEMENTADA
+- [x] Categorização avançada de despesas ✅ IMPLEMENTADA
+- [ ] Relatórios financeiros básicos 🔄 PRÓXIMO PASSO
+- [x] Templates de cobrança personalizáveis ✅ IMPLEMENTADOS
+
+#### **FASE 3 - Integração (Semana 3-4)** ✅ CONCLUÍDA
+- [x] Sistema Financeiro Geral implementado
+- [x] Dashboard consolidado de todas as viagens
+- [x] Fluxo de caixa integrado
+- [x] Contas a receber centralizadas
+- [x] Contas a pagar consolidadas
+- [x] Relatórios executivos
+- [x] Performance comparativa entre viagens
+
+#### **FASE 4 - Otimização (Semana 5-6)** 📋 PLANEJADA
+- [ ] Automações de cobrança 🔄 PRÓXIMO
+- [ ] Sistema de orçamento vs realizado 🔄 PRÓXIMO
+- [ ] Gráficos avançados e visualizações 🔄 PRÓXIMO
 
 #### **FASE 4 - Inteligência (Semana 7-8)**
 - [ ] Previsões de lucro
@@ -412,3 +492,91 @@ Este sistema transformará a gestão financeira das viagens, proporcionando:
 - Integrar com gateways de pagamento
 
 **Status**: ✅ SISTEMA FINANCEIRO OPERACIONAL
+
+---
+
+## 🔗 **INTEGRAÇÃO FINANCEIRA IMPLEMENTADA**
+
+### ✅ **Sistema Financeiro Geral - Nova Funcionalidade**
+
+**Localização**: `/dashboard/financeiro/geral`
+
+#### **Funcionalidades Implementadas:**
+
+1. **Dashboard Consolidado**
+   - Resumo de todas as viagens em um período
+   - Cards com totais de receitas, despesas, lucro e pendências
+   - Performance comparativa entre viagens
+   - Indicadores de crescimento vs período anterior
+
+2. **Fluxo de Caixa Integrado**
+   - Todas as movimentações financeiras em ordem cronológica
+   - Entradas e saídas categorizadas por viagem
+   - Saldo líquido consolidado
+   - Filtros por período e categoria
+
+3. **Contas a Receber Centralizadas**
+   - Lista unificada de todos os devedores
+   - Classificação por urgência (Urgente, Atenção, Em dia)
+   - Taxa de cobrança e inadimplência
+   - Ações de cobrança em massa
+
+4. **Contas a Pagar Consolidadas**
+   - Todas as despesas organizadas por categoria
+   - Status de pagamento centralizado
+   - Distribuição por categoria de despesa
+   - Taxa de eficiência de pagamentos
+
+5. **Relatórios Executivos**
+   - Ranking de viagens por rentabilidade
+   - Análise de performance por adversário
+   - Métricas de margem e lucro
+   - Relatórios em PDF (estrutura preparada)
+
+#### **Integração Automática:**
+- ✅ Receitas das viagens → Fluxo de caixa geral
+- ✅ Despesas das viagens → Contas a pagar centralizadas  
+- ✅ Pendências → Lista unificada de cobrança
+- ✅ Dados sincronizados em tempo real
+
+#### **Como Acessar:**
+1. Faça login no sistema
+2. Vá para o menu lateral → "Financeiro Geral"
+3. Ou acesse diretamente: `/dashboard/financeiro/geral`
+
+#### **Benefícios da Integração:**
+- **Visão 360°**: Todos os dados financeiros em um só lugar
+- **Tomada de Decisão**: Métricas consolidadas para decisões estratégicas
+- **Eficiência**: Cobrança e pagamentos centralizados
+- **Análise**: Performance comparativa entre viagens
+- **Controle**: Fluxo de caixa em tempo real
+
+**Status**: ✅ INTEGRAÇÃO FINANCEIRA COMPLETA E OPERACIONAL
+
+---
+
+## 🎯 **STATUS ATUAL - JANEIRO 2025**
+
+### ✅ **IMPLEMENTADO E FUNCIONANDO:**
+- Base de dados completa (todas as tabelas criadas)
+- Sistema financeiro da viagem individual
+- Sistema financeiro geral consolidado
+- Dashboard com métricas em tempo real
+- Gestão de receitas e despesas
+- Sistema de cobrança inteligente
+- Integração automática entre sistemas
+
+### 🔄 **PRÓXIMO PASSO - RELATÓRIOS FINANCEIROS:**
+Implementar a funcionalidade de relatórios financeiros básicos na FASE 2:
+- Relatório de lucro/prejuízo por viagem
+- Comparativo entre viagens
+- Análise de categorias de despesa
+- Exportação em PDF
+
+### 📋 **COMANDO PARA CONTINUAR:**
+```bash
+# Próxima implementação: Relatórios financeiros básicos
+# Foco: Aba "Relatórios" no sistema financeiro da viagem
+```
+
+**Pronto para continuar com os relatórios! 🚀**

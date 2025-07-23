@@ -178,6 +178,12 @@ const MainLayout = () => {
             onClick={closeMenu} 
           />
           <NavItem 
+            icon={<ClipboardList className="h-5 w-5" />} 
+            title="Financeiro Geral" 
+            to="/dashboard/financeiro/geral" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
             icon={<CreditCard className="h-5 w-5" />} 
             title="Pagamentos" 
             to="/dashboard/pagamentos" 
