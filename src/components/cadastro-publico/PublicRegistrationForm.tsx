@@ -136,7 +136,7 @@ export const PublicRegistrationForm = () => {
         <div className="p-6 pb-0">
           <LogoEmpresa size="2xl" className="justify-center" />
         </div>
-        <div className="bg-red-600 text-white py-3 px-6">
+        <div className="bg-white-600 text-black py-3 px-6">
           <p className="text-lg font-light italic tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>
             Realizando sonhos, criando histórias.
           </p>
