@@ -102,16 +102,18 @@ export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCa
                     </div>
                   )}
                   <span className="text-sm font-medium">vs</span>
-                  {viagem.logo_adversario && (
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <img 
-                        src={viagem.logo_adversario} 
-                        alt={viagem.adversario} 
-                        className="w-full h-full object-contain" 
-                  />
-                </div>
-              )}
-            </div>
+                   {viagem.logo_adversario && (
+                     <div className="w-8 h-8 flex items-center justify-center">
+                       <img 
+                         src={viagem.logo_adversario} 
+                         alt={viagem.adversario} 
+                         className="w-full h-full object-contain" 
+                       />
+                     </div>
+                   )}
+                 </>
+               )}
+             </div>
           </div>
           <Badge className={getStatusColor(viagem.status_viagem)}>
             {viagem.status_viagem}

@@ -121,6 +121,7 @@ const DetalhesViagem = () => {
   }, [originalPassageiros, selectedOnibusId, onibusList]);
 
   const openEditPassageiroDialog = (passageiro: any) => {
+    console.log("Abrindo dialog de edição para:", passageiro);
     setSelectedPassageiro(passageiro);
     setEditPassageiroOpen(true);
   };
