@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Loader2, 
-  UserPlus, 
+import {
+  Loader2,
+  UserPlus,
   Search,
   Phone,
   Mail,
@@ -72,18 +72,18 @@ const Clientes = () => {
         console.log('Buscando clientes...');
         setLoading(true);
         setError(null);
-        
+
         const { data, error } = await supabase
           .from('clientes')
           .select('*')
           .order('nome', { ascending: true }); // Ordem alfabética
-        
+
         console.log('Resultado:', { data, error });
-        
+
         if (error) {
           throw error;
         }
-        
+
         setClientes(data || []);
       } catch (err: any) {
         console.error('Erro ao buscar clientes:', err);
@@ -122,19 +122,19 @@ const Clientes = () => {
   // Handle delete cliente
   const handleDeleteCliente = async () => {
     if (!clienteToDelete) return;
-    
+
     try {
       setIsDeleting(true);
-      
+
       const { error } = await supabase
         .from('clientes')
         .delete()
         .eq('id', clienteToDelete.id);
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Update local state
       setClientes(clientes.filter(c => c.id !== clienteToDelete.id));
       toast.success(`Cliente ${clienteToDelete.nome} removido com sucesso`);
@@ -152,7 +152,7 @@ const Clientes = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 24) {
       return diffInHours === 0 ? 'Agora' : `${diffInHours}h`;
     } else {
@@ -202,8 +202,8 @@ const Clientes = () => {
                 )}
               </p>
             </div>
-            
-            <Button 
+
+            <Button
               size="sm"
               className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-4"
               asChild
@@ -214,7 +214,7 @@ const Clientes = () => {
               </Link>
             </Button>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -241,8 +241,8 @@ const Clientes = () => {
                 <p className="text-gray-500 mb-4">
                   Tente buscar por outro termo ou adicione um novo cliente.
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setSearchTerm("")}
                   className="mr-2"
                 >
@@ -283,8 +283,8 @@ const Clientes = () => {
                       <div className="relative">
                         <Avatar className="h-14 w-14">
                           {cliente.foto ? (
-                            <AvatarImage 
-                              src={cliente.foto} 
+                            <AvatarImage
+                              src={cliente.foto}
                               alt={cliente.nome}
                               className="object-cover"
                             />
@@ -297,7 +297,7 @@ const Clientes = () => {
                         {/* Online indicator (fake for demo) */}
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                       </div>
-                      
+
                       {/* Main Content - Clicável */}
                       <Link to={`/dashboard/clientes/${cliente.id}`} className="flex-1 min-w-0 cursor-pointer">
                         <div className="flex items-center justify-between mb-1">
@@ -311,7 +311,7 @@ const Clientes = () => {
                             </span>
                           </div>
                         </div>
-                        
+
                         {/* Contact Info */}
                         <div className="space-y-1">
                           {cliente.telefone && (
@@ -320,13 +320,13 @@ const Clientes = () => {
                               <span>{formatPhone(cliente.telefone)}</span>
                             </div>
                           )}
-                          
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center text-sm text-gray-600">
                               <MapPin className="h-3 w-3 mr-2 text-blue-600" />
                               <span>{cliente.cidade}, {cliente.estado}</span>
                             </div>
-                            
+
                             {cliente.email && (
                               <Badge variant="secondary" className="text-xs">
                                 <Mail className="h-3 w-3 mr-1" />
@@ -334,7 +334,7 @@ const Clientes = () => {
                               </Badge>
                             )}
                           </div>
-                          
+
                           {cliente.data_nascimento && (
                             <div className="flex items-center text-sm text-gray-500">
                               <Calendar className="h-3 w-3 mr-2" />
@@ -343,14 +343,14 @@ const Clientes = () => {
                           )}
                         </div>
                       </Link>
-                      
+
                       {/* Dropdown menu - posicionado absolutamente */}
                       <div className="absolute top-2 right-2 z-10">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-8 w-8 p-0 hover:bg-gray-100"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -364,7 +364,7 @@ const Clientes = () => {
                                 Editar
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => setClienteToDelete(cliente)}
                             >
@@ -386,7 +386,7 @@ const Clientes = () => {
                 <div className="flex items-center text-sm text-gray-500">
                   Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClientes.length)} de {filteredClientes.length} clientes
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -397,7 +397,7 @@ const Clientes = () => {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  
+
                   <div className="flex items-center space-x-1">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNumber: number;
@@ -410,25 +410,24 @@ const Clientes = () => {
                       } else {
                         pageNumber = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <Button
                           key={pageNumber}
                           variant={currentPage === pageNumber ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(pageNumber)}
-                          className={`h-8 w-8 p-0 ${
-                            currentPage === pageNumber 
-                              ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                              : ""
-                          }`}
+                          className={`h-8 w-8 p-0 ${currentPage === pageNumber
+                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                            : ""
+                            }`}
                         >
                           {pageNumber}
                         </Button>
                       );
                     })}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -451,13 +450,13 @@ const Clientes = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o cliente <strong>{clienteToDelete?.nome}</strong>? 
+              Tem certeza que deseja excluir o cliente <strong>{clienteToDelete?.nome}</strong>?
               Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteCliente}
               className="bg-red-600 hover:bg-red-700"
               disabled={isDeleting}

@@ -19,13 +19,7 @@ export interface ClienteOption {
   cidade: string;
 }
 
-export interface Parcela {
-  id?: string;
-  valor_parcela: number;
-  forma_pagamento: string;
-  observacoes?: string;
-  data_pagamento?: string;
-}
+// Interface Parcela removida - sistema de parcelamento desabilitado
 
 export interface PassageiroDialogProps {
   open: boolean;

@@ -42,8 +42,6 @@ interface PassageirosCardProps {
   viagemId: string | null;
   setPassageiros: (passageiros: any[]) => void;
   setIsLoading: (isLoading: boolean) => void;
-  capacidadeTotal?: number;
-  totalPassageiros?: number;
 }
 
 export function PassageirosCard({
@@ -64,8 +62,6 @@ export function PassageirosCard({
   viagemId,
   setPassageiros,
   setIsLoading,
-  capacidadeTotal,
-  totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
 

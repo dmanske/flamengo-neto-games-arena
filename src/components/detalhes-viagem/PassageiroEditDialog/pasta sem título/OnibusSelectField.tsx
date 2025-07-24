@@ -1,0 +1,168 @@
+
+import React, { useState, useEffect } from "react";
+import { AlertCircle } from "lucide-react";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { OnibusOption } from "./types";
+
+interface OnibusSelectFieldProps {
+  control: any;
+  form: any;
+  viagemId?: string;
+  currentOnibusId?: string;
+  className?: string;
+  selectClassName?: string;
+  optionClassName?: string;
+}
+
+export function OnibusSelectField({ 
+  control, 
+  form, 
+  viagemId, 
+  currentOnibusId,
+  className,
+  selectClassName,
+  optionClassName
+}: OnibusSelectFieldProps) {
+  const [onibusList, setOnibusList] = useState<OnibusOption[]>([]);
+
+  useEffect(() => {
+    if (viagemId) {
+      fetchOnibus();
+    }
+  }, [viagemId]);
+
+  const fetchOnibus = async () => {
+    if (!viagemId) return;
+    
+    try {
+      const { data: onibusData, error: onibusError } = await supabase
+        .from("viagem_onibus")
+        .select("id, numero_identificacao, tipo_onibus, empresa, capacidade_onibus, lugares_extras")
+        .eq("viagem_id", viagemId)
+        .order("created_at");
+
+      if (onibusError) throw onibusError;
+      
+      if (!onibusData || onibusData.length === 0) {
+        return;
+      }
+      
+      const onibusWithCounts: OnibusOption[] = [];
+      
+      for (const onibus of onibusData) {
+        const { data: passageirosData, error: passageirosError } = await supabase
+          .from('viagem_passageiros')
+          .select('id')
+          .eq('onibus_id', onibus.id);
+          
+        if (passageirosError) throw passageirosError;
+        
+        const passageirosCount = passageirosData ? passageirosData.length : 0;
+        const capacidadeTotal = onibus.capacidade_onibus + (onibus.lugares_extras || 0);
+        const disponivel = passageirosCount < capacidadeTotal;
+        
+        onibusWithCounts.push({
+          ...onibus,
+          passageiros_count: passageirosCount,
+          disponivel: disponivel,
+          capacidade_total: capacidadeTotal
+        });
+      }
+      
+      setOnibusList(onibusWithCounts);
+    } catch (error) {
+      console.error("Erro ao buscar ônibus:", error);
+      toast.error("Erro ao carregar a lista de ônibus");
+    }
+  };
+
+  const selectedOnibus = form.watch('onibus_id') 
+    ? onibusList.find(o => o.id === form.watch('onibus_id')) 
+    : null;
+
+  const ocupacaoInfo = selectedOnibus ? {
+    atual: selectedOnibus.passageiros_count || 0,
+    total: selectedOnibus.capacidade_total || selectedOnibus.capacidade_onibus,
+    disponivel: selectedOnibus.disponivel
+  } : null;
+
+  return (
+    <FormField
+      control={control}
+      name="onibus_id"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className={`flex items-center gap-2 text-gray-700 ${className || ''}`}>
+            Ônibus
+            {ocupacaoInfo && !ocupacaoInfo.disponivel && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Este ônibus está lotado</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </FormLabel>
+          <Select
+            onValueChange={field.onChange}
+            value={field.value}
+          >
+            <FormControl>
+              <SelectTrigger className={selectClassName || "bg-white text-gray-900 border-gray-300 focus:ring-blue-200 focus:border-blue-400 hover:bg-blue-50"}>
+                <SelectValue placeholder="Selecione um ônibus" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+              {onibusList.map((onibus) => (
+                <SelectItem
+                  key={onibus.id}
+                  value={onibus.id}
+                  disabled={!onibus.disponivel}
+                  className={optionClassName || "hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>
+                      {onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`} ({onibus.empresa})
+                    </span>
+                    <span className={`text-xs ${!onibus.disponivel ? 'text-red-500' : 'text-green-600'}`}>
+                      {onibus.passageiros_count || 0}/{onibus.capacidade_total || onibus.capacidade_onibus}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormDescription className="text-gray-600">
+            {ocupacaoInfo 
+              ? `Ocupação atual: ${ocupacaoInfo.atual}/${ocupacaoInfo.total} passageiros` 
+              : "Selecione o ônibus para o passageiro"}
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}

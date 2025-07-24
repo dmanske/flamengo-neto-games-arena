@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 
-import { fetchPassageiros } from './PassageirosCard';
 
 interface Onibus {
   id: string;

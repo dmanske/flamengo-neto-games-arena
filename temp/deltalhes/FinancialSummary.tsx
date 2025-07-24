@@ -12,10 +12,6 @@ export interface FinancialSummaryProps {
   totalPassageiros: number;
   valorPotencialTotal: number;
   capacidadeTotalOnibus: number; // Renamed from capacidadeOnibus to align with DetalhesViagem.tsx
-  totalReceitas?: number;
-  totalDespesas?: number;
-  totalDescontos?: number;
-  valorBrutoTotal?: number;
 }
 
 export function FinancialSummary({
@@ -26,10 +22,6 @@ export function FinancialSummary({
   totalPassageiros,
   valorPotencialTotal,
   capacidadeTotalOnibus,
-  totalReceitas,
-  totalDespesas,
-  totalDescontos,
-  valorBrutoTotal,
 }: FinancialSummaryProps) {
   // Calculate percentage of bus occupation
   const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100);

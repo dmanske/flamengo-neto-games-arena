@@ -12,6 +12,7 @@ import PassageiroDeleteDialog from "@/components/detalhes-viagem/PassageiroDelet
 import { PassageiroDetailsDialog } from "@/components/detalhes-viagem/PassageiroDetailsDialog";
 import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
 import { PendingPaymentsCard } from "@/components/detalhes-viagem/PendingPaymentsCard";
+import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/FinanceiroViagem";
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
 import { ViagemReport } from "@/components/relatorios/ViagemReport";
@@ -23,7 +24,6 @@ import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard"
 import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
 
 import { toast } from "sonner";
-import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/FinanceiroViagem";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -282,13 +282,29 @@ const DetalhesViagem = () => {
         </TabsContent>
 
         <TabsContent value="financeiro">
-          {id ? (
-            <FinanceiroViagem viagemId={id} />
-          ) : (
-            <div className="p-4 bg-red-50 rounded-lg">
-              <p className="text-red-700">❌ Erro: ID da viagem não encontrado</p>
+          {/* Resumo Financeiro dos Passageiros */}
+          {originalPassageiros.length > 0 && (
+            <div className="mb-6">
+              <FinancialSummary
+                totalArrecadado={totalArrecadado}
+                totalPago={totalPago}
+                totalPendente={totalPendente}
+                percentualPagamento={totalArrecadado > 0 ? Math.round((totalPago / totalArrecadado) * 100) : 0}
+                totalPassageiros={originalPassageiros.length}
+                valorPotencialTotal={(viagem?.valor_padrao || 0) * (viagem?.capacidade_onibus || 0)}
+                capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
+                totalReceitas={totalReceitas}
+                totalDespesas={totalDespesas}
+                totalDescontos={totalDescontos}
+                valorBrutoTotal={valorBrutoTotal}
+              />
             </div>
           )}
+          
+          {/* Sistema Financeiro Completo da Viagem */}
+          <FinanceiroViagem
+            viagemId={id || ""}
+          />
         </TabsContent>
       </Tabs>
 

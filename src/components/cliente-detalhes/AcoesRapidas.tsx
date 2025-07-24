@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  MessageSquare, 
-  Mail, 
-  Phone, 
-  CreditCard, 
-  FileText, 
+import {
+  MessageSquare,
+  Mail,
+  Phone,
+  CreditCard,
+  FileText,
   UserPlus,
   Edit,
   Settings
@@ -65,7 +65,7 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           <CardTitle className="text-lg">Comunicação</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button 
+          <Button
             onClick={abrirWhatsApp}
             className="w-full bg-green-600 hover:bg-green-700 text-white"
             disabled={!cliente.telefone}
@@ -73,20 +73,20 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
             <MessageSquare className="h-4 w-4 mr-2" />
             WhatsApp
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={abrirEmail}
-            variant="outline" 
+            variant="outline"
             className="w-full"
             disabled={!cliente.email}
           >
             <Mail className="h-4 w-4 mr-2" />
             Enviar E-mail
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={ligar}
-            variant="outline" 
+            variant="outline"
             className="w-full"
             disabled={!cliente.telefone}
           >
@@ -102,17 +102,17 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           <CardTitle className="text-lg">Financeiro</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button 
+          <Button
             onClick={cobrarPendencias}
             className="w-full bg-orange-600 hover:bg-orange-700 text-white"
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Cobrar Pendências
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={gerarRelatorio}
-            variant="outline" 
+            variant="outline"
             className="w-full"
           >
             <FileText className="h-4 w-4 mr-2" />
@@ -127,7 +127,7 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           <CardTitle className="text-lg">Viagens</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button 
+          <Button
             onClick={inscreverViagem}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
@@ -143,8 +143,8 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           <CardTitle className="text-lg">Administrativo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             asChild
           >
@@ -153,9 +153,9 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
               Editar Dados
             </a>
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => alert('Configurações avançadas em breve!')}
           >

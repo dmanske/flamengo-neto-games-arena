@@ -31,9 +31,9 @@ import { supabase } from "@/lib/supabase";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClienteSearchWithSuggestions } from "./ClienteSearchWithSuggestions";
 import { OnibusSelectField } from "./OnibusSelectField";
+import { ParcelasManager } from "./ParcelasManager";
 import { formSchema, FormData } from "./formSchema";
-import { PassageiroDialogProps } from "./types";
-import { Users, MapPin, CreditCard, Ticket, Bus, Home } from "lucide-react";
+import { PassageiroDialogProps, Parcela } from "./types";
 
 export function PassageiroDialog({
   open,
@@ -45,6 +45,7 @@ export function PassageiroDialog({
   defaultOnibusId,
 }: PassageiroDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [parcelas, setParcelas] = useState<Parcela[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -71,53 +72,11 @@ export function PassageiroDialog({
   const desconto = form.watch("desconto");
   
   const valorLiquido = valorTotal - desconto;
+  const totalPago = parcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
 
   const onSubmit = async (values: FormData) => {
     if (!viagemId) return;
     setIsLoading(true);
-    
-    // Verificar capacidade do ônibus antes de adicionar passageiros
-    if (values.onibus_id) {
-      try {
-        // Buscar dados do ônibus
-        const { data: onibusData, error: onibusError } = await supabase
-          .from("viagem_onibus")
-          .select("capacidade_onibus, lugares_extras")
-          .eq("id", values.onibus_id)
-          .single();
-
-        if (onibusError) throw onibusError;
-
-        // Contar passageiros atuais no ônibus
-        const { data: passageirosAtuais, error: passageirosError } = await supabase
-          .from("viagem_passageiros")
-          .select("id")
-          .eq("onibus_id", values.onibus_id);
-
-        if (passageirosError) throw passageirosError;
-
-        const capacidadeTotal = onibusData.capacidade_onibus + (onibusData.lugares_extras || 0);
-        const passageirosAtuaisCount = passageirosAtuais ? passageirosAtuais.length : 0;
-        const novosPassageiros = values.cliente_id.length;
-        
-        // Verificar se há capacidade suficiente
-        if (passageirosAtuaisCount + novosPassageiros > capacidadeTotal) {
-          const vagasDisponiveis = capacidadeTotal - passageirosAtuaisCount;
-          toast.error(
-            `Capacidade insuficiente! O ônibus tem ${capacidadeTotal} lugares, ${passageirosAtuaisCount} ocupados. ` +
-            `Restam apenas ${vagasDisponiveis} vaga(s) disponível(is), mas você está tentando adicionar ${novosPassageiros} passageiro(s).`
-          );
-          setIsLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error("Erro ao verificar capacidade do ônibus:", error);
-        toast.error("Erro ao verificar capacidade do ônibus. Tente novamente.");
-        setIsLoading(false);
-        return;
-      }
-    }
-    
     let algumErro = false;
     let algumSucesso = false;
     for (const clienteId of values.cliente_id) {
@@ -133,27 +92,19 @@ export function PassageiroDialog({
           algumErro = true;
           continue;
         }
-        // Determinar status correto baseado no parcelamento
-        const statusCorreto = "Pendente"; // Sempre começa como pendente
-        
-        const { data: passageiroData, error: passageiroError } = await supabase
+        const { error: passageiroError } = await supabase
           .from("viagem_passageiros")
           .insert({
             viagem_id: viagemId,
             cliente_id: clienteId,
             setor_maracana: values.setor_maracana,
-            status_pagamento: statusCorreto,
+            status_pagamento: values.status_pagamento,
             forma_pagamento: values.forma_pagamento,
             valor: values.valor,
             desconto: values.desconto,
             onibus_id: values.onibus_id,
-          })
-          .select('id')
-          .single();
+          });
         if (passageiroError) throw passageiroError;
-
-        // Sistema de parcelamento removido - agora apenas status simples
-
         algumSucesso = true;
       } catch (error) {
         console.error("Erro ao adicionar passageiro:", error);
@@ -185,18 +136,15 @@ export function PassageiroDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              Adicionar Passageiro
-            </DialogTitle>
+            <DialogTitle className="text-gray-900">Adicionar Passageiro</DialogTitle>
             <DialogDescription className="text-gray-600">
-              Adicione um ou mais passageiros à esta viagem.
+              Adicione um passageiro à esta viagem.
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <ClienteSearchWithSuggestions control={form.control} viagemId={viagemId} />
+              <ClienteSearchWithSuggestions control={form.control} />
 
               <OnibusSelectField 
                 control={form.control} 
@@ -210,10 +158,7 @@ export function PassageiroDialog({
                 name="cidade_embarque"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 flex items-center gap-2">
-                      <Home className="h-4 w-4 text-blue-600" />
-                      Cidade de Embarque
-                    </FormLabel>
+                    <FormLabel className="text-gray-700">Cidade de Embarque</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -243,10 +188,7 @@ export function PassageiroDialog({
                 name="setor_maracana"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 flex items-center gap-2">
-                      <Ticket className="h-4 w-4 text-blue-600" />
-                      Setor do Maracanã
-                    </FormLabel>
+                    <FormLabel className="text-gray-700">Setor do Maracanã</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -278,10 +220,7 @@ export function PassageiroDialog({
                   name="valor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-blue-600" />
-                        Valor (R$)
-                      </FormLabel>
+                      <FormLabel className="text-gray-700">Valor (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -301,10 +240,7 @@ export function PassageiroDialog({
                   name="desconto"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-green-600" />
-                        Desconto (R$) - Opcional
-                      </FormLabel>
+                      <FormLabel className="text-gray-700">Desconto (R$) - Opcional</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -320,8 +256,6 @@ export function PassageiroDialog({
                 />
               </div>
 
-              {/* Sistema de parcelamento removido - cadastro simples */}
-
               <DialogFooter>
                 <Button
                   type="button"
@@ -333,24 +267,10 @@ export function PassageiroDialog({
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isLoading || !form.watch("cliente_id") || form.watch("cliente_id").length === 0}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Salvando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Users className="h-4 w-4" />
-                      <span>
-                        {form.watch("cliente_id") && form.watch("cliente_id").length > 1 
-                          ? `Salvar ${form.watch("cliente_id").length} Passageiros` 
-                          : "Salvar Passageiro"}
-                      </span>
-                    </>
-                  )}
+                  {isLoading ? "Salvando..." : "Salvar Passageiro"}
                 </Button>
               </DialogFooter>
             </form>

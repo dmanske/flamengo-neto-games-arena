@@ -32,10 +32,8 @@ import EditarOnibus from '@/pages/EditarOnibus';
 import DetalhesOnibus from '@/pages/DetalhesOnibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
-import CadastrarPassageiroComParcelamento from '@/pages/CadastrarPassageiroComParcelamento';
-import DemoParcelamento from '@/pages/DemoParcelamento';
-
-import CadastroPassageiroSimples from '@/pages/CadastroPassageiroSimples';
+import CadastrarPassageiroSimples from '@/pages/CadastrarPassageiroSimples';
+// Sistema de parcelamento removido
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
 import Loja from '@/pages/Loja';
 import LojaAdmin from '@/pages/LojaAdmin';
@@ -109,10 +107,10 @@ function App() {
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="presenca/:viagemId" element={<ListaPresenca />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
-                  <Route path="cadastrar-passageiro-parcelamento" element={<CadastrarPassageiroComParcelamento />} />
-                  <Route path="demo-parcelamento" element={<DemoParcelamento />} />
+                  <Route path="cadastrar-passageiro-simples" element={<CadastrarPassageiroSimples />} />
+                  {/* Route demo-parcelamento removida - sistema desabilitado */}
 
-                  <Route path="cadastro-passageiro-simples" element={<CadastroPassageiroSimples />} />
+                  {/* Route cadastro-passageiro-simples removida - página não existe */}
                   <Route path="onibus" element={<Onibus />} />
                   <Route path="onibus/:id" element={<DetalhesOnibus />} />
                   <Route path="editar-onibus/:id" element={<EditarOnibus />} />

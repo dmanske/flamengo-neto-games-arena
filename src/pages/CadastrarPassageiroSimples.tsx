@@ -23,18 +23,6 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-// Importações temporárias simplificadas
-interface ParcelaConfig {
-  numero: number;
-  valor: number;
-  dataVencimento: Date;
-  status: string;
-  dataPagamento?: Date;
-}
-
-import { ParcelamentoSelectorSimples } from "@/components/parcelamento/ParcelamentoSelectorSimples";
-
-import { useParcelamentoSimples } from "@/hooks/useParcelamentoSimples";
 import { formatCurrency } from "@/lib/utils";
 
 // Schema de validação do formulário
@@ -51,6 +39,7 @@ const formSchema = z.object({
   viagem_id: z.string().min(1, { message: "Selecione uma viagem" }),
   valor: z.number().min(1, { message: "Valor deve ser maior que zero" }),
   desconto: z.number().min(0, { message: "Desconto não pode ser negativo" }),
+  status_pagamento: z.enum(["Pendente", "Pago", "Cancelado"] as const),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,14 +51,11 @@ interface Viagem {
   valor_padrao?: number;
 }
 
-const CadastrarPassageiroComParcelamento = () => {
+const CadastrarPassageiroSimples = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viagens, setViagens] = useState<Viagem[]>([]);
   const [viagemSelecionada, setViagemSelecionada] = useState<Viagem | null>(null);
-  const [parcelas, setParcelas] = useState<ParcelaConfig[]>([]);
   const navigate = useNavigate();
-  
-  const { salvarParcelasPassageiro, isLoading: isLoadingParcelas } = useParcelamentoSimples();
 
   // Configurar formulário
   const form = useForm<FormValues>({
@@ -84,6 +70,7 @@ const CadastrarPassageiroComParcelamento = () => {
       viagem_id: "",
       valor: 800, // Valor padrão
       desconto: 0,
+      status_pagamento: "Pendente",
     },
   });
 
@@ -130,11 +117,6 @@ const CadastrarPassageiroComParcelamento = () => {
     try {
       setIsSubmitting(true);
 
-      if (parcelas.length === 0) {
-        toast.error('Configure a forma de pagamento');
-        return;
-      }
-
       // 1. Criar cliente
       const { data: clienteData, error: clienteError } = await supabase
         .from("clientes")
@@ -166,40 +148,17 @@ const CadastrarPassageiroComParcelamento = () => {
           desconto: values.desconto,
           setor_maracana: values.setor_maracana,
           numero_onibus: values.numero_onibus,
-          status_pagamento: 'Pendente' // Sempre começa como pendente
+          status_pagamento: values.status_pagamento
         })
         .select('id')
         .single();
 
       if (passageiroError) throw passageiroError;
 
-      // 3. Salvar parcelas
-      await salvarParcelasPassageiro(
-        passageiroData.id, 
-        parcelas,
-        parcelas.length === 1 ? 'avista' : 'parcelado'
-      );
-
-      // 4. Enviar mensagem de confirmação
-      const mensagem = `🎟️ Você foi cadastrado com sucesso para a caravana do Flamengo!
-🚍 Embarque: ${values.cidade_embarque}
-🏟️ Setor: ${values.setor_maracana}
-💰 Valor: ${formatCurrency(valorFinal)}
-📅 Parcelas: ${parcelas.length}x
-
-${parcelas.map((p, i) => 
-  `${i + 1}ª parcela: ${formatCurrency(p.valor)} - Vence: ${p.dataVencimento.toLocaleDateString('pt-BR')}`
-).join('\n')}
-
-Nos vemos lá! 🔴⚫`;
-
-      console.log(`Enviando mensagem para ${values.telefone}:`, mensagem);
-
-      toast.success("Passageiro cadastrado com sucesso! Parcelamento configurado.");
+      toast.success("Passageiro cadastrado com sucesso!");
       
       // Reset e redirect
       form.reset();
-      setParcelas([]);
       navigate("/dashboard/viagens", { replace: true });
 
     } catch (error: any) {
@@ -215,13 +174,13 @@ Nos vemos lá! 🔴⚫`;
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Cadastrar Passageiro</h1>
-          <p className="text-gray-600">Com sistema de parcelamento inteligente</p>
+          <p className="text-gray-600">Sistema simples de cadastro</p>
         </div>
         <Button variant="outline" onClick={() => navigate(-1)}>
           Voltar
         </Button>
       </div>
-      
+
       <div className="space-y-6">
         {/* Dados do Passageiro */}
         <Card>
@@ -248,7 +207,7 @@ Nos vemos lá! 🔴⚫`;
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="telefone"
@@ -333,7 +292,7 @@ Nos vemos lá! 🔴⚫`;
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="md:col-span-2">
                 <FormField
                   control={form.control}
@@ -400,6 +359,32 @@ Nos vemos lá! 🔴⚫`;
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="status_pagamento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status de Pagamento</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Pendente">Pendente</SelectItem>
+                        <SelectItem value="Pago">Pago</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -413,77 +398,52 @@ Nos vemos lá! 🔴⚫`;
           </CardContent>
         </Card>
 
-        {/* Sistema de Parcelamento */}
-        {viagemSelecionada && valorFinal > 0 && (
-          <ParcelamentoSelectorSimples
-            valorTotal={valorFinal}
-            dataViagem={new Date(viagemSelecionada.data_jogo)}
-            onParcelamentoChange={setParcelas}
-          />
-        )}
-
         {/* Resumo Final */}
-        {parcelas.length > 0 && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-800">Resumo do Cadastro</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Passageiro:</span>
-                    <span className="font-medium ml-2">{form.watch('nome') || 'Nome não informado'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Viagem:</span>
-                    <span className="font-medium ml-2">
-                      {viagemSelecionada ? `Flamengo x ${viagemSelecionada.adversario}` : 'Não selecionada'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Valor Total:</span>
-                    <span className="font-medium ml-2">{formatCurrency(valorFinal)}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Parcelas:</span>
-                    <span className="font-medium ml-2">{parcelas.length}x</span>
-                  </div>
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-800">Resumo do Cadastro</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Passageiro:</span>
+                  <span className="font-medium ml-2">{form.watch('nome') || 'Nome não informado'}</span>
                 </div>
-
-                <div className="border-t pt-3">
-                  <h4 className="font-medium mb-2">Cronograma de Pagamento:</h4>
-                  <div className="space-y-1">
-                    {parcelas.map((parcela, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>Parcela {parcela.numero}:</span>
-                        <span>
-                          {formatCurrency(parcela.valor)} - {parcela.dataVencimento.toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                <div>
+                  <span className="text-gray-600">Viagem:</span>
+                  <span className="font-medium ml-2">
+                    {viagemSelecionada ? `Flamengo x ${viagemSelecionada.adversario}` : 'Não selecionada'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Valor Total:</span>
+                  <span className="font-medium ml-2">{formatCurrency(valorFinal)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Status:</span>
+                  <span className="font-medium ml-2">{form.watch('status_pagamento')}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Botões de Ação */}
         <div className="flex justify-end gap-3">
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             variant="outline"
             onClick={() => navigate(-1)}
           >
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={form.handleSubmit(onSubmit)}
-            disabled={isSubmitting || isLoadingParcelas || parcelas.length === 0 || !viagemSelecionada}
+            disabled={isSubmitting || !viagemSelecionada}
             className="bg-primary hover:bg-primary/90"
           >
-            {isSubmitting || isLoadingParcelas ? "Cadastrando..." : "Cadastrar com Parcelamento"}
+            {isSubmitting ? "Cadastrando..." : "Cadastrar Passageiro"}
           </Button>
         </div>
       </div>
@@ -491,4 +451,4 @@ Nos vemos lá! 🔴⚫`;
   );
 };
 
-export default CadastrarPassageiroComParcelamento;
+export default CadastrarPassageiroSimples;

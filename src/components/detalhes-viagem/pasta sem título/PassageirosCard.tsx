@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { converterStatusParaInteligente } from "@/lib/status-utils";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -46,6 +48,56 @@ interface PassageirosCardProps {
   totalPassageiros?: number;
 }
 
+export const fetchPassageiros = async (viagemId: string, setPassageiros: (p: any[]) => void, setIsLoading: (b: boolean) => void, toast: any) => {
+  try {
+    setIsLoading(true);
+    if (!viagemId || viagemId === "undefined") {
+      console.warn("ID da viagem inválido:", viagemId);
+      return;
+    }
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(viagemId)) {
+      console.warn("ID da viagem não é um UUID válido:", viagemId);
+      return;
+    }
+    
+    // Consulta explicitamente o campo is_responsavel_onibus
+    const { data, error } = await supabase
+      .from('viagem_passageiros')
+      .select(`
+        id, 
+        viagem_id, 
+        cliente_id, 
+        onibus_id, 
+        is_responsavel_onibus,
+        status_pagamento,
+        setor_maracana,
+        cidade_embarque,
+        clientes:clientes!viagem_passageiros_cliente_id_fkey(*)
+      `)
+      .eq('viagem_id', viagemId)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    // Mapear os dados para garantir que viagem_passageiro_id seja definido
+    const passageirosFormatados = (data || []).map(p => ({
+      ...p,
+      viagem_passageiro_id: p.id, // Garantir que viagem_passageiro_id seja definido
+      nome: p.clientes.nome,
+      is_responsavel_onibus: p.is_responsavel_onibus || false
+    }));
+    
+    console.log('Passageiros carregados:', passageirosFormatados);
+    setPassageiros(passageirosFormatados);
+  } catch (error: any) {
+    console.error('Erro ao buscar passageiros:', error);
+    toast.error("Erro ao carregar passageiros");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 export function PassageirosCard({
   passageirosAtuais,
   passageiros,
@@ -68,6 +120,8 @@ export function PassageirosCard({
   totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [passeioFilter, setPasseioFilter] = useState<string>("todos");
+  const [setorFilter, setSetorFilter] = useState<string>("todos");
 
   // Permitir controle externo do filtro de status
   useEffect(() => {
@@ -80,7 +134,7 @@ export function PassageirosCard({
     return () => document.removeEventListener("setPassageirosStatusFilter", handler);
   }, []);
 
-  // Filtrar passageiros por status se necessário
+  // Filtrar passageiros por status e passeios
   const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
     const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
@@ -93,7 +147,23 @@ export function PassageirosCard({
     
     const matchesStatus = statusFilter === "todos" || passageiro.status_pagamento === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    // Filtro de passeios
+    let matchesPasseio = true;
+    if (passeioFilter !== "todos") {
+      if (passeioFilter === "sem_passeios") {
+        matchesPasseio = !passageiro.passeios || passageiro.passeios.length === 0;
+      } else if (passeioFilter === "com_passeios") {
+        matchesPasseio = passageiro.passeios && passageiro.passeios.length > 0;
+      } else {
+        // Filtro por passeio específico
+        matchesPasseio = passageiro.passeios && passageiro.passeios.some(p => p.passeio_nome === passeioFilter);
+      }
+    }
+    
+    // Filtro de setores
+    const matchesSetor = setorFilter === "todos" || passageiro.setor_maracana === setorFilter;
+    
+    return matchesSearch && matchesStatus && matchesPasseio && matchesSetor;
   });
 
   const getStatusColor = (status: string) => {
@@ -109,41 +179,15 @@ export function PassageirosCard({
     }
   };
 
-  const fetchPassageiros = async () => {
-    try {
-      setIsLoading(true);
+  // Verificar se a capacidade está completa
+  const isCapacidadeCompleta = capacidadeTotal && totalPassageiros ? totalPassageiros >= capacidadeTotal : false;
 
-      // Verificar se o viagemId é válido
-      if (!viagemId || viagemId === "undefined") {
-        console.warn("ID da viagem inválido:", viagemId);
-        return;
-      }
-
-      // Verificar se o ID é um UUID válido
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(viagemId)) {
-        console.warn("ID da viagem não é um UUID válido:", viagemId);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('passageiros')
-        .select('*')
-        .eq('viagem_id', viagemId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      setPassageiros(data || []);
-    } catch (error: any) {
-      console.error('Erro ao buscar passageiros:', error);
-      toast.error("Erro ao carregar passageiros");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Obter setores únicos dos passageiros
+  const setoresUnicos = Array.from(new Set(
+    (passageirosAtuais || [])
+      .map(p => p.setor_maracana)
+      .filter(setor => setor && setor !== "")
+  )).sort();
 
   return (
     <Card>
@@ -168,14 +212,28 @@ export function PassageirosCard({
             <CardDescription>
               {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
               {onibusAtual && ` • Capacidade: ${onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0)} lugares`}
+              {capacidadeTotal && totalPassageiros && (
+                <span className={`ml-2 font-medium ${
+                  isCapacidadeCompleta ? 'text-red-600' : totalPassageiros / capacidadeTotal > 0.8 ? 'text-orange-600' : 'text-green-600'
+                }`}>
+                  • Total da viagem: {totalPassageiros}/{capacidadeTotal}
+                  {isCapacidadeCompleta && ' (COMPLETA)'}
+                </span>
+              )}
             </CardDescription>
           </div>
           <Button 
             onClick={() => setAddPassageiroOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isCapacidadeCompleta}
+            className={`${
+              isCapacidadeCompleta 
+                ? "bg-gray-400 cursor-not-allowed" 
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+            title={isCapacidadeCompleta ? "Capacidade da viagem completa" : "Adicionar novo passageiro"}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Passageiro
+            {isCapacidadeCompleta ? "Capacidade Completa" : "Adicionar Passageiro"}
           </Button>
         </div>
       </CardHeader>
@@ -199,6 +257,39 @@ export function PassageirosCard({
               <SelectItem value="Pago">Pago</SelectItem>
               <SelectItem value="Pendente">Pendente</SelectItem>
               <SelectItem value="Cancelado">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={passeioFilter} onValueChange={setPasseioFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por passeios" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-gray-200 z-50">
+              <SelectItem value="todos">Todos os passeios</SelectItem>
+              <SelectItem value="com_passeios">Com passeios</SelectItem>
+              <SelectItem value="sem_passeios">Sem passeios</SelectItem>
+              {passeiosPagos && passeiosPagos.map((passeio) => (
+                <SelectItem key={passeio} value={passeio}>
+                  {passeio}
+                </SelectItem>
+              ))}
+              {outroPasseio && (
+                <SelectItem value={outroPasseio}>
+                  {outroPasseio}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <Select value={setorFilter} onValueChange={setSetorFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filtrar por setor" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border-gray-200 z-50">
+              <SelectItem value="todos">Todos os setores</SelectItem>
+              {setoresUnicos.map((setor) => (
+                <SelectItem key={setor} value={setor}>
+                  {setor}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -230,12 +321,12 @@ export function PassageirosCard({
                 </TableRow>
               ) : (
                 passageirosFiltrados.map((passageiro, index) => {
-                  // Calcular valor pago e valor que falta
-                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
+                  // Calcular valor pago e valor que falta (apenas parcelas realmente pagas)
+                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
                   const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
                   const valorFalta = valorLiquido - valorPago;
                   return (
-                    <TableRow key={passageiro.viagem_passageiro_id}>
+                    <TableRow key={passageiro.viagem_passageiro_id} className={passageiro.is_responsavel_onibus ? "bg-blue-50" : ""}>
                       <TableCell className="text-center">{index + 1}</TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-rome-navy">
                         <div className="flex items-center gap-2">
@@ -278,9 +369,20 @@ export function PassageirosCard({
                       </TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{passageiro.setor_maracana}</TableCell>
                       <TableCell className="text-center">
-                        <Badge className={getStatusColor(passageiro.status_pagamento)}>
-                          {passageiro.status_pagamento}
-                        </Badge>
+                        {(() => {
+                          const statusInteligente = converterStatusParaInteligente({
+                            valor: passageiro.valor || 0,
+                            desconto: passageiro.desconto || 0,
+                            parcelas: passageiro.parcelas,
+                            status_pagamento: passageiro.status_pagamento
+                          });
+                          
+                          return (
+                            <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
+                              {statusInteligente.status}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
@@ -319,7 +421,9 @@ export function PassageirosCard({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onEditPassageiro(passageiro)}
+                            onClick={() => {
+                              onEditPassageiro(passageiro);
+                            }}
                             className="h-8 w-8 p-0"
                           >
                             <Pencil className="h-4 w-4" />
