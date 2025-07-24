@@ -55,7 +55,7 @@ export default function EditarViagem() {
   const [onibusArray, setOnibusArray] = useState<ViagemOnibus[]>([]);
 
   // Opções para selects
-  const cidadesEmbarque = ["Blumenau", "Joinville", "Florianópolis", "Itajaí", "Balneário Camboriú"];
+  const cidadesEmbarque = ["Agrolandia", "Agronomica", "Apiuna", "Barra Velha", "Blumenau", "Curitiba", "Gaspar", "Ibirama", "Ilhota", "Indaial", "Itajai", "Ituporanga", "Joinville", "Lontras", "Navegantes", "Piçarras", "Presidente Getulio", "Rio do Sul", "Rodeio", "Trombudo Central"];
   const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Porto Alegre - RS", "Brasília"];
   const setoresEstadio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Setor padrão do estádio visitante", "Sem ingresso", "A definir"];
   const statusOptions = ["Aberta", "Fechada", "Cancelada", "Finalizada", "Em andamento"];

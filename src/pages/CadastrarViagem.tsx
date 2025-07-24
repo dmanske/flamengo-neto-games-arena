@@ -87,7 +87,7 @@ const CadastrarViagem = () => {
   const [logoUrl, setLogoUrl] = useState<string>("");
 
   // Cidades e setores
-  const cidadesEmbarque = ["Blumenau", "Joinville", "Florianópolis", "Itajaí", "Balneário Camboriú"];
+  const cidadesEmbarque = ["Agrolandia", "Agronomica", "Apiuna", "Barra Velha", "Blumenau", "Curitiba", "Gaspar", "Ibirama", "Ilhota", "Indaial", "Itajai", "Ituporanga", "Joinville", "Lontras", "Navegantes", "Piçarras", "Presidente Getulio", "Rio do Sul", "Rodeio", "Trombudo Central"];
   const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Brasília", "Salvador", "Recife", "Fortaleza"];
   const setoresEstadio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Setor padrão do estádio visitante", "Sem ingresso"];
 
