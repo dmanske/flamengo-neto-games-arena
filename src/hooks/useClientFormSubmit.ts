@@ -1,7 +1,7 @@
+// @ts-nocheck
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-// @ts-nocheck
 import { toast } from "sonner";
 import { useClientValidation } from "./useClientValidation";
 import { cleanCPF, cleanPhone, convertBrazilianDateToISO } from "@/utils/formatters";

@@ -10,7 +10,8 @@ import { Link } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
+  TooltipProvider
 } from "@/components/ui/tooltip";
 
 interface Viagem {
@@ -62,6 +63,7 @@ export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCa
   };
 
   return (
+    <TooltipProvider>
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
@@ -193,5 +195,6 @@ export function ViagemCard({ viagem, passageirosCount, onDeleteClick }: ViagemCa
         </div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }
