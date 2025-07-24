@@ -19,6 +19,7 @@ import {
 import { 
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger 
 } from "@/components/ui/tooltip";
 import { supabase } from "@/lib/supabase";
@@ -121,14 +122,16 @@ export function OnibusSelectField({ control, form, viagemId, defaultOnibusId }: 
             <Bus className="h-4 w-4 text-blue-600" />
             Ônibus
             {ocupacaoInfo && !ocupacaoInfo.disponivel && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="h-4 w-4 text-red-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Este ônibus está lotado</p>
-                </TooltipContent>
-              </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este ônibus está lotado</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </FormLabel>
           <Select
