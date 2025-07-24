@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList, DollarSign, Calculator } from "lucide-react";
+import LogoEmpresa from "@/components/empresa/LogoEmpresa";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -94,9 +95,7 @@ const MainLayout = () => {
         
         {!collapsed && (
           <div className="text-center">
-            <div className="font-bold text-gray-900">
-              <span className="text-lg">Neto Tours</span>
-            </div>
+            <LogoEmpresa size="sidebar" className="justify-center" />
           </div>
         )}
         {!isMobile && (
@@ -229,7 +228,7 @@ const MainLayout = () => {
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-gray-900">Neto Tours</span>
+                <LogoEmpresa size="sm" className="justify-start" />
               </div>
             </div>
           </div>

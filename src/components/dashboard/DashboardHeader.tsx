@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Plus, UserPlus, Search, Bell, Menu, Filter, X, Calendar, MapPin, CreditCard, UserCheck, Bus, Loader2, FileText } from "lucide-react";
+import LogoEmpresa from "@/components/empresa/LogoEmpresa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -88,13 +89,13 @@ export const DashboardHeader = ({ onFiltersChange }: DashboardHeaderProps) => {
     <div className="mb-8">
       {/* Dashboard Title and Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-            Dashboard
-          </h1>
-          <p className="text-gray-500 text-sm sm:text-base">
-            Bem-vindo de volta! Aqui está o resumo das suas caravanas.
-          </p>
+        <div className="flex items-center gap-4">
+          <LogoEmpresa size="lg" className="justify-start" />
+          <div>
+            <p className="text-gray-500 text-sm sm:text-base">
+              Bem-vindo de volta! Aqui está o resumo das suas caravanas.
+            </p>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-center">
           <Button asChild className="bg-red-600 hover:bg-red-700 text-white shadow-sm">

@@ -3,7 +3,7 @@ import { useEmpresa } from '@/hooks/useEmpresa';
 
 interface LogoEmpresaProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'sidebar';
   showName?: boolean;
   theme?: 'light' | 'dark';
 }
@@ -21,7 +21,9 @@ export default function LogoEmpresa({
     md: 'h-12 w-12',
     lg: 'h-16 w-16',
     xl: 'h-24 w-24',
-    '2xl': 'h-48 w-48'
+    '2xl': 'h-48 w-48',
+    '3xl': 'h-72 w-72',
+    sidebar: 'h-24 w-24' // 2x o tamanho md (12 -> 24)
   };
 
   if (loading) {
