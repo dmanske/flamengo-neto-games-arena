@@ -202,9 +202,42 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <User className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <h4 className="font-semibold">{passageiro.nome}</h4>
-                        <p className="text-sm text-gray-600">{passageiro.telefone}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold">{passageiro.nome}</h4>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-gray-600">{passageiro.telefone}</p>
+                              {passageiro.parcelas_pendentes > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {passageiro.parcelas_pendentes}/{passageiro.total_parcelas} parcelas
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-red-600">
+                              {formatCurrency(passageiro.valor_pendente)}
+                            </p>
+                            <div className="text-xs text-gray-500">
+                              <p>deve</p>
+                              {passageiro.proxima_parcela && (
+                                <p className={`font-medium ${
+                                  passageiro.proxima_parcela.dias_para_vencer < 0 ? 'text-red-600' :
+                                  passageiro.proxima_parcela.dias_para_vencer <= 3 ? 'text-orange-600' :
+                                  'text-blue-600'
+                                }`}>
+                                  {passageiro.proxima_parcela.dias_para_vencer < 0 
+                                    ? `${Math.abs(passageiro.proxima_parcela.dias_para_vencer)} dias atrasada`
+                                    : passageiro.proxima_parcela.dias_para_vencer === 0
+                                    ? 'vence hoje'
+                                    : `${passageiro.proxima_parcela.dias_para_vencer} dias`
+                                  }
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
@@ -244,6 +277,18 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Cobrar
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Implementar modal de histórico de parcelas
+                        toast.info('Histórico de parcelas em desenvolvimento');
+                      }}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Parcelas
                     </Button>
                   </div>
                 </div>

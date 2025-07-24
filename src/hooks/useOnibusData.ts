@@ -77,11 +77,7 @@ export function useOnibusData() {
     if (!onibusToDelete) return;
     
     try {
-      let success = false;
-      
       // Verificar se o ônibus está sendo usado em alguma viagem
-      // Em vez de procurar por onibus_id, vamos verificar se existe uma viagem 
-      // com a mesma combinação de tipo_onibus e empresa
       const onibusParaDeletar = onibusList.find(bus => bus.id === onibusToDelete);
       
       if (!onibusParaDeletar) {
@@ -91,6 +87,7 @@ export function useOnibusData() {
         return;
       }
       
+      // Verificar se existe viagem associada
       const { data: viagemOnibus, error: viagemCheckError } = await supabase
         .from("viagem_onibus")
         .select("id")
@@ -107,7 +104,23 @@ export function useOnibusData() {
         return;
       }
       
-      // First delete related images
+      // Verificar se existe passageiros associados
+      const { data: passageiros, error: passageirosError } = await supabase
+        .from("viagem_passageiros")
+        .select("id")
+        .eq("onibus_id", onibusToDelete)
+        .limit(1);
+        
+      if (passageirosError) throw passageirosError;
+      
+      if (passageiros && passageiros.length > 0) {
+        toast.error("Este ônibus possui passageiros associados e não pode ser excluído");
+        setOnibusToDelete(null);
+        setDeleteDialogOpen(false);
+        return;
+      }
+      
+      // Excluir imagens relacionadas primeiro
       const { error: imgError } = await supabase
         .from("onibus_images")
         .delete()
@@ -117,23 +130,30 @@ export function useOnibusData() {
         console.warn("Erro ao excluir imagens associadas:", imgError);
       }
       
-      // Then delete the onibus record
-      const { error } = await supabase
+      // Excluir o registro do ônibus
+      const { error: deleteError } = await supabase
         .from("onibus")
         .delete()
         .eq("id", onibusToDelete);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
       
-      // Update local state
-      setOnibusList(prevState => prevState.filter(item => item.id !== onibusToDelete));
-      setOnibusImages(prevState => prevState.filter(item => item.onibus_id !== onibusToDelete));
-      success = true;
-      
-      if (success) {
-        toast.success("Ônibus removido com sucesso");
-        navigate("/dashboard/onibus");
+      // Verificar se realmente foi excluído
+      const { data: checkData } = await supabase
+        .from("onibus")
+        .select("id")
+        .eq("id", onibusToDelete)
+        .single();
+        
+      if (checkData) {
+        throw new Error("Falha na exclusão - registro ainda existe no banco");
       }
+      
+      toast.success("Ônibus removido com sucesso");
+      
+      // Recarregar os dados para garantir sincronização
+      await fetchOnibusData();
+      
     } catch (error: any) {
       console.error("Erro ao excluir:", error);
       toast.error(`Erro ao excluir: ${error.message}`);

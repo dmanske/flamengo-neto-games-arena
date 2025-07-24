@@ -31,6 +31,10 @@ import EditarOnibus from '@/pages/EditarOnibus';
 import DetalhesOnibus from '@/pages/DetalhesOnibus';
 import Passageiros from '@/pages/Passageiros';
 import CadastrarPassageiro from '@/pages/CadastrarPassageiro';
+import CadastrarPassageiroComParcelamento from '@/pages/CadastrarPassageiroComParcelamento';
+import DemoParcelamento from '@/pages/DemoParcelamento';
+
+import CadastroPassageiroSimples from '@/pages/CadastroPassageiroSimples';
 import GerenciadorWhatsApp from '@/pages/GerenciadorWhatsApp';
 import Loja from '@/pages/Loja';
 import LojaAdmin from '@/pages/LojaAdmin';
@@ -100,6 +104,10 @@ function App() {
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="presenca/:viagemId" element={<ListaPresenca />} />
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
+                  <Route path="cadastrar-passageiro-parcelamento" element={<CadastrarPassageiroComParcelamento />} />
+                  <Route path="demo-parcelamento" element={<DemoParcelamento />} />
+
+                  <Route path="cadastro-passageiro-simples" element={<CadastroPassageiroSimples />} />
                   <Route path="onibus" element={<Onibus />} />
                   <Route path="onibus/:id" element={<DetalhesOnibus />} />
                   <Route path="editar-onibus/:id" element={<EditarOnibus />} />
@@ -111,7 +119,7 @@ function App() {
                   <Route path="loja-admin" element={<LojaAdmin />} />
                   
                   {/* Rotas Financeiras */}
-                  <Route path="financeiro" element={<DashboardFinanceiro />} />
+                  <Route path="financeiro" element={<FinanceiroGeral />} />
                   <Route path="financeiro/geral" element={<FinanceiroGeral />} />
                   <Route path="financeiro/receitas" element={<Receitas />} />
                   <Route path="financeiro/despesas" element={<Despesas />} />

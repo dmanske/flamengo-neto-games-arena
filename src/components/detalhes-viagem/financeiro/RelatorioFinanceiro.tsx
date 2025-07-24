@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { converterStatusParaInteligente } from '@/lib/status-utils';
 import { 
   Download, 
   FileText, 
@@ -318,17 +319,20 @@ export function RelatorioFinanceiro({
                       {passageiro.desconto > 0 ? `-${formatCurrency(passageiro.desconto)}` : '-'}
                     </td>
                     <td className="p-2 text-center">
-                      <Badge 
-                        className={
-                          passageiro.status_pagamento === 'Pago' 
-                            ? 'bg-green-100 text-green-800' 
-                            : passageiro.status_pagamento === 'Pendente'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }
-                      >
-                        {passageiro.status_pagamento}
-                      </Badge>
+                      {(() => {
+                        const statusInteligente = converterStatusParaInteligente({
+                          valor: passageiro.valor || 0,
+                          desconto: passageiro.desconto || 0,
+                          parcelas: passageiro.parcelas,
+                          status_pagamento: passageiro.status_pagamento
+                        });
+                        
+                        return (
+                          <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
+                            {statusInteligente.status}
+                          </Badge>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}

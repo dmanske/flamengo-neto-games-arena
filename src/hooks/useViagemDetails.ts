@@ -276,6 +276,8 @@ export function useViagemDetails(viagemId: string | undefined) {
       
       if (error) throw error;
       
+
+      
       // Formatar os dados para exibição
       const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => ({
         id: item.clientes.id,
@@ -328,13 +330,16 @@ export function useViagemDetails(viagemId: string | undefined) {
       let descontos = 0;
       let valorBruto = 0;
       
-      formattedPassageiros.forEach(passageiro => {
+      formattedPassageiros.forEach((passageiro, index) => {
         const valorOriginal = passageiro.valor || 0;
         const desconto = passageiro.desconto || 0;
         const valorLiquido = valorOriginal - desconto;
         
-        // Calcular valor efetivamente pago através das parcelas
-        const valorPagoParcelas = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
+        // Calcular valor efetivamente pago através das parcelas (apenas parcelas com data_pagamento)
+        const valorPagoParcelas = (passageiro.parcelas || []).reduce((sum, p) => {
+          const valorParcela = p.data_pagamento ? (p.valor_parcela || 0) : 0;
+          return sum + valorParcela;
+        }, 0);
         
         valorBruto += valorOriginal;
         descontos += desconto;

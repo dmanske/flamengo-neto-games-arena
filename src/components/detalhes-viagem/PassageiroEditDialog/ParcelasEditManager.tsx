@@ -113,7 +113,7 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto, onStat
         .from("viagem_passageiros_parcelas")
         .select("*")
         .eq("viagem_passageiro_id", passageiroId)
-        .order("created_at");
+        .order("numero_parcela");
 
       if (error) throw error;
       setParcelas(data || []);
@@ -186,6 +186,107 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto, onStat
     }
   };
 
+  // Marcar parcela como paga
+  const marcarComoPago = async (parcela: Parcela) => {
+    try {
+      console.log('✅ Marcando parcela como paga:', parcela.id);
+
+      const { error } = await supabase
+        .from("viagem_passageiros_parcelas")
+        .update({
+          data_pagamento: new Date().toISOString().split('T')[0],
+          status: 'pago'
+        })
+        .eq("id", parcela.id);
+
+      if (error) throw error;
+
+      // Atualizar lista local
+      await fetchParcelas();
+      
+      toast.success("Parcela marcada como paga!");
+    } catch (error) {
+      console.error("❌ Erro ao marcar parcela como paga:", error);
+      toast.error("Erro ao marcar parcela como paga");
+    }
+  };
+
+  // Marcar parcela como pendente (reverter pagamento)
+  const marcarComoPendente = async (parcela: Parcela) => {
+    try {
+      console.log('⏳ Marcando parcela como pendente:', parcela.id);
+
+      const { error } = await supabase
+        .from("viagem_passageiros_parcelas")
+        .update({
+          data_pagamento: null,
+          status: 'pendente'
+        })
+        .eq("id", parcela.id);
+
+      if (error) throw error;
+
+      // Atualizar lista local
+      await fetchParcelas();
+      
+      toast.success("Parcela marcada como pendente!");
+    } catch (error) {
+      console.error("❌ Erro ao marcar parcela como pendente:", error);
+      toast.error("Erro ao marcar parcela como pendente");
+    }
+  };
+
+  // Criar parcelamento automático
+  const criarParcelamento = async (numParcelas: number, intervaloDias: number = 7) => {
+    try {
+      if (saldoRestante <= 0) {
+        toast.error("Não há valor para parcelar");
+        return;
+      }
+
+      const valorParcela = saldoRestante / numParcelas;
+      const hoje = new Date();
+      
+      const novasParcelas = [];
+      for (let i = 0; i < numParcelas; i++) {
+        const dataVencimento = new Date(hoje);
+        dataVencimento.setDate(hoje.getDate() + (i * intervaloDias));
+        
+        novasParcelas.push({
+          viagem_passageiro_id: passageiroId,
+          numero_parcela: parcelas.length + i + 1,
+          total_parcelas: numParcelas,
+          valor_parcela: Math.round(valorParcela * 100) / 100,
+          data_vencimento: dataVencimento.toISOString().split('T')[0],
+          status: 'pendente',
+          tipo_parcelamento: numParcelas === 1 ? 'avista' : 'parcelado',
+          forma_pagamento: 'Pix',
+          data_pagamento: null
+        });
+      }
+
+      // Inserir todas as parcelas
+      const { error } = await supabase
+        .from("viagem_passageiros_parcelas")
+        .insert(novasParcelas);
+
+      if (error) throw error;
+
+      // Recarregar parcelas
+      await fetchParcelas();
+      
+      const tipoParcelamento = numParcelas === 1 ? 'à vista' : 
+                              intervaloDias === 7 ? `${numParcelas}x semanais` :
+                              `${numParcelas}x quinzenais`;
+      
+      toast.success(`Parcelamento ${tipoParcelamento} criado com sucesso!`);
+      
+    } catch (error) {
+      console.error("❌ Erro ao criar parcelamento:", error);
+      toast.error("Erro ao criar parcelamento");
+    }
+  };
+
   const removerParcela = async (parcelaId: string) => {
     try {
       console.log('🗑️ Removendo parcela:', parcelaId);
@@ -201,7 +302,7 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto, onStat
       setParcelas(novasParcelas);
       
       // Calcular novo total após remoção
-      const novoTotalPago = novasParcelas.reduce((sum, p) => sum + p.valor_parcela, 0);
+      const novoTotalPago = novasParcelas.reduce((sum, p) => p.data_pagamento ? sum + p.valor_parcela : sum, 0);
       
       console.log('📊 Total após remoção:', {
         novoTotalPago,
@@ -259,32 +360,152 @@ export function ParcelasEditManager({ passageiroId, valorTotal, desconto, onStat
       <CardContent className="space-y-4">
         {parcelas.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Parcelas Pagas:</h4>
+            <h4 className="text-sm font-medium text-gray-700">Parcelas do Passageiro:</h4>
             {parcelas.map((parcela) => (
-              <div key={parcela.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                <div className="flex-1">
-                  <span className="text-sm font-medium">{formatCurrency(parcela.valor_parcela)}</span>
-                  <span className="text-xs text-gray-500 ml-2">({parcela.forma_pagamento})</span>
-                  {parcela.observacoes && (
-                    <p className="text-xs text-gray-600 mt-1">{parcela.observacoes}</p>
-                  )}
-                  {parcela.data_pagamento && (
-                    <p className="text-xs text-gray-500">
-                      {format(new Date(parcela.data_pagamento), 'dd/MM/yyyy', { locale: ptBR })}
-                    </p>
-                  )}
+              <div key={parcela.id} className={`p-3 rounded-md border ${
+                parcela.data_pagamento ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{formatCurrency(parcela.valor_parcela)}</span>
+                      <span className="text-xs text-gray-500">({parcela.forma_pagamento})</span>
+                      <div className={`px-2 py-1 rounded text-xs font-medium ${
+                        parcela.data_pagamento 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {parcela.data_pagamento ? '✅ Pago' : '⏳ Pendente'}
+                      </div>
+                    </div>
+                    
+                    {/* Mostrar data de vencimento */}
+                    {parcela.data_vencimento && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        Vencimento: {format(new Date(parcela.data_vencimento), 'dd/MM/yyyy', { locale: ptBR })}
+                      </p>
+                    )}
+                    
+                    {/* Mostrar data de pagamento se pago */}
+                    {parcela.data_pagamento && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Pago em: {format(new Date(parcela.data_pagamento), 'dd/MM/yyyy', { locale: ptBR })}
+                      </p>
+                    )}
+                    
+                    {parcela.observacoes && (
+                      <p className="text-xs text-gray-600 mt-1">{parcela.observacoes}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {/* Botão para marcar como pago/pendente */}
+                    {!parcela.data_pagamento ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => marcarComoPago(parcela)}
+                        className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                      >
+                        Marcar como Pago
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => marcarComoPendente(parcela)}
+                        className="text-yellow-600 hover:text-yellow-700 text-xs"
+                      >
+                        Reverter
+                      </Button>
+                    )}
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removerParcela(parcela.id!)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removerParcela(parcela.id!)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Sistema de Parcelamento Inteligente */}
+        {parcelas.length === 0 && saldoRestante > 0 && (
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="text-sm font-medium text-blue-800 mb-3">
+              💡 Criar Parcelamento Automático
+            </h4>
+            <p className="text-xs text-blue-600 mb-3">
+              Valor a parcelar: {formatCurrency(saldoRestante)}
+            </p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(1)}
+                className="text-xs"
+              >
+                À Vista
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(2)}
+                className="text-xs"
+              >
+                2x Semanal
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(3)}
+                className="text-xs"
+              >
+                3x Semanal
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(4)}
+                className="text-xs"
+              >
+                4x Semanal
+              </Button>
+            </div>
+            
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(2, 15)}
+                className="text-xs"
+              >
+                2x Quinzenal
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => criarParcelamento(3, 15)}
+                className="text-xs"
+              >
+                3x Quinzenal
+              </Button>
+            </div>
           </div>
         )}
 

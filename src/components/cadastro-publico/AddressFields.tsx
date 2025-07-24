@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
   FormControl,
@@ -10,8 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { fetchAddressByCEP, formatCEP } from "@/utils/cepUtils";
-import { toast } from "sonner";
+import { formatCEP } from "@/utils/cepUtils";
+import { useCepSearch } from "@/hooks/useCepSearch";
 import { PublicRegistrationFormData } from "./FormSchema";
 
 // Lista de estados brasileiros com nomes completos
@@ -50,36 +50,32 @@ interface AddressFieldsProps {
 }
 
 export const AddressFields = ({ form }: AddressFieldsProps) => {
-  const [loadingCep, setLoadingCep] = useState(false);
+  const { searchCep, isLoading: loadingCep, cleanup } = useCepSearch();
 
-  const handleCepBlur = async (cep: string) => {
-    const cleanCep = cep.replace(/\D/g, '');
-    if (cleanCep.length !== 8) return;
-    
-    setLoadingCep(true);
-    try {
-      const addressData = await fetchAddressByCEP(cleanCep);
+  // Cleanup ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
+  const handleCepBlur = (cep: string) => {
+    searchCep(cep, (addressData) => {
       if (addressData) {
         form.setValue("endereco", addressData.logradouro || "");
         form.setValue("cidade", addressData.localidade || "");
         form.setValue("estado", addressData.uf || "");
         form.setValue("bairro", addressData.bairro || "");
         
-        // Trigger a re-render of the form
-        form.trigger();
-        
         // Se tiver complemento, adiciona ao campo complemento
         if (addressData.complemento) {
           form.setValue("complemento", addressData.complemento);
         }
         
-        toast.success("Endereço encontrado automaticamente!");
+        // Trigger validation
+        form.trigger(["endereco", "cidade", "estado", "bairro"]);
       }
-    } catch (error) {
-      toast.error("CEP não encontrado. Preencha o endereço manualmente.");
-    } finally {
-      setLoadingCep(false);
-    }
+    });
   };
 
   return (

@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 import { formatPhone, formatCPF, formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -341,6 +342,19 @@ const Clientes = () => {
                           <div className="flex items-center text-sm text-gray-600">
                             <Phone className="h-3 w-3 mr-2 text-green-600" />
                             <span>{formatPhone(cliente.telefone)}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 w-5 p-0 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => {
+                                const phoneNumber = cliente.telefone.replace(/\D/g, '');
+                                const whatsappUrl = `https://wa.me/55${phoneNumber}`;
+                                window.open(whatsappUrl, '_blank');
+                              }}
+                              title="Abrir WhatsApp"
+                            >
+                              <WhatsAppIcon size={12} className="text-green-600" />
+                            </Button>
                           </div>
                         )}
                         

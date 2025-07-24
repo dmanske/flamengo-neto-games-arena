@@ -13,7 +13,8 @@ import {
   Eye,
   Download,
   Edit,
-  Trash2
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatCurrency } from '@/lib/utils';
@@ -222,10 +223,11 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
 
       {/* Tabs de Conteúdo */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
           <TabsTrigger value="despesas">Despesas</TabsTrigger>
+          <TabsTrigger value="parcelas">Parcelas</TabsTrigger>
           <TabsTrigger value="cobranca">Cobrança</TabsTrigger>
           <TabsTrigger value="pendencias">Pendências</TabsTrigger>
         </TabsList>
@@ -444,6 +446,57 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
                     <Plus className="h-4 w-4 mr-2" />
                     Adicionar Primeira Receita
                   </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="parcelas">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Controle Detalhado de Parcelas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {passageirosPendentes && passageirosPendentes.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h3 className="font-medium text-blue-800">Total de Passageiros</h3>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {passageirosPendentes.length}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <h3 className="font-medium text-green-800">Valor Recebido</h3>
+                      <p className="text-2xl font-bold text-green-600">
+                        {formatCurrency(passageirosPendentes.reduce((sum, p) => sum + p.valor_pago, 0))}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <h3 className="font-medium text-red-800">Valor Pendente</h3>
+                      <p className="text-2xl font-bold text-red-600">
+                        {formatCurrency(passageirosPendentes.reduce((sum, p) => sum + p.valor_pendente, 0))}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-center py-8 text-gray-500">
+                    <Receipt className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-lg font-medium">Controle Detalhado de Parcelas</p>
+                    <p className="text-sm">
+                      Selecione um passageiro na aba "Cobrança" para ver o histórico detalhado de suas parcelas
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                  <p className="text-lg font-medium">🎉 Todos os pagamentos em dia!</p>
+                  <p>Não há parcelas pendentes no momento</p>
                 </div>
               )}
             </CardContent>

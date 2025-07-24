@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { converterStatusParaInteligente } from "@/lib/status-utils";
 import {
   Table,
   TableBody,
@@ -320,8 +321,8 @@ export function PassageirosCard({
                 </TableRow>
               ) : (
                 passageirosFiltrados.map((passageiro, index) => {
-                  // Calcular valor pago e valor que falta
-                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
+                  // Calcular valor pago e valor que falta (apenas parcelas realmente pagas)
+                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
                   const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
                   const valorFalta = valorLiquido - valorPago;
                   return (
@@ -368,9 +369,20 @@ export function PassageirosCard({
                       </TableCell>
                       <TableCell className="font-cinzel font-semibold text-center text-black">{passageiro.setor_maracana}</TableCell>
                       <TableCell className="text-center">
-                        <Badge className={getStatusColor(passageiro.status_pagamento)}>
-                          {passageiro.status_pagamento}
-                        </Badge>
+                        {(() => {
+                          const statusInteligente = converterStatusParaInteligente({
+                            valor: passageiro.valor || 0,
+                            desconto: passageiro.desconto || 0,
+                            parcelas: passageiro.parcelas,
+                            status_pagamento: passageiro.status_pagamento
+                          });
+                          
+                          return (
+                            <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
+                              {statusInteligente.status}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">

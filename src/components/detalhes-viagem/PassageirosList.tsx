@@ -2,6 +2,7 @@ import React from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { converterStatusParaInteligente } from "@/lib/status-utils";
 import {
   Table,
   TableBody,
@@ -68,15 +69,20 @@ export function PassageirosList({
                   {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))}
                 </TableCell>
                 <TableCell>
-                  <Badge 
-                    className={
-                      passageiro.status_pagamento === "Pago" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-amber-100 text-amber-800"
-                    }
-                  >
-                    {passageiro.status_pagamento}
-                  </Badge>
+                  {(() => {
+                    const statusInteligente = converterStatusParaInteligente({
+                      valor: passageiro.valor || 0,
+                      desconto: passageiro.desconto || 0,
+                      parcelas: passageiro.parcelas,
+                      status_pagamento: passageiro.status_pagamento
+                    });
+                    
+                    return (
+                      <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
+                        {statusInteligente.status}
+                      </Badge>
+                    );
+                  })()}
                 </TableCell>
                 <TableCell>{passageiro.forma_pagamento}</TableCell>
                 <TableCell>{

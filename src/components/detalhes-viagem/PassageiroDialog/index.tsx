@@ -78,6 +78,49 @@ export function PassageiroDialog({
   const onSubmit = async (values: FormData) => {
     if (!viagemId) return;
     setIsLoading(true);
+    
+    // Verificar capacidade do ônibus antes de adicionar passageiros
+    if (values.onibus_id) {
+      try {
+        // Buscar dados do ônibus
+        const { data: onibusData, error: onibusError } = await supabase
+          .from("viagem_onibus")
+          .select("capacidade_onibus, lugares_extras")
+          .eq("id", values.onibus_id)
+          .single();
+
+        if (onibusError) throw onibusError;
+
+        // Contar passageiros atuais no ônibus
+        const { data: passageirosAtuais, error: passageirosError } = await supabase
+          .from("viagem_passageiros")
+          .select("id")
+          .eq("onibus_id", values.onibus_id);
+
+        if (passageirosError) throw passageirosError;
+
+        const capacidadeTotal = onibusData.capacidade_onibus + (onibusData.lugares_extras || 0);
+        const passageirosAtuaisCount = passageirosAtuais ? passageirosAtuais.length : 0;
+        const novosPassageiros = values.cliente_id.length;
+        
+        // Verificar se há capacidade suficiente
+        if (passageirosAtuaisCount + novosPassageiros > capacidadeTotal) {
+          const vagasDisponiveis = capacidadeTotal - passageirosAtuaisCount;
+          toast.error(
+            `Capacidade insuficiente! O ônibus tem ${capacidadeTotal} lugares, ${passageirosAtuaisCount} ocupados. ` +
+            `Restam apenas ${vagasDisponiveis} vaga(s) disponível(is), mas você está tentando adicionar ${novosPassageiros} passageiro(s).`
+          );
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Erro ao verificar capacidade do ônibus:", error);
+        toast.error("Erro ao verificar capacidade do ônibus. Tente novamente.");
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     let algumErro = false;
     let algumSucesso = false;
     for (const clienteId of values.cliente_id) {
@@ -93,19 +136,46 @@ export function PassageiroDialog({
           algumErro = true;
           continue;
         }
-        const { error: passageiroError } = await supabase
+        // Determinar status correto baseado no parcelamento
+        const statusCorreto = "Pendente"; // Sempre começa como pendente
+        
+        const { data: passageiroData, error: passageiroError } = await supabase
           .from("viagem_passageiros")
           .insert({
             viagem_id: viagemId,
             cliente_id: clienteId,
             setor_maracana: values.setor_maracana,
-            status_pagamento: values.status_pagamento,
+            status_pagamento: statusCorreto,
             forma_pagamento: values.forma_pagamento,
             valor: values.valor,
             desconto: values.desconto,
             onibus_id: values.onibus_id,
-          });
+          })
+          .select('id')
+          .single();
         if (passageiroError) throw passageiroError;
+
+        // Salvar parcelas se houver
+        if (parcelas.length > 0 && passageiroData) {
+          const parcelasParaInserir = parcelas.map(parcela => ({
+            viagem_passageiro_id: passageiroData.id,
+            numero_parcela: parcela.numero,
+            total_parcelas: parcelas.length,
+            valor_parcela: parcela.valor_parcela,
+            data_vencimento: parcela.data_vencimento,
+            status: 'pendente', // Forçar sempre como pendente na inserção
+            tipo_parcelamento: parcelas.length === 1 ? 'avista' : 'parcelado',
+            forma_pagamento: parcela.forma_pagamento,
+            data_pagamento: null // Garantir que data_pagamento seja null
+          }));
+
+          const { error: parcelasError } = await supabase
+            .from('viagem_passageiros_parcelas')
+            .insert(parcelasParaInserir);
+
+          if (parcelasError) throw parcelasError;
+        }
+
         algumSucesso = true;
       } catch (error) {
         console.error("Erro ao adicionar passageiro:", error);
@@ -271,6 +341,13 @@ export function PassageiroDialog({
                   )}
                 />
               </div>
+
+              {/* Sistema de Parcelamento */}
+              <ParcelasManager
+                valorTotal={valorLiquido}
+                viagemId={viagemId}
+                onParcelasChange={setParcelas}
+              />
 
               <DialogFooter>
                 <Button

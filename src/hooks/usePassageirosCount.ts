@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { converterStatusParaInteligente } from '@/lib/status-utils';
 import { toast } from 'sonner';
 
 interface PassageirosCount {
@@ -24,7 +25,12 @@ export function usePassageirosCount(viagemId: string) {
         
         const { data: passageiros, error } = await supabase
           .from('viagem_passageiros')
-          .select('status_pagamento')
+          .select(`
+            status_pagamento,
+            valor,
+            desconto,
+            viagem_passageiros_parcelas (valor_parcela, data_pagamento)
+          `)
           .eq('viagem_id', viagemId);
 
         if (error) {
@@ -33,8 +39,27 @@ export function usePassageirosCount(viagemId: string) {
 
         if (passageiros) {
           const total = passageiros.length;
-          const confirmados = passageiros.filter(p => p.status_pagamento === 'Pago').length;
-          const pendentes = passageiros.filter(p => p.status_pagamento === 'Pendente').length;
+          
+          // Usar status inteligente para contagem
+          const confirmados = passageiros.filter(p => {
+            const statusInteligente = converterStatusParaInteligente({
+              valor: p.valor || 0,
+              desconto: p.desconto || 0,
+              parcelas: p.viagem_passageiros_parcelas,
+              status_pagamento: p.status_pagamento
+            });
+            return statusInteligente.status === 'Pago';
+          }).length;
+          
+          const pendentes = passageiros.filter(p => {
+            const statusInteligente = converterStatusParaInteligente({
+              valor: p.valor || 0,
+              desconto: p.desconto || 0,
+              parcelas: p.viagem_passageiros_parcelas,
+              status_pagamento: p.status_pagamento
+            });
+            return ['Pendente', 'Parcelado'].includes(statusInteligente.status);
+          }).length;
 
           setCount({
             total,

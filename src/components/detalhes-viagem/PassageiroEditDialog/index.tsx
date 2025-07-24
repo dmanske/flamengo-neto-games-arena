@@ -75,27 +75,32 @@ export function PassageiroEditDialog({
   // Calcular valor líquido
   const valorLiquido = valorTotal - desconto;
   
-  // Função para buscar e calcular total pago
+  // Função para buscar e calcular total pago (apenas parcelas realmente pagas)
   const calcularTotalPago = async () => {
     if (!passageiro?.viagem_passageiro_id) return;
     
     try {
       const { data: parcelas, error } = await supabase
         .from("viagem_passageiros_parcelas")
-        .select("valor_parcela")
+        .select("valor_parcela, data_pagamento")
         .eq("viagem_passageiro_id", passageiro.viagem_passageiro_id);
       
       if (error) throw error;
       
-      const total = parcelas?.reduce((sum, p) => sum + p.valor_parcela, 0) || 0;
+      // Somar apenas parcelas que foram realmente pagas (têm data_pagamento)
+      const total = parcelas?.reduce((sum, p) => {
+        return p.data_pagamento ? sum + p.valor_parcela : sum;
+      }, 0) || 0;
+      
       setTotalPago(total);
       const isComplete = total >= valorLiquido;
       setIsPaymentComplete(isComplete);
       
-      // Atualizar o status no formulário automaticamente
+      // Atualizar o status no formulário automaticamente apenas se o pagamento estiver completo
       if (isComplete && statusPagamento !== "Pago") {
         form.setValue("status_pagamento", "Pago");
-      } else if (!isComplete && total > 0 && statusPagamento !== "Pendente") {
+      } else if (!isComplete && statusPagamento === "Pago") {
+        // Se o pagamento não está completo mas o status é "Pago", reverter para "Pendente"
         form.setValue("status_pagamento", "Pendente");
       }
     } catch (error) {
@@ -108,6 +113,11 @@ export function PassageiroEditDialog({
     setIsPaymentComplete(isComplete);
     if (isComplete) {
       form.setValue("status_pagamento", "Pago");
+    } else {
+      // Se o pagamento não está completo, garantir que o status seja "Pendente"
+      if (form.getValues("status_pagamento") === "Pago") {
+        form.setValue("status_pagamento", "Pendente");
+      }
     }
   };
 
@@ -168,37 +178,22 @@ export function PassageiroEditDialog({
       // Verificar se o pagamento está completo automaticamente
       const valorLiquidoAtual = (values.valor || 0) - (values.desconto || 0);
       
-      // Se o usuário marcou como 'Pago' mas o pagamento não está completo, fazer quitação automática
+      // Verificar se o usuário está tentando marcar como 'Pago' sem ter pagamento completo
       if (values.status_pagamento === "Pago" && !isPaymentComplete) {
-        console.log('🔄 Usuário marcou como Pago - fazendo quitação automática');
-        
-        // Confirmar com o usuário se ele quer fazer a quitação automática
         const valorRestante = valorLiquidoAtual - totalPago;
+        
         if (valorRestante > 0.01) {
-          const confirmar = window.confirm(
-            `Há um valor pendente de ${formatCurrency(valorRestante)}. Deseja quitar automaticamente?`
+          // Não permitir marcar como Pago se há valor pendente
+          toast.error(
+            `Não é possível marcar como "Pago" pois há ${formatCurrency(valorRestante)} pendente. ` +
+            `Adicione as parcelas correspondentes ou use o botão "Quitar Restante".`
           );
           
-          if (!confirmar) {
-            // Se o usuário não confirmar, manter como Pendente
-            values.status_pagamento = "Pendente";
-            form.setValue("status_pagamento", "Pendente");
-            toast.info("Status mantido como Pendente");
-          } else {
-            // Fazer quitação automática
-            const { error: parcelaInsertError } = await supabase
-              .from("viagem_passageiros_parcelas")
-              .insert({
-                viagem_passageiro_id: passageiro.viagem_passageiro_id,
-                valor_parcela: valorRestante,
-                forma_pagamento: "Pix",
-                data_pagamento: new Date().toISOString().slice(0, 10),
-                observacoes: "Quitação automática ao marcar como Pago"
-              });
-            
-            if (parcelaInsertError) throw parcelaInsertError;
-            toast.success("Quitação automática realizada com sucesso!");
-          }
+          // Reverter para o status anterior
+          values.status_pagamento = "Pendente";
+          form.setValue("status_pagamento", "Pendente");
+          setIsLoading(false);
+          return;
         }
       }
 

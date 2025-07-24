@@ -60,9 +60,27 @@ export const formatTelefone = (telefone: string): string => {
 export const fetchAddressByCEP = async (cep: string): Promise<AddressData | null> => {
   try {
     const cleanCEP = cep.replace(/\D/g, '');
-    if (cleanCEP.length !== 8) return null;
+    if (cleanCEP.length !== 8) {
+      throw new Error('CEP deve ter 8 dígitos');
+    }
     
-    const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
     
     if (data.erro) {
@@ -70,8 +88,13 @@ export const fetchAddressByCEP = async (cep: string): Promise<AddressData | null
     }
     
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao buscar endereço:', error);
-    return null;
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Timeout na busca do CEP');
+    }
+    
+    throw error;
   }
 };

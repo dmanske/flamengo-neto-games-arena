@@ -18,6 +18,7 @@ import { ViagemReport } from "@/components/relatorios/ViagemReport";
 import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernViagemDetailsLayout";
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
+import { converterStatusParaInteligente } from "@/lib/status-utils";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
 import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
 
@@ -216,7 +217,15 @@ const DetalhesViagem = () => {
 
           <PaidPaymentsCard
             totalPago={totalPago}
-            countPago={originalPassageiros.filter(p => p.status_pagamento === "Pago").length}
+            countPago={originalPassageiros.filter(p => {
+              const statusInteligente = converterStatusParaInteligente({
+                valor: p.valor || 0,
+                desconto: p.desconto || 0,
+                parcelas: p.parcelas,
+                status_pagamento: p.status_pagamento
+              });
+              return statusInteligente.status === 'Pago';
+            }).length}
             onShowPaidOnly={handleShowPaidOnly}
           />
           

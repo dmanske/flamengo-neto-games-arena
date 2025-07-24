@@ -12,8 +12,7 @@ const CadastroPublico = () => {
           <div className="flex justify-center mb-8">
             <div className="flex flex-col justify-center items-center text-center">
               <h1 className="text-4xl font-bold text-red-600 mb-2">Neto Tours Viagens</h1>
-              <p className="text-lg text-gray-700 font-medium">Caravanas Rubro-Negras</p>
-              <p className="text-sm text-gray-600 mt-1">Sua paixão pelo Flamengo em cada viagem</p>
+              <p className="text-lg text-gray-700 font-medium">Realizando sonhos, criando histórias.</p>
             </div>
           </div>
 
@@ -25,7 +24,7 @@ const CadastroPublico = () => {
               <CardDescription className="text-red-100 text-base">
                 Faça seu cadastro e embarque nas melhores caravanas do Flamengo!
                 <br />
-                Apenas o nome completo é obrigatório, os demais campos são opcionais.
+                Por favor, preencha todos os dados.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">

@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { converterStatusParaInteligente } from "@/lib/status-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { User, MapPin, CreditCard, Phone, Mail } from "lucide-react";
@@ -57,7 +58,7 @@ export function PassageiroDetailsDialog({
   if (!passageiro) return null;
 
   const valorLiquido = passageiro.valor - passageiro.desconto;
-  const valorPago = passageiro.parcelas?.reduce((sum, p) => sum + p.valor_parcela, 0) || 0;
+  const valorPago = passageiro.parcelas?.reduce((sum, p) => p.data_pagamento ? sum + p.valor_parcela : sum, 0) || 0;
   const valorPendente = valorLiquido - valorPago;
 
   const statusColors = {
@@ -180,9 +181,20 @@ export function PassageiroDetailsDialog({
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gray-600">Status do Pagamento:</span>
-                    <Badge className={statusColors[passageiro.status_pagamento as keyof typeof statusColors] || statusColors.Pendente}>
-                      {passageiro.status_pagamento}
-                    </Badge>
+                    {(() => {
+                      const statusInteligente = converterStatusParaInteligente({
+                        valor: passageiro.valor || 0,
+                        desconto: passageiro.desconto || 0,
+                        parcelas: passageiro.parcelas,
+                        status_pagamento: passageiro.status_pagamento
+                      });
+                      
+                      return (
+                        <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
+                          {statusInteligente.status}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </div>
               </CardContent>

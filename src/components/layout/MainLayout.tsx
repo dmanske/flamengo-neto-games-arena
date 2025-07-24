@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList, DollarSign, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -153,6 +153,8 @@ const MainLayout = () => {
             to="/dashboard/cadastrar-cliente" 
             onClick={closeMenu} 
           />
+
+
           <NavItem 
             icon={<Bus className="h-5 w-5" />} 
             title="Ônibus" 
@@ -175,12 +177,6 @@ const MainLayout = () => {
             icon={<DollarSign className="h-5 w-5" />} 
             title="Financeiro" 
             to="/dashboard/financeiro" 
-            onClick={closeMenu} 
-          />
-          <NavItem 
-            icon={<ClipboardList className="h-5 w-5" />} 
-            title="Financeiro Geral" 
-            to="/dashboard/financeiro/geral" 
             onClick={closeMenu} 
           />
           <NavItem 

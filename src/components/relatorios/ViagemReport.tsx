@@ -2,6 +2,7 @@ import React from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { PassageiroDisplay } from '@/hooks/useViagemDetails';
 import { Badge } from '@/components/ui/badge';
+import { converterStatusParaInteligente } from '@/lib/status-utils';
 
 interface Viagem {
   id: string;
@@ -163,13 +164,20 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                                   {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))}
                                 </td>
                                 <td className="border p-1">
-                                  <span className={`px-1 py-0.5 rounded text-xs ${
-                                    passageiro.status_pagamento === "Pago" 
-                                      ? "bg-green-100 text-green-800" 
-                                      : "bg-amber-100 text-amber-800"
-                                  }`}>
-                                    {passageiro.status_pagamento}
-                                  </span>
+                                  {(() => {
+                                    const statusInteligente = converterStatusParaInteligente({
+                                      valor: passageiro.valor || 0,
+                                      desconto: passageiro.desconto || 0,
+                                      parcelas: passageiro.parcelas,
+                                      status_pagamento: passageiro.status_pagamento
+                                    });
+                                    
+                                    return (
+                                      <span className={`px-1 py-0.5 rounded text-xs ${statusInteligente.cor}`} title={statusInteligente.descricao}>
+                                        {statusInteligente.status}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                               </tr>
                             ))}
@@ -209,13 +217,20 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                         {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))}
                       </td>
                       <td className="border p-1">
-                        <span className={`px-1 py-0.5 rounded text-xs ${
-                          passageiro.status_pagamento === "Pago" 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-amber-100 text-amber-800"
-                        }`}>
-                          {passageiro.status_pagamento}
-                        </span>
+                        {(() => {
+                          const statusInteligente = converterStatusParaInteligente({
+                            valor: passageiro.valor || 0,
+                            desconto: passageiro.desconto || 0,
+                            parcelas: passageiro.parcelas,
+                            status_pagamento: passageiro.status_pagamento
+                          });
+                          
+                          return (
+                            <span className={`px-1 py-0.5 rounded text-xs ${statusInteligente.cor}`} title={statusInteligente.descricao}>
+                              {statusInteligente.status}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))}

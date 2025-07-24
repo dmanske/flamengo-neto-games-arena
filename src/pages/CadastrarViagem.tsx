@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { CalendarDays, MapPin, Users, Plus, Trash2 } from "lucide-react";
+import { formatInputDateToISO } from "@/lib/date-utils";
 
 // Definir os passeios disponíveis
 const passeiosDisponiveis = [
@@ -253,7 +254,7 @@ const CadastrarViagem = () => {
         }
       }
 
-      const dataJogoFormatted = new Date(data.data_jogo).toISOString();
+      const dataJogoFormatted = formatInputDateToISO(data.data_jogo);
       
       // Criar a viagem
       const { data: viagemData, error: viagemError } = await supabase
@@ -261,7 +262,7 @@ const CadastrarViagem = () => {
         .insert({
           adversario: data.adversario,
           data_jogo: dataJogoFormatted,
-          data_saida: new Date(data.data_saida).toISOString(),
+          data_saida: formatInputDateToISO(data.data_saida),
           local_jogo: data.local_jogo,
           valor_padrao: data.valor_padrao ? parseFloat(data.valor_padrao) : null,
           capacidade_onibus: parseInt(data.capacidade_onibus),

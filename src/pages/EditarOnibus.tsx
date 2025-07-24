@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { SimpleImageUpload } from "@/components/onibus/SimpleImageUpload";
 
 const EditarOnibus = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [newImagePath, setNewImagePath] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     tipo_onibus: "",
     empresa: "",
@@ -46,6 +50,17 @@ const EditarOnibus = () => {
           capacidade: data.capacidade?.toString() || "",
           description: data.description || "",
         });
+
+        // Buscar imagem associada
+        const { data: imageData } = await supabase
+          .from("onibus_images")
+          .select("image_url")
+          .eq("onibus_id", id)
+          .single();
+
+        if (imageData?.image_url) {
+          setCurrentImageUrl(imageData.image_url);
+        }
       }
     } catch (error: any) {
       console.error("Erro ao buscar ônibus:", error);
@@ -57,6 +72,26 @@ const EditarOnibus = () => {
 
   const handleInputChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRemoveImage = async () => {
+    if (!currentImageUrl) return;
+
+    try {
+      // Remover da tabela onibus_images
+      const { error } = await supabase
+        .from("onibus_images")
+        .delete()
+        .eq("onibus_id", id);
+
+      if (error) throw error;
+
+      setCurrentImageUrl(null);
+      toast.success("Imagem removida com sucesso!");
+    } catch (error: any) {
+      console.error("Erro ao remover imagem:", error);
+      toast.error("Erro ao remover imagem");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,6 +121,30 @@ const EditarOnibus = () => {
 
       if (error) throw error;
 
+      // Se há uma nova imagem para salvar
+      if (newImagePath) {
+        // Primeiro, remover imagem existente se houver
+        await supabase
+          .from("onibus_images")
+          .delete()
+          .eq("onibus_id", id);
+
+        // Inserir nova imagem
+        const { error: imageError } = await supabase
+          .from("onibus_images")
+          .insert({
+            tipo_onibus: formData.tipo_onibus,
+            empresa: formData.empresa,
+            image_url: newImagePath,
+            onibus_id: id
+          });
+
+        if (imageError) {
+          console.error("Erro ao salvar nova imagem:", imageError);
+          toast.error("Ônibus atualizado, mas houve erro ao salvar a nova imagem");
+        }
+      }
+
       toast.success("Ônibus atualizado com sucesso!");
       navigate("/dashboard/onibus");
     } catch (error: any) {
@@ -98,11 +157,11 @@ const EditarOnibus = () => {
 
   if (isLoading) {
     return (
-      <div className="container py-6">
+      <div className="container mx-auto py-6">
         <div className="mb-6">
           <Skeleton className="h-10 w-40" />
         </div>
-        <Card>
+        <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <Skeleton className="h-6 w-48" />
           </CardHeader>
@@ -117,20 +176,25 @@ const EditarOnibus = () => {
   }
 
   return (
-    <div className="container py-6">
-      <div className="mb-6 flex items-center gap-2">
-        <Button variant="outline" size="icon" asChild>
-          <Link to="/dashboard/onibus">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center gap-2 mb-6">
+        <Button 
+          variant="ghost"
+          onClick={() => navigate("/dashboard/onibus")}
+          className="p-0 h-auto"
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-3xl font-bold">Editar Ônibus</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
+        <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Informações do Ônibus</CardTitle>
+            <CardTitle>Dados do Ônibus</CardTitle>
+            <CardDescription>
+              Edite as informações do ônibus no sistema
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,7 +204,7 @@ const EditarOnibus = () => {
                   id="tipo_onibus"
                   value={formData.tipo_onibus}
                   onChange={(e) => handleInputChange("tipo_onibus", e.target.value)}
-                  placeholder="Ex: Leito, Semi-leito, Executivo"
+                  placeholder="Ex: Semi-Leito, Convencional"
                   required
                 />
               </div>
@@ -150,7 +214,7 @@ const EditarOnibus = () => {
                   id="empresa"
                   value={formData.empresa}
                   onChange={(e) => handleInputChange("empresa", e.target.value)}
-                  placeholder="Nome da empresa"
+                  placeholder="Ex: Viação 1001, Kaissara"
                   required
                 />
               </div>
@@ -163,7 +227,7 @@ const EditarOnibus = () => {
                   id="numero_identificacao"
                   value={formData.numero_identificacao}
                   onChange={(e) => handleInputChange("numero_identificacao", e.target.value)}
-                  placeholder="Ex: 001, A-123"
+                  placeholder="Número de identificação do ônibus (opcional)"
                 />
               </div>
               <div>
@@ -173,7 +237,7 @@ const EditarOnibus = () => {
                   type="number"
                   value={formData.capacidade}
                   onChange={(e) => handleInputChange("capacidade", e.target.value)}
-                  placeholder="Número de assentos"
+                  placeholder="Capacidade do ônibus"
                   min="1"
                   required
                 />
@@ -182,22 +246,80 @@ const EditarOnibus = () => {
 
             <div>
               <Label htmlFor="description">Descrição</Label>
-              <Input
+              <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
-                placeholder="Descrição adicional do ônibus"
+                placeholder="Informações adicionais sobre o ônibus"
+                className="min-h-[100px]"
               />
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex gap-4">
-          <Button type="submit" disabled={isSaving} className="bg-red-600 hover:bg-red-700">
-            {isSaving ? "Salvando..." : "Salvar Alterações"}
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Imagem do Ônibus
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {currentImageUrl && !newImagePath && (
+              <div className="space-y-2">
+                <Label>Imagem Atual</Label>
+                <div className="relative inline-block">
+                  <img 
+                    src={currentImageUrl} 
+                    alt="Imagem atual do ônibus" 
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>
+                {currentImageUrl && !newImagePath ? "Substituir Imagem" : "Nova Imagem"}
+              </Label>
+              <SimpleImageUpload
+                value={newImagePath}
+                onChange={setNewImagePath}
+                maxSizeInMB={5}
+              />
+
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-4 justify-center max-w-2xl mx-auto">
+          <Button 
+            className="bg-[#e40016] text-white hover:bg-[#c20012]"
+            onClick={() => navigate("/dashboard/onibus")} 
+            type="button"
+          >
+            Cancelar
           </Button>
-          <Button type="button" variant="outline" asChild>
-            <Link to="/dashboard/onibus">Cancelar</Link>
+          <Button 
+            type="submit"
+            disabled={isSaving}
+            className="bg-[#e40016] text-white hover:bg-[#c20012]"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : "Salvar Alterações"}
           </Button>
         </div>
       </form>

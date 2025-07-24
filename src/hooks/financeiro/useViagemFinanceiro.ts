@@ -55,6 +55,13 @@ export interface PassageiroPendente {
   dias_atraso: number;
   ultimo_contato?: string;
   status_pagamento: string;
+  parcelas_pendentes: number;
+  total_parcelas: number;
+  proxima_parcela?: {
+    valor: number;
+    data_vencimento: string;
+    dias_para_vencer: number;
+  };
 }
 
 export interface ResumoFinanceiro {
@@ -140,7 +147,13 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
             telefone
           ),
           viagem_passageiros_parcelas (
-            valor_parcela
+            id,
+            valor_parcela,
+            data_vencimento,
+            data_pagamento,
+            status,
+            numero_parcela,
+            total_parcelas
           )
         `)
         .eq('viagem_id', viagemId);
@@ -151,14 +164,40 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
       data?.forEach((passageiro: any) => {
         const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
-        const valorPago = (passageiro.viagem_passageiros_parcelas || [])
-          .reduce((sum: number, p: any) => sum + (p.valor_parcela || 0), 0);
+        const parcelas = passageiro.viagem_passageiros_parcelas || [];
+        
+        // Calcular valores pagos e pendentes
+        const valorPago = parcelas
+          .reduce((sum: number, p: any) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
         const valorPendente = valorTotal - valorPago;
 
         if (valorPendente > 0.01) { // Margem para centavos
           const diasAtraso = Math.floor(
             (new Date().getTime() - new Date(passageiro.created_at).getTime()) / (1000 * 60 * 60 * 24)
           );
+
+          // Calcular informações das parcelas
+          const parcelasPendentes = parcelas.filter((p: any) => !p.data_pagamento);
+          const totalParcelas = parcelas.length > 0 ? parcelas[0].total_parcelas || parcelas.length : 0;
+          
+          // Encontrar próxima parcela a vencer
+          let proximaParcela = undefined;
+          if (parcelasPendentes.length > 0) {
+            // Ordenar parcelas pendentes por data de vencimento
+            const parcelasOrdenadas = parcelasPendentes
+              .sort((a: any, b: any) => new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime());
+            
+            const proxima = parcelasOrdenadas[0];
+            const hoje = new Date();
+            const dataVencimento = new Date(proxima.data_vencimento);
+            const diasParaVencer = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+            
+            proximaParcela = {
+              valor: proxima.valor_parcela,
+              data_vencimento: proxima.data_vencimento,
+              dias_para_vencer: diasParaVencer
+            };
+          }
 
           pendentes.push({
             viagem_passageiro_id: passageiro.id,
@@ -169,7 +208,10 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
             valor_pago: valorPago,
             valor_pendente: valorPendente,
             dias_atraso: diasAtraso,
-            status_pagamento: passageiro.status_pagamento
+            status_pagamento: passageiro.status_pagamento,
+            parcelas_pendentes: parcelasPendentes.length,
+            total_parcelas: totalParcelas,
+            proxima_parcela: proximaParcela
           });
         }
       });
@@ -228,7 +270,10 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas (valor_parcela)
+          viagem_passageiros_parcelas (
+            valor_parcela,
+            data_pagamento
+          )
         `)
         .eq('viagem_id', viagemId);
 
@@ -238,10 +283,26 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       let totalPendencias = 0;
       let countPendencias = 0;
 
-      passageiros?.forEach((p: any) => {
+      console.log('🔍 DEBUG - Calculando resumo financeiro para viagem:', viagemId);
+      console.log('📊 Passageiros encontrados:', passageiros?.length || 0);
+
+      passageiros?.forEach((p: any, index: number) => {
         const valorLiquido = (p.valor || 0) - (p.desconto || 0);
-        const valorPago = (p.viagem_passageiros_parcelas || [])
-          .reduce((sum: number, parcela: any) => sum + (parcela.valor_parcela || 0), 0);
+        const parcelas = p.viagem_passageiros_parcelas || [];
+        
+        console.log(`👤 Passageiro ${index + 1}:`, {
+          valor_original: p.valor,
+          desconto: p.desconto,
+          valor_liquido: valorLiquido,
+          total_parcelas: parcelas.length,
+          parcelas_pagas: parcelas.filter((parcela: any) => parcela.data_pagamento).length
+        });
+
+        const valorPago = parcelas
+          .reduce((sum: number, parcela: any) => {
+            const pago = parcela.data_pagamento ? (parcela.valor_parcela || 0) : 0;
+            return sum + pago;
+          }, 0);
         
         receitasPassageiros += valorLiquido;
         
@@ -250,6 +311,11 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
           totalPendencias += pendente;
           countPendencias++;
         }
+
+        console.log(`💰 Valores calculados:`, {
+          valor_pago: valorPago,
+          valor_pendente: pendente
+        });
       });
 
       // Somar outras receitas
@@ -478,7 +544,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas (valor_parcela)
+          viagem_passageiros_parcelas (valor_parcela, data_pagamento)
         `)
         .eq('id', viagemPassageiroId)
         .single();
@@ -486,8 +552,11 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (passageiroError) throw passageiroError;
 
       const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
+      // Somar apenas parcelas que foram realmente pagas (têm data_pagamento)
       const valorPago = (passageiro.viagem_passageiros_parcelas || [])
-        .reduce((sum: number, p: any) => sum + (p.valor_parcela || 0), 0);
+        .reduce((sum: number, p: any) => {
+          return p.data_pagamento ? sum + (p.valor_parcela || 0) : sum;
+        }, 0);
 
       // Determinar novo status
       let novoStatus: 'pago' | 'pendente' | 'cancelado';
@@ -530,7 +599,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
       const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
       const valorPago = (passageiro.viagem_passageiros_parcelas || [])
-        .reduce((sum: number, p: any) => sum + (p.valor_parcela || 0), 0);
+        .reduce((sum: number, p: any) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
       const valorPendente = valorTotal - valorPago;
 
       if (valorPendente > 0.01) {

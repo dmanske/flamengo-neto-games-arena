@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarDays, MapPin, Users, Save, ArrowLeft, Loader2 } from "lucide-react";
 import { OnibusForm } from "@/components/viagem/OnibusForm";
 import { ViagemOnibus } from "@/types/entities";
+import { formatDateOnlyForInput, formatDateForInput, formatInputDateToISO } from "@/lib/date-utils";
 
 // Schema de validação
 const viagemSchema = z.object({
@@ -111,8 +112,8 @@ export default function EditarViagem() {
           // Preencher o formulário com os dados existentes
           form.reset({
             adversario: data.adversario || "",
-            data_jogo: data.data_jogo ? new Date(data.data_jogo).toISOString().split('T')[0] : "",
-            data_saida: data.data_saida ? new Date(data.data_saida).toISOString().slice(0, 16) : "",
+            data_jogo: data.data_jogo ? formatDateOnlyForInput(data.data_jogo) : "",
+            data_saida: data.data_saida ? formatDateForInput(data.data_saida) : "",
             local_jogo: data.local_jogo || "Rio de Janeiro",
             valor_padrao: data.valor_padrao?.toString() || "",
 
@@ -157,8 +158,8 @@ export default function EditarViagem() {
 
       const updateData = {
         adversario: data.adversario,
-        data_jogo: new Date(data.data_jogo).toISOString(),
-        data_saida: new Date(data.data_saida).toISOString(),
+        data_jogo: formatInputDateToISO(data.data_jogo),
+        data_saida: formatInputDateToISO(data.data_saida),
         local_jogo: data.local_jogo,
         valor_padrao: data.valor_padrao ? parseFloat(data.valor_padrao) : null,
         capacidade_onibus: capacidadeTotal,

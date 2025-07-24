@@ -171,45 +171,82 @@ export function FinancialSummary({
 
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-2">Valor Total da Viagem</h3>
+          <h3 className="text-lg font-medium mb-2">Potencial da Viagem</h3>
           <div className="space-y-4">
-            <div>
+            {/* Valor Potencial Total */}
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <div className="flex justify-between text-sm mb-1">
-                <span>Valor Bruto Total:</span>
-                <span className="font-medium text-blue-600">{formatCurrency(valorBrutoTotal)}</span>
+                <span className="text-blue-800 font-medium">Valor Potencial Total:</span>
+                <span className="font-bold text-blue-600">{formatCurrency(valorPotencialTotal)}</span>
+              </div>
+              <div className="text-xs text-blue-600">
+                {capacidadeTotalOnibus} lugares × valor médio
               </div>
             </div>
             
-            {totalDescontos > 0 && (
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Total de Descontos:</span>
-                  <span className="font-medium text-red-600">-{formatCurrency(totalDescontos)}</span>
-                </div>
-              </div>
-            )}
-            
-            <div className="pt-2 border-t border-gray-100">
+            {/* Valor Efetivo (Passageiros Cadastrados) */}
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
               <div className="flex justify-between text-sm mb-1">
-                <span>Valor Líquido Total:</span>
-                <span className="font-medium text-green-600">{formatCurrency(totalArrecadado)}</span>
+                <span className="text-green-800 font-medium">Valor Efetivo Cadastrado:</span>
+                <span className="font-bold text-green-600">{formatCurrency(totalArrecadado)}</span>
+              </div>
+              <div className="text-xs text-green-600">
+                {totalPassageiros} passageiros cadastrados
               </div>
             </div>
             
+            {/* Taxa de Ocupação */}
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span>Percentual Arrecadado:</span>
+                <span>Taxa de Ocupação:</span>
                 <span className={`font-medium ${
-                  percentualArrecadado >= 100 ? 'text-green-600' : 
-                  percentualArrecadado >= 80 ? 'text-blue-600' : 'text-orange-600'
+                  percentualOcupacao >= 90 ? 'text-green-600' : 
+                  percentualOcupacao >= 70 ? 'text-blue-600' : 
+                  percentualOcupacao >= 50 ? 'text-orange-600' : 'text-red-600'
                 }`}>
-                  {percentualArrecadado}%
+                  {percentualOcupacao}%
                 </span>
               </div>
               <Progress 
-                value={percentualArrecadado} 
-                className="h-1" 
+                value={percentualOcupacao} 
+                className="h-2"
               />
+              <div className="text-xs text-gray-500 mt-1">
+                {totalPassageiros} de {capacidadeTotalOnibus} lugares ocupados
+              </div>
+            </div>
+            
+            {/* Percentual Arrecadado (dos cadastrados) */}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Arrecadação (dos cadastrados):</span>
+                <span className={`font-medium ${
+                  eficienciaPagamento >= 100 ? 'text-green-600' : 
+                  eficienciaPagamento >= 80 ? 'text-blue-600' : 'text-orange-600'
+                }`}>
+                  {eficienciaPagamento}%
+                </span>
+              </div>
+              <Progress 
+                value={eficienciaPagamento} 
+                className="h-2"
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {formatCurrency(totalPago)} pagos de {formatCurrency(totalArrecadado)} cadastrados
+              </div>
+            </div>
+            
+            {/* Potencial Restante */}
+            <div className="pt-2 border-t border-gray-100">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">Potencial Restante:</span>
+                <span className="font-medium text-gray-600">
+                  {formatCurrency(valorPotencialTotal - totalArrecadado)}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500">
+                {capacidadeTotalOnibus - totalPassageiros} lugares disponíveis
+              </div>
             </div>
             
             {totalDescontos > 0 && (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,22 @@ import {
   MessageCircle,
   Phone,
   Mail,
-  Download
+  Download,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { ContaReceber } from '@/hooks/useFinanceiroGeral';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface ContasReceberTabProps {
   contasReceber: ContaReceber[];
 }
 
 export function ContasReceberTab({ contasReceber }: ContasReceberTabProps) {
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
   // Calcular totais
   const totalPendente = contasReceber.reduce((sum, conta) => sum + conta.valor_pendente, 0);
   const totalPago = contasReceber.reduce((sum, conta) => sum + conta.valor_pago, 0);
@@ -28,6 +34,89 @@ export function ContasReceberTab({ contasReceber }: ContasReceberTabProps) {
   const urgentes = contasReceber.filter(c => c.dias_atraso > 7);
   const atencao = contasReceber.filter(c => c.dias_atraso > 0 && c.dias_atraso <= 7);
   const emDia = contasReceber.filter(c => c.dias_atraso <= 0);
+
+  const toggleExpanded = (contaId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(contaId)) {
+      newExpanded.delete(contaId);
+    } else {
+      newExpanded.add(contaId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  // Marcar conta como quitada (quitar valor restante)
+  const marcarComoQuitado = async (passageiroId: string) => {
+    try {
+      // Buscar valor pendente
+      const conta = contasReceber.find(c => c.id === passageiroId);
+      if (!conta || conta.valor_pendente <= 0) {
+        toast.error("Não há valor pendente para quitar");
+        return;
+      }
+
+      // Confirmar ação
+      const confirmar = window.confirm(
+        `Confirma a quitação de ${formatCurrency(conta.valor_pendente)} para ${conta.passageiro_nome}?`
+      );
+      
+      if (!confirmar) return;
+
+      // Registrar pagamento do valor restante
+      const { error } = await supabase
+        .from('viagem_passageiros_parcelas')
+        .insert({
+          viagem_passageiro_id: passageiroId,
+          valor_parcela: conta.valor_pendente,
+          forma_pagamento: 'Pix',
+          data_pagamento: new Date().toISOString().split('T')[0],
+          observacoes: 'Quitação total via Contas a Receber'
+        });
+
+      if (error) throw error;
+
+      toast.success(`Conta de ${conta.passageiro_nome} quitada com sucesso!`);
+      
+      // Recarregar dados (se houver callback)
+      window.location.reload(); // Temporário - idealmente usar callback
+      
+    } catch (error) {
+      console.error('Erro ao quitar conta:', error);
+      toast.error('Erro ao quitar conta');
+    }
+  };
+
+  // Marcar parcela individual como paga
+  const marcarParcelaComoPaga = async (passageiroId: string, parcela: any) => {
+    try {
+      const confirmar = window.confirm(
+        `Confirma o pagamento da ${parcela.numero}ª parcela de ${formatCurrency(parcela.valor)}?`
+      );
+      
+      if (!confirmar) return;
+
+      // Atualizar parcela para paga
+      const { error } = await supabase
+        .from('viagem_passageiros_parcelas')
+        .update({
+          data_pagamento: new Date().toISOString().split('T')[0],
+          status: 'pago'
+        })
+        .eq('viagem_passageiro_id', passageiroId)
+        .eq('numero_parcela', parcela.numero);
+
+      if (error) throw error;
+
+      toast.success(`${parcela.numero}ª parcela marcada como paga!`);
+      
+      // Recarregar dados
+      window.location.reload(); // Temporário
+      
+    } catch (error) {
+      console.error('Erro ao marcar parcela como paga:', error);
+      toast.error('Erro ao marcar parcela como paga');
+    }
+  };
 
   const getStatusColor = (dias_atraso: number) => {
     if (dias_atraso > 7) return 'bg-red-100 text-red-800 border-red-200';
@@ -150,70 +239,95 @@ export function ContasReceberTab({ contasReceber }: ContasReceberTabProps) {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
+                    
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Passageiro
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Viagem
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vencimento
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Valor Total
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Pago
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Pendente
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {contasReceber.map((conta) => (
-                  <tr key={conta.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">
-                        {conta.passageiro_nome}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{conta.viagem_nome}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(conta.data_vencimento).toLocaleDateString('pt-BR')}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(conta.data_vencimento).toLocaleDateString('pt-BR', { 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(conta.valor_total)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-green-600">
-                        {formatCurrency(conta.valor_pago)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-red-600">
-                        {formatCurrency(conta.valor_pendente)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <React.Fragment key={conta.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-2 py-4 whitespace-nowrap">
+                        {conta.parcelas_detalhes && conta.parcelas_detalhes.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpanded(conta.id)}
+                            className="p-1 h-6 w-6"
+                          >
+                            {expandedRows.has(conta.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">
+                          {conta.passageiro_nome}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{conta.viagem_nome}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {new Date(conta.data_vencimento).toLocaleDateString('pt-BR')}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(conta.data_vencimento).toLocaleDateString('pt-BR', { 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCurrency(conta.valor_total)}
+                        </div>
+                        {conta.parcelas_detalhes && conta.parcelas_detalhes.length > 1 && (
+                          <div className="text-xs text-gray-500">
+                            {conta.parcelas_detalhes.length} parcelas
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-green-600">
+                          {formatCurrency(conta.valor_pago)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-red-600">
+                          {formatCurrency(conta.valor_pendente)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <Badge className={getStatusColor(conta.dias_atraso)}>
                           <div className="flex items-center gap-1">
@@ -228,20 +342,87 @@ export function ContasReceberTab({ contasReceber }: ContasReceberTabProps) {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Phone className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => marcarComoQuitado(conta.id)}
+                            className="bg-green-50 text-green-700 hover:bg-green-100"
+                          >
+                            Quitar
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Linha expandida com detalhes das parcelas */}
+                    {expandedRows.has(conta.id) && conta.parcelas_detalhes && (
+                      <tr>
+                        <td colSpan={9} className="px-4 py-2 bg-gray-50">
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">
+                              Detalhes das Parcelas:
+                            </h4>
+                            <div className="grid gap-2">
+                              {conta.parcelas_detalhes.map((parcela, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                                  <div className="flex items-center gap-4">
+                                    <Badge variant="outline" className="text-xs">
+                                      {parcela.numero}ª parcela
+                                    </Badge>
+                                    <span className="text-sm font-medium">
+                                      {formatCurrency(parcela.valor)}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      Vence: {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
+                                    </span>
+                                    {parcela.data_pagamento && (
+                                      <span className="text-xs text-green-600">
+                                        Pago em: {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    )}
+                                    <span className="text-xs text-gray-500">
+                                      {parcela.forma_pagamento}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge className={
+                                      parcela.status === 'pago' ? 'bg-green-100 text-green-800' :
+                                      parcela.status === 'vencido' ? 'bg-red-100 text-red-800' :
+                                      'bg-yellow-100 text-yellow-800'
+                                    }>
+                                      {parcela.status === 'pago' ? 'Pago' :
+                                       parcela.status === 'vencido' ? 'Vencido' : 'Pendente'}
+                                    </Badge>
+                                    
+                                    {parcela.status !== 'pago' && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => marcarParcelaComoPaga(conta.id, parcela)}
+                                        className="bg-green-600 hover:bg-green-700 text-white text-xs h-6 px-2"
+                                      >
+                                        Pagar
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
