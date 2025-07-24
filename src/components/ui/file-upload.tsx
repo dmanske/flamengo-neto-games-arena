@@ -37,21 +37,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         return;
       }
 
-      // Verificar se o bucket existe, se não, criar
-      const { error: bucketError } = await supabase.storage.getBucket(bucketName);
-      if (bucketError && bucketError.message.includes('not found')) {
-        console.log(`Creating ${bucketName} storage bucket...`);
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-        });
-        if (createError) {
-          console.error('Error creating bucket:', createError);
-          toast.error('Erro ao criar bucket de armazenamento');
-          return;
-        }
-        console.log(`${bucketName} bucket created successfully`);
-      }
+      // Pular verificação do bucket - assumir que existe
 
       // Comprimir a imagem antes do upload
       const compressedFile = await compressImage(file);

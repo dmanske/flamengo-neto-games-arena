@@ -20,6 +20,7 @@ import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
 import CadastrarCliente from "@/pages/CadastrarCliente";
 import EditarCliente from "@/pages/EditarCliente";
+import ClienteDetalhes from "@/pages/ClienteDetalhes";
 import Viagens from "@/pages/Viagens";
 import CadastrarViagem from "@/pages/CadastrarViagem";
 import EditarViagem from "@/pages/EditarViagem";
@@ -99,6 +100,7 @@ function App() {
                 <Route path="/dashboard" element={<MainLayout />}>
                   <Route index element={<Dashboard />} />
                   <Route path="clientes" element={<Clientes />} />
+                  <Route path="clientes/:id" element={<ClienteDetalhes />} />
                   <Route path="clientes/:id/editar" element={<EditarCliente />} />
                   <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
                   <Route path="viagens" element={<Viagens />} />

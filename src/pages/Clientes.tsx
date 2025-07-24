@@ -23,7 +23,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 import { formatPhone, formatCPF, formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
-import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -277,112 +276,107 @@ const Clientes = () => {
           <>
             <div className="space-y-3">
               {currentClientes.map((cliente) => (
-              <Card key={cliente.id} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-4">
-                    {/* Avatar */}
-                    <div className="relative">
-                      <Avatar className="h-14 w-14">
-                        {cliente.foto ? (
-                          <AvatarImage 
-                            src={cliente.foto} 
-                            alt={cliente.nome}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-lg">
-                            {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      {/* Online indicator (fake for demo) */}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {formatarNomeComPreposicoes(cliente.nome)}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {getTimeAgo(cliente.created_at)}
-                          </span>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={`/dashboard/clientes/${cliente.id}/editar`} className="flex items-center">
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Editar
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="text-red-600"
-                                onClick={() => setClienteToDelete(cliente)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                <Card key={cliente.id} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow duration-200 relative">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-4">
+                      {/* Avatar */}
+                      <div className="relative">
+                        <Avatar className="h-14 w-14">
+                          {cliente.foto ? (
+                            <AvatarImage 
+                              src={cliente.foto} 
+                              alt={cliente.nome}
+                              className="object-cover"
+                            />
+                          ) : (
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-lg">
+                              {cliente.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        {/* Online indicator (fake for demo) */}
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                       </div>
                       
-                      {/* Contact Info */}
-                      <div className="space-y-1">
-                        {cliente.telefone && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone className="h-3 w-3 mr-2 text-green-600" />
-                            <span>{formatPhone(cliente.telefone)}</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-5 w-5 p-0 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => {
-                                const phoneNumber = cliente.telefone.replace(/\D/g, '');
-                                const whatsappUrl = `https://wa.me/55${phoneNumber}`;
-                                window.open(whatsappUrl, '_blank');
-                              }}
-                              title="Abrir WhatsApp"
-                            >
-                              <WhatsAppIcon size={12} className="text-green-600" />
-                            </Button>
+                      {/* Main Content - Clicável */}
+                      <Link to={`/dashboard/clientes/${cliente.id}`} className="flex-1 min-w-0 cursor-pointer">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {formatarNomeComPreposicoes(cliente.nome)}
+                          </h3>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {getTimeAgo(cliente.created_at)}
+                            </span>
                           </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-3 w-3 mr-2 text-blue-600" />
-                            <span>{cliente.cidade}, {cliente.estado}</span>
-                          </div>
-                          
-                          {cliente.email && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Mail className="h-3 w-3 mr-1" />
-                              Email
-                            </Badge>
-                          )}
                         </div>
                         
-                        {cliente.data_nascimento && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="h-3 w-3 mr-2" />
-                            <span>Nascimento: {formatBirthDate(cliente.data_nascimento)}</span>
+                        {/* Contact Info */}
+                        <div className="space-y-1">
+                          {cliente.telefone && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Phone className="h-3 w-3 mr-2 text-green-600" />
+                              <span>{formatPhone(cliente.telefone)}</span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <MapPin className="h-3 w-3 mr-2 text-blue-600" />
+                              <span>{cliente.cidade}, {cliente.estado}</span>
+                            </div>
+                            
+                            {cliente.email && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Mail className="h-3 w-3 mr-1" />
+                                Email
+                              </Badge>
+                            )}
                           </div>
-                        )}
+                          
+                          {cliente.data_nascimento && (
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Calendar className="h-3 w-3 mr-2" />
+                              <span>Nascimento: {formatBirthDate(cliente.data_nascimento)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                      
+                      {/* Dropdown menu - posicionado absolutamente */}
+                      <div className="absolute top-2 right-2 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/dashboard/clientes/${cliente.id}/editar`} className="flex items-center">
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={() => setClienteToDelete(cliente)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
               ))}
             </div>
 

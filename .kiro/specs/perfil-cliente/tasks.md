@@ -6,186 +6,215 @@ Este documento define as tarefas de implementação do Sistema de Perfil do Clie
 
 ## Estrutura de Implementação
 
-### FASE 1 - Fundação (2-3 dias)
+### FASE 1 - Fundação (2-3 dias) ✅ CONCLUÍDA
 Implementação da estrutura básica e informações essenciais
 
-### FASE 2 - Histórico e Financeiro (2-3 dias)  
+### FASE 2 - Histórico e Financeiro (2-3 dias) ✅ CONCLUÍDA
 Adição do histórico de viagens e situação financeira
 
-### FASE 3 - Comunicação e Insights (2-3 dias)
+### FASE 3 - Comunicação e Insights (2-3 dias) 🔄 EM ANDAMENTO
 Implementação de comunicação e estatísticas avançadas
 
 ---
 
-## FASE 1 - FUNDAÇÃO
+## FASE 1 - FUNDAÇÃO ✅ CONCLUÍDA
 
-### 1.1 Estrutura Base e Roteamento
+### 1.1 Estrutura Base e Roteamento ✅
 
-- [ ] 1.1.1 Criar rota `/dashboard/clientes/:id` no App.tsx
+- [x] 1.1.1 Criar rota `/dashboard/clientes/:id` no App.tsx ✅
   - Adicionar rota dinâmica para detalhes do cliente
   - Configurar parâmetros de URL
   - Implementar redirecionamento para 404 se cliente não existir
   - _Requirements: 1.1, 1.4_
 
-- [ ] 1.1.2 Criar página ClienteDetalhes.tsx
+- [x] 1.1.2 Criar página ClienteDetalhes.tsx ✅
   - Estrutura básica da página com layout responsivo
   - Header com breadcrumb e navegação
   - Container principal para conteúdo
   - Loading states e error handling
   - _Requirements: 1.1, 1.3, 8.3, 8.5_
 
-- [ ] 1.1.3 Implementar navegação clicável na lista de clientes
+- [x] 1.1.3 Implementar navegação clicável na lista de clientes ✅
   - Modificar Clientes.tsx para tornar cards clicáveis
   - Adicionar Link ou navegação programática
   - Manter funcionalidade existente do dropdown
   - _Requirements: 1.1_
 
-### 1.2 Hook Principal de Dados
+### 1.2 Hook Principal de Dados ✅
 
-- [ ] 1.2.1 Criar hook useClienteDetalhes
+- [x] 1.2.1 Criar hook useClienteDetalhes ✅
   - Buscar dados básicos do cliente por ID
   - Implementar loading states
   - Tratamento de erros (cliente não encontrado)
   - Cache básico para performance
   - _Requirements: 1.5, 9.1, 10.5_
 
-- [ ] 1.2.2 Criar tipos TypeScript
+- [x] 1.2.2 Criar tipos TypeScript ✅
   - Interface ClienteDetalhes completa
   - Tipos para cada seção (pessoal, viagens, financeiro)
   - Enums para status e classificações
   - _Requirements: 9.1_
 
-### 1.3 Header do Cliente
+### 1.3 Header do Cliente ✅
 
-- [ ] 1.3.1 Criar componente ClienteHeader
+- [x] 1.3.1 Criar componente ClienteHeader ✅
   - Foto do cliente (avatar com fallback)
   - Nome formatado e informações básicas
   - Badges de status (VIP, etc.)
   - Botão de editar e voltar
   - _Requirements: 1.2, 2.5_
 
-- [ ] 1.3.2 Implementar layout responsivo do header
+- [x] 1.3.2 Implementar layout responsivo do header ✅
   - Versão mobile compacta
   - Versão desktop expandida
   - Adaptação automática por breakpoint
   - _Requirements: 8.1, 8.2_
 
-### 1.4 Seção de Informações Pessoais
+### 1.4 Seção de Informações Pessoais ✅
 
-- [ ] 1.4.1 Criar componente InformacoesPessoais
+- [x] 1.4.1 Criar componente InformacoesPessoais ✅
   - Card com dados pessoais básicos
   - Formatação de CPF, telefone e data
   - Links clicáveis para WhatsApp e email
   - _Requirements: 2.1, 2.2, 2.6, 2.7_
 
-- [ ] 1.4.2 Implementar seção de endereço
+- [x] 1.4.2 Implementar seção de endereço ✅
   - Dados de endereço completo
   - Formatação de CEP
   - Layout organizado e legível
   - _Requirements: 2.2_
 
-- [ ] 1.4.3 Adicionar outras informações
+- [x] 1.4.3 Adicionar outras informações ✅
   - Como conheceu a empresa
   - Observações do cliente
   - Data de cadastro formatada
   - _Requirements: 2.3, 2.4_
 
-### 1.5 Sistema de Navegação por Tabs
+### 1.5 Sistema de Navegação por Tabs ✅
 
-- [ ] 1.5.1 Criar componente ClienteNavigation
+- [x] 1.5.1 Criar componente ClienteNavigation ✅
   - Tabs horizontais responsivas
   - Estado ativo visual
   - Navegação por clique
   - _Requirements: 8.3_
 
-- [ ] 1.5.2 Implementar roteamento interno
+- [x] 1.5.2 Implementar roteamento interno ✅
   - URLs com hash para cada seção
   - Navegação direta por URL
   - Estado persistente da tab ativa
   - _Requirements: 8.3_
 
-### 1.6 Ações Rápidas Básicas
+### 1.6 Ações Rápidas Básicas ✅
 
-- [ ] 1.6.1 Criar componente AcoesRapidas
+- [x] 1.6.1 Criar componente AcoesRapidas ✅
   - Botões para WhatsApp, email e telefone
   - Integração com WhatsApp Web
   - Abertura de cliente de email
   - _Requirements: 7.1, 7.4_
 
-- [ ] 1.6.2 Implementar ações de comunicação
+- [x] 1.6.2 Implementar ações de comunicação ✅
   - Função para abrir WhatsApp com número preenchido
   - Função para abrir email com destinatário
   - Tratamento de erros de integração
   - _Requirements: 7.4_
 
+### 🐛 1.7 Correções Aplicadas
+
+- [x] 1.7.1 Corrigir formatação de data de nascimento ✅
+  - Problema: Data mostrada diferente da cadastrada
+  - Solução: Adicionar timezone para evitar problemas de interpretação
+  - Aplicado em: InformacoesPessoais.tsx
+  - Status: Corrigido
+
+### 🐛 2.4 Correções da Fase 2
+
+- [x] 2.4.1 Corrigir relacionamento Supabase ✅
+  - Problema: "Could not embed because more than one relationship was found"
+  - Solução: Especificar relacionamento explícito `viagens!viagem_passageiros_viagem_id_fkey`
+  - Aplicado em: useClienteFinanceiro.ts, useClienteViagens.ts, useClienteDetalhes.ts
+  - Status: Corrigido
+
+- [x] 2.4.2 Corrigir colunas inexistentes ✅
+  - Problema: "column viagem_passageiros.numero_onibus does not exist" e "column viagens_1.status does not exist"
+  - Solução: Usar colunas corretas `status_viagem` (não `status`) e remover `numero_onibus`
+  - Aplicado em: useClienteFinanceiro.ts, useClienteViagens.ts, useClienteDetalhes.ts
+  - Status: Corrigido
+
+- [x] 2.4.3 Corrigir algoritmo de score de crédito ✅
+  - Problema: Score de crédito não estava baseado em dados reais
+  - Solução: Algoritmo simplificado baseado em atrasos reais e histórico de pagamentos
+  - Lógica: 100 pontos (em dia) → 85 (pendente sem atraso) → 70-30 (com atraso) → bonus por histórico
+  - Aplicado em: useClienteFinanceiro.ts
+  - Status: Corrigido
+
 ---
 
-## FASE 2 - HISTÓRICO E FINANCEIRO
+## FASE 2 - HISTÓRICO E FINANCEIRO ✅ CONCLUÍDA
 
-### 2.1 Histórico de Viagens
+### 2.1 Histórico de Viagens ✅
 
-- [ ] 2.1.1 Criar hook useClienteViagens
+- [x] 2.1.1 Criar hook useClienteViagens ✅
   - Buscar viagens do cliente com JOIN
   - Calcular estatísticas básicas
   - Ordenação cronológica
   - _Requirements: 3.1, 9.2_
 
-- [ ] 2.1.2 Criar componente HistoricoViagens
+- [x] 2.1.2 Criar componente HistoricoViagens ✅
   - Lista de viagens com dados formatados
   - Badges coloridos para status
   - Links para detalhes da viagem
   - Contador total de viagens
   - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.6_
 
-- [ ] 2.1.3 Implementar resumo de viagens
+- [x] 2.1.3 Implementar resumo de viagens ✅
   - Total de viagens participadas
   - Valor total gasto
   - Viagem mais cara
   - Adversário favorito básico
   - _Requirements: 3.6_
 
-- [ ] 2.1.4 Adicionar estado vazio
+- [x] 2.1.4 Adicionar estado vazio ✅
   - Mensagem quando não há viagens
   - Sugestão de ação (inscrever em viagem)
   - Design consistente com o sistema
   - _Requirements: 3.4_
 
-### 2.2 Situação Financeira
+### 2.2 Situação Financeira ✅
 
-- [ ] 2.2.1 Criar hook useClienteFinanceiro
+- [x] 2.2.1 Criar hook useClienteFinanceiro ✅
   - Buscar parcelas e pagamentos
   - Calcular totais e pendências
   - Identificar status de crédito
   - _Requirements: 4.1, 4.2, 9.3_
 
-- [ ] 2.2.2 Criar componente SituacaoFinanceira
+- [x] 2.2.2 Criar componente SituacaoFinanceira ✅
   - Cards com métricas principais
   - Status de crédito visual
   - Cores de alerta para pendências
   - _Requirements: 4.1, 4.2, 4.5_
 
-- [ ] 2.2.3 Implementar lista de parcelas pendentes
+- [x] 2.2.3 Implementar lista de parcelas pendentes ✅
   - Parcelas em atraso destacadas
   - Informações de vencimento
   - Botão de cobrança rápida
   - _Requirements: 4.3, 4.5, 4.6_
 
-- [ ] 2.2.4 Adicionar histórico de pagamentos
+- [x] 2.2.4 Adicionar histórico de pagamentos ✅
   - Lista de pagamentos realizados
   - Formas de pagamento
   - Datas e valores
   - _Requirements: 4.4_
 
-### 2.3 Cálculo de Score de Crédito
+### 2.3 Cálculo de Score de Crédito ✅
 
-- [ ] 2.3.1 Implementar algoritmo de score
+- [x] 2.3.1 Implementar algoritmo de score ✅
   - Pontualidade de pagamentos (40%)
   - Histórico de relacionamento (30%)
   - Valor médio de compras (20%)
   - Frequência de viagens (10%)
   - _Requirements: 4.2_
 
-- [ ] 2.3.2 Criar classificação visual
+- [x] 2.3.2 Criar classificação visual ✅
   - Bom Pagador (80-100): Verde
   - Atenção (60-79): Amarelo
   - Inadimplente (0-59): Vermelho

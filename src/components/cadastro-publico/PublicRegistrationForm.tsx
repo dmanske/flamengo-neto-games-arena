@@ -20,7 +20,7 @@ export const PublicRegistrationForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { validateClient, isValidating } = useClientValidation();
-  
+
   const fonte = searchParams.get('fonte') || 'publico';
 
   const form = useForm<PublicRegistrationFormData>({
@@ -48,14 +48,14 @@ export const PublicRegistrationForm = () => {
 
   const onSubmit = async (data: PublicRegistrationFormData) => {
     console.log('🚀 Iniciando submissão do formulário público...', { fonte });
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Validar cliente
       console.log('🔍 Validando cliente...');
       const validation = await validateClient(data.cpf, data.telefone, data.email);
-      
+
       if (!validation.isValid && validation.existingClient) {
         toast.error(validation.message || "Cliente já cadastrado");
         setIsSubmitting(false);
@@ -101,10 +101,10 @@ export const PublicRegistrationForm = () => {
 
       // Feedback de sucesso
       toast.success("Cadastro realizado com sucesso! Entraremos em contato em breve.");
-      
+
       // Reset do formulário
       form.reset();
-      
+
       // Redirecionar para página de sucesso ou inicial
       setTimeout(() => {
         navigate('/', { replace: true });
@@ -112,15 +112,15 @@ export const PublicRegistrationForm = () => {
 
     } catch (error: any) {
       console.error('💥 Erro no cadastro público:', error);
-      
+
       let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
-      
+
       if (error?.code === '23505') {
         errorMessage = "Já existe um cliente cadastrado com estes dados.";
       } else if (error?.message) {
         errorMessage = `Erro: ${error.message}`;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -136,7 +136,7 @@ export const PublicRegistrationForm = () => {
         <div className="p-6 pb-0">
           <LogoEmpresa size="2xl" className="justify-center" />
         </div>
-        <div className="bg-white-600 text-black py-3 px-6">
+        <div className="bg-white-600 text-blackfecg py-3 px-6">
           <p className="text-lg font-light italic tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>
             Realizando sonhos, criando histórias.
           </p>
@@ -145,58 +145,58 @@ export const PublicRegistrationForm = () => {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Dados Pessoais */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados Pessoais</CardTitle>
-            <CardDescription>
-              Por favor, informe todos os seus dados pessoais para realizarmos o cadastro.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PersonalInfoFields form={form} />
-          </CardContent>
-        </Card>
+          {/* Dados Pessoais */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados Pessoais</CardTitle>
+              <CardDescription>
+                Por favor, informe todos os seus dados pessoais para realizarmos o cadastro.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PersonalInfoFields form={form} />
+            </CardContent>
+          </Card>
 
-        {/* Endereço */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Endereço</CardTitle>
-            <CardDescription>
-              Informações do seu endereço
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AddressFields form={form} />
-          </CardContent>
-        </Card>
+          {/* Endereço */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Endereço</CardTitle>
+              <CardDescription>
+                Informações do seu endereço
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AddressFields form={form} />
+            </CardContent>
+          </Card>
 
-        {/* Como conheceu e observações */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informações Adicionais</CardTitle>
-            <CardDescription>
-              Como nos conheceu e observações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ReferralFields form={form} />
-          </CardContent>
-        </Card>
+          {/* Como conheceu e observações */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações Adicionais</CardTitle>
+              <CardDescription>
+                Como nos conheceu e observações
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReferralFields form={form} />
+            </CardContent>
+          </Card>
 
-        {/* Botão de submit */}
-        <div className="flex justify-center pt-4">
-          <Button 
-            type="submit" 
-            size="lg" 
-            disabled={isLoading}
-            className="w-full md:w-auto bg-red-600 hover:bg-red-700"
-          >
-            {isLoading ? "Cadastrando..." : "Realizar Cadastro"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          {/* Botão de submit */}
+          <div className="flex justify-center pt-4">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isLoading}
+              className="w-full md:w-auto bg-red-600 hover:bg-red-700"
+            >
+              {isLoading ? "Cadastrando..." : "Realizar Cadastro"}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 };
