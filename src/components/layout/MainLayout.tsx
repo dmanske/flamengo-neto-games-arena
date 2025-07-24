@@ -191,6 +191,12 @@ const MainLayout = () => {
             to="/dashboard/whatsapp" 
             onClick={closeMenu} 
           />
+          <NavItem 
+            icon={<Settings className="h-5 w-5" />} 
+            title="Configurações" 
+            to="/dashboard/empresa/configuracoes" 
+            onClick={closeMenu} 
+          />
         </div>
       </ScrollArea>
       

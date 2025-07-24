@@ -13,6 +13,7 @@ import { publicRegistrationSchema, type PublicRegistrationFormData } from "./For
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { AddressFields } from "./AddressFields";
 import { ReferralFields } from "./ReferralFields";
+import LogoEmpresa from "@/components/empresa/LogoEmpresa";
 
 export const PublicRegistrationForm = () => {
   const [searchParams] = useSearchParams();
@@ -129,14 +130,27 @@ export const PublicRegistrationForm = () => {
   const isLoading = isSubmitting || isValidating;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <div className="max-w-4xl mx-auto">
+      {/* Header com Logo da Empresa */}
+      <div className="text-center mb-8 bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="p-6 pb-0">
+          <LogoEmpresa size="2xl" className="justify-center" />
+        </div>
+        <div className="bg-red-600 text-white py-3 px-6">
+          <p className="text-lg font-light italic tracking-wide" style={{ fontFamily: 'Georgia, serif' }}>
+            Realizando sonhos, criando histórias.
+          </p>
+        </div>
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         {/* Dados Pessoais */}
         <Card>
           <CardHeader>
             <CardTitle>Dados Pessoais</CardTitle>
             <CardDescription>
-              Preencha seus dados pessoais para o cadastro
+              Por favor, informe todos os seus dados pessoais para realizarmos o cadastro.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -183,5 +197,6 @@ export const PublicRegistrationForm = () => {
         </div>
       </form>
     </Form>
+    </div>
   );
 };

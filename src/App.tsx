@@ -61,6 +61,9 @@ import Relatorios from "@/pages/financeiro/Relatorios";
 import FluxoCaixa from "@/pages/financeiro/FluxoCaixa";
 import FinanceiroGeral from "@/pages/FinanceiroGeral";
 
+// Import página de configuração da empresa
+import EmpresaConfigPage from "@/pages/EmpresaConfigPage";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -126,6 +129,9 @@ function App() {
                   <Route path="financeiro/contas-pagar" element={<ContasPagarSimples />} />
                   <Route path="financeiro/relatorios" element={<Relatorios />} />
                   <Route path="financeiro/fluxo-caixa" element={<FluxoCaixa />} />
+                  
+                  {/* Configurações da Empresa */}
+                  <Route path="empresa/configuracoes" element={<EmpresaConfigPage />} />
                 </Route>
               </Route>
 
