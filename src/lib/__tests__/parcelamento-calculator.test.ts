@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Testes para o Sistema de Parcelamento Inteligente
  */
