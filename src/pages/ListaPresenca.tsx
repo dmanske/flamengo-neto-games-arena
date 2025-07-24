@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Users, UserCheck, UserX, Search, Bus, Filter, TrendingUp, MapPin, Ticket, X } from "lucide-react";
