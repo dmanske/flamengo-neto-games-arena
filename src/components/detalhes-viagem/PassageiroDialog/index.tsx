@@ -73,111 +73,131 @@ export function PassageiroDialog({
   const valorLiquido = valorTotal - desconto;
 
   const onSubmit = async (values: FormData) => {
-    if (!viagemId) return;
+    if (!viagemId || !Array.isArray(values.cliente_id) || values.cliente_id.length === 0) {
+      toast.error("Selecione pelo menos um passageiro");
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Verificar capacidade do ônibus antes de adicionar passageiros
-    if (values.onibus_id) {
-      try {
-        // Buscar dados do ônibus
-        const { data: onibusData, error: onibusError } = await supabase
-          .from("viagem_onibus")
-          .select("capacidade_onibus, lugares_extras")
-          .eq("id", values.onibus_id)
-          .single();
+    const controller = new AbortController();
+    let hasError = false;
 
-        if (onibusError) throw onibusError;
+    try {
+      // Verificar capacidade do ônibus em batch
+      if (values.onibus_id) {
+        const [onibusResponse, passageirosResponse] = await Promise.all([
+          supabase
+            .from("viagem_onibus")
+            .select("capacidade_onibus, lugares_extras")
+            .eq("id", values.onibus_id)
+            .abortSignal(controller.signal)
+            .single(),
+          supabase
+            .from("viagem_passageiros")
+            .select("id")
+            .eq("onibus_id", values.onibus_id)
+            .abortSignal(controller.signal)
+        ]);
 
-        // Contar passageiros atuais no ônibus
-        const { data: passageirosAtuais, error: passageirosError } = await supabase
-          .from("viagem_passageiros")
-          .select("id")
-          .eq("onibus_id", values.onibus_id);
+        if (onibusResponse.error) throw onibusResponse.error;
+        if (passageirosResponse.error) throw passageirosResponse.error;
 
-        if (passageirosError) throw passageirosError;
-
-        const capacidadeTotal = onibusData.capacidade_onibus + (onibusData.lugares_extras || 0);
-        const passageirosAtuaisCount = passageirosAtuais ? passageirosAtuais.length : 0;
+        const capacidadeTotal = onibusResponse.data.capacidade_onibus + (onibusResponse.data.lugares_extras || 0);
+        const passageirosAtuaisCount = passageirosResponse.data?.length || 0;
         const novosPassageiros = values.cliente_id.length;
         
-        // Verificar se há capacidade suficiente
         if (passageirosAtuaisCount + novosPassageiros > capacidadeTotal) {
           const vagasDisponiveis = capacidadeTotal - passageirosAtuaisCount;
           toast.error(
             `Capacidade insuficiente! O ônibus tem ${capacidadeTotal} lugares, ${passageirosAtuaisCount} ocupados. ` +
             `Restam apenas ${vagasDisponiveis} vaga(s) disponível(is), mas você está tentando adicionar ${novosPassageiros} passageiro(s).`
           );
-          setIsLoading(false);
           return;
         }
-      } catch (error) {
-        console.error("Erro ao verificar capacidade do ônibus:", error);
-        toast.error("Erro ao verificar capacidade do ônibus. Tente novamente.");
-        setIsLoading(false);
+      }
+
+      // Verificar em lote se clientes já estão na viagem
+      const { data: clientesExistentes } = await supabase
+        .from("viagem_passageiros")
+        .select("cliente_id, clientes(nome)")
+        .eq("viagem_id", viagemId)
+        .in("cliente_id", values.cliente_id)
+        .abortSignal(controller.signal);
+
+      if (clientesExistentes && clientesExistentes.length > 0) {
+        const cliente = clientesExistentes[0];
+        const nomeCliente = (cliente as any)?.clientes?.nome || 'Desconhecido';
+        toast.error(`O cliente ${nomeCliente} já está cadastrado nesta viagem.`);
         return;
       }
-    }
-    
-    let algumErro = false;
-    let algumSucesso = false;
-    for (const clienteId of values.cliente_id) {
-      try {
-        const { data: existingPassageiro } = await supabase
-          .from("viagem_passageiros")
-          .select("id")
-          .eq("viagem_id", viagemId)
-          .eq("cliente_id", clienteId)
-          .single();
-        if (existingPassageiro) {
-          toast.error(`O cliente já está cadastrado nesta viagem.`);
-          algumErro = true;
-          continue;
-        }
-        // Determinar status correto baseado no parcelamento
-        const statusCorreto = "Pendente"; // Sempre começa como pendente
-        
-        const { data: passageiroData, error: passageiroError } = await supabase
-          .from("viagem_passageiros")
-          .insert({
-            viagem_id: viagemId,
-            cliente_id: clienteId,
-            setor_maracana: values.setor_maracana,
-            status_pagamento: statusCorreto,
-            forma_pagamento: values.forma_pagamento,
-            valor: values.valor,
-            desconto: values.desconto,
-            onibus_id: values.onibus_id,
-          })
-          .select('id')
-          .single();
-        if (passageiroError) throw passageiroError;
 
-        // Sistema de parcelamento removido - agora apenas status simples
-
-        algumSucesso = true;
-      } catch (error) {
-        console.error("Erro ao adicionar passageiro:", error);
-        algumErro = true;
-      }
-    }
-    if (algumSucesso) {
-      toast.success("Passageiro(s) adicionado(s) com sucesso!");
-      onSuccess();
-      onOpenChange(false);
-      form.reset({
-        cliente_id: [],
-        setor_maracana: setorPadrao || "A definir",
+      // Inserir passageiros em lote
+      const passageirosParaInserir = values.cliente_id.map((clienteId: string) => ({
+        viagem_id: viagemId,
+        cliente_id: clienteId,
+        setor_maracana: values.setor_maracana,
         status_pagamento: "Pendente",
-        forma_pagamento: "Pix",
-        valor: valorPadrao || 0,
-        desconto: 0,
-        onibus_id: defaultOnibusId || "",
-        cidade_embarque: "Blumenau",
-      });
-    } else if (algumErro) {
-      toast.error("Nenhum passageiro foi adicionado.");
+        forma_pagamento: values.forma_pagamento,
+        valor: values.valor,
+        desconto: values.desconto,
+        onibus_id: values.onibus_id,
+        cidade_embarque: values.cidade_embarque || null,
+      }));
+
+      const { data: novosPassageirosData, error: insertError } = await supabase
+        .from("viagem_passageiros")
+        .insert(passageirosParaInserir)
+        .select('id')
+        .abortSignal(controller.signal);
+
+      if (insertError) throw insertError;
+
+      console.log("Passageiros inseridos:", novosPassageirosData);
+      
+      // Aguardar processamento completo antes de continuar
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      toast.success(`${values.cliente_id.length} passageiro${values.cliente_id.length > 1 ? 's adicionados' : ' adicionado'} com sucesso!`);
+      
+      // Reset e fechamento usando microtasks para evitar conflitos de estado
+      setTimeout(() => {
+        if (!hasError && !controller.signal.aborted) {
+          form.reset({
+            cliente_id: [],
+            setor_maracana: setorPadrao || "A definir",
+            status_pagamento: "Pendente",
+            forma_pagamento: "Pix",
+            valor: valorPadrao || 0,
+            desconto: 0,
+            onibus_id: defaultOnibusId || "",
+            cidade_embarque: "Blumenau",
+          });
+          onSuccess();
+          
+          // Delay adicional antes de fechar o dialog para evitar tela branca
+          setTimeout(() => {
+            if (!controller.signal.aborted) {
+              onOpenChange(false);
+            }
+          }, 50);
+        }
+      }, 0);
+      
+    } catch (error) {
+      hasError = true;
+      console.error("Erro detalhado ao adicionar passageiros:", error);
+      
+      if (!controller.signal.aborted) {
+        toast.error("Erro ao adicionar passageiros. Tente novamente.");
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
+
+    // Cleanup function para abortar requests pendentes
+    return () => {
+      controller.abort();
+    };
   };
 
   return (

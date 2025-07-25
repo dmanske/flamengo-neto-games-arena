@@ -38,17 +38,35 @@ export function OnibusSelectField({ control, form, viagemId, defaultOnibusId }: 
   const [onibusLotados, setOnibusLotados] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetchOnibus().then(() => {
-      if (defaultOnibusId && form.getValues("onibus_id") !== defaultOnibusId) {
-        const onibusExiste = onibusList.some(o => o.id === defaultOnibusId);
-        if (onibusExiste) {
-          form.setValue("onibus_id", defaultOnibusId);
+    let isMounted = true;
+    
+    const initializeOnibus = async () => {
+      try {
+        await fetchOnibus();
+        
+        if (!isMounted) return;
+        
+        if (defaultOnibusId && form.getValues("onibus_id") !== defaultOnibusId) {
+          const onibusExiste = onibusList.some(o => o.id === defaultOnibusId);
+          if (onibusExiste && isMounted) {
+            form.setValue("onibus_id", defaultOnibusId);
+          }
+        } else if (!defaultOnibusId && onibusList.length === 1 && !form.getValues("onibus_id") && isMounted) {
+          form.setValue("onibus_id", onibusList[0].id);
         }
-      } else if (!defaultOnibusId && onibusList.length === 1 && !form.getValues("onibus_id")) {
-        form.setValue("onibus_id", onibusList[0].id);
+      } catch (error) {
+        if (isMounted) {
+          console.error("Erro ao inicializar ônibus:", error);
+        }
       }
-    });
-  }, [defaultOnibusId]);
+    };
+
+    initializeOnibus();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [defaultOnibusId, form, onibusList]);
 
   const fetchOnibus = async () => {
     try {

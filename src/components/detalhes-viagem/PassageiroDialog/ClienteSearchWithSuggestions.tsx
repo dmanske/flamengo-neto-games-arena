@@ -67,9 +67,11 @@ export function ClienteSearchWithSuggestions({ control, viagemId }: ClienteSearc
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (showSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSuggestions]);
 
   // Buscar clientes já adicionados nesta viagem
   const fetchClientesJaAdicionados = async () => {
