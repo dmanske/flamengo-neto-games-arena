@@ -464,8 +464,7 @@ const Dashboard = () => {
                   <div className="space-y-6">
                     <ProximasViagensCard 
                       isLoading={isLoading} 
-                      proximasViagens={proximasViagens} 
-                      expanded={true}
+                      proximasViagens={proximasViagens}
                     />
                   </div>
                 )}

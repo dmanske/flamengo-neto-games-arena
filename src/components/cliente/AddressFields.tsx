@@ -3,10 +3,8 @@ import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { formatCEP, fetchAddressByCEP } from "@/utils/cepUtils";
-import { toast } from "sonner";
+import { formatCEP } from "@/utils/cepUtils";
 
 // Lista de estados brasileiros com nomes completos
 const estadosBrasileiros = [
@@ -44,37 +42,6 @@ interface AddressFieldsProps {
 }
 
 export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
-  const [loadingCep, setLoadingCep] = React.useState(false);
-
-  const handleCepBlur = async (cep: string) => {
-    const cleanCep = cep.replace(/\D/g, '');
-    if (cleanCep.length !== 8) return;
-    
-    setLoadingCep(true);
-    try {
-      const addressData = await fetchAddressByCEP(cleanCep);
-      if (addressData) {
-        form.setValue("endereco", addressData.logradouro || "");
-        form.setValue("cidade", addressData.localidade || "");
-        form.setValue("estado", addressData.uf || "");
-        form.setValue("bairro", addressData.bairro || "");
-        
-        // Trigger a re-render of the form
-        form.trigger();
-        
-        // Se tiver complemento, adiciona ao campo complemento
-        if (addressData.complemento) {
-          form.setValue("complemento", addressData.complemento);
-        }
-        
-        toast.success("Endereço encontrado automaticamente!");
-      }
-    } catch (error) {
-      toast.error("CEP não encontrado. Preencha o endereço manualmente.");
-    } finally {
-      setLoadingCep(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -85,25 +52,17 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>CEP</FormLabel>
-              <div className="relative">
                 <FormControl>
-                  <Input 
-                    placeholder="00000-000" 
-                    {...field} 
-                    onChange={(e) => {
-                      const formattedCEP = formatCEP(e.target.value);
-                      field.onChange(formattedCEP);
-                    }}
-                    onBlur={() => handleCepBlur(field.value)}
-                    maxLength={9}
-                  />
-                </FormControl>
-                {loadingCep && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
-                )}
-              </div>
+                 <Input 
+                   placeholder="00000-000" 
+                   {...field} 
+                   onChange={(e) => {
+                     const formattedCEP = formatCEP(e.target.value);
+                     field.onChange(formattedCEP);
+                   }}
+                   maxLength={9}
+                 />
+               </FormControl>
               <FormMessage />
             </FormItem>
           )}

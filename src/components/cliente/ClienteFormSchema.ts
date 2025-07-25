@@ -132,6 +132,11 @@ export const formSchema = z.object({
   fonte_cadastro: z.string()
     .default("admin")
     .transform(() => "admin"),
+
+  // Campo adicional opcional
+  passeio_cristo: z.string()
+    .optional()
+    .default("sim"),
 });
 
 export type ClienteFormData = z.infer<typeof formSchema>;
