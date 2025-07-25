@@ -5,6 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PasseiosSection } from "@/components/viagem/PasseiosSection";
+import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
+import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +18,7 @@ import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { CalendarDays, MapPin, Users, Plus, Trash2 } from "lucide-react";
 import { formatInputDateToISO } from "@/lib/date-utils";
 
-// Definir os passeios disponíveis
-const passeiosDisponiveis = [
-  "Cristo Redentor",
-  "Pão de Açúcar",
-  "Centro Histórico",
-  "Copacabana",
-  "Ipanema"
-];
+// Removido: passeiosDisponiveis - agora vem do banco de dados
 
 // Logo padrão do Flamengo
 const LOGO_FLAMENGO_PADRAO = "https://logodetimes.com/times/flamengo/logo-flamengo-256.png";
@@ -40,14 +36,11 @@ const viagemSchema = z.object({
   cidade_embarque: z.string().default("Blumenau"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default(LOGO_FLAMENGO_PADRAO),
-  passeios_pagos: z.array(z.string()).default([]),
+  passeios_selecionados: z.array(z.string()).default([]),
   outro_passeio: z.string().optional(),
 });
 
-type ViagemFormData = z.infer<typeof viagemSchema> & {
-  _isCustomAdversario?: boolean; // Campo auxiliar para controlar o estado do adversário personalizado
-  _isCustomLocal?: boolean; // Campo auxiliar para controlar o estado do local personalizado
-};
+// Using ViagemFormData from types/entities.ts
 
 // Interface para os dados do ônibus
 interface OnibusFormData {
@@ -106,12 +99,22 @@ const CadastrarViagem = () => {
       cidade_embarque: "Blumenau",
       logo_adversario: "",
       logo_flamengo: LOGO_FLAMENGO_PADRAO,
-      passeios_pagos: [],
+      passeios_selecionados: [],
       outro_passeio: "",
       _isCustomAdversario: false,
       _isCustomLocal: false,
     },
   });
+
+  // Sincronizar logoUrl com o campo do formulário
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'logo_adversario') {
+        setLogoUrl(value.logo_adversario || '');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
   
   // Carregar adversários
   useEffect(() => {
@@ -243,7 +246,7 @@ const CadastrarViagem = () => {
       setIsLoading(true);
       
       console.log("Dados do formulário:", data);
-      console.log("Passeios selecionados:", data.passeios_pagos);
+      console.log("Passeios selecionados:", data.passeios_selecionados);
 
       // Validar dados dos ônibus
       for (const onibus of onibusItems) {
@@ -271,7 +274,7 @@ const CadastrarViagem = () => {
           cidade_embarque: data.cidade_embarque,
           logo_adversario: data.logo_adversario,
           logo_flamengo: data.logo_flamengo || LOGO_FLAMENGO_PADRAO,
-          passeios_pagos: data.passeios_pagos,
+          passeios_pagos: [], // Manter compatibilidade, mas usar nova estrutura
           outro_passeio: data.outro_passeio,
           tipo_onibus: onibusItems[0]?.tipo_onibus || "",
           empresa: onibusItems[0]?.empresa || "",
@@ -295,6 +298,30 @@ const CadastrarViagem = () => {
           });
 
         if (onibusError) throw onibusError;
+      }
+
+      // Salvar relacionamentos de passeios selecionados
+      if (data.passeios_selecionados && data.passeios_selecionados.length > 0) {
+        // Buscar os passeios para obter os valores atuais
+        const { data: passeiosData, error: passeiosError } = await supabase
+          .from('passeios')
+          .select('id, valor')
+          .in('id', data.passeios_selecionados);
+
+        if (passeiosError) throw passeiosError;
+
+        // Criar relacionamentos viagem-passeios
+        const viagemPasseios = passeiosData.map(passeio => ({
+          viagem_id: viagemData.id,
+          passeio_id: passeio.id,
+          valor_cobrado: passeio.valor
+        }));
+
+        const { error: viagemPasseiosError } = await supabase
+          .from('viagem_passeios')
+          .insert(viagemPasseios);
+
+        if (viagemPasseiosError) throw viagemPasseiosError;
       }
 
       toast.success("Viagem cadastrada com sucesso!");
@@ -609,17 +636,21 @@ const CadastrarViagem = () => {
                             />
                           </div>
                           <span className="text-lg font-bold text-gray-600">X</span>
-                          <div className="relative w-16 h-16">
-                            <img 
-                              src={logoUrl || "https://via.placeholder.com/64?text=?"} 
-                              alt="Logo do adversário" 
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = "https://via.placeholder.com/64?text=?";
-                              }} 
-                            />
+                          <div className="relative w-16 h-16 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                            {logoUrl ? (
+                              <img 
+                                src={logoUrl} 
+                                alt="Logo do adversário" 
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.onerror = null;
+                                  target.src = "https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=?";
+                                }} 
+                              />
+                            ) : (
+                              <span className="text-2xl text-gray-400">?</span>
+                            )}
                           </div>
                           <div className="flex flex-col">
                             <span className="text-sm font-medium">Flamengo x {form.watch("adversario") || "Adversário"}</span>
@@ -755,64 +786,9 @@ const CadastrarViagem = () => {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="passeios_pagos"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Passeios Inclusos</FormLabel>
-                      <div className="grid grid-cols-2 gap-2">
-                        {passeiosDisponiveis.map((passeio) => (
-                          <FormField
-                            key={passeio}
-                            control={form.control}
-                            name="passeios_pagos"
-                            render={({ field }) => (
-                              <FormItem
-                                key={passeio}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(passeio)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = field.value || [];
-                                      return checked
-                                        ? field.onChange([...currentValue, passeio])
-                                        : field.onChange(
-                                            currentValue?.filter(
-                                              (value) => value !== passeio
-                                            )
-                                          );
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  {passeio}
-                                </FormLabel>
-                              </FormItem>
-                            )}
-                          />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <PasseiosSection form={form} />
 
-                <FormField
-                  control={form.control}
-                  name="outro_passeio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Outro Passeio</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Museu do Amanhã" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <OutroPasseioSection form={form} />
               </CardContent>
             </Card>
           </div>

@@ -22,6 +22,8 @@ import { useViagemReport } from "@/hooks/useViagemReport";
 import { converterStatusParaInteligente } from "@/lib/status-utils";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
 import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
+import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
+import { useViagemCompatibility } from "@/hooks/useViagemCompatibility";
 
 import { toast } from "sonner";
 
@@ -84,6 +86,14 @@ const DetalhesViagem = () => {
     togglePendingPayments,
     filterStatus
   } = useViagemDetails(id);
+
+  // Hook para compatibilidade entre sistemas antigo e novo
+  const { 
+    sistema, 
+    valorPasseios, 
+    temPasseios, 
+    shouldUseNewSystem 
+  } = useViagemCompatibility(viagem);
 
   const { reportRef, handlePrint, handleExportPDF } = useViagemReport();
 
@@ -208,7 +218,25 @@ const DetalhesViagem = () => {
                 totalDespesas={totalDespesas}
                 totalDescontos={totalDescontos}
                 valorBrutoTotal={valorBrutoTotal}
+                valorPasseios={valorPasseios}
+                sistemaPasseios={sistema}
               />
+            </div>
+          )}
+
+          {/* Seção de Passeios da Viagem */}
+          {temPasseios && (
+            <div className="mb-6">
+              <div className="bg-white rounded-lg border p-6">
+                <h3 className="text-lg font-medium mb-4">
+                  Passeios da Viagem {shouldUseNewSystem && '(com Valores)'}
+                </h3>
+                <PasseiosExibicaoHibrida 
+                  viagem={viagem} 
+                  formato="detalhado"
+                  className="max-w-2xl"
+                />
+              </div>
             </div>
           )}
 
@@ -298,6 +326,8 @@ const DetalhesViagem = () => {
                 totalDespesas={totalDespesas}
                 totalDescontos={totalDescontos}
                 valorBrutoTotal={valorBrutoTotal}
+                valorPasseios={valorPasseios}
+                sistemaPasseios={sistema}
               />
             </div>
           )}

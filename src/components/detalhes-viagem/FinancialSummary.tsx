@@ -16,6 +16,8 @@ export interface FinancialSummaryProps {
   totalDespesas?: number;
   totalDescontos?: number;
   valorBrutoTotal?: number;
+  valorPasseios?: number;
+  sistemaPasseios?: 'novo' | 'antigo' | 'sem_dados';
 }
 
 export function FinancialSummary({
@@ -30,6 +32,8 @@ export function FinancialSummary({
   totalDespesas,
   totalDescontos,
   valorBrutoTotal,
+  valorPasseios = 0,
+  sistemaPasseios = 'sem_dados',
 }: FinancialSummaryProps) {
   // Calculate percentage of bus occupation
   const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100);
@@ -45,6 +49,12 @@ export function FinancialSummary({
                 <span>Valor Arrecadado:</span>
                 <span className="font-medium">{formatCurrency(totalArrecadado)}</span>
               </div>
+              {sistemaPasseios === 'novo' && valorPasseios > 0 && (
+                <div className="flex justify-between text-xs text-gray-600 ml-2">
+                  <span>• Receita Passeios:</span>
+                  <span>{formatCurrency(valorPasseios)}</span>
+                </div>
+              )}
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ResponsaveisCard } from "./ResponsaveisCard";
 import { formatCurrency } from "@/lib/utils";
+import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -238,21 +239,13 @@ export function ModernViagemDetailsLayout({
                 <div className="p-3 bg-green-100 rounded-full">
                   <MapPin className="h-6 w-6 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">Passeios Pagos</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {Array.isArray(viagem.passeios_pagos) && viagem.passeios_pagos.length > 0 ? (
-                      viagem.passeios_pagos.map((passeio: string) => (
-                        <Badge key={passeio} className="bg-green-200 text-green-800 border-green-300">{passeio}</Badge>
-                      ))
-                    ) : null}
-                    {viagem.outro_passeio && (
-                      <Badge className="bg-blue-200 text-blue-800 border-blue-300">{viagem.outro_passeio}</Badge>
-                    )}
-                    {(!viagem.passeios_pagos || viagem.passeios_pagos.length === 0) && !viagem.outro_passeio && (
-                      <span className="text-gray-500 text-sm">Nenhum passeio selecionado</span>
-                    )}
-                  </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-2">Passeios da Viagem</p>
+                  <PasseiosExibicaoHibrida 
+                    viagem={viagem} 
+                    formato="lista"
+                    className="text-sm"
+                  />
                 </div>
               </div>
             </CardContent>

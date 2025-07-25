@@ -9,6 +9,7 @@ export const formSchema = z.object({
   status_pagamento: z.string().min(1, "Selecione um status de pagamento"),
   forma_pagamento: z.string().min(1, "Selecione uma forma de pagamento"),
   cidade_embarque: z.string().min(1, "Selecione uma cidade de embarque"),
+  passeios_selecionados: z.array(z.string()).default([]),
 });
 
 export type FormData = z.infer<typeof formSchema>;

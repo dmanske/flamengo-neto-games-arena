@@ -23,6 +23,9 @@ import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PasseiosCompactos } from "./PasseiosCompactos";
+import { calcularValorFinalPassageiro } from "@/utils/passageiroCalculos";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -146,7 +149,8 @@ export function PassageirosCard({
   };
 
   return (
-    <Card>
+    <TooltipProvider>
+      <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -214,7 +218,7 @@ export function PassageirosCard({
                 <TableHead className="text-center">Cidade Embarque</TableHead>
                 <TableHead className="text-center">Setor</TableHead>
                 <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Valor</TableHead>
+                <TableHead className="text-center">Valor Total</TableHead>
                 <TableHead className="text-center">Passeios</TableHead>
                 <TableHead className="text-center">Ações</TableHead>
               </TableRow>
@@ -285,6 +289,11 @@ export function PassageirosCard({
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <span className="font-semibold">R$ {valorLiquido.toFixed(2)}</span>
+                          {passageiro.passeios && passageiro.passeios.length > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              (base + passeios)
+                            </span>
+                          )}
                           {passageiro.status_pagamento !== 'Pago' && (
                             <span className="text-xs text-green-700">Pago: R$ {valorPago.toFixed(2)}</span>
                           )}
@@ -294,25 +303,7 @@ export function PassageirosCard({
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        {passageiro.passeios?.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            {passageiro.passeios.map((passeio) => (
-                              <Badge
-                                key={passeio.passeio_nome}
-                                variant={passeio.status === 'Confirmado' ? 'default' : 'secondary'}
-                                className="text-xs flex items-center gap-1"
-                              >
-                                <Ticket className="h-3 w-3" />
-                                {passeio.passeio_nome}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm flex items-center justify-center gap-1">
-                            <Ticket className="h-3 w-3" />
-                            Sem passeios
-                          </span>
-                        )}
+                        <PasseiosCompactos passeios={passageiro.passeios} />
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -343,5 +334,6 @@ export function PassageirosCard({
         </div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }

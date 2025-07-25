@@ -31,8 +31,10 @@ import { supabase } from "@/lib/supabase";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClienteSearchWithSuggestions } from "./ClienteSearchWithSuggestions";
 import { OnibusSelectField } from "./OnibusSelectField";
+import { PasseiosSelectionSection } from "./PasseiosSelectionSection";
 import { formSchema, FormData } from "./formSchema";
 import { PassageiroDialogProps } from "./types";
+import { usePasseios } from "@/hooks/usePasseios";
 import { Users, MapPin, CreditCard, Ticket, Bus, Home } from "lucide-react";
 
 export function PassageiroDialog({
@@ -45,6 +47,7 @@ export function PassageiroDialog({
   defaultOnibusId,
 }: PassageiroDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { calcularTotal } = usePasseios();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -57,6 +60,7 @@ export function PassageiroDialog({
       desconto: 0,
       onibus_id: defaultOnibusId || "",
       cidade_embarque: "Blumenau",
+      passeios_selecionados: [],
     },
   });
 
@@ -67,9 +71,13 @@ export function PassageiroDialog({
   }, [valorPadrao, form]);
 
   const statusPagamento = form.watch("status_pagamento");
-  const valorTotal = form.watch("valor");
+  const valorBase = form.watch("valor");
   const desconto = form.watch("desconto");
+  const passeiosSelecionados = form.watch("passeios_selecionados") || [];
   
+  // Calcular valor total (base + passeios) apenas para exibição
+  const valorPasseios = calcularTotal(passeiosSelecionados);
+  const valorTotal = valorBase + valorPasseios;
   const valorLiquido = valorTotal - desconto;
 
   const onSubmit = async (values: FormData) => {
@@ -153,6 +161,47 @@ export function PassageiroDialog({
       if (insertError) throw insertError;
 
       console.log("Passageiros inseridos:", novosPassageirosData);
+
+      // Salvar relacionamentos passageiro-passeios se houver passeios selecionados
+      if (values.passeios_selecionados && values.passeios_selecionados.length > 0 && novosPassageirosData) {
+        // Buscar dados dos passeios para obter os nomes
+        const { data: passeiosData, error: passeiosError } = await supabase
+          .from('passeios')
+          .select('id, nome')
+          .in('id', values.passeios_selecionados)
+          .abortSignal(controller.signal);
+
+        if (passeiosError) {
+          console.warn("Erro ao buscar dados dos passeios:", passeiosError);
+        } else if (passeiosData) {
+          // Criar relacionamentos para cada passageiro inserido
+          const passageiroPasseiosParaInserir = [];
+          
+          for (const passageiro of novosPassageirosData) {
+            for (const passeio of passeiosData) {
+              passageiroPasseiosParaInserir.push({
+                viagem_passageiro_id: passageiro.id,
+                passeio_nome: passeio.nome,
+                status: 'Confirmado'
+              });
+            }
+          }
+
+          if (passageiroPasseiosParaInserir.length > 0) {
+            const { error: passageiroPasseiosError } = await supabase
+              .from('passageiro_passeios')
+              .insert(passageiroPasseiosParaInserir)
+              .abortSignal(controller.signal);
+
+            if (passageiroPasseiosError) {
+              console.warn("Erro ao salvar passeios do passageiro:", passageiroPasseiosError);
+              // Não falhar a operação por causa dos passeios
+            } else {
+              console.log("Passeios do passageiro salvos com sucesso");
+            }
+          }
+        }
+      }
       
       // Aguardar processamento completo antes de continuar
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -171,6 +220,7 @@ export function PassageiroDialog({
             desconto: 0,
             onibus_id: defaultOnibusId || "",
             cidade_embarque: "Blumenau",
+            passeios_selecionados: [],
           });
           onSuccess();
           
@@ -305,6 +355,8 @@ export function PassageiroDialog({
                 )}
               />
 
+              <PasseiosSelectionSection form={form} disabled={isLoading} />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -313,7 +365,7 @@ export function PassageiroDialog({
                     <FormItem>
                       <FormLabel className="text-gray-700 flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
-                        Valor (R$)
+                        Valor Base (R$)
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -352,6 +404,41 @@ export function PassageiroDialog({
                   )}
                 />
               </div>
+
+              {/* Exibição do valor total calculado */}
+              {(valorPasseios > 0 || valorTotal !== valorBase) && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                  <h4 className="font-medium text-blue-900">Resumo de Valores</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Valor base:</span>
+                      <span className="font-medium">R$ {valorBase.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    {valorPasseios > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Passeios adicionais:</span>
+                        <span className="font-medium">R$ {valorPasseios.toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-blue-300 pt-1">
+                      <span className="text-blue-900 font-medium">Valor total:</span>
+                      <span className="font-bold text-blue-900">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    {desconto > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-green-700">Desconto:</span>
+                          <span className="font-medium text-green-700">- R$ {desconto.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-blue-300 pt-1">
+                          <span className="text-blue-900 font-bold">Valor final:</span>
+                          <span className="font-bold text-blue-900">R$ {valorLiquido.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Sistema de parcelamento removido - cadastro simples */}
 

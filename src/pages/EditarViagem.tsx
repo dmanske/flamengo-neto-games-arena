@@ -5,6 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PasseiosSection } from "@/components/viagem/PasseiosSection";
+import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
+import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +26,6 @@ const viagemSchema = z.object({
   data_saida: z.string().min(1, "Data e hora da saída é obrigatória"),
   local_jogo: z.string().default("Rio de Janeiro"),
   valor_padrao: z.string().optional(),
-
   status_viagem: z.string().default("Aberta"),
   setor_padrao: z.string().optional(),
   cidade_embarque: z.string().default("Blumenau"),
@@ -31,20 +33,13 @@ const viagemSchema = z.object({
   logo_flamengo: z.string().optional(),
   tipo_onibus: z.string().optional(),
   empresa: z.string().optional(),
-  passeios_pagos: z.array(z.string()).default([]),
+  passeios_selecionados: z.array(z.string()).default([]),
   outro_passeio: z.string().optional(),
 });
 
-type ViagemFormData = z.infer<typeof viagemSchema>;
+// Using ViagemFormData from types/entities.ts
 
-const passeiosDisponiveis = [
-  "Cristo Redentor",
-  "Pão de Açúcar",
-  "Centro Histórico",
-  "Copacabana",
-  "Ipanema",
-  "AquaRio"
-];
+// Removido: passeiosDisponiveis - agora vem do banco de dados
 
 export default function EditarViagem() {
   const { id } = useParams();
@@ -76,7 +71,7 @@ export default function EditarViagem() {
       logo_flamengo: "",
       tipo_onibus: "",
       empresa: "",
-      passeios_pagos: [],
+      passeios_selecionados: [],
       outro_passeio: "",
     }
   });
@@ -106,6 +101,16 @@ export default function EditarViagem() {
 
         setOnibusArray(onibusData || []);
 
+        // Buscar passeios relacionados à viagem
+        const { data: viagemPasseiosData, error: viagemPasseiosError } = await supabase
+          .from("viagem_passeios")
+          .select("passeio_id")
+          .eq("viagem_id", id);
+
+        if (viagemPasseiosError) throw viagemPasseiosError;
+
+        const passeiosSelecionados = viagemPasseiosData?.map(vp => vp.passeio_id) || [];
+
         if (data) {
           setViagem(data);
 
@@ -124,7 +129,7 @@ export default function EditarViagem() {
             logo_flamengo: data.logo_flamengo || "",
             tipo_onibus: data.tipo_onibus || "",
             empresa: data.empresa || "",
-            passeios_pagos: data.passeios_pagos || [],
+            passeios_selecionados: passeiosSelecionados,
             outro_passeio: data.outro_passeio || "",
           });
         }
@@ -170,7 +175,7 @@ export default function EditarViagem() {
         logo_flamengo: data.logo_flamengo,
         tipo_onibus: onibusArray[0]?.tipo_onibus || data.tipo_onibus,
         empresa: onibusArray[0]?.empresa || data.empresa,
-        passeios_pagos: data.passeios_pagos,
+        passeios_pagos: [], // Manter compatibilidade
         outro_passeio: data.outro_passeio,
       };
 
@@ -181,6 +186,39 @@ export default function EditarViagem() {
         .eq("id", id);
 
       if (viagemError) throw viagemError;
+
+      // Atualizar relacionamentos de passeios
+      // Primeiro, remover todos os passeios existentes
+      const { error: deletePasseiosError } = await supabase
+        .from('viagem_passeios')
+        .delete()
+        .eq('viagem_id', id);
+
+      if (deletePasseiosError) throw deletePasseiosError;
+
+      // Depois, adicionar os novos passeios selecionados
+      if (data.passeios_selecionados && data.passeios_selecionados.length > 0) {
+        // Buscar os passeios para obter os valores atuais
+        const { data: passeiosData, error: passeiosError } = await supabase
+          .from('passeios')
+          .select('id, valor')
+          .in('id', data.passeios_selecionados);
+
+        if (passeiosError) throw passeiosError;
+
+        // Criar novos relacionamentos viagem-passeios
+        const viagemPasseios = passeiosData.map(passeio => ({
+          viagem_id: id,
+          passeio_id: passeio.id,
+          valor_cobrado: passeio.valor
+        }));
+
+        const { error: viagemPasseiosError } = await supabase
+          .from('viagem_passeios')
+          .insert(viagemPasseios);
+
+        if (viagemPasseiosError) throw viagemPasseiosError;
+      }
 
       // Gerenciar ônibus - buscar IDs existentes
       const { data: existingOnibusData, error: fetchError } = await supabase
@@ -563,78 +601,9 @@ export default function EditarViagem() {
             </div>
 
             {/* Passeios */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                <CardTitle className="flex items-center gap-2 text-slate-800">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  Passeios Inclusos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <FormField
-                  control={form.control}
-                  name="passeios_pagos"
-                  render={() => (
-                    <FormItem>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {passeiosDisponiveis.map((passeio) => (
-                          <FormField
-                            key={passeio}
-                            control={form.control}
-                            name="passeios_pagos"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={passeio}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(passeio)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([...field.value, passeio])
-                                          : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== passeio
-                                            )
-                                          )
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="text-sm font-normal cursor-pointer">
-                                    {passeio}
-                                  </FormLabel>
-                                </FormItem>
-                              )
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <PasseiosSection form={form} />
 
-                <FormField
-                  control={form.control}
-                  name="outro_passeio"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel className="text-slate-700 font-medium">Outro Passeio (personalizado)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Digite um passeio personalizado..."
-                          {...field}
-                          className="border-slate-200 focus:border-blue-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            <OutroPasseioSection form={form} />
 
             {/* Gerenciamento de Ônibus */}
             <Card className="border-0 shadow-lg">

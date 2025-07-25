@@ -86,3 +86,24 @@ export interface Viagem {
   passeios_pagos: string[];
   outro_passeio: string | null;
 }
+
+// Interface para formulários de viagem com nova estrutura de passeios
+export interface ViagemFormData {
+  adversario: string;
+  data_jogo: string;
+  data_saida: string;
+  local_jogo: string;
+  valor_padrao?: string;
+  capacidade_onibus: string;
+  status_viagem: string;
+  setor_padrao?: string;
+  cidade_embarque: string;
+  logo_adversario?: string;
+  logo_flamengo: string;
+  passeios_pagos: string[]; // Manter compatibilidade
+  passeios_selecionados: string[]; // Nova estrutura
+  outro_passeio?: string;
+  // Campos auxiliares para controle de estado
+  _isCustomAdversario?: boolean;
+  _isCustomLocal?: boolean;
+}

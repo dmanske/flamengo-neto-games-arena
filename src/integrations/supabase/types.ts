@@ -1486,6 +1486,75 @@ export type Database = {
         }
         Relationships: []
       }
+      passeios: {
+        Row: {
+          id: string
+          nome: string
+          valor: number
+          categoria: string
+          ativo: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          valor: number
+          categoria: string
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          valor?: number
+          categoria?: string
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      viagem_passeios: {
+        Row: {
+          id: string
+          viagem_id: string
+          passeio_id: string
+          valor_cobrado: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          viagem_id: string
+          passeio_id: string
+          valor_cobrado: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          viagem_id?: string
+          passeio_id?: string
+          valor_cobrado?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_passeios_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_passeios_passeio_id_fkey"
+            columns: ["passeio_id"]
+            isOneToOne: false
+            referencedRelation: "passeios"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       v_lista_presenca_completa: {
