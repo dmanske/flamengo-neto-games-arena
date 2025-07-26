@@ -2,7 +2,7 @@ import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Bus, DollarSign, Users, Pencil, Trash2, FileText, Printer } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Bus, DollarSign, Users, Pencil, Trash2, FileText, Printer, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,6 +44,7 @@ interface ModernViagemDetailsLayoutProps {
   onDelete: () => void;
   onPrint?: () => void;
   onExportPDF?: () => void;
+  onOpenFilters?: () => void;
   onibusList: Array<any>;
   passageiros?: Array<any>;
   children: React.ReactNode;
@@ -54,6 +55,7 @@ export function ModernViagemDetailsLayout({
   onDelete, 
   onPrint, 
   onExportPDF, 
+  onOpenFilters,
   onibusList,
   passageiros = [],
   children 
@@ -179,15 +181,22 @@ export function ModernViagemDetailsLayout({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
-              {onPrint && (
-                <Button variant="outline" onClick={onPrint} className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700">
-                  <Printer className="h-4 w-4 mr-2" />
-                  Imprimir
+              {onOpenFilters && (
+                <Button variant="outline" onClick={onOpenFilters} className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros do Relatório
                 </Button>
               )}
+
+
               
               {onExportPDF && (
-                <Button variant="outline" onClick={onExportPDF} className="bg-white hover:bg-green-50 border-green-200 text-green-700">
+                <Button 
+                  variant="outline" 
+                  onClick={onExportPDF} 
+                  className="bg-white hover:bg-green-50 border-green-200 text-green-700"
+                  title="Salvar como arquivo PDF no computador"
+                >
                   <FileText className="h-4 w-4 mr-2" />
                   Exportar PDF
                 </Button>

@@ -16,9 +16,11 @@ import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/Financ
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
 import { ViagemReport } from "@/components/relatorios/ViagemReport";
+import { ReportFiltersDialog } from "@/components/relatorios/ReportFiltersDialog";
 import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernViagemDetailsLayout";
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
+import { usePasseios } from "@/hooks/usePasseios";
 import { converterStatusParaInteligente } from "@/lib/status-utils";
 import { PaidPaymentsCard } from "@/components/detalhes-viagem/PaidPaymentsCard";
 import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
@@ -95,7 +97,25 @@ const DetalhesViagem = () => {
     shouldUseNewSystem 
   } = useViagemCompatibility(viagem);
 
-  const { reportRef, handlePrint, handleExportPDF } = useViagemReport();
+  const { 
+    reportRef, 
+    handlePrint, 
+    handleExportPDF, 
+    filters, 
+    setFilters, 
+    filterPassageiros, 
+    calculatePreviewData 
+  } = useViagemReport();
+
+  // Hook para carregar passeios (para filtros de viagens novas)
+  const { passeios } = usePasseios();
+
+  // Estados para o modal de filtros
+  const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
+
+  // Calcular passageiros filtrados e dados de preview
+  const passageirosFiltrados = filterPassageiros(originalPassageiros, filters);
+  const previewData = calculatePreviewData(originalPassageiros, filters);
 
   const passageirosListRef = React.useRef<HTMLDivElement>(null);
 
@@ -188,8 +208,26 @@ const DetalhesViagem = () => {
           totalPago={totalPago}
           totalPendente={totalPendente}
           passageiroPorOnibus={passageiroPorOnibus}
+          filters={filters}
+          passageirosFiltrados={passageirosFiltrados}
         />
       </div>
+
+      {/* Modal de Filtros do Relatório */}
+      <ReportFiltersDialog
+        open={filtersDialogOpen}
+        onOpenChange={setFiltersDialogOpen}
+        filters={filters}
+        onFiltersChange={setFilters}
+        onApplyFilters={(newFilters) => {
+          setFilters(newFilters);
+          // Aqui poderia adicionar lógica adicional se necessário
+        }}
+        passageiros={originalPassageiros}
+        onibusList={onibusList}
+        passeios={temPasseios ? passeios : []}
+        previewData={previewData}
+      />
 
       <Tabs defaultValue="passageiros" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -382,6 +420,7 @@ const DetalhesViagem = () => {
       onDelete={() => handleDelete()}
       onPrint={handlePrint}
       onExportPDF={handleExportPDF}
+      onOpenFilters={() => setFiltersDialogOpen(true)}
       onibusList={onibusList}
       passageiros={originalPassageiros}
     >

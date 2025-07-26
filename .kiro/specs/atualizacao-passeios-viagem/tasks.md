@@ -90,13 +90,18 @@
   - Garantir consistência visual em todo o sistema
   - _Requirements: 2.1, 2.2, 7.1_
 
-- [ ] 12. Implementar sistema de filtros para relatórios PDF (DISCUSSÃO NECESSÁRIA)
+- [x] 12. Implementar sistema de filtros para relatórios PDF (DISCUSSÃO NECESSÁRIA)
   - NOTA: Discutir tipos de filtros desejados antes da implementação
   - Adicionar interface de filtros no componente ViagemReport
   - Implementar filtros por: status de pagamento, passeios selecionados, ônibus, setor, etc.
   - Criar opções de personalização do relatório (incluir/excluir seções)
   - Atualizar hook useViagemReport para suportar filtros
   - Implementar preview do relatório com filtros aplicados
+  - **MELHORIAS ADICIONAIS:**
+    - Filtro rápido "Lista para Responsável do Ônibus" (remove valores financeiros)
+    - Filtros de passeios por tipo (Pagos, Gratuitos, Todos)
+    - Exibição de nomes dos passeios na lista de passageiros
+    - Opção de mostrar/ocultar status de pagamento na lista para responsável
   - Garantir compatibilidade com sistema híbrido (viagens antigas vs novas)
   - _Requirements: 2.1, 6.1, 7.1_
 
@@ -124,6 +129,12 @@
   - Criar lógica para recalcular parcelas quando passeios são alterados
   - Implementar relatórios financeiros com breakdown de valores (base vs passeios)
   - Garantir consistência entre todos os módulos financeiros
+  - **FILTROS AVANÇADOS PARA IMPLEMENTAÇÃO FUTURA:**
+    - Data de pagamento das parcelas
+    - Período de criação da viagem
+    - Número de parcelas
+    - Forma de pagamento (quando implementado)
+    - Histórico de alterações de valor
   - _Requirements: 4.2, 5.2, 6.4_
 
 - [ ] 16. Documentação e treinamento
