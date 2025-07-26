@@ -85,6 +85,12 @@ export interface Viagem {
   capacidade_onibus: number;
   passeios_pagos: string[];
   outro_passeio: string | null;
+  
+  // Novos campos para sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
 }
 
 // Interface para formulários de viagem com nova estrutura de passeios
@@ -103,6 +109,13 @@ export interface ViagemFormData {
   passeios_pagos: string[]; // Manter compatibilidade
   passeios_selecionados: string[]; // Nova estrutura
   outro_passeio?: string;
+  
+  // Novos campos para sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
+  
   // Campos auxiliares para controle de estado
   _isCustomAdversario?: boolean;
   _isCustomLocal?: boolean;

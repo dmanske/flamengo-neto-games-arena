@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PasseiosSection } from "@/components/viagem/PasseiosSection";
 import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
+import { TipoPagamentoSection } from "@/components/viagem/TipoPagamentoSection";
 import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,11 @@ const viagemSchema = z.object({
   empresa: z.string().optional(),
   passeios_selecionados: z.array(z.string()).default([]),
   outro_passeio: z.string().optional(),
+  // Novos campos para sistema avançado de pagamento
+  tipo_pagamento: z.enum(['livre', 'parcelado_flexivel', 'parcelado_obrigatorio']).default('livre'),
+  exige_pagamento_completo: z.boolean().default(false),
+  dias_antecedencia: z.number().min(1).max(30).default(5),
+  permite_viagem_com_pendencia: z.boolean().default(true),
 });
 
 // Using ViagemFormData from types/entities.ts
@@ -63,7 +69,6 @@ export default function EditarViagem() {
       data_saida: "",
       local_jogo: "Rio de Janeiro",
       valor_padrao: "",
-
       status_viagem: "Aberta",
       setor_padrao: "Norte",
       cidade_embarque: "Blumenau",
@@ -73,6 +78,11 @@ export default function EditarViagem() {
       empresa: "",
       passeios_selecionados: [],
       outro_passeio: "",
+      // Novos campos para sistema avançado de pagamento
+      tipo_pagamento: 'livre',
+      exige_pagamento_completo: false,
+      dias_antecedencia: 5,
+      permite_viagem_com_pendencia: true,
     }
   });
 
@@ -121,7 +131,6 @@ export default function EditarViagem() {
             data_saida: data.data_saida ? formatDateForInput(data.data_saida) : "",
             local_jogo: data.local_jogo || "Rio de Janeiro",
             valor_padrao: data.valor_padrao?.toString() || "",
-
             status_viagem: data.status_viagem || "Aberta",
             setor_padrao: data.setor_padrao || "Norte",
             cidade_embarque: data.cidade_embarque || "Blumenau",
@@ -131,6 +140,11 @@ export default function EditarViagem() {
             empresa: data.empresa || "",
             passeios_selecionados: passeiosSelecionados,
             outro_passeio: data.outro_passeio || "",
+            // Novos campos para sistema avançado de pagamento (com fallback para viagens antigas)
+            tipo_pagamento: data.tipo_pagamento || 'livre',
+            exige_pagamento_completo: data.exige_pagamento_completo || false,
+            dias_antecedencia: data.dias_antecedencia || 5,
+            permite_viagem_com_pendencia: data.permite_viagem_com_pendencia !== undefined ? data.permite_viagem_com_pendencia : true,
           });
         }
       } catch (error: any) {
@@ -177,6 +191,11 @@ export default function EditarViagem() {
         empresa: onibusArray[0]?.empresa || data.empresa,
         passeios_pagos: [], // Manter compatibilidade
         outro_passeio: data.outro_passeio,
+        // Novos campos para sistema avançado de pagamento
+        tipo_pagamento: data.tipo_pagamento,
+        exige_pagamento_completo: data.exige_pagamento_completo,
+        dias_antecedencia: data.dias_antecedencia,
+        permite_viagem_com_pendencia: data.permite_viagem_com_pendencia,
       };
 
       // Atualizar viagem
@@ -604,6 +623,18 @@ export default function EditarViagem() {
             <PasseiosSection form={form} />
 
             <OutroPasseioSection form={form} />
+
+            {/* Seção de Tipo de Pagamento */}
+            <TipoPagamentoSection
+              tipoPagamento={form.watch('tipo_pagamento')}
+              onTipoPagamentoChange={(tipo) => form.setValue('tipo_pagamento', tipo)}
+              exigePagamentoCompleto={form.watch('exige_pagamento_completo')}
+              onExigePagamentoCompletoChange={(exige) => form.setValue('exige_pagamento_completo', exige)}
+              diasAntecedencia={form.watch('dias_antecedencia')}
+              onDiasAntecedenciaChange={(dias) => form.setValue('dias_antecedencia', dias)}
+              permiteViagemComPendencia={form.watch('permite_viagem_com_pendencia')}
+              onPermiteViagemComPendenciaChange={(permite) => form.setValue('permite_viagem_com_pendencia', permite)}
+            />
 
             {/* Gerenciamento de Ônibus */}
             <Card className="border-0 shadow-lg">

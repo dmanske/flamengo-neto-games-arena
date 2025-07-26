@@ -19,6 +19,20 @@ export interface Viagem {
   setor_padrao: string | null;
   passeios_pagos?: string[];
   outro_passeio?: string | null;
+  // Novos campos do sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
+  // Passeios relacionados
+  viagem_passeios?: Array<{
+    passeio_id: string;
+    passeios: {
+      nome: string;
+      valor: number;
+      categoria: string;
+    };
+  }>;
 }
 
 export interface Cliente {
@@ -153,7 +167,17 @@ export function useViagemDetails(viagemId: string | undefined) {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('viagens')
-        .select('*')
+        .select(`
+          *,
+          viagem_passeios (
+            passeio_id,
+            passeios (
+              nome,
+              valor,
+              categoria
+            )
+          )
+        `)
         .eq('id', id)
         .single();
 

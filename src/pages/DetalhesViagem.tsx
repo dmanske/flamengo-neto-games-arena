@@ -392,8 +392,6 @@ const DetalhesViagem = () => {
         onOpenChange={setEditPassageiroOpen}
         passageiro={selectedPassageiro}
         onSuccess={() => id && fetchPassageiros(id)}
-        passeiosPagos={viagem?.passeios_pagos}
-        outroPasseio={viagem?.outro_passeio}
       />
 
       <PassageiroDetailsDialog

@@ -10,10 +10,8 @@ export interface ViagemLegacy {
 export interface ViagemNova {
   id: string;
   viagem_passeios?: Array<{
-    id: string;
     passeio_id: string;
-    valor_cobrado: number;
-    passeio?: {
+    passeios?: {
       nome: string;
       valor: number;
       categoria: string;
@@ -47,7 +45,7 @@ export const isViagemLegacy = (viagem: ViagemHibrida): boolean => {
 export const formatarPasseiosParaExibicao = (viagem: ViagemHibrida): string[] => {
   if (isViagemNova(viagem)) {
     // Sistema novo - usar viagem_passeios
-    return viagem.viagem_passeios?.map(vp => vp.passeio?.nome || 'Passeio') || [];
+    return viagem.viagem_passeios?.map(vp => vp.passeios?.nome || 'Passeio') || [];
   } else if (isViagemLegacy(viagem)) {
     // Sistema antigo - usar passeios_pagos
     return viagem.passeios_pagos || [];
@@ -62,7 +60,7 @@ export const formatarPasseiosParaExibicao = (viagem: ViagemHibrida): string[] =>
 export const calcularValorTotalPasseios = (viagem: ViagemHibrida): number => {
   if (isViagemNova(viagem)) {
     // Sistema novo - somar valores dos relacionamentos
-    return viagem.viagem_passeios?.reduce((total, vp) => total + vp.valor_cobrado, 0) || 0;
+    return viagem.viagem_passeios?.reduce((total, vp) => total + (vp.passeios?.valor || 0), 0) || 0;
   } else {
     // Sistema antigo - não tem valores específicos
     return 0;
@@ -73,18 +71,31 @@ export const calcularValorTotalPasseios = (viagem: ViagemHibrida): number => {
  * Obtém informações de compatibilidade da viagem
  */
 export const getViagemCompatibilityInfo = (viagem: ViagemHibrida) => {
-  const isNova = isViagemNova(viagem);
-  const isLegacy = isViagemLegacy(viagem);
-  const passeios = formatarPasseiosParaExibicao(viagem);
-  const valorPasseios = calcularValorTotalPasseios(viagem);
-  
-  return {
-    isNova,
-    isLegacy,
-    sistema: isNova ? 'novo' : isLegacy ? 'legacy' : 'sem_passeios',
-    passeios,
-    valorPasseios,
-    temPasseios: passeios.length > 0,
-    outroPasseio: viagem.outro_passeio
-  };
+  try {
+    const isNova = isViagemNova(viagem);
+    const isLegacy = isViagemLegacy(viagem);
+    const passeios = formatarPasseiosParaExibicao(viagem);
+    const valorPasseios = calcularValorTotalPasseios(viagem);
+    
+    return {
+      isNova,
+      isLegacy,
+      sistema: isNova ? 'novo' : isLegacy ? 'legacy' : 'sem_passeios',
+      passeios,
+      valorPasseios,
+      temPasseios: passeios.length > 0,
+      outroPasseio: viagem.outro_passeio
+    };
+  } catch (error) {
+    console.error('Erro ao processar compatibilidade da viagem:', error);
+    return {
+      isNova: false,
+      isLegacy: false,
+      sistema: 'erro' as const,
+      passeios: [],
+      valorPasseios: 0,
+      temPasseios: false,
+      outroPasseio: undefined
+    };
+  }
 };

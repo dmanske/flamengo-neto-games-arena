@@ -35,17 +35,13 @@ import { PassageiroEditDialogProps } from "./types";
 import { OnibusSelectField } from "./OnibusSelectField";
 import { SetorSelectField } from "./SetorSelectField";
 import { ParcelasEditManager } from "./ParcelasEditManager";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { PasseiosEditSection } from "./PasseiosEditSection";
 
 export function PassageiroEditDialog({
   open,
   onOpenChange,
   passageiro,
   onSuccess,
-  passeiosPagos,
-  outroPasseio,
 }: PassageiroEditDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -68,22 +64,43 @@ export function PassageiroEditDialog({
   const desconto = form.watch("desconto");
 
   useEffect(() => {
-    if (passageiro) {
-      form.reset({
-        setor_maracana: passageiro.setor_maracana || "",
-        status_pagamento: passageiro.status_pagamento || "Pendente",
-        forma_pagamento: passageiro.forma_pagamento || "",
-        valor: passageiro.valor || 0,
-        desconto: passageiro.desconto || 0,
-        onibus_id: passageiro.onibus_id?.toString() || "",
-        cidade_embarque: passageiro.cidade_embarque || "",
-        observacoes: passageiro.observacoes || "",
-        passeios: passageiro.passeios?.map(p => ({
-          nome: p.passeio_nome,
-          status: p.status
-        })) || []
-      });
-    }
+    const loadPassageiroData = async () => {
+      if (passageiro) {
+        // Carregar dados básicos
+        form.reset({
+          setor_maracana: passageiro.setor_maracana || "",
+          status_pagamento: passageiro.status_pagamento || "Pendente",
+          forma_pagamento: passageiro.forma_pagamento || "",
+          valor: passageiro.valor || 0,
+          desconto: passageiro.desconto || 0,
+          onibus_id: passageiro.onibus_id?.toString() || "",
+          cidade_embarque: passageiro.cidade_embarque || "",
+          observacoes: passageiro.observacoes || "",
+          passeios_selecionados: []
+        });
+
+        // Carregar passeios selecionados convertendo nomes para IDs
+        if (passageiro.passeios && passageiro.passeios.length > 0) {
+          try {
+            const nomesPasseios = passageiro.passeios.map(p => p.passeio_nome);
+            
+            const { data: passeiosInfo, error } = await supabase
+              .from('passeios')
+              .select('id, nome')
+              .in('nome', nomesPasseios);
+
+            if (!error && passeiosInfo) {
+              const idsPasseios = passeiosInfo.map(p => p.id);
+              form.setValue('passeios_selecionados', idsPasseios);
+            }
+          } catch (error) {
+            console.error('Erro ao carregar passeios selecionados:', error);
+          }
+        }
+      }
+    };
+
+    loadPassageiroData();
   }, [passageiro, form]);
 
   const onSubmit = async (values: FormData) => {
@@ -117,7 +134,7 @@ export function PassageiroEditDialog({
       }
 
       // Atualizar passeios do passageiro
-      if (values.passeios) {
+      if (values.passeios_selecionados) {
         // Primeiro, remover todos os passeios existentes
         const { error: deleteError } = await supabase
           .from("passageiro_passeios")
@@ -125,17 +142,30 @@ export function PassageiroEditDialog({
           .eq("viagem_passageiro_id", passageiro.viagem_passageiro_id);
         if (deleteError) throw deleteError;
 
-        // Depois, inserir os novos passeios
-        const passeiosData = values.passeios.map(passeio => ({
-          viagem_passageiro_id: passageiro.viagem_passageiro_id,
-          passeio_nome: passeio.nome,
-          status: passeio.status
-        }));
+        // Depois, inserir os novos passeios selecionados
+        if (values.passeios_selecionados.length > 0) {
+          // Buscar os nomes dos passeios pelos IDs
+          const { data: passeiosInfo, error: passeiosInfoError } = await supabase
+            .from('passeios')
+            .select('id, nome')
+            .in('id', values.passeios_selecionados);
 
-        const { error: passeiosError } = await supabase
-          .from("passageiro_passeios")
-          .insert(passeiosData);
-        if (passeiosError) throw passeiosError;
+          if (passeiosInfoError) throw passeiosInfoError;
+
+          const passeiosData = values.passeios_selecionados.map(passeioId => {
+            const passeioInfo = passeiosInfo?.find(p => p.id === passeioId);
+            return {
+              viagem_passageiro_id: passageiro.viagem_passageiro_id,
+              passeio_nome: passeioInfo?.nome || 'Passeio',
+              status: 'confirmado'
+            };
+          });
+
+          const { error: passeiosError } = await supabase
+            .from("passageiro_passeios")
+            .insert(passeiosData);
+          if (passeiosError) throw passeiosError;
+        }
       }
 
       // Atualizar passageiro normalmente
@@ -324,76 +354,8 @@ export function PassageiroEditDialog({
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="passeios"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">Passeios</FormLabel>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {passeiosPagos?.map((passeio) => (
-                            <div key={passeio} className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50">
-                              <Checkbox
-                                id={passeio}
-                                checked={field.value?.some(p => p.nome === passeio)}
-                                onCheckedChange={(checked) => {
-                                  const currentPasseios = field.value || [];
-                                  if (checked) {
-                                    field.onChange([
-                                      ...currentPasseios,
-                                      { nome: passeio, status: 'Confirmado' }
-                                    ]);
-                                  } else {
-                                    field.onChange(currentPasseios.filter(p => p.nome !== passeio));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor={passeio} className="cursor-pointer">{passeio}</Label>
-                            </div>
-                          ))}
-                          {outroPasseio && (
-                            <div className="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50">
-                              <Checkbox
-                                id="outro"
-                                checked={field.value?.some(p => p.nome === outroPasseio)}
-                                onCheckedChange={(checked) => {
-                                  const currentPasseios = field.value || [];
-                                  if (checked) {
-                                    field.onChange([
-                                      ...currentPasseios,
-                                      { nome: outroPasseio, status: 'Confirmado' }
-                                    ]);
-                                  } else {
-                                    field.onChange(currentPasseios.filter(p => p.nome !== outroPasseio));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor="outro" className="cursor-pointer">{outroPasseio}</Label>
-                            </div>
-                          )}
-                        </div>
-                        {field.value && field.value.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Passeios Selecionados:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {field.value.map((passeio) => (
-                                <Badge
-                                  key={passeio.nome}
-                                  variant={passeio.status === 'Confirmado' ? 'default' : 'secondary'}
-                                  className="text-sm"
-                                >
-                                  {passeio.nome}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Seção de Passeios Atualizada */}
+                <PasseiosEditSection form={form} viagemId={passageiro?.viagem_id || ''} />
               </div>
 
               {/* Coluna da Direita */}

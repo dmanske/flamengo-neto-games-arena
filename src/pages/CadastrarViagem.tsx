@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PasseiosSection } from "@/components/viagem/PasseiosSection";
 import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
+import { TipoPagamentoSection } from "@/components/viagem/TipoPagamentoSection";
 import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,11 @@ const viagemSchema = z.object({
   logo_flamengo: z.string().default(LOGO_FLAMENGO_PADRAO),
   passeios_selecionados: z.array(z.string()).default([]),
   outro_passeio: z.string().optional(),
+  // Novos campos para sistema avançado de pagamento
+  tipo_pagamento: z.enum(['livre', 'parcelado_flexivel', 'parcelado_obrigatorio']).default('livre'),
+  exige_pagamento_completo: z.boolean().default(false),
+  dias_antecedencia: z.number().min(1).max(30).default(5),
+  permite_viagem_com_pendencia: z.boolean().default(true),
 });
 
 // Using ViagemFormData from types/entities.ts
@@ -101,6 +107,11 @@ const CadastrarViagem = () => {
       logo_flamengo: LOGO_FLAMENGO_PADRAO,
       passeios_selecionados: [],
       outro_passeio: "",
+      // Novos campos para sistema avançado de pagamento
+      tipo_pagamento: 'livre',
+      exige_pagamento_completo: false,
+      dias_antecedencia: 5,
+      permite_viagem_com_pendencia: true,
       _isCustomAdversario: false,
       _isCustomLocal: false,
     },
@@ -278,6 +289,11 @@ const CadastrarViagem = () => {
           outro_passeio: data.outro_passeio,
           tipo_onibus: onibusItems[0]?.tipo_onibus || "",
           empresa: onibusItems[0]?.empresa || "",
+          // Novos campos para sistema avançado de pagamento
+          tipo_pagamento: data.tipo_pagamento,
+          exige_pagamento_completo: data.exige_pagamento_completo,
+          dias_antecedencia: data.dias_antecedencia,
+          permite_viagem_com_pendencia: data.permite_viagem_com_pendencia,
         })
         .select()
         .single();
@@ -789,6 +805,18 @@ const CadastrarViagem = () => {
                 <PasseiosSection form={form} />
 
                 <OutroPasseioSection form={form} />
+
+                {/* Seção de Tipo de Pagamento */}
+                <TipoPagamentoSection
+                  tipoPagamento={form.watch('tipo_pagamento')}
+                  onTipoPagamentoChange={(tipo) => form.setValue('tipo_pagamento', tipo)}
+                  exigePagamentoCompleto={form.watch('exige_pagamento_completo')}
+                  onExigePagamentoCompletoChange={(exige) => form.setValue('exige_pagamento_completo', exige)}
+                  diasAntecedencia={form.watch('dias_antecedencia')}
+                  onDiasAntecedenciaChange={(dias) => form.setValue('dias_antecedencia', dias)}
+                  permiteViagemComPendencia={form.watch('permite_viagem_com_pendencia')}
+                  onPermiteViagemComPendenciaChange={(permite) => form.setValue('permite_viagem_com_pendencia', permite)}
+                />
               </CardContent>
             </Card>
           </div>

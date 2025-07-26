@@ -9,10 +9,7 @@ export const formSchema = z.object({
   onibus_id: z.string().min(1, "Selecione um ônibus"),
   cidade_embarque: z.string().min(1, "Selecione uma cidade de embarque"),
   observacoes: z.string().optional(),
-  passeios: z.array(z.object({
-    nome: z.string(),
-    status: z.string()
-  })).optional()
+  passeios_selecionados: z.array(z.string()).default([])
 });
 
 export type FormData = z.infer<typeof formSchema>;

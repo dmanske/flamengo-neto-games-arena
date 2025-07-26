@@ -11,7 +11,7 @@ import {
  */
 export const useViagemCompatibility = (viagem: ViagemHibrida | null) => {
   const compatibilityInfo = useMemo(() => {
-    if (!viagem) {
+    if (!viagem || !viagem.id) {
       return {
         isNova: false,
         isLegacy: false,
@@ -23,7 +23,20 @@ export const useViagemCompatibility = (viagem: ViagemHibrida | null) => {
       };
     }
 
-    return getViagemCompatibilityInfo(viagem);
+    try {
+      return getViagemCompatibilityInfo(viagem);
+    } catch (error) {
+      console.error('Erro no hook useViagemCompatibility:', error);
+      return {
+        isNova: false,
+        isLegacy: false,
+        sistema: 'erro' as const,
+        passeios: [],
+        valorPasseios: 0,
+        temPasseios: false,
+        outroPasseio: undefined
+      };
+    }
   }, [viagem]);
 
   const shouldUseNewSystem = useMemo(() => {

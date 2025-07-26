@@ -16,6 +16,7 @@ import { ptBR } from "date-fns/locale";
 import { formatBirthDate } from "@/utils/formatters";
 import { usePasseios } from "@/hooks/usePasseios";
 import { formatCurrency } from "@/lib/utils";
+import { ControleFinanceiroAvancado } from "@/components/financeiro/ControleFinanceiroAvancado";
 
 interface PassageiroDetails {
   viagem_passageiro_id: string;
@@ -424,6 +425,12 @@ export function PassageiroDetailsDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* Sistema Avançado de Pagamento */}
+            <ControleFinanceiroAvancado
+              viagemPassageiroId={passageiro.viagem_passageiro_id}
+              clienteNome={passageiro.nome}
+            />
           </div>
         </div>
       </DialogContent>

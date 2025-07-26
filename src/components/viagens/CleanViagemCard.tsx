@@ -22,6 +22,20 @@ interface Viagem {
   logo_flamengo: string | null;
   logo_adversario: string | null;
   capacidade_onibus: number;
+  // Novos campos do sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
+  // Passeios relacionados
+  viagem_passeios?: Array<{
+    passeio_id: string;
+    passeios: {
+      nome: string;
+      valor: number;
+      categoria: string;
+    };
+  }>;
 }
 
 interface CleanViagemCardProps {
@@ -186,6 +200,69 @@ export function CleanViagemCard({
               </div>
             </div>
           </div>
+
+          {/* Seção de Passeios e Tipo de Pagamento */}
+          {(viagem.viagem_passeios && viagem.viagem_passeios.length > 0) || viagem.tipo_pagamento ? (
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              {/* Tipo de Pagamento */}
+              {viagem.tipo_pagamento && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-professional-navy">Tipo de Pagamento</span>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${
+                      viagem.tipo_pagamento === 'livre' 
+                        ? 'border-blue-300 text-blue-700 bg-blue-50'
+                        : viagem.tipo_pagamento === 'parcelado_flexivel'
+                        ? 'border-green-300 text-green-700 bg-green-50'
+                        : 'border-orange-300 text-orange-700 bg-orange-50'
+                    }`}
+                  >
+                    {viagem.tipo_pagamento === 'livre' && 'Livre'}
+                    {viagem.tipo_pagamento === 'parcelado_flexivel' && 'Flexível'}
+                    {viagem.tipo_pagamento === 'parcelado_obrigatorio' && 'Obrigatório'}
+                  </Badge>
+                </div>
+              )}
+
+              {/* Passeios Disponíveis */}
+              {viagem.viagem_passeios && viagem.viagem_passeios.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-professional-navy">Passeios</span>
+                    <span className="text-xs text-professional-slate">
+                      {viagem.viagem_passeios.length} disponível{viagem.viagem_passeios.length > 1 ? 'is' : ''}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {viagem.viagem_passeios.slice(0, 3).map((vp, index) => (
+                      <Badge 
+                        key={vp.passeio_id}
+                        variant="secondary"
+                        className={`text-xs ${
+                          vp.passeios.categoria === 'pago' 
+                            ? 'bg-green-100 text-green-700 border-green-200' 
+                            : 'bg-blue-100 text-blue-700 border-blue-200'
+                        }`}
+                      >
+                        {vp.passeios.nome}
+                        {vp.passeios.valor > 0 && (
+                          <span className="ml-1 font-medium">
+                            R$ {vp.passeios.valor.toFixed(0)}
+                          </span>
+                        )}
+                      </Badge>
+                    ))}
+                    {viagem.viagem_passeios.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{viagem.viagem_passeios.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
           
           {/* Occupancy info */}
           <div className="bg-professional-light rounded-lg p-3">

@@ -71,6 +71,12 @@ export function PassageirosCard({
   totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  
+  // Calcular se há vagas disponíveis no ônibus atual
+  const capacidadeOnibusAtual = onibusAtual ? onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0) : 0;
+  const passageirosNoOnibus = passageirosAtuais?.length || 0;
+  const vagasDisponiveis = capacidadeOnibusAtual - passageirosNoOnibus;
+  const onibusLotado = onibusAtual && vagasDisponiveis <= 0;
 
   // Permitir controle externo do filtro de status
   useEffect(() => {
@@ -171,15 +177,37 @@ export function PassageirosCard({
             </CardTitle>
             <CardDescription>
               {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
-              {onibusAtual && ` • Capacidade: ${onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0)} lugares`}
+              {onibusAtual && (
+                <span className={`ml-2 ${
+                  onibusLotado 
+                    ? 'text-red-600 font-medium' 
+                    : vagasDisponiveis <= 3 
+                      ? 'text-yellow-600 font-medium' 
+                      : 'text-gray-600'
+                }`}>
+                  • {passageirosNoOnibus}/{capacidadeOnibusAtual} lugares
+                  {onibusLotado 
+                    ? ' (LOTADO)' 
+                    : vagasDisponiveis <= 3 
+                      ? ` (${vagasDisponiveis} vagas restantes)` 
+                      : ''
+                  }
+                </span>
+              )}
             </CardDescription>
           </div>
           <Button 
             onClick={() => setAddPassageiroOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            disabled={onibusLotado}
+            className={`${
+              onibusLotado 
+                ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+            title={onibusLotado ? 'Ônibus lotado - sem vagas disponíveis' : 'Adicionar novo passageiro'}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Passageiro
+            {onibusLotado ? 'Ônibus Lotado' : 'Adicionar Passageiro'}
           </Button>
         </div>
       </CardHeader>

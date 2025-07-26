@@ -28,10 +28,15 @@ const initStorage = async () => {
       console.log('Logos bucket created successfully');
     }
     
-    // Check client-photos bucket (bucket should already exist)
+    // Check and create client-photos bucket
     const { error: clientPhotosError } = await supabase.storage.getBucket('client-photos');
-    if (clientPhotosError) {
-      console.warn('Client-photos bucket not accessible:', clientPhotosError.message);
+    if (clientPhotosError && clientPhotosError.message.includes('not found')) {
+      console.log('Creating client-photos storage bucket...');
+      await supabase.storage.createBucket('client-photos', {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB
+      });
+      console.log('Client-photos bucket created successfully');
     }
 
     // Additional error handling for debug purposes
@@ -41,7 +46,7 @@ const initStorage = async () => {
     if (logosError && !logosError.message.includes('not found')) {
       console.error('Error checking logos bucket:', logosError);
     }
-    if (clientPhotosError) {
+    if (clientPhotosError && !clientPhotosError.message.includes('not found')) {
       console.error('Error accessing client-photos bucket:', clientPhotosError);
     }
   } catch (error) {

@@ -73,9 +73,9 @@ export const PasseiosExibicaoHibrida: React.FC<PasseiosExibicaoHibridaProps> = (
               // Sistema novo - mostrar com valores
               viagem.viagem_passeios?.map((vp, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">{vp.passeio?.nome}</span>
+                  <span className="text-sm text-gray-700">{vp.passeios?.nome}</span>
                   <Badge variant="secondary" className="text-xs">
-                    R$ {vp.valor_cobrado.toFixed(2).replace('.', ',')}
+                    R$ {(vp.passeios?.valor || 0).toFixed(2).replace('.', ',')}
                   </Badge>
                 </div>
               ))

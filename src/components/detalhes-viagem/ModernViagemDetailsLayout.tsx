@@ -37,6 +37,20 @@ interface Viagem {
   logo_adversario: string | null;
   passeios_pagos?: string[];
   outro_passeio?: string;
+  // Novos campos do sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
+  // Passeios relacionados
+  viagem_passeios?: Array<{
+    passeio_id: string;
+    passeios: {
+      nome: string;
+      valor: number;
+      categoria: string;
+    };
+  }>;
 }
 
 interface ModernViagemDetailsLayoutProps {
@@ -227,7 +241,7 @@ export function ModernViagemDetailsLayout({
         {/* Responsáveis Card - Sempre exibido com todos os responsáveis */}
         <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -285,6 +299,50 @@ export function ModernViagemDetailsLayout({
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Capacidade Total</p>
                   <p className="text-lg font-bold text-gray-900">{totalCapacity} passageiros</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card de Tipo de Pagamento */}
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-full ${
+                  viagem.tipo_pagamento === 'livre' 
+                    ? 'bg-blue-100' 
+                    : viagem.tipo_pagamento === 'parcelado_flexivel'
+                    ? 'bg-green-100'
+                    : 'bg-amber-100'
+                }`}>
+                  <DollarSign className={`h-6 w-6 ${
+                    viagem.tipo_pagamento === 'livre' 
+                      ? 'text-blue-600' 
+                      : viagem.tipo_pagamento === 'parcelado_flexivel'
+                      ? 'text-green-600'
+                      : 'text-amber-600'
+                  }`} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Tipo de Pagamento</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-gray-900">
+                      {viagem.tipo_pagamento === 'livre' && 'Livre'}
+                      {viagem.tipo_pagamento === 'parcelado_flexivel' && 'Flexível'}
+                      {viagem.tipo_pagamento === 'parcelado_obrigatorio' && 'Obrigatório'}
+                      {!viagem.tipo_pagamento && 'Livre'}
+                    </p>
+                    {viagem.exige_pagamento_completo && (
+                      <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                        Obrigatório
+                      </Badge>
+                    )}
+                  </div>
+                  {viagem.exige_pagamento_completo && viagem.dias_antecedencia && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Pagar até {viagem.dias_antecedencia} dias antes
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>

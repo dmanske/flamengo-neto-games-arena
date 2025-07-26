@@ -48,6 +48,20 @@ interface Viagem {
   data_jogo: string;
   adversario: string;
   rota: string;
+  // Novos campos do sistema avançado de pagamento
+  tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
+  exige_pagamento_completo?: boolean;
+  dias_antecedencia?: number;
+  permite_viagem_com_pendencia?: boolean;
+  // Passeios relacionados
+  viagem_passeios?: Array<{
+    passeio_id: string;
+    passeios: {
+      nome: string;
+      valor: number;
+      categoria: string;
+    };
+  }>;
   valor_padrao: number | null;
   empresa: string;
   tipo_onibus: string;
@@ -79,7 +93,17 @@ const Viagens = () => {
 
       const { data, error } = await supabase
         .from('viagens')
-        .select('*')
+        .select(`
+          *,
+          viagem_passeios (
+            passeio_id,
+            passeios (
+              nome,
+              valor,
+              categoria
+            )
+          )
+        `)
         .order('data_jogo', { ascending: true });
 
       if (error) {

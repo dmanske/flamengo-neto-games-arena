@@ -82,3 +82,14 @@ Esta funcionalidade visa implementar um sistema completo de gerenciamento de pas
 2. WHEN valores são atualizados THEN viagens futuras SHALL usar os novos valores automaticamente
 3. WHEN valores são alterados THEN viagens existentes SHALL manter os valores históricos
 4. WHEN passeios são desativados THEN o sistema SHALL manter histórico mas não exibir em novas viagens
+
+### Requirement 8
+
+**User Story:** Como um desenvolvedor do sistema, eu quero carregar apenas os passeios específicos de uma viagem, para que eu tenha melhor performance e dados mais precisos nos componentes.
+
+#### Acceptance Criteria
+
+1. WHEN um componente precisa dos passeios de uma viagem THEN o sistema SHALL carregar apenas os passeios relacionados àquela viagem específica
+2. WHEN um hook é criado para passeios de viagem THEN o sistema SHALL usar queries otimizadas com JOIN entre viagem_passeios e passeios
+3. WHEN os dados são carregados THEN o sistema SHALL incluir informações completas do passeio (nome, valor, categoria) junto com dados do relacionamento
+4. WHEN não há passeios para a viagem THEN o sistema SHALL retornar array vazio sem causar erros

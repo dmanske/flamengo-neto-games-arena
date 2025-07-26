@@ -122,7 +122,7 @@ interface ViagemComPasseios {
   outro_passeio?: string;
 }
 
-// Hook para gerenciar passeios
+// Hook para gerenciar passeios (geral)
 interface UsePasseiosReturn {
   passeios: Passeio[];
   passeiosPagos: Passeio[];
@@ -130,6 +130,18 @@ interface UsePasseiosReturn {
   loading: boolean;
   error: string | null;
   calcularTotal: (passeioIds: string[]) => number;
+  refetch: () => void;
+}
+
+// Hook otimizado para passeios específicos de uma viagem
+interface UsePasseiosViagemReturn {
+  passeiosViagem: ViagemPasseio[]; // Passeios com dados do relacionamento
+  passeiosDisponiveis: Passeio[]; // Todos os passeios para seleção
+  loading: boolean;
+  error: string | null;
+  calcularTotalViagem: () => number;
+  adicionarPasseio: (passeioId: string) => Promise<void>;
+  removerPasseio: (passeioId: string) => Promise<void>;
   refetch: () => void;
 }
 ```
@@ -236,6 +248,107 @@ export const PasseiosGratuitosSection: React.FC<{ form: UseFormReturn<ViagemForm
       </div>
     </div>
   );
+};
+```
+
+### 6. Hook Otimizado para Passeios de Viagem Específica
+
+```typescript
+// src/hooks/usePasseiosViagem.ts
+export const usePasseiosViagem = (viagemId: string) => {
+  const [passeiosViagem, setPasseiosViagem] = useState<ViagemPasseio[]>([]);
+  const [passeiosDisponiveis, setPasseiosDisponiveis] = useState<Passeio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Query otimizada com JOIN
+  const fetchPasseiosViagem = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar passeios da viagem com JOIN
+      const { data: viagemPasseios, error: viagemError } = await supabase
+        .from('viagem_passeios')
+        .select(`
+          *,
+          passeio:passeios(*)
+        `)
+        .eq('viagem_id', viagemId);
+
+      if (viagemError) throw viagemError;
+
+      // Buscar todos os passeios disponíveis para seleção
+      const { data: todosPasseios, error: passeiosError } = await supabase
+        .from('passeios')
+        .select('*')
+        .eq('ativo', true)
+        .order('categoria', { ascending: true })
+        .order('nome', { ascending: true });
+
+      if (passeiosError) throw passeiosError;
+
+      setPasseiosViagem(viagemPasseios || []);
+      setPasseiosDisponiveis(todosPasseios || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar passeios');
+    } finally {
+      setLoading(false);
+    }
+  }, [viagemId]);
+
+  // Calcular total dos passeios da viagem
+  const calcularTotalViagem = useCallback(() => {
+    return passeiosViagem.reduce((total, vp) => total + vp.valor_cobrado, 0);
+  }, [passeiosViagem]);
+
+  // Adicionar passeio à viagem
+  const adicionarPasseio = useCallback(async (passeioId: string) => {
+    const passeio = passeiosDisponiveis.find(p => p.id === passeioId);
+    if (!passeio) return;
+
+    const { error } = await supabase
+      .from('viagem_passeios')
+      .insert({
+        viagem_id: viagemId,
+        passeio_id: passeioId,
+        valor_cobrado: passeio.valor
+      });
+
+    if (!error) {
+      await fetchPasseiosViagem();
+    }
+  }, [viagemId, passeiosDisponiveis, fetchPasseiosViagem]);
+
+  // Remover passeio da viagem
+  const removerPasseio = useCallback(async (passeioId: string) => {
+    const { error } = await supabase
+      .from('viagem_passeios')
+      .delete()
+      .eq('viagem_id', viagemId)
+      .eq('passeio_id', passeioId);
+
+    if (!error) {
+      await fetchPasseiosViagem();
+    }
+  }, [viagemId, fetchPasseiosViagem]);
+
+  useEffect(() => {
+    if (viagemId) {
+      fetchPasseiosViagem();
+    }
+  }, [viagemId, fetchPasseiosViagem]);
+
+  return {
+    passeiosViagem,
+    passeiosDisponiveis,
+    loading,
+    error,
+    calcularTotalViagem,
+    adicionarPasseio,
+    removerPasseio,
+    refetch: fetchPasseiosViagem
+  };
 };
 ```
 
