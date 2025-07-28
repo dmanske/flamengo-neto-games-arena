@@ -282,27 +282,7 @@ const DetalhesViagem = () => {
             <ResumoCards passageiros={originalPassageiros} />
           )}
 
-          <PaidPaymentsCard
-            totalPago={totalPago}
-            countPago={originalPassageiros.filter(p => {
-              const statusInteligente = converterStatusParaInteligente({
-                valor: p.valor || 0,
-                desconto: p.desconto || 0,
-                parcelas: p.parcelas,
-                status_pagamento: p.status_pagamento
-              });
-              return statusInteligente.status === 'Pago';
-            }).length}
-            onShowPaidOnly={handleShowPaidOnly}
-          />
-          
-          {countPendentePayment > 0 && (
-            <PendingPaymentsCard 
-              totalPendente={totalPendente}
-              countPendente={countPendentePayment}
-              onShowPendingOnly={handleShowPendingOnly}
-            />
-          )}
+          {/* Cards de pagamentos removidos para simplificar interface */}
 
           <div ref={passageirosListRef}>
             <PassageirosCard

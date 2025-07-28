@@ -14,6 +14,7 @@ import type {
 export const usePagamentoAvancado = (
   viagemPassageiroId: string | undefined
 ): UsePagamentoAvancadoReturn => {
+  console.warn('⚠️ HOOK DEPRECIADO: usePagamentoAvancado foi substituído pelo sistema de pagamentos separados. Use usePagamentosSeparados.');
   const [controleFinanceiro, setControleFinanceiro] = useState<ControleFinanceiroUnificado | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +35,8 @@ export const usePagamentoAvancado = (
           valor,
           desconto,
           status_pagamento,
-          viagens!inner (
+          gratuito,
+          viagens!viagem_passageiros_viagem_id_fkey (
             id,
             adversario,
             tipo_pagamento,

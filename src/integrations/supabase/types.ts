@@ -1231,11 +1231,13 @@ export type Database = {
           is_responsavel_onibus: boolean | null
           observacoes: string | null
           onibus_id: string | null
+          passeios_pagos: boolean | null
           setor_maracana: string
           status_pagamento: string
           status_presenca: string | null
           valor: number | null
           viagem_id: string
+          viagem_paga: boolean | null
         }
         Insert: {
           cidade_embarque?: string
@@ -1247,11 +1249,13 @@ export type Database = {
           is_responsavel_onibus?: boolean | null
           observacoes?: string | null
           onibus_id?: string | null
+          passeios_pagos?: boolean | null
           setor_maracana?: string
           status_pagamento?: string
           status_presenca?: string | null
           valor?: number | null
           viagem_id: string
+          viagem_paga?: boolean | null
         }
         Update: {
           cidade_embarque?: string
@@ -1263,11 +1267,13 @@ export type Database = {
           is_responsavel_onibus?: boolean | null
           observacoes?: string | null
           onibus_id?: string | null
+          passeios_pagos?: boolean | null
           setor_maracana?: string
           status_pagamento?: string
           status_presenca?: string | null
           valor?: number | null
           viagem_id?: string
+          viagem_paga?: boolean | null
         }
         Relationships: [
           {
@@ -1310,6 +1316,50 @@ export type Database = {
             columns: ["viagem_id"]
             isOneToOne: false
             referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_pagamentos_categorizado: {
+        Row: {
+          categoria: string
+          created_at: string
+          data_pagamento: string
+          forma_pagamento: string | null
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor_pago: number
+          viagem_passageiro_id: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_pago: number
+          viagem_passageiro_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor_pago?: number
+          viagem_passageiro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_pagamentos_categorizado_viagem_passageiro_id_fkey"
+            columns: ["viagem_passageiro_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_passageiros"
             referencedColumns: ["id"]
           },
         ]

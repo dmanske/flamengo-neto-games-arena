@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -34,8 +35,9 @@ import { formSchema, FormData } from "./formSchema";
 import { PassageiroEditDialogProps } from "./types";
 import { OnibusSelectField } from "./OnibusSelectField";
 import { SetorSelectField } from "./SetorSelectField";
-import { ParcelasEditManager } from "./ParcelasEditManager";
-import { PasseiosEditSection } from "./PasseiosEditSection";
+// ParcelasEditManager removido - usando apenas sistema avançado
+import { PasseiosEditSectionSimples } from "./PasseiosEditSectionSimples";
+import { SecaoFinanceiraAvancada } from "./SecaoFinanceiraAvancada";
 
 export function PassageiroEditDialog({
   open,
@@ -44,6 +46,7 @@ export function PassageiroEditDialog({
   onSuccess,
 }: PassageiroEditDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -56,12 +59,14 @@ export function PassageiroEditDialog({
       onibus_id: "",
       cidade_embarque: "Blumenau",
       observacoes: "",
+      gratuito: false,
     },
   });
 
   const statusPagamento = form.watch("status_pagamento");
   const valorTotal = form.watch("valor");
   const desconto = form.watch("desconto");
+  const gratuito = form.watch("gratuito");
 
   useEffect(() => {
     const loadPassageiroData = async () => {
@@ -76,7 +81,8 @@ export function PassageiroEditDialog({
           onibus_id: passageiro.onibus_id?.toString() || "",
           cidade_embarque: passageiro.cidade_embarque || "",
           observacoes: passageiro.observacoes || "",
-          passeios_selecionados: []
+          passeios_selecionados: [],
+          gratuito: passageiro.gratuito || false
         });
 
         // Carregar passeios selecionados convertendo nomes para IDs
@@ -102,6 +108,23 @@ export function PassageiroEditDialog({
 
     loadPassageiroData();
   }, [passageiro, form]);
+
+  // Lógica de gratuidade - quando marcado como gratuito, zerar valores
+  useEffect(() => {
+    if (gratuito) {
+      console.log('🎁 Passageiro marcado como gratuito - zerando valores');
+      // Zerar valor da viagem (mas manter o valor original para referência)
+      form.setValue("valor", 0);
+      form.setValue("desconto", 0);
+      form.setValue("status_pagamento", "Pago"); // Se gratuito, marcar como pago
+      // Os passeios serão tratados como gratuitos no salvamento
+    } else if (passageiro) {
+      // Restaurar valores originais quando desmarcar
+      form.setValue("valor", passageiro.valor || 0);
+      form.setValue("desconto", passageiro.desconto || 0);
+      form.setValue("status_pagamento", passageiro.status_pagamento || "Pendente");
+    }
+  }, [gratuito, passageiro, form]);
 
   const onSubmit = async (values: FormData) => {
     if (!passageiro?.viagem_passageiro_id) return;
@@ -144,10 +167,10 @@ export function PassageiroEditDialog({
 
         // Depois, inserir os novos passeios selecionados
         if (values.passeios_selecionados.length > 0) {
-          // Buscar os nomes dos passeios pelos IDs
+          // Buscar os nomes e valores dos passeios pelos IDs
           const { data: passeiosInfo, error: passeiosInfoError } = await supabase
             .from('passeios')
-            .select('id, nome')
+            .select('id, nome, valor')
             .in('id', values.passeios_selecionados);
 
           if (passeiosInfoError) throw passeiosInfoError;
@@ -156,7 +179,9 @@ export function PassageiroEditDialog({
             const passeioInfo = passeiosInfo?.find(p => p.id === passeioId);
             return {
               viagem_passageiro_id: passageiro.viagem_passageiro_id,
+              passeio_id: passeioId,
               passeio_nome: passeioInfo?.nome || 'Passeio',
+              valor_cobrado: values.gratuito ? 0 : (passeioInfo?.valor || 0),
               status: 'confirmado'
             };
           });
@@ -173,13 +198,14 @@ export function PassageiroEditDialog({
         .from("viagem_passageiros")
         .update({
           setor_maracana: values.setor_maracana,
-          status_pagamento: values.status_pagamento,
+          status_pagamento: values.gratuito ? "Pago" : values.status_pagamento,
           forma_pagamento: values.forma_pagamento,
-          valor: values.valor,
+          valor: values.gratuito ? 0 : values.valor,
           desconto: values.desconto,
           onibus_id: values.onibus_id,
           cidade_embarque: values.cidade_embarque,
           observacoes: values.observacoes,
+          gratuito: values.gratuito,
         })
         .eq("id", passageiro.viagem_passageiro_id);
       if (error) throw error;
@@ -338,6 +364,32 @@ export function PassageiroEditDialog({
                     )}
                   />
                 </div>
+
+                {/* Campo de Gratuidade */}
+                <FormField
+                  control={form.control}
+                  name="gratuito"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-gray-700 font-medium">
+                          🎁 Passageiro Gratuito
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Marque esta opção se o passageiro não deve ser cobrado. 
+                          Passageiros gratuitos não contam nas receitas da viagem.
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
                 {/* Observações */}
                 <FormField
                   control={form.control}
@@ -355,73 +407,34 @@ export function PassageiroEditDialog({
                   )}
                 />
                 {/* Seção de Passeios Atualizada */}
-                <PasseiosEditSection form={form} viagemId={passageiro?.viagem_id || ''} />
+                <PasseiosEditSectionSimples 
+                  form={form} 
+                  viagemId={passageiro?.viagem_id || ''} 
+                  passageiroId={passageiro?.viagem_passageiro_id || passageiro?.id}
+                  onPasseiosChange={() => {
+                    // Forçar refresh da seção financeira
+                    console.log('🔄 Passeios alterados, atualizando seção financeira...');
+                    setRefreshKey(prev => prev + 1);
+                  }}
+                />
               </div>
 
               {/* Coluna da Direita */}
               <div className="space-y-6">
-                {/* Status e Forma de Pagamento */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="status_pagamento"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">Status do Pagamento</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                              <SelectValue placeholder="Selecione um status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                            <SelectItem value="Pendente" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pendente</SelectItem>
-                            <SelectItem value="Pago" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pago</SelectItem>
-                            <SelectItem value="Cancelado" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cancelado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="forma_pagamento"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">Forma de Pagamento</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                              <SelectValue placeholder="Selecione uma forma" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                            <SelectItem value="Pix" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Pix</SelectItem>
-                            <SelectItem value="Cartão" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Cartão</SelectItem>
-                            <SelectItem value="Boleto" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Boleto</SelectItem>
-                            <SelectItem value="Paypal" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Paypal</SelectItem>
-                            <SelectItem value="Outro" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Outro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* Campos do sistema antigo removidos - usando apenas Situação Financeira */}
 
-                {/* Sistema de Parcelas */}
-                <ParcelasEditManager
-                  passageiroId={passageiro.viagem_passageiro_id.toString()}
-                  valorTotal={valorTotal}
-                  desconto={desconto}
+                {/* Sistema Financeiro Avançado */}
+                <SecaoFinanceiraAvancada
+                  key={refreshKey}
+                  passageiroId={passageiro.viagem_passageiro_id?.toString() || passageiro.id?.toString() || ''}
+                  nomePassageiro={passageiro.nome}
+                  onPagamentoRealizado={() => {
+                    // Recarregar dados se necessário
+                    console.log('Pagamento realizado, dados atualizados');
+                  }}
                 />
+                
+                {/* Sistema de Parcelas Legado removido - usando apenas Situação Financeira Avançada */}
               </div>
             </div>
 

@@ -13,6 +13,8 @@ import type { FormData } from './formSchema';
 interface PasseiosEditSectionProps {
   form: UseFormReturn<FormData>;
   viagemId: string;
+  passageiroId?: string;
+  onPasseiosChange?: () => void;
 }
 
 interface PasseioDaViagem {
@@ -25,7 +27,7 @@ interface PasseioDaViagem {
   };
 }
 
-export const PasseiosEditSection: React.FC<PasseiosEditSectionProps> = ({ form, viagemId }) => {
+export const PasseiosEditSection: React.FC<PasseiosEditSectionProps> = ({ form, viagemId, passageiroId, onPasseiosChange }) => {
   const [passeiosDaViagem, setPasseiosDaViagem] = useState<PasseioDaViagem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,49 @@ export const PasseiosEditSection: React.FC<PasseiosEditSectionProps> = ({ form, 
     const passeio = passeiosDaViagem.find(p => p.passeio_id === passeioId);
     return total + (passeio?.passeios.valor || 0);
   }, 0);
+
+  // Função para salvar passeios automaticamente
+  const salvarPasseiosAutomaticamente = async (novosPasseios: string[]) => {
+    if (!passageiroId) return;
+
+    try {
+      console.log('🔄 Salvando passeios automaticamente...', novosPasseios);
+      
+      // Primeiro, remover todos os passeios existentes do passageiro
+      const { error: deleteError } = await supabase
+        .from('passageiro_passeios')
+        .delete()
+        .eq('viagem_passageiro_id', passageiroId);
+
+      if (deleteError) throw deleteError;
+
+      // Depois, adicionar os novos passeios selecionados
+      if (novosPasseios.length > 0) {
+        const { data: passeiosData, error: passeiosError } = await supabase
+          .from('passeios')
+          .select('id, valor')
+          .in('id', novosPasseios);
+
+        if (passeiosError) throw passeiosError;
+
+        const passageiroPasseios = passeiosData.map(passeio => ({
+          viagem_passageiro_id: passageiroId,
+          passeio_id: passeio.id,
+          valor_pago: passeio.valor
+        }));
+
+        const { error: insertError } = await supabase
+          .from('passageiro_passeios')
+          .insert(passageiroPasseios);
+
+        if (insertError) throw insertError;
+      }
+
+      console.log('✅ Passeios salvos automaticamente!');
+    } catch (error) {
+      console.error('❌ Erro ao salvar passeios automaticamente:', error);
+    }
+  };
 
   // Carregar passeios específicos da viagem
   useEffect(() => {
@@ -178,6 +223,8 @@ export const PasseiosEditSection: React.FC<PasseiosEditSectionProps> = ({ form, 
                         } else {
                           field.onChange([...currentValue, passeioViagem.passeio_id]);
                         }
+                        // Notificar mudança imediatamente
+                        onPasseiosChange?.();
                       };
                       
                       return (
@@ -257,6 +304,8 @@ export const PasseiosEditSection: React.FC<PasseiosEditSectionProps> = ({ form, 
                         } else {
                           field.onChange([...currentValue, passeioViagem.passeio_id]);
                         }
+                        // Notificar mudança imediatamente
+                        onPasseiosChange?.();
                       };
                       
                       return (

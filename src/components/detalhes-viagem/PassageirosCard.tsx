@@ -26,6 +26,13 @@ import { toast } from "sonner";
 import { PasseiosCompactos } from "./PasseiosCompactos";
 import { calcularValorFinalPassageiro } from "@/utils/passageiroCalculos";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { StatusBadgeAvancado, BreakdownVisual } from "./StatusBadgeAvancado";
+import { BotoesAcaoRapida } from "./BotoesAcaoRapida";
+import { PassageiroRow } from "./PassageiroRow";
+import { PassageiroComStatus } from "./PassageiroComStatus";
+import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
+import type { StatusPagamentoAvancado, CategoriaPagamento } from "@/types/pagamentos-separados";
+import { obterValoresPasseiosPorNomes } from "@/utils/passeiosUtils";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -89,32 +96,134 @@ export function PassageirosCard({
     return () => document.removeEventListener("setPassageirosStatusFilter", handler);
   }, []);
 
-  // Filtrar passageiros por status se necessário
+  // Filtrar passageiros com busca inteligente
   const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-      passageiro.nome.toLowerCase().includes(searchTermLower) ||
-      passageiro.telefone?.includes(searchTerm) ||
-      passageiro.email?.toLowerCase().includes(searchTermLower) ||
-      passageiro.cidade_embarque?.toLowerCase().includes(searchTermLower) ||
-      passageiro.setor_maracana?.toLowerCase().includes(searchTermLower) ||
-      passageiro.status_pagamento?.toLowerCase().includes(searchTermLower);
+    const searchTermTrimmed = searchTerm.trim();
     
-    const matchesStatus = statusFilter === "todos" || passageiro.status_pagamento === statusFilter;
+    if (!searchTermTrimmed) return true;
     
-    return matchesSearch && matchesStatus;
+    // Suporte para múltiplos termos separados por espaço
+    const searchTerms = searchTermTrimmed.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    // Dados básicos do passageiro
+    const nome = passageiro.clientes?.nome || passageiro.nome || '';
+    const telefone = passageiro.clientes?.telefone || passageiro.telefone || '';
+    const email = passageiro.clientes?.email || passageiro.email || '';
+    const cpf = passageiro.clientes?.cpf || passageiro.cpf || '';
+    const cidade = passageiro.clientes?.cidade || passageiro.cidade || '';
+    const estado = passageiro.clientes?.estado || passageiro.estado || '';
+    
+    // Dados da viagem
+    const cidadeEmbarque = passageiro.cidade_embarque || '';
+    const setorMaracana = passageiro.setor_maracana || '';
+    const statusPagamento = passageiro.status_pagamento || '';
+    const formaPagamento = passageiro.forma_pagamento || '';
+    const observacoes = passageiro.observacoes || '';
+    
+    // Dados financeiros
+    const valor = passageiro.valor?.toString() || '';
+    const desconto = passageiro.desconto?.toString() || '';
+    
+    // Passeios do passageiro (corrigir estrutura)
+    const passeiosNomes = passageiro.passeios?.map(p => p.passeio_nome || '').join(' ') || '';
+    
+    // Data de nascimento formatada para busca
+    const dataNascimento = passageiro.clientes?.data_nascimento || passageiro.data_nascimento || '';
+    const dataNascimentoFormatada = dataNascimento ? new Date(dataNascimento).toLocaleDateString('pt-BR') : '';
+    
+    // Debug temporário para ver estrutura dos passeios
+    if (searchTermTrimmed.includes('pão') || searchTermTrimmed.includes('lapa')) {
+      console.log(`🔍 DEBUG Busca - ${nome}:`, {
+        searchTerm: searchTermTrimmed,
+        passeios: passageiro.passeios,
+        passeiosNomes,
+        dataNascimento: dataNascimentoFormatada
+      });
+    }
+    
+    // Texto completo para busca
+    const fullText = [
+      nome, telefone, email, cpf, cidade, estado,
+      cidadeEmbarque, setorMaracana, statusPagamento, formaPagamento,
+      observacoes, valor, desconto, passeiosNomes, dataNascimentoFormatada
+    ].join(' ').toLowerCase();
+    
+    // Todos os termos devem estar presentes (busca AND)
+    const matchesSearch = searchTerms.every(term => fullText.includes(term));
+    
+    // Filtro de status será aplicado no render (após calcular status real)
+    return matchesSearch;
   });
+
+  // Função para verificar se passageiro passa no filtro de status
+  const passaNoFiltroStatus = (statusCalculado: StatusPagamentoAvancado): boolean => {
+    if (statusFilter === "todos") return true;
+    
+    if (statusFilter === "Pagamentos Pendentes") {
+      return statusCalculado !== 'Pago Completo' && 
+             statusCalculado !== 'Brinde' && 
+             statusCalculado !== 'Cancelado';
+    }
+    
+    if (statusFilter === "Pagamentos Confirmados") {
+      return statusCalculado === 'Pago Completo' || 
+             statusCalculado === 'Brinde';
+    }
+    
+    return statusCalculado === statusFilter;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pago":
+      case "Pago Completo":
         return "bg-green-100 text-green-800 border-green-200";
-      case "Pendente":
+      case "Viagem Paga":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "Cancelado":
+      case "Passeios Pagos":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Pendente":
         return "bg-red-100 text-red-800 border-red-200";
+      case "Brinde":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "Cancelado":
+        return "bg-gray-100 text-gray-800 border-gray-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  // Função para lidar com pagamentos
+  const handlePagamento = async (
+    passageiroId: string,
+    categoria: CategoriaPagamento,
+    valor: number,
+    formaPagamento: string,
+    observacoes?: string,
+    dataPagamento?: string
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('historico_pagamentos_categorizado')
+        .insert({
+          viagem_passageiro_id: passageiroId,
+          categoria: categoria,
+          valor_pago: valor,
+          forma_pagamento: formaPagamento,
+          observacoes: observacoes,
+          data_pagamento: dataPagamento || new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Recarregar dados
+      await fetchPassageiros();
+      return true;
+
+    } catch (error: any) {
+      console.error('Erro ao registrar pagamento:', error);
+      toast.error('Erro ao registrar pagamento');
+      return false;
     }
   };
 
@@ -135,17 +244,114 @@ export function PassageirosCard({
         return;
       }
 
+      console.log('🚀 DEBUG PassageirosCard: Executando query para viagemId:', viagemId);
+      
       const { data, error } = await supabase
-        .from('passageiros')
-        .select('*')
+        .from('viagem_passageiros')
+        .select(`
+          *,
+          clientes!viagem_passageiros_cliente_id_fkey (
+            nome,
+            telefone,
+            email,
+            data_nascimento,
+            foto
+          ),
+          passageiro_passeios (
+            id,
+            passeio_nome,
+            valor_cobrado
+          ),
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago,
+            data_pagamento
+          )
+        `)
         .eq('viagem_id', viagemId)
         .order('created_at', { ascending: false });
+      
+      console.log('🚀 DEBUG PassageirosCard: Resultado da query:', { 
+        data, 
+        error, 
+        viagemId,
+        dataLength: data?.length,
+        primeiroItem: data?.[0],
+        exemploPasseios: data?.[0]?.passageiro_passeios
+      });
 
       if (error) {
         throw error;
       }
+      
+      // Debug temporário - verificar dados brutos
+      console.log('🔍 Dados brutos da query:', {
+        totalPassageiros: data?.length || 0,
+        primeiroPassageiro: data?.[0],
+        passeiosDosPrimeiros3: data?.slice(0, 3).map(p => ({
+          nome: p.nome,
+          passeios: p.passageiro_passeios
+        }))
+      });
 
-      setPassageiros(data || []);
+      // Processar dados para calcular valores dos passeios corretamente
+      const passageirosProcessados = await Promise.all((data || []).map(async (passageiro) => {
+        const passeiosPassageiro = passageiro.passageiro_passeios || [];
+        
+        // Debug temporário
+        if (passeiosPassageiro.length > 0) {
+          console.log(`🔍 Passageiro ${passageiro.nome} tem ${passeiosPassageiro.length} passeios:`, passeiosPassageiro);
+        }
+        
+
+        
+        // Se há passeios sem valor, buscar todos de uma vez
+        const passeiosSemValor = passeiosPassageiro.filter(pp => 
+          !pp.valor_cobrado || pp.valor_cobrado === 0
+        );
+        
+        if (passeiosSemValor.length > 0) {
+          const nomesPasseios = passeiosSemValor.map(pp => pp.passeio_nome);
+          try {
+            const { data: passeiosInfo, error: passeiosError } = await supabase
+              .from('passeios')
+              .select('nome, valor')
+              .in('nome', nomesPasseios);
+            
+            if (!passeiosError && passeiosInfo) {
+              
+              // Criar mapa de valores para usar no cálculo (sem modificar dados originais)
+              const valoresPorNome = new Map();
+              passeiosInfo.forEach(p => {
+                valoresPorNome.set(p.nome, p.valor || 0);
+              });
+              
+              // Adicionar valores como propriedade temporária para cálculo
+              passeiosPassageiro.forEach(pp => {
+                if (!pp.valor_cobrado || pp.valor_cobrado === 0) {
+                  const valorTabela = valoresPorNome.get(pp.passeio_nome) || 0;
+                  pp.valor_real_calculado = valorTabela;
+                  console.log(`🔧 Passeio ${pp.passeio_nome}: valor_cobrado=${pp.valor_cobrado} → valor_real_calculado=${valorTabela}`);
+                } else {
+                  pp.valor_real_calculado = pp.valor_cobrado;
+                  console.log(`✅ Passeio ${pp.passeio_nome}: usando valor_cobrado=${pp.valor_cobrado}`);
+                }
+              });
+            }
+          } catch (error) {
+            console.error('❌ Erro ao buscar valores dos passeios:', error);
+          }
+        }
+        
+        const valorTotalPasseios = passeiosPassageiro.reduce((sum, pp) => sum + (pp.valor_real_calculado || pp.valor_cobrado || 0), 0);
+        
+        return {
+          ...passageiro,
+          passageiro_passeios: passeiosPassageiro
+        };
+      }));
+
+      setPassageiros(passageirosProcessados);
     } catch (error: any) {
       console.error('Erro ao buscar passageiros:', error);
       toast.error("Erro ao carregar passageiros");
@@ -216,21 +422,31 @@ export function PassageirosCard({
           <div className="relative flex-1">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por nome, telefone, setor, status ou cidade de embarque..."
+              placeholder="🔍 Busca inteligente: nome, telefone, email, CPF, cidade, setor, status, pagamento, valor, passeios..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 pr-16"
             />
+            {searchTerm && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-white px-1">
+                {passageirosFiltrados.length} resultado{passageirosFiltrados.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent className="bg-white border-gray-200 z-50">
               <SelectItem value="todos">Todos os status</SelectItem>
-              <SelectItem value="Pago">Pago</SelectItem>
-              <SelectItem value="Pendente">Pendente</SelectItem>
-              <SelectItem value="Cancelado">Cancelado</SelectItem>
+              <SelectItem value="Pago Completo">🟢 Pago Completo</SelectItem>
+              <SelectItem value="Viagem Paga">🟡 Viagem Paga</SelectItem>
+              <SelectItem value="Passeios Pagos">🟡 Passeios Pagos</SelectItem>
+              <SelectItem value="Pendente">🔴 Pendente</SelectItem>
+              <SelectItem value="Brinde">🎁 Brinde</SelectItem>
+              <SelectItem value="Cancelado">❌ Cancelado</SelectItem>
+              <SelectItem value="Pagamentos Pendentes">⏳ Pagamentos Pendentes</SelectItem>
+              <SelectItem value="Pagamentos Confirmados">✅ Pagamentos Confirmados</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -239,123 +455,50 @@ export function PassageirosCard({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">#</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead className="text-center">Telefone</TableHead>
-                <TableHead className="text-center">Data Nasc.</TableHead>
-                <TableHead className="text-center">Cidade Embarque</TableHead>
-                <TableHead className="text-center">Setor</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Valor Total</TableHead>
-                <TableHead className="text-center">Passeios</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
+                <TableHead className="w-[50px] px-2">#</TableHead>
+                <TableHead className="px-2">Nome</TableHead>
+                <TableHead className="text-center px-2">Telefone</TableHead>
+                <TableHead className="text-center px-2">Data Nasc.</TableHead>
+                <TableHead className="text-center px-2">Cidade Embarque</TableHead>
+                <TableHead className="text-center px-2">Setor</TableHead>
+                <TableHead className="text-center px-2">Status</TableHead>
+                <TableHead className="text-center px-2">Passeios</TableHead>
+                <TableHead className="text-center px-2">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {passageirosFiltrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     {searchTerm || statusFilter !== "todos" 
                       ? "Nenhum passageiro encontrado com os filtros aplicados" 
                       : "Nenhum passageiro cadastrado"}
                   </TableCell>
                 </TableRow>
               ) : (
-                passageirosFiltrados.map((passageiro, index) => {
-                  // Calcular valor pago e valor que falta
-                  const valorPago = (passageiro.parcelas || []).reduce((sum, p) => sum + (p.valor_parcela || 0), 0);
-                  const valorLiquido = (passageiro.valor || 0) - (passageiro.desconto || 0);
-                  const valorFalta = valorLiquido - valorPago;
-                  return (
-                    <TableRow key={passageiro.viagem_passageiro_id}>
-                      <TableCell className="text-center">{index + 1}</TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-rome-navy">
-                        <div className="flex items-center gap-2">
-                          {passageiro.foto ? (
-                            <Avatar className="h-8 w-8 border-2 border-primary/20">
-                              <AvatarImage 
-                                src={passageiro.foto} 
-                                alt={passageiro.nome}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                                {passageiro.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <Avatar className="h-8 w-8 border-2 border-primary/20">
-                              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                                {passageiro.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                          {onViewDetails ? (
-                            <button
-                              onClick={() => onViewDetails(passageiro)}
-                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                            >
-                              {formatarNomeComPreposicoes(passageiro.nome)}
-                            </button>
-                          ) : (
-                            formatarNomeComPreposicoes(passageiro.nome)
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">{passageiro.telefone}</TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black">
-                        {formatBirthDate(passageiro.data_nascimento)}
-                      </TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black">
-                        {passageiro.cidade_embarque || 'Blumenau'}
-                      </TableCell>
-                      <TableCell className="font-cinzel font-semibold text-center text-black">{passageiro.setor_maracana}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={getStatusColor(passageiro.status_pagamento)}>
-                          {passageiro.status_pagamento}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="font-semibold">R$ {valorLiquido.toFixed(2)}</span>
-                          {passageiro.passeios && passageiro.passeios.length > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              (base + passeios)
-                            </span>
-                          )}
-                          {passageiro.status_pagamento !== 'Pago' && (
-                            <span className="text-xs text-green-700">Pago: R$ {valorPago.toFixed(2)}</span>
-                          )}
-                          {((valorFalta > 0.009) && passageiro.status_pagamento !== 'Pago') && (
-                            <span className="text-xs text-orange-600">Falta: R$ {valorFalta.toFixed(2)}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <PasseiosCompactos passeios={passageiro.passeios} />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEditPassageiro(passageiro)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onDeletePassageiro(passageiro)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                passageirosFiltrados.map((passageiro, index) => (
+                  <PassageiroComStatus key={passageiro.id} passageiro={passageiro}>
+                    {(statusCalculado) => {
+                      // Aplicar filtro de status com status calculado
+                      if (!passaNoFiltroStatus(statusCalculado)) {
+                        return null;
+                      }
+                      
+                      return (
+                        <PassageiroRow
+                          passageiro={passageiro}
+                          index={index}
+                          onEditPassageiro={onEditPassageiro}
+                          onDeletePassageiro={onDeletePassageiro}
+                          onViewDetails={onViewDetails}
+                          handlePagamento={handlePagamento}
+                        />
+                      );
+                    }}
+                  </PassageiroComStatus>
+                )).filter(Boolean) // Remove nulls
+
+
               )}
             </TableBody>
           </Table>

@@ -10,6 +10,7 @@ interface ParcelaSimples {
 }
 
 export function useParcelamentoSimples() {
+  console.warn('⚠️ HOOK DEPRECIADO: useParcelamentoSimples foi substituído pelo sistema de pagamentos separados. Use usePagamentosSeparados.');
   const [isLoading, setIsLoading] = useState(false);
 
   // Salvar parcelas de um passageiro

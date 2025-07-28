@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -104,6 +105,7 @@ export function PassageiroDialog({
       onibus_id: defaultOnibusId || "",
       cidade_embarque: "Blumenau",
       passeios_selecionados: [],
+      gratuito: false,
     },
   });
 
@@ -112,6 +114,23 @@ export function PassageiroDialog({
       form.setValue("valor", valorPadrao);
     }
   }, [valorPadrao, form]);
+
+  // Lógica de gratuidade - quando marcado como gratuito, zerar valores
+  const gratuito = form.watch("gratuito");
+  useEffect(() => {
+    if (gratuito) {
+      console.log('🎁 Passageiro marcado como gratuito - zerando valores');
+      // Zerar valor da viagem (mas manter o valor original para referência)
+      form.setValue("valor", 0);
+      form.setValue("desconto", 0);
+      // Os passeios serão tratados como gratuitos no salvamento
+    } else {
+      // Restaurar valor original quando desmarcar
+      if (valorPadrao) {
+        form.setValue("valor", valorPadrao);
+      }
+    }
+  }, [gratuito, valorPadrao, form]);
 
   // Monitorar capacidade do ônibus selecionado
   const onibusId = form.watch("onibus_id");
@@ -191,9 +210,10 @@ export function PassageiroDialog({
     ? (isMultiplosClientes ? 'rapido' : 'detalhado')
     : modoPasseios;
   
-  // Calcular valor total (base + passeios) apenas para exibição
-  const valorPasseios = calcularTotal(passeiosSelecionados);
-  const valorTotal = valorBase + valorPasseios;
+  // Calcular valor total (base + passeios) considerando gratuidade
+  const valorPasseios = gratuito ? 0 : calcularTotal(passeiosSelecionados);
+  const valorBaseExibicao = gratuito ? 0 : valorBase;
+  const valorTotal = valorBaseExibicao + valorPasseios;
   const valorLiquido = valorTotal - desconto;
 
   const onSubmit = async (values: FormData) => {
@@ -260,12 +280,13 @@ export function PassageiroDialog({
         viagem_id: viagemId,
         cliente_id: clienteId,
         setor_maracana: values.setor_maracana,
-        status_pagamento: "Pendente",
+        status_pagamento: values.gratuito ? "Pago" : values.status_pagamento, // Se gratuito, marcar como pago
         forma_pagamento: values.forma_pagamento,
-        valor: values.valor,
+        valor: values.gratuito ? 0 : values.valor, // Se gratuito, valor = 0
         desconto: values.desconto,
         onibus_id: values.onibus_id,
         cidade_embarque: values.cidade_embarque || null,
+        gratuito: values.gratuito || false, // Adicionar campo gratuito
       }));
 
       const { data: novosPassageirosData, error: insertError } = await supabase
@@ -294,13 +315,30 @@ export function PassageiroDialog({
           if (passeiosError) {
             console.warn("Erro ao buscar dados dos passeios:", passeiosError);
           } else if (passeiosData) {
+            // Buscar valores dos passeios para aplicar lógica de gratuidade
+            const { data: passeiosComValor, error: valorError } = await supabase
+              .from('passeios')
+              .select('id, nome, valor')
+              .in('id', values.passeios_selecionados)
+              .abortSignal(controller.signal);
+
+            if (valorError) {
+              console.warn("Erro ao buscar valores dos passeios:", valorError);
+            }
+
             // Criar relacionamentos para cada passageiro inserido
             for (const passageiro of novosPassageirosData) {
               for (const passeio of passeiosData) {
+                const passeioComValor = passeiosComValor?.find(p => p.id === passeio.id);
+                // Se passageiro é gratuito, passeios também são gratuitos
+                const valorCobrado = values.gratuito ? 0 : (passeioComValor?.valor || 0);
+                
                 passageiroPasseiosParaInserir.push({
                   viagem_passageiro_id: passageiro.id,
+                  passeio_id: passeio.id,
                   passeio_nome: passeio.nome,
-                  status: 'Confirmado'
+                  valor_cobrado: valorCobrado,
+                  status: 'confirmado'
                 });
               }
             }
@@ -715,6 +753,31 @@ export function PassageiroDialog({
                 />
               </div>
 
+              {/* Campo de Gratuidade */}
+              <FormField
+                control={form.control}
+                name="gratuito"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-gray-700 font-medium">
+                        🎁 Passageiro(s) Gratuito(s)
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Marque esta opção se o(s) passageiro(s) não deve(m) ser cobrado(s). 
+                        Passageiros gratuitos não contam nas receitas da viagem e os passeios selecionados também serão gratuitos.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               {/* Resumo simplificado */}
               {isMultiplosClientes && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
@@ -738,23 +801,51 @@ export function PassageiroDialog({
               )}
 
               {/* Exibição do valor total calculado - apenas no modo detalhado */}
-              {(modoPasseiosAtual === 'detalhado' && (valorPasseios > 0 || valorTotal !== valorBase)) && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-                  <h4 className="font-medium text-blue-900">Resumo de Valores</h4>
+              {(modoPasseiosAtual === 'detalhado' && (valorPasseios > 0 || valorTotal !== valorBase || gratuito)) && (
+                <div className={`p-4 border rounded-lg space-y-2 ${
+                  gratuito 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-blue-50 border-blue-200'
+                }`}>
+                  <h4 className={`font-medium ${
+                    gratuito ? 'text-green-900' : 'text-blue-900'
+                  }`}>
+                    {gratuito ? '🎁 Resumo de Valores (Gratuito)' : 'Resumo de Valores'}
+                  </h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-700">Valor base:</span>
-                      <span className="font-medium">R$ {valorBase.toFixed(2).replace('.', ',')}</span>
+                      <span className="font-medium">
+                        {gratuito ? (
+                          <span className="text-green-600">R$ 0,00 (Gratuito)</span>
+                        ) : (
+                          `R$ ${valorBase.toFixed(2).replace('.', ',')}`
+                        )}
+                      </span>
                     </div>
-                    {valorPasseios > 0 && (
+                    {(valorPasseios > 0 || (gratuito && passeiosSelecionados.length > 0)) && (
                       <div className="flex justify-between">
                         <span className="text-blue-700">Passeios adicionais:</span>
-                        <span className="font-medium">R$ {valorPasseios.toFixed(2).replace('.', ',')}</span>
+                        <span className="font-medium">
+                          {gratuito ? (
+                            <span className="text-green-600">R$ 0,00 (Gratuito)</span>
+                          ) : (
+                            `R$ ${valorPasseios.toFixed(2).replace('.', ',')}`
+                          )}
+                        </span>
                       </div>
                     )}
-                    <div className="flex justify-between border-t border-blue-300 pt-1">
-                      <span className="text-blue-900 font-medium">Valor total:</span>
-                      <span className="font-bold text-blue-900">R$ {valorTotal.toFixed(2).replace('.', ',')}</span>
+                    <div className={`flex justify-between border-t pt-1 ${
+                      gratuito ? 'border-green-300' : 'border-blue-300'
+                    }`}>
+                      <span className={`font-medium ${
+                        gratuito ? 'text-green-900' : 'text-blue-900'
+                      }`}>Valor total:</span>
+                      <span className={`font-bold ${
+                        gratuito ? 'text-green-900' : 'text-blue-900'
+                      }`}>
+                        {gratuito ? '🎁 R$ 0,00' : `R$ ${valorTotal.toFixed(2).replace('.', ',')}`}
+                      </span>
                     </div>
                     {desconto > 0 && (
                       <>
@@ -762,9 +853,17 @@ export function PassageiroDialog({
                           <span className="text-green-700">Desconto:</span>
                           <span className="font-medium text-green-700">- R$ {desconto.toFixed(2).replace('.', ',')}</span>
                         </div>
-                        <div className="flex justify-between border-t border-blue-300 pt-1">
-                          <span className="text-blue-900 font-bold">Valor final:</span>
-                          <span className="font-bold text-blue-900">R$ {valorLiquido.toFixed(2).replace('.', ',')}</span>
+                        <div className={`flex justify-between border-t pt-1 ${
+                          gratuito ? 'border-green-300' : 'border-blue-300'
+                        }`}>
+                          <span className={`font-bold ${
+                            gratuito ? 'text-green-900' : 'text-blue-900'
+                          }`}>Valor final:</span>
+                          <span className={`font-bold ${
+                            gratuito ? 'text-green-900' : 'text-blue-900'
+                          }`}>
+                            {gratuito ? '🎁 R$ 0,00' : `R$ ${valorLiquido.toFixed(2).replace('.', ',')}`}
+                          </span>
                         </div>
                       </>
                     )}

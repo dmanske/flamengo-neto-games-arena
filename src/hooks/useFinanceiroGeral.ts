@@ -144,7 +144,8 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas(valor_parcela, data_pagamento)
+          passageiro_passeios(valor_cobrado),
+          historico_pagamentos_categorizado(categoria, valor_pago, data_pagamento)
         `)
         .in('viagem_id', viagemIds);
 
@@ -159,28 +160,32 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
       let countPendencias = 0;
 
       (passageirosData || []).forEach((p: any) => {
-        const valorLiquido = (p.valor || 0) - (p.desconto || 0);
+        const valorViagem = (p.valor || 0) - (p.desconto || 0);
+        const valorPasseios = (p.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+        const valorLiquido = valorViagem + valorPasseios;
         
-        // Calcular valor pago considerando apenas parcelas pagas NO PERÍODO
-        const valorPagoNoPeriodo = (p.viagem_passageiros_parcelas || [])
-          .reduce((sum: number, parcela: any) => {
-            if (!parcela.data_pagamento) return sum;
+        // Calcular valor pago considerando apenas pagamentos NO PERÍODO
+        const historicoPagamentos = p.historico_pagamentos_categorizado || [];
+        const valorPagoNoPeriodo = historicoPagamentos
+          .reduce((sum: number, pagamento: any) => {
+            if (!pagamento.data_pagamento) return sum;
             
-            const dataPagamento = new Date(parcela.data_pagamento);
+            const dataPagamento = new Date(pagamento.data_pagamento);
             const dataInicio = new Date(filtroData.inicio);
             const dataFim = new Date(filtroData.fim);
             
             // Só conta se foi pago no período selecionado
             if (dataPagamento >= dataInicio && dataPagamento <= dataFim) {
-              return sum + (parcela.valor_parcela || 0);
+              return sum + (pagamento.valor_pago || 0);
             }
             return sum;
           }, 0);
         
         // Valor total pago (independente do período) para calcular pendências
-        const valorPagoTotal = (p.viagem_passageiros_parcelas || [])
-          .reduce((sum: number, parcela: any) => 
-            parcela.data_pagamento ? sum + (parcela.valor_parcela || 0) : sum, 0
+        const valorPagoTotal = historicoPagamentos
+          .reduce((sum: number, pagamento: any) => 
+            pagamento.data_pagamento ? sum + (pagamento.valor_pago || 0) : sum, 0
           );
         
         // Receita total da viagem (sempre conta o valor líquido)
@@ -243,7 +248,8 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           viagem_id,
           valor,
           desconto,
-          viagem_passageiros_parcelas(valor_parcela, data_pagamento)
+          passageiro_passeios(valor_cobrado),
+          historico_pagamentos_categorizado(categoria, valor_pago, data_pagamento)
         `)
         .in('viagem_id', viagemIds);
 
@@ -298,9 +304,14 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         let pendencias = 0;
         
         passageirosViagem.forEach((p: any) => {
-          const valorLiquido = (p.valor || 0) - (p.desconto || 0);
-          const valorPago = (p.viagem_passageiros_parcelas || [])
-            .reduce((sum: number, parcela: any) => parcela.data_pagamento ? sum + (parcela.valor_parcela || 0) : sum, 0);
+          const valorViagem = (p.valor || 0) - (p.desconto || 0);
+          const valorPasseios = (p.passageiro_passeios || [])
+            .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+          const valorLiquido = valorViagem + valorPasseios;
+          
+          const historicoPagamentos = p.historico_pagamentos_categorizado || [];
+          const valorPago = historicoPagamentos
+            .reduce((sum: number, pagamento: any) => pagamento.data_pagamento ? sum + (pagamento.valor_pago || 0) : sum, 0);
           
           receitasPassageiros += valorLiquido;
           
@@ -347,21 +358,22 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
       const fluxoItems: FluxoCaixaItem[] = [];
 
       // Buscar pagamentos de passageiros como entradas
-      const { data: parcelasData, error: parcelasError } = await supabase
-        .from('viagem_passageiros_parcelas')
+      const { data: pagamentosData, error: pagamentosError } = await supabase
+        .from('historico_pagamentos_categorizado')
         .select(`
-          valor_parcela,
+          valor_pago,
           data_pagamento,
           forma_pagamento,
+          categoria,
           viagem_passageiro_id
         `)
         .gte('data_pagamento', filtroData.inicio)
         .lte('data_pagamento', filtroData.fim)
         .order('data_pagamento', { ascending: false });
 
-      if (!parcelasError && parcelasData) {
-        // Buscar detalhes dos passageiros para as parcelas
-        const passageiroIds = [...new Set(parcelasData.map(p => p.viagem_passageiro_id))];
+      if (!pagamentosError && pagamentosData) {
+        // Buscar detalhes dos passageiros para os pagamentos
+        const passageiroIds = [...new Set(pagamentosData.map(p => p.viagem_passageiro_id))];
         
         if (passageiroIds.length > 0) {
           const { data: passageirosDetalhes } = await supabase
@@ -409,14 +421,17 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             return acc;
           }, {});
 
-          parcelasData.forEach((parcela: any) => {
-            const passageiro = passageirosMap[parcela.viagem_passageiro_id];
+          pagamentosData.forEach((pagamento: any) => {
+            const passageiro = passageirosMap[pagamento.viagem_passageiro_id];
+            const categoriaLabel = pagamento.categoria === 'viagem' ? 'Viagem' : 
+                                 pagamento.categoria === 'passeios' ? 'Passeios' : 
+                                 'Pagamento Completo';
             fluxoItems.push({
-              data: parcela.data_pagamento,
-              descricao: `Pagamento - ${passageiro?.cliente?.nome || 'Passageiro'}`,
+              data: pagamento.data_pagamento,
+              descricao: `${categoriaLabel} - ${passageiro?.cliente?.nome || 'Passageiro'}`,
               tipo: 'entrada',
               categoria: 'passageiro',
-              valor: parcela.valor_parcela,
+              valor: pagamento.valor_pago,
               viagem_id: passageiro?.viagem_id,
               viagem_nome: passageiro?.viagem?.adversario
             });
@@ -516,12 +531,12 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           created_at,
           viagem_id,
           cliente_id,
-          viagem_passageiros_parcelas(
-            valor_parcela, 
+          passageiro_passeios(valor_cobrado),
+          historico_pagamentos_categorizado(
+            valor_pago, 
             data_pagamento, 
-            data_vencimento,
             forma_pagamento,
-            numero_parcela
+            categoria
           )
         `)
 
@@ -561,16 +576,19 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
       }
 
       (passageirosData || []).forEach((passageiro: any) => {
-        const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
+        const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+        const valorPasseios = (passageiro.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+        const valorTotal = valorViagem + valorPasseios;
         
-        // Calcular valor pago (apenas parcelas com data_pagamento) e última data de pagamento
+        // Calcular valor pago e última data de pagamento
         let valorPago = 0;
         let ultimaDataPagamento = null;
         
-        (passageiro.viagem_passageiros_parcelas || []).forEach((parcela: any) => {
-          if (parcela.data_pagamento) {
-            valorPago += parcela.valor_parcela || 0;
-            const dataPagamento = new Date(parcela.data_pagamento);
+        (passageiro.historico_pagamentos_categorizado || []).forEach((pagamento: any) => {
+          if (pagamento.data_pagamento) {
+            valorPago += pagamento.valor_pago || 0;
+            const dataPagamento = new Date(pagamento.data_pagamento);
             if (!ultimaDataPagamento || dataPagamento > ultimaDataPagamento) {
               ultimaDataPagamento = dataPagamento;
             }
@@ -589,27 +607,17 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             (new Date().getTime() - dataVencimento.getTime()) / (1000 * 60 * 60 * 24)
           );
 
-          // Processar detalhes das parcelas
-          const parcelasDetalhes = (passageiro.viagem_passageiros_parcelas || []).map((parcela: any) => {
-            const dataVencParcela = parcela.data_vencimento ? new Date(parcela.data_vencimento) : dataVencimento;
-            const hoje = new Date();
-            
-            let statusParcela: 'pago' | 'pendente' | 'vencido' = 'pendente';
-            if (parcela.data_pagamento) {
-              statusParcela = 'pago';
-            } else if (dataVencParcela < hoje) {
-              statusParcela = 'vencido';
-            }
-
+          // Processar detalhes dos pagamentos
+          const pagamentosDetalhes = (passageiro.historico_pagamentos_categorizado || []).map((pagamento: any) => {
             return {
-              numero: parcela.numero_parcela || 1,
-              valor: parcela.valor_parcela || 0,
-              data_vencimento: parcela.data_vencimento || dataVencimento.toISOString().split('T')[0],
-              data_pagamento: parcela.data_pagamento,
-              status: statusParcela,
-              forma_pagamento: parcela.forma_pagamento || 'N/A'
+              id: pagamento.id,
+              valor: pagamento.valor_pago,
+              categoria: pagamento.categoria,
+              data_pagamento: pagamento.data_pagamento,
+              forma_pagamento: pagamento.forma_pagamento,
+              status: 'pago' as const
             };
-          }).sort((a, b) => a.numero - b.numero);
+          });
 
           // Filtrar por período baseado na data de vencimento ou última atividade
           const dataReferencia = ultimaDataPagamento || dataVencimento;
@@ -629,7 +637,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             data_vencimento: viagem?.data_jogo || passageiro.created_at,
             dias_atraso: diasAtraso,
             status: valorPago > 0 ? 'Parcial' : 'Pendente',
-            parcelas_detalhes: parcelasDetalhes
+            pagamentos_detalhes: pagamentosDetalhes
           });
           // }
         }

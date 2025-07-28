@@ -97,6 +97,7 @@ export interface Onibus {
 }
 
 export function useViagemDetails(viagemId: string | undefined) {
+  console.log('🚀 DEBUG: useViagemDetails iniciado com viagemId:', viagemId);
   const navigate = useNavigate();
   const [viagem, setViagem] = useState<Viagem | null>(null);
   const [passageiros, setPassageiros] = useState<PassageiroDisplay[]>([]);
@@ -163,6 +164,7 @@ export function useViagemDetails(viagemId: string | undefined) {
   }, [searchTerm, passageiros, filterStatus]);
 
   const fetchViagemData = async (id: string) => {
+    console.log('🚀 DEBUG: fetchViagemData chamado com id:', id);
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -237,6 +239,8 @@ export function useViagemDetails(viagemId: string | undefined) {
   };
 
   const fetchPassageiros = async (viagemId: string) => {
+    console.log('🚀 DEBUG: fetchPassageiros chamado com viagemId:', viagemId);
+    
     if (!viagemId || viagemId === "undefined") {
       console.warn("ID da viagem inválido:", viagemId);
       return;
@@ -251,6 +255,8 @@ export function useViagemDetails(viagemId: string | undefined) {
 
     try {
       // Buscar passageiros da viagem com dados do cliente usando a relação específica
+      console.log('🚀 DEBUG: Executando query para viagemId:', viagemId);
+      
       const { data, error } = await supabase
         .from("viagem_passageiros")
         .select(`
@@ -284,23 +290,45 @@ export function useViagemDetails(viagemId: string | undefined) {
             passeio_cristo,
             foto
           ),
-          viagem_passageiros_parcelas (
-            id,
-            valor_parcela,
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago,
             forma_pagamento,
             data_pagamento,
             observacoes
           ),
           passageiro_passeios (
             passeio_nome,
-            status
+            status,
+            valor_cobrado
           )
         `)
         .eq("viagem_id", viagemId);
       
+      console.log('🚀 DEBUG: Resultado da query:', { 
+        data, 
+        error, 
+        viagemId,
+        dataLength: data?.length,
+        primeiroItem: data?.[0],
+        primeiroItemPasseios: data?.[0]?.passageiro_passeios,
+        primeiroItemGratuito: data?.[0]?.gratuito
+      });
+      
       if (error) throw error;
       
-
+      // Debug: verificar dados brutos da query
+      console.log('🔍 DEBUG useViagemDetails - Dados brutos da query:', {
+        viagemId,
+        totalPassageiros: data?.length || 0,
+        primeiroPassageiro: data?.[0],
+        passageirosComPasseios: data?.filter(p => p.passageiro_passeios?.length > 0).length || 0,
+        exemploPasseios: data?.[0]?.passageiro_passeios,
+        todosPasseios: data?.map(p => ({
+          nome: p.clientes?.nome,
+          passeios: p.passageiro_passeios?.length || 0
+        }))
+      });
       
       // Formatar os dados para exibição
       const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => ({
@@ -331,7 +359,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         cidade_embarque: item.cidade_embarque,
         observacoes: item.observacoes,
         is_responsavel_onibus: item.is_responsavel_onibus || false,
-        parcelas: item.viagem_passageiros_parcelas,
+        historico_pagamentos: item.historico_pagamentos_categorizado,
         passeios: item.passageiro_passeios || []
       }));
       

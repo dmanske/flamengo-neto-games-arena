@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { converterStatusParaInteligente } from "@/lib/status-utils";
+import { StatusBadgeAvancado } from "./StatusBadgeAvancado";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { User, MapPin, CreditCard, Phone, Mail, Calendar, CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
@@ -16,7 +17,8 @@ import { ptBR } from "date-fns/locale";
 import { formatBirthDate } from "@/utils/formatters";
 import { usePasseios } from "@/hooks/usePasseios";
 import { formatCurrency } from "@/lib/utils";
-import { ControleFinanceiroAvancado } from "@/components/financeiro/ControleFinanceiroAvancado";
+// ControleFinanceiroAvancado removido - usando apenas Resumo Financeiro compacto
+import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 
 interface PassageiroDetails {
   viagem_passageiro_id: string;
@@ -64,25 +66,28 @@ export function PassageiroDetailsDialog({
 }: PassageiroDetailsDialogProps) {
   const { passeios } = usePasseios();
   
+  // Usar sistema novo de pagamentos separados
+  const {
+    breakdown,
+    historicoPagamentos,
+    loading: loadingPagamentos,
+    obterStatusAtual
+  } = usePagamentosSeparados(passageiro?.viagem_passageiro_id);
+  
   if (!passageiro) return null;
 
-  const valorLiquido = passageiro.valor - passageiro.desconto;
-  const valorPago = passageiro.parcelas?.reduce((sum, p) => p.data_pagamento ? sum + p.valor_parcela : sum, 0) || 0;
-  const valorPendente = valorLiquido - valorPago;
+  // Usar dados do sistema novo se disponível, senão fallback para sistema antigo
+  const valorViagem = breakdown?.valor_viagem || (passageiro.valor - passageiro.desconto);
+  const valorPasseios = breakdown?.valor_passeios || 0;
+  const valorTotal = valorViagem + valorPasseios;
+  const valorPago = breakdown?.pago_total || 0;
+  const valorPendente = breakdown?.pendente_total || (valorTotal - valorPago);
 
-  // Calcular valor dos passeios selecionados
+  // Status usando sistema novo (mesmo da lista e modal de edição)
+  const statusAvancado = breakdown ? obterStatusAtual() : 'Pendente';
+
+  // Passeios selecionados usando dados corretos
   const passeiosSelecionados = passageiro.passeios || [];
-  const valorPasseios = passeiosSelecionados.reduce((total, pp) => {
-    const passeio = passeios.find(p => p.nome === pp.passeio_nome);
-    return total + (passeio?.valor || 0);
-  }, 0);
-
-  const statusInteligente = converterStatusParaInteligente({
-    valor: passageiro.valor || 0,
-    desconto: passageiro.desconto || 0,
-    parcelas: passageiro.parcelas,
-    status_pagamento: passageiro.status_pagamento
-  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,9 +109,9 @@ export function PassageiroDetailsDialog({
               )}
               {/* Status Indicator */}
               <div className="absolute -bottom-1 -right-1">
-                {statusInteligente.status === 'Pago' ? (
+                {statusAvancado === 'Pago Completo' || statusAvancado === 'Brinde' ? (
                   <CheckCircle className="h-6 w-6 text-green-500 bg-white rounded-full" />
-                ) : statusInteligente.status === 'Pendente' ? (
+                ) : statusAvancado === 'Pendente' ? (
                   <Clock className="h-6 w-6 text-yellow-500 bg-white rounded-full" />
                 ) : (
                   <XCircle className="h-6 w-6 text-red-500 bg-white rounded-full" />
@@ -120,9 +125,10 @@ export function PassageiroDetailsDialog({
                 {passageiro.nome}
               </DialogTitle>
               <div className="flex items-center gap-3">
-                <Badge className={statusInteligente.cor} title={statusInteligente.descricao}>
-                  {statusInteligente.status}
-                </Badge>
+                <StatusBadgeAvancado 
+                  status={statusAvancado}
+                  size="md"
+                />
                 <span className="text-sm text-gray-600">
                   {passageiro.cidade}, {passageiro.estado}
                 </span>
@@ -133,11 +139,12 @@ export function PassageiroDetailsDialog({
             <div className="text-right">
               <div className="text-sm text-gray-600">Valor Total</div>
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(valorLiquido)}
+                {formatCurrency(valorTotal)}
               </div>
-              {valorPasseios > 0 && (
-                <div className="text-xs text-gray-500">
-                  + {formatCurrency(valorPasseios)} passeios
+              {breakdown && (
+                <div className="text-xs text-gray-500 space-y-1">
+                  <div>Viagem: {formatCurrency(valorViagem)}</div>
+                  <div>Passeios: {formatCurrency(valorPasseios)}</div>
                 </div>
               )}
             </div>
@@ -155,6 +162,11 @@ export function PassageiroDetailsDialog({
               <DollarSign className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-blue-700">{formatCurrency(valorPago)}</div>
               <div className="text-sm text-blue-600">Valor Pago</div>
+              {breakdown && (
+                <div className="text-xs text-gray-500 mt-1">
+                  V: {formatCurrency(breakdown.pago_viagem)} | P: {formatCurrency(breakdown.pago_passeios)}
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -163,6 +175,11 @@ export function PassageiroDetailsDialog({
               <Clock className="h-8 w-8 text-amber-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-amber-700">{formatCurrency(valorPendente)}</div>
               <div className="text-sm text-amber-600">Pendente</div>
+              {breakdown && (
+                <div className="text-xs text-gray-500 mt-1">
+                  V: {formatCurrency(breakdown.pendente_viagem)} | P: {formatCurrency(breakdown.pendente_passeios)}
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -171,6 +188,11 @@ export function PassageiroDetailsDialog({
               <MapPin className="h-8 w-8 text-green-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-green-700">{passeiosSelecionados.length}</div>
               <div className="text-sm text-green-600">Passeios</div>
+              {valorPasseios > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {formatCurrency(valorPasseios)}
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -340,45 +362,57 @@ export function PassageiroDetailsDialog({
                   Breakdown completo dos valores
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                {/* Valores Base */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="text-sm font-medium text-blue-600 mb-1">Valor Base</div>
-                    <div className="text-xl font-bold text-blue-700">{formatCurrency(passageiro.valor)}</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="text-sm font-medium text-orange-600 mb-1">Desconto</div>
-                    <div className="text-xl font-bold text-orange-700">-{formatCurrency(passageiro.desconto)}</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="text-sm font-medium text-green-600 mb-1">Valor Líquido</div>
-                    <div className="text-xl font-bold text-green-700">{formatCurrency(valorLiquido)}</div>
-                  </div>
-                </div>
-
-                {/* Valores dos Passeios */}
-                {valorPasseios > 0 && (
-                  <>
-                    <Separator />
-                    <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="text-sm font-medium text-purple-600 mb-1">Valor dos Passeios</div>
-                      <div className="text-xl font-bold text-purple-700">+{formatCurrency(valorPasseios)}</div>
+              <CardContent className="p-4">
+                {/* Layout compacto em 2 colunas */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Coluna Esquerda - Composição */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Composição</div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Viagem:</span>
+                        <span className="font-medium">{formatCurrency(valorViagem)}</span>
+                      </div>
+                      {valorPasseios > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Passeios:</span>
+                          <span className="font-medium text-purple-600">+{formatCurrency(valorPasseios)}</span>
+                        </div>
+                      )}
+                      {passageiro.desconto > 0 && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600">Desconto:</span>
+                          <span className="font-medium text-orange-600">-{formatCurrency(passageiro.desconto)}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-1 mt-2">
+                        <div className="flex justify-between items-center font-semibold">
+                          <span>Total:</span>
+                          <span className="text-lg text-blue-600">{formatCurrency(valorTotal)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </>
-                )}
-
-                <Separator />
-
-                {/* Status de Pagamento */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                    <div className="text-sm font-medium text-emerald-600 mb-1">Valor Pago</div>
-                    <div className="text-xl font-bold text-emerald-700">{formatCurrency(valorPago)}</div>
                   </div>
-                  <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-                    <div className="text-sm font-medium text-red-600 mb-1">Valor Pendente</div>
-                    <div className="text-xl font-bold text-red-700">{formatCurrency(valorPendente)}</div>
+
+                  {/* Coluna Direita - Status */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">Status</div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Pago:</span>
+                        <span className="font-medium text-green-600">{formatCurrency(valorPago)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Pendente:</span>
+                        <span className="font-medium text-red-600">{formatCurrency(valorPendente)}</span>
+                      </div>
+                      {breakdown && (
+                        <div className="text-xs text-gray-500 mt-2 space-y-0.5">
+                          <div>V: {formatCurrency(breakdown.pago_viagem)} / {formatCurrency(breakdown.pendente_viagem)}</div>
+                          <div>P: {formatCurrency(breakdown.pago_passeios)} / {formatCurrency(breakdown.pendente_passeios)}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -426,13 +460,66 @@ export function PassageiroDetailsDialog({
               </CardContent>
             </Card>
 
-            {/* Sistema Avançado de Pagamento */}
-            <ControleFinanceiroAvancado
-              viagemPassageiroId={passageiro.viagem_passageiro_id}
-              clienteNome={passageiro.nome}
-            />
+            {/* Sistema Avançado de Pagamento removido - usando apenas Resumo Financeiro */}
           </div>
         </div>
+
+        {/* Histórico de Pagamentos - Sistema Novo */}
+        {breakdown && historicoPagamentos.length > 0 && (
+          <Card className="shadow-lg border-0 mt-6">
+            <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Histórico de Pagamentos ({historicoPagamentos.length})
+              </CardTitle>
+              <CardDescription className="text-green-100">
+                Pagamentos registrados no sistema novo
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {historicoPagamentos
+                  .sort((a, b) => new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime())
+                  .map((pagamento, index) => (
+                    <div key={pagamento.id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {formatCurrency(pagamento.valor_pago)}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {pagamento.categoria === 'viagem' ? 'Viagem' : 
+                             pagamento.categoria === 'passeios' ? 'Passeios' : 'Viagem + Passeios'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900">
+                          {format(new Date(pagamento.data_pagamento), "dd/MM/yyyy", { locale: ptBR })}
+                        </div>
+                        {pagamento.forma_pagamento && (
+                          <div className="text-xs text-gray-500">
+                            {pagamento.forma_pagamento.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading indicator para dados financeiros */}
+        {loadingPagamentos && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Carregando dados financeiros...</span>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

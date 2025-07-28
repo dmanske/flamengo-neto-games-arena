@@ -10,6 +10,7 @@ export const formSchema = z.object({
   forma_pagamento: z.string().min(1, "Selecione uma forma de pagamento"),
   cidade_embarque: z.string().min(1, "Selecione uma cidade de embarque"),
   passeios_selecionados: z.array(z.string()).default([]),
+  gratuito: z.boolean().default(false),
 });
 
 export type FormData = z.infer<typeof formSchema>;

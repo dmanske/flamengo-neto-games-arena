@@ -29,7 +29,7 @@ export function usePassageirosCount(viagemId: string) {
             status_pagamento,
             valor,
             desconto,
-            viagem_passageiros_parcelas (valor_parcela, data_pagamento)
+            historico_pagamentos_categorizado (categoria, valor_pago, data_pagamento)
           `)
           .eq('viagem_id', viagemId);
 
@@ -42,23 +42,13 @@ export function usePassageirosCount(viagemId: string) {
           
           // Usar status inteligente para contagem
           const confirmados = passageiros.filter(p => {
-            const statusInteligente = converterStatusParaInteligente({
-              valor: p.valor || 0,
-              desconto: p.desconto || 0,
-              parcelas: p.viagem_passageiros_parcelas,
-              status_pagamento: p.status_pagamento
-            });
-            return statusInteligente.status === 'Pago';
+            // Sistema unificado - usar status direto
+            return ['Pago Completo', 'Pago'].includes(p.status_pagamento);
           }).length;
           
           const pendentes = passageiros.filter(p => {
-            const statusInteligente = converterStatusParaInteligente({
-              valor: p.valor || 0,
-              desconto: p.desconto || 0,
-              parcelas: p.viagem_passageiros_parcelas,
-              status_pagamento: p.status_pagamento
-            });
-            return ['Pendente', 'Parcelado'].includes(statusInteligente.status);
+            // Sistema unificado - usar status direto
+            return ['Pendente', 'Viagem Paga', 'Passeios Pagos'].includes(p.status_pagamento);
           }).length;
 
           setCount({

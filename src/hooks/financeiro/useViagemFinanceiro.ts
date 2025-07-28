@@ -62,6 +62,15 @@ export interface PassageiroPendente {
     data_vencimento: string;
     dias_para_vencer: number;
   };
+  // Novos campos para pagamentos separados
+  valor_viagem: number;
+  valor_passeios: number;
+  viagem_paga: boolean;
+  passeios_pagos: boolean;
+  pago_viagem: number;
+  pago_passeios: number;
+  pendente_viagem: number;
+  pendente_passeios: number;
 }
 
 export interface ResumoFinanceiro {
@@ -72,6 +81,14 @@ export interface ResumoFinanceiro {
   total_pendencias: number;
   count_pendencias: number;
   taxa_inadimplencia: number;
+  // Breakdown por categoria
+  receitas_viagem: number;
+  receitas_passeios: number;
+  pendencias_viagem: number;
+  pendencias_passeios: number;
+  passageiros_viagem_paga: number;
+  passageiros_passeios_pagos: number;
+  passageiros_pago_completo: number;
 }
 
 export function useViagemFinanceiro(viagemId: string | undefined) {
@@ -86,7 +103,14 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     margem_lucro: 0,
     total_pendencias: 0,
     count_pendencias: 0,
-    taxa_inadimplencia: 0
+    taxa_inadimplencia: 0,
+    receitas_viagem: 0,
+    receitas_passeios: 0,
+    pendencias_viagem: 0,
+    pendencias_passeios: 0,
+    passageiros_viagem_paga: 0,
+    passageiros_passeios_pagos: 0,
+    passageiros_pago_completo: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -128,7 +152,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     }
   };
 
-  // Buscar passageiros com pendências
+  // Buscar passageiros com pendências (com suporte a pagamentos separados)
   const fetchPassageirosPendentes = async () => {
     if (!viagemId) return;
 
@@ -141,19 +165,24 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
           valor,
           desconto,
           status_pagamento,
+          viagem_paga,
+          passeios_pagos,
           created_at,
           clientes!viagem_passageiros_cliente_id_fkey (
             nome,
             telefone
           ),
-          viagem_passageiros_parcelas (
-            id,
-            valor_parcela,
-            data_vencimento,
-            data_pagamento,
-            status,
-            numero_parcela,
-            total_parcelas
+          passageiro_passeios (
+            valor_cobrado,
+            passeios!inner (
+              nome,
+              valor
+            )
+          ),
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago,
+            data_pagamento
           )
         `)
         .eq('viagem_id', viagemId);
@@ -163,35 +192,46 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       const pendentes: PassageiroPendente[] = [];
 
       data?.forEach((passageiro: any) => {
-        const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
-        const parcelas = passageiro.viagem_passageiros_parcelas || [];
-        
-        // Calcular valores pagos e pendentes
-        const valorPago = parcelas
-          .reduce((sum: number, p: any) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
-        const valorPendente = valorTotal - valorPago;
+        const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+        const valorPasseios = (passageiro.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+        const valorTotal = valorViagem + valorPasseios;
+
+        // Calcular pagamentos por categoria (novo sistema)
+        const historicoPagamentos = passageiro.historico_pagamentos_categorizado || [];
+        const pagoViagem = historicoPagamentos
+          .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+        const pagoPasseios = historicoPagamentos
+          .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+        // SISTEMA UNIFICADO - Apenas sistema novo
+        const valorPago = pagoViagem + pagoPasseios;
+        const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
+        const pendentePasseios = Math.max(0, valorPasseios - pagoPasseios);
+        const valorPendente = pendenteViagem + pendentePasseios;
 
         if (valorPendente > 0.01) { // Margem para centavos
           const diasAtraso = Math.floor(
             (new Date().getTime() - new Date(passageiro.created_at).getTime()) / (1000 * 60 * 60 * 24)
           );
 
-          // Calcular informações das parcelas
+          // Calcular informações das parcelas (compatibilidade)
           const parcelasPendentes = parcelas.filter((p: any) => !p.data_pagamento);
           const totalParcelas = parcelas.length > 0 ? parcelas[0].total_parcelas || parcelas.length : 0;
-          
+
           // Encontrar próxima parcela a vencer
           let proximaParcela = undefined;
           if (parcelasPendentes.length > 0) {
-            // Ordenar parcelas pendentes por data de vencimento
             const parcelasOrdenadas = parcelasPendentes
               .sort((a: any, b: any) => new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime());
-            
+
             const proxima = parcelasOrdenadas[0];
             const hoje = new Date();
             const dataVencimento = new Date(proxima.data_vencimento);
             const diasParaVencer = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-            
+
             proximaParcela = {
               valor: proxima.valor_parcela,
               data_vencimento: proxima.data_vencimento,
@@ -211,7 +251,16 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
             status_pagamento: passageiro.status_pagamento,
             parcelas_pendentes: parcelasPendentes.length,
             total_parcelas: totalParcelas,
-            proxima_parcela: proximaParcela
+            proxima_parcela: proximaParcela,
+            // Novos campos para pagamentos separados
+            valor_viagem: valorViagem,
+            valor_passeios: valorPasseios,
+            viagem_paga: passageiro.viagem_paga || false,
+            passeios_pagos: passageiro.passeios_pagos || false,
+            pago_viagem: pagoViagem,
+            pago_passeios: pagoPasseios,
+            pendente_viagem: pendenteViagem,
+            pendente_passeios: pendentePasseios
           });
         }
       });
@@ -259,68 +308,99 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     }
   };
 
-  // Calcular resumo financeiro
+  // Calcular resumo financeiro (com suporte a pagamentos separados)
   const calcularResumoFinanceiro = async () => {
     if (!viagemId) return;
 
     try {
-      // Buscar receitas de passageiros
+      // Buscar receitas de passageiros com dados de pagamentos separados
       const { data: passageiros, error: passageirosError } = await supabase
         .from('viagem_passageiros')
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas (
-            valor_parcela,
-            data_pagamento
+          viagem_paga,
+          passeios_pagos,
+          status_pagamento,
+
+          passageiro_passeios (
+            valor_cobrado
+          ),
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago
           )
         `)
         .eq('viagem_id', viagemId);
 
       if (passageirosError) throw passageirosError;
 
-      let receitasPassageiros = 0;
-      let totalPendencias = 0;
+      let receitasViagem = 0;
+      let receitasPasseios = 0;
+      let pendenciasViagem = 0;
+      let pendenciasPasseios = 0;
       let countPendencias = 0;
+      let passageirosViagemPaga = 0;
+      let passageirosPasseiosPagos = 0;
+      let passageirosPagoCompleto = 0;
 
       console.log('🔍 DEBUG - Calculando resumo financeiro para viagem:', viagemId);
       console.log('📊 Passageiros encontrados:', passageiros?.length || 0);
 
       passageiros?.forEach((p: any, index: number) => {
-        const valorLiquido = (p.valor || 0) - (p.desconto || 0);
-        const parcelas = p.viagem_passageiros_parcelas || [];
-        
-        console.log(`👤 Passageiro ${index + 1}:`, {
-          valor_original: p.valor,
-          desconto: p.desconto,
-          valor_liquido: valorLiquido,
-          total_parcelas: parcelas.length,
-          parcelas_pagas: parcelas.filter((parcela: any) => parcela.data_pagamento).length
-        });
+        const valorViagem = (p.valor || 0) - (p.desconto || 0);
+        const valorPasseios = (p.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+        const valorTotal = valorViagem + valorPasseios;
 
-        const valorPago = parcelas
-          .reduce((sum: number, parcela: any) => {
-            const pago = parcela.data_pagamento ? (parcela.valor_parcela || 0) : 0;
-            return sum + pago;
-          }, 0);
-        
-        receitasPassageiros += valorLiquido;
-        
-        const pendente = valorLiquido - valorPago;
-        if (pendente > 0.01) {
-          totalPendencias += pendente;
+        // Calcular pagamentos por categoria (novo sistema)
+        const historicoPagamentos = p.historico_pagamentos_categorizado || [];
+        const pagoViagem = historicoPagamentos
+          .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+        const pagoPasseios = historicoPagamentos
+          .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+        // Fallback para sistema antigo se não houver dados novos
+        const valorPagoTotal = pagoViagem + pagoPasseios;
+
+        // Acumular receitas
+        receitasViagem += valorViagem;
+        receitasPasseios += valorPasseios;
+
+        // Calcular pendências
+        const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
+        const pendentePasseios = Math.max(0, valorPasseios - pagoPasseios);
+        const pendenciaTotal = pendenteViagem + pendentePasseios;
+
+        if (pendenciaTotal > 0.01) {
+          pendenciasViagem += pendenteViagem;
+          pendenciasPasseios += pendentePasseios;
           countPendencias++;
         }
 
-        console.log(`💰 Valores calculados:`, {
-          valor_pago: valorPago,
-          valor_pendente: pendente
+        // Contar status
+        if (p.viagem_paga) passageirosViagemPaga++;
+        if (p.passeios_pagos || valorPasseios === 0) passageirosPasseiosPagos++;
+        if ((p.viagem_paga && p.passeios_pagos) || (p.viagem_paga && valorPasseios === 0)) {
+          passageirosPagoCompleto++;
+        }
+
+        console.log(`👤 Passageiro ${index + 1}:`, {
+          valor_viagem: valorViagem,
+          valor_passeios: valorPasseios,
+          pago_viagem: pagoViagem,
+          pago_passeios: pagoPasseios,
+          pendente_viagem: pendenteViagem,
+          pendente_passeios: pendentePasseios
         });
       });
 
       // Somar outras receitas
       const totalOutrasReceitas = receitas.reduce((sum, r) => sum + r.valor, 0);
-      const totalReceitas = receitasPassageiros + totalOutrasReceitas;
+      const totalReceitas = receitasViagem + receitasPasseios + totalOutrasReceitas;
+      const totalPendencias = pendenciasViagem + pendenciasPasseios;
 
       // Somar despesas
       const totalDespesas = despesas.reduce((sum, d) => sum + d.valor, 0);
@@ -337,7 +417,14 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         margem_lucro: margemLucro,
         total_pendencias: totalPendencias,
         count_pendencias: countPendencias,
-        taxa_inadimplencia: taxaInadimplencia
+        taxa_inadimplencia: taxaInadimplencia,
+        receitas_viagem: receitasViagem,
+        receitas_passeios: receitasPasseios,
+        pendencias_viagem: pendenciasViagem,
+        pendencias_passeios: pendenciasPasseios,
+        passageiros_viagem_paga: passageirosViagemPaga,
+        passageiros_passeios_pagos: passageirosPasseiosPagos,
+        passageiros_pago_completo: passageirosPagoCompleto
       });
     } catch (error) {
       console.error('Erro ao calcular resumo:', error);
@@ -505,17 +592,19 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
   // Registrar pagamento de parcela
   const registrarPagamento = async (
     viagemPassageiroId: string,
-    valorParcela: number,
+    valorPagamento: number,
     formaPagamento: string,
     dataPagamento: string = new Date().toISOString(),
     observacoes?: string
   ) => {
     try {
+      // Usar sistema unificado - categoria "ambos" para compatibilidade
       const { error } = await supabase
-        .from('viagem_passageiros_parcelas')
+        .from('historico_pagamentos_categorizado')
         .insert({
           viagem_passageiro_id: viagemPassageiroId,
-          valor_parcela: valorParcela,
+          categoria: 'ambos',
+          valor_pago: valorPagamento,
           forma_pagamento: formaPagamento,
           data_pagamento: dataPagamento,
           observacoes: observacoes
@@ -538,40 +627,69 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
   // Verificar e atualizar status de pagamento automaticamente
   const verificarStatusPagamento = async (viagemPassageiroId: string) => {
     try {
-      // Buscar dados do passageiro
+      // Buscar dados do passageiro com sistema unificado
       const { data: passageiro, error: passageiroError } = await supabase
         .from('viagem_passageiros')
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas (valor_parcela, data_pagamento)
+          passageiro_passeios (valor_cobrado),
+          historico_pagamentos_categorizado (categoria, valor_pago)
         `)
         .eq('id', viagemPassageiroId)
         .single();
 
       if (passageiroError) throw passageiroError;
 
-      const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
-      // Somar apenas parcelas que foram realmente pagas (têm data_pagamento)
-      const valorPago = (passageiro.viagem_passageiros_parcelas || [])
-        .reduce((sum: number, p: any) => {
-          return p.data_pagamento ? sum + (p.valor_parcela || 0) : sum;
-        }, 0);
+      const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+      const valorPasseios = (passageiro.passageiro_passeios || [])
+        .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
 
-      // Determinar novo status
-      let novoStatus: 'pago' | 'pendente' | 'cancelado';
-      if (valorPago >= valorTotal - 0.01) { // Margem para centavos
-        novoStatus = 'pago';
-      } else if (valorPago > 0) {
-        novoStatus = 'pendente';
+      // Calcular pagamentos por categoria
+      const historicoPagamentos = passageiro.historico_pagamentos_categorizado || [];
+      const pagoViagem = historicoPagamentos
+        .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+      const pagoPasseios = historicoPagamentos
+        .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+      const valorPago = pagoViagem + pagoPasseios;
+
+      // Determinar status avançado baseado em pagamentos separados
+      const viagemPaga = pagoViagem >= valorViagem - 0.01;
+      const passeiosPagos = valorPasseios === 0 || pagoPasseios >= valorPasseios - 0.01;
+
+      let novoStatus: string;
+      let viagemPagaFlag = false;
+      let passeiosPagosFlag = false;
+
+      if (viagemPaga && passeiosPagos) {
+        novoStatus = 'Pago Completo';
+        viagemPagaFlag = true;
+        passeiosPagosFlag = true;
+      } else if (viagemPaga && !passeiosPagos) {
+        novoStatus = 'Viagem Paga';
+        viagemPagaFlag = true;
+        passeiosPagosFlag = false;
+      } else if (!viagemPaga && passeiosPagos) {
+        novoStatus = 'Passeios Pagos';
+        viagemPagaFlag = false;
+        passeiosPagosFlag = true;
       } else {
-        novoStatus = 'pendente';
+        novoStatus = 'Pendente';
+        viagemPagaFlag = false;
+        passeiosPagosFlag = false;
       }
 
-      // Atualizar status se necessário
+      // Atualizar status e flags
       const { error: updateError } = await supabase
         .from('viagem_passageiros')
-        .update({ status_pagamento: novoStatus })
+        .update({
+          status_pagamento: novoStatus,
+          viagem_paga: viagemPagaFlag,
+          passeios_pagos: passeiosPagosFlag
+        })
         .eq('id', viagemPassageiroId);
 
       if (updateError) throw updateError;
@@ -584,37 +702,55 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
   // Marcar passageiro como pago
   const marcarComoPago = async (viagemPassageiroId: string) => {
     try {
-      // Buscar valor pendente
+      // Buscar valor pendente com sistema unificado
       const { data: passageiro, error: passageiroError } = await supabase
         .from('viagem_passageiros')
         .select(`
           valor,
           desconto,
-          viagem_passageiros_parcelas (valor_parcela)
+          passageiro_passeios (valor_cobrado),
+          historico_pagamentos_categorizado (categoria, valor_pago)
         `)
         .eq('id', viagemPassageiroId)
         .single();
 
       if (passageiroError) throw passageiroError;
 
-      const valorTotal = (passageiro.valor || 0) - (passageiro.desconto || 0);
-      const valorPago = (passageiro.viagem_passageiros_parcelas || [])
-        .reduce((sum: number, p: any) => p.data_pagamento ? sum + (p.valor_parcela || 0) : sum, 0);
+      const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+      const valorPasseios = (passageiro.passageiro_passeios || [])
+        .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+      const valorTotal = valorViagem + valorPasseios;
+
+      // Calcular pagamentos por categoria
+      const historicoPagamentos = passageiro.historico_pagamentos_categorizado || [];
+      const pagoViagem = historicoPagamentos
+        .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+      const pagoPasseios = historicoPagamentos
+        .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+      const valorPago = pagoViagem + pagoPasseios;
       const valorPendente = valorTotal - valorPago;
 
       if (valorPendente > 0.01) {
-        // Registrar pagamento do valor pendente
-        await registrarPagamento(
-          viagemPassageiroId,
-          valorPendente,
-          'dinheiro', // Forma padrão, pode ser alterada
-          new Date().toISOString(),
-          'Pagamento marcado como pago manualmente'
-        );
-      } else {
-        // Apenas atualizar status
-        await atualizarStatusPagamento(viagemPassageiroId, 'pago');
+        // Registrar pagamento do valor pendente como "ambos" (viagem + passeios)
+        const { error } = await supabase
+          .from('historico_pagamentos_categorizado')
+          .insert({
+            viagem_passageiro_id: viagemPassageiroId,
+            categoria: 'ambos',
+            valor_pago: valorPendente,
+            forma_pagamento: 'dinheiro',
+            observacoes: 'Pagamento marcado como pago manualmente',
+            data_pagamento: new Date().toISOString()
+          });
+
+        if (error) throw error;
       }
+
+      // Atualizar status automaticamente
+      await verificarStatusPagamento(viagemPassageiroId);
     } catch (error) {
       console.error('Erro ao marcar como pago:', error);
       toast.error('Erro ao marcar como pago');
@@ -625,7 +761,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
   const cancelarPagamento = async (viagemPassageiroId: string, motivo?: string) => {
     try {
       await atualizarStatusPagamento(viagemPassageiroId, 'cancelado');
-      
+
       if (motivo) {
         // Registrar no histórico de cobrança
         await registrarCobranca(
@@ -641,6 +777,126 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     } catch (error) {
       console.error('Erro ao cancelar pagamento:', error);
       toast.error('Erro ao cancelar pagamento');
+    }
+  };
+
+  // NOVAS FUNÇÕES PARA PAGAMENTOS SEPARADOS
+
+  // Registrar pagamento específico por categoria
+  const registrarPagamentoSeparado = async (
+    viagemPassageiroId: string,
+    categoria: 'viagem' | 'passeios' | 'ambos',
+    valor: number,
+    formaPagamento: string = 'pix',
+    observacoes?: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('historico_pagamentos_categorizado')
+        .insert({
+          viagem_passageiro_id: viagemPassageiroId,
+          categoria: categoria,
+          valor_pago: valor,
+          forma_pagamento: formaPagamento,
+          observacoes: observacoes,
+          data_pagamento: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success(`Pagamento de ${categoria} registrado com sucesso!`);
+      await fetchAllData();
+      return true;
+
+    } catch (error: any) {
+      console.error('Erro ao registrar pagamento separado:', error);
+      toast.error('Erro ao registrar pagamento');
+      return false;
+    }
+  };
+
+  // Pagar apenas viagem
+  const pagarViagem = async (
+    viagemPassageiroId: string,
+    valor: number,
+    formaPagamento: string = 'pix',
+    observacoes?: string
+  ) => {
+    return registrarPagamentoSeparado(viagemPassageiroId, 'viagem', valor, formaPagamento, observacoes);
+  };
+
+  // Pagar apenas passeios
+  const pagarPasseios = async (
+    viagemPassageiroId: string,
+    valor: number,
+    formaPagamento: string = 'pix',
+    observacoes?: string
+  ) => {
+    return registrarPagamentoSeparado(viagemPassageiroId, 'passeios', valor, formaPagamento, observacoes);
+  };
+
+  // Pagar tudo (viagem + passeios)
+  const pagarTudo = async (
+    viagemPassageiroId: string,
+    valor: number,
+    formaPagamento: string = 'pix',
+    observacoes?: string
+  ) => {
+    return registrarPagamentoSeparado(viagemPassageiroId, 'ambos', valor, formaPagamento, observacoes);
+  };
+
+  // Obter breakdown de pagamento de um passageiro específico
+  const obterBreakdownPassageiro = async (viagemPassageiroId: string) => {
+    try {
+      const { data: passageiro, error } = await supabase
+        .from('viagem_passageiros')
+        .select(`
+          valor,
+          desconto,
+          viagem_paga,
+          passeios_pagos,
+          passageiro_passeios (
+            valor_cobrado
+          ),
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago
+          )
+        `)
+        .eq('id', viagemPassageiroId)
+        .single();
+
+      if (error) throw error;
+
+      const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+      const valorPasseios = (passageiro.passageiro_passeios || [])
+        .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+
+      const historico = passageiro.historico_pagamentos_categorizado || [];
+      const pagoViagem = historico
+        .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+      const pagoPasseios = historico
+        .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+        .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+      return {
+        valor_viagem: valorViagem,
+        valor_passeios: valorPasseios,
+        valor_total: valorViagem + valorPasseios,
+        pago_viagem: pagoViagem,
+        pago_passeios: pagoPasseios,
+        pago_total: pagoViagem + pagoPasseios,
+        pendente_viagem: Math.max(0, valorViagem - pagoViagem),
+        pendente_passeios: Math.max(0, valorPasseios - pagoPasseios),
+        pendente_total: Math.max(0, (valorViagem + valorPasseios) - (pagoViagem + pagoPasseios)),
+        viagem_paga: passageiro.viagem_paga || false,
+        passeios_pagos: passageiro.passeios_pagos || false
+      };
+
+    } catch (error) {
+      console.error('Erro ao obter breakdown:', error);
+      return null;
     }
   };
 
@@ -678,7 +934,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     historicoCobranca,
     resumoFinanceiro,
     isLoading,
-    
+
     // Ações
     fetchAllData,
     registrarCobranca,
@@ -692,12 +948,19 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     fetchDespesas,
     fetchPassageirosPendentes,
     fetchHistoricoCobranca,
-    
-    // Gerenciamento de Status dos Passageiros
+
+    // Gerenciamento de Status dos Passageiros (sistema antigo)
     atualizarStatusPagamento,
     registrarPagamento,
     verificarStatusPagamento,
     marcarComoPago,
-    cancelarPagamento
+    cancelarPagamento,
+
+    // NOVAS FUNÇÕES - Pagamentos Separados
+    registrarPagamentoSeparado,
+    pagarViagem,
+    pagarPasseios,
+    pagarTudo,
+    obterBreakdownPassageiro
   };
 }
