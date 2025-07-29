@@ -19,6 +19,17 @@ interface Viagem {
   status_viagem: string;
   valor_padrao: number | null;
   setor_padrao: string | null;
+  // Campos para passeios
+  passeios_pagos?: string[];
+  outro_passeio?: string;
+  viagem_passeios?: Array<{
+    passeio_id: string;
+    passeios: {
+      nome: string;
+      valor: number;
+      categoria: string;
+    };
+  }>;
 }
 
 interface Onibus {
@@ -239,7 +250,6 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold text-gray-800 mb-3 text-lg">Informações da Viagem</h3>
             <div className="space-y-2 text-sm">
-              <p><strong>Rota:</strong> {viagem.rota}</p>
               <p><strong>Empresa:</strong> {viagem.empresa}</p>
               <p><strong>Tipo de Ônibus:</strong> {viagem.tipo_onibus}</p>
               <p><strong>Capacidade Total:</strong> {viagem.capacidade_onibus} passageiros</p>
@@ -249,6 +259,38 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
               {viagem.setor_padrao && (
                 <p><strong>Setor Padrão:</strong> {viagem.setor_padrao}</p>
               )}
+              
+              {/* Informações sobre Passeios da Viagem */}
+              {(viagem.viagem_passeios && viagem.viagem_passeios.length > 0) || (viagem.passeios_pagos && viagem.passeios_pagos.length > 0) ? (
+                <div className="mt-3 pt-2 border-t border-gray-200">
+                  <p><strong>Passeios da Viagem:</strong></p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {/* Sistema novo - viagem_passeios */}
+                    {viagem.viagem_passeios && viagem.viagem_passeios.map((vp, idx) => (
+                      <span key={idx} className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        {vp.passeios.nome} ({formatCurrency(vp.passeios.valor)})
+                      </span>
+                    ))}
+                    
+                    {/* Sistema antigo - passeios_pagos */}
+                    {viagem.passeios_pagos && viagem.passeios_pagos.map((passeio, idx) => (
+                      <span key={idx} className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                        {passeio}
+                      </span>
+                    ))}
+                    
+                    {/* Outro passeio */}
+                    {viagem.outro_passeio && (
+                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">
+                        {viagem.outro_passeio}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p><strong>Passeios:</strong> <span className="text-gray-500">Nenhum passeio configurado</span></p>
+              )}
+              
               {filters?.modoResponsavel && (
                 <p className="text-orange-600 font-medium">📋 Lista para Responsável do Ônibus</p>
               )}
@@ -356,11 +398,11 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                                 <td className="border p-1">{passageiro.setor_maracana}</td>
                                 {(!filters || filters.mostrarNomesPasseios) && (
                                   <td className="border p-1">
-                                    {passageiro.passageiro_passeios && passageiro.passageiro_passeios.length > 0 ? (
+                                    {passageiro.passeios && passageiro.passeios.length > 0 ? (
                                       <div className="flex flex-wrap gap-1">
-                                        {passageiro.passageiro_passeios.map((pp, idx) => (
-                                          <span key={idx} className={`text-xs px-1 py-0.5 rounded ${pp.passeio?.valor > 0 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                            {pp.passeio?.nome}
+                                        {passageiro.passeios.map((pp, idx) => (
+                                          <span key={idx} className={`text-xs px-1 py-0.5 rounded ${(pp.valor_cobrado || 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            {pp.passeio_nome || pp.passeio?.nome}
                                           </span>
                                         ))}
                                       </div>
@@ -437,11 +479,11 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                       <td className="border p-1">{passageiro.setor_maracana}</td>
                       {(!filters || filters.mostrarNomesPasseios) && (
                         <td className="border p-1">
-                          {passageiro.passageiro_passeios && passageiro.passageiro_passeios.length > 0 ? (
+                          {passageiro.passeios && passageiro.passeios.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {passageiro.passageiro_passeios.map((pp, idx) => (
-                                <span key={idx} className={`text-xs px-1 py-0.5 rounded ${pp.passeio?.valor > 0 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {pp.passeio?.nome}
+                              {passageiro.passeios.map((pp, idx) => (
+                                <span key={idx} className={`text-xs px-1 py-0.5 rounded ${(pp.valor_cobrado || 0) > 0 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {pp.passeio_nome || pp.passeio?.nome}
                                 </span>
                               ))}
                             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useViagemCompatibility } from '@/hooks/useViagemCompatibility';
 
 export interface ViagemReceita {
   id: string;
@@ -92,9 +93,11 @@ export interface ResumoFinanceiro {
 }
 
 export function useViagemFinanceiro(viagemId: string | undefined) {
+  const [viagem, setViagem] = useState<any>(null);
   const [receitas, setReceitas] = useState<ViagemReceita[]>([]);
   const [despesas, setDespesas] = useState<ViagemDespesa[]>([]);
   const [passageirosPendentes, setPassageirosPendentes] = useState<PassageiroPendente[]>([]);
+  const [todosPassageiros, setTodosPassageiros] = useState<any[]>([]);
   const [historicoCobranca, setHistoricoCobranca] = useState<CobrancaHistorico[]>([]);
   const [resumoFinanceiro, setResumoFinanceiro] = useState<ResumoFinanceiro>({
     total_receitas: 0,
@@ -113,6 +116,42 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     passageiros_pago_completo: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Hook para compatibilidade com sistema de passeios
+  const { 
+    sistema, 
+    valorPasseios, 
+    temPasseios, 
+    shouldUseNewSystem 
+  } = useViagemCompatibility(viagem);
+
+  // Buscar dados da viagem (necessário para compatibilidade de passeios)
+  const fetchViagem = async () => {
+    if (!viagemId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('viagens')
+        .select(`
+          *,
+          viagem_passeios (
+            passeio_id,
+            passeios (
+              nome,
+              valor,
+              categoria
+            )
+          )
+        `)
+        .eq('id', viagemId)
+        .single();
+
+      if (error) throw error;
+      setViagem(data);
+    } catch (error) {
+      console.error('Erro ao buscar dados da viagem:', error);
+    }
+  };
 
   // Buscar receitas da viagem
   const fetchReceitas = async () => {
@@ -152,6 +191,64 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     }
   };
 
+  // Buscar todos os passageiros (para relatórios)
+  const fetchTodosPassageiros = async () => {
+    if (!viagemId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('viagem_passageiros')
+        .select(`
+          id,
+          cliente_id,
+          valor,
+          desconto,
+          status_pagamento,
+          viagem_paga,
+          passeios_pagos,
+          created_at,
+          clientes!viagem_passageiros_cliente_id_fkey (
+            nome,
+            telefone
+          ),
+          passageiro_passeios (
+            passeio_nome,
+            status,
+            valor_cobrado
+          ),
+          historico_pagamentos_categorizado (
+            categoria,
+            valor_pago,
+            data_pagamento
+          )
+        `)
+        .eq('viagem_id', viagemId);
+
+      if (error) throw error;
+
+      const todosFormatados = (data || []).map((item: any) => ({
+        id: item.clientes.id,
+        viagem_passageiro_id: item.id,
+        nome: item.clientes.nome,
+        telefone: item.clientes.telefone,
+        setor_maracana: item.setor_maracana || '-',
+        valor: item.valor || 0,
+        valor_total: item.valor || 0,
+        desconto: item.desconto || 0,
+        status_pagamento: item.status_pagamento,
+        passeios: item.passageiro_passeios || [],
+        // Calcular valores de viagem e passeios
+        valor_viagem: (item.valor || 0) - (item.desconto || 0),
+        valor_passeios: (item.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0)
+      }));
+
+      setTodosPassageiros(todosFormatados);
+    } catch (error) {
+      console.error('Erro ao buscar todos os passageiros:', error);
+    }
+  };
+
   // Buscar passageiros com pendências (com suporte a pagamentos separados)
   const fetchPassageirosPendentes = async () => {
     if (!viagemId) return;
@@ -183,6 +280,13 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
             categoria,
             valor_pago,
             data_pagamento
+          ),
+          viagem_passageiros_parcelas (
+            id,
+            valor_parcela,
+            data_vencimento,
+            data_pagamento,
+            total_parcelas
           )
         `)
         .eq('viagem_id', viagemId);
@@ -218,6 +322,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
           );
 
           // Calcular informações das parcelas (compatibilidade)
+          const parcelas = passageiro.viagem_passageiros_parcelas || [];
           const parcelasPendentes = parcelas.filter((p: any) => !p.data_pagamento);
           const totalParcelas = parcelas.length > 0 ? parcelas[0].total_parcelas || parcelas.length : 0;
 
@@ -907,9 +1012,11 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     setIsLoading(true);
     try {
       await Promise.all([
+        fetchViagem(), // Adicionar busca da viagem
         fetchReceitas(),
         fetchDespesas(),
         fetchPassageirosPendentes(),
+        fetchTodosPassageiros(), // Buscar todos os passageiros para relatórios
         fetchHistoricoCobranca()
       ]);
       await calcularResumoFinanceiro();
@@ -928,12 +1035,20 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
   return {
     // Dados
+    viagem,
     receitas,
     despesas,
     passageirosPendentes,
+    todosPassageiros,
     historicoCobranca,
     resumoFinanceiro,
     isLoading,
+
+    // Compatibilidade de Passeios
+    sistema,
+    valorPasseios,
+    temPasseios,
+    shouldUseNewSystem,
 
     // Ações
     fetchAllData,

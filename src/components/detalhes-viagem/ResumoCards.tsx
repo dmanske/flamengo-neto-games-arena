@@ -13,7 +13,7 @@ interface ResumoCardsProps {
 }
 
 export function ResumoCards({ passageiros }: ResumoCardsProps) {
-  // Resumo por cidade de embarque
+  // Resumo por cidade de embarque - mostrar todas as cidades selecionadas
   const cidadeResumo = passageiros.reduce((acc, p) => {
     const cidade = p.cidade_embarque || "Não informado";
     acc[cidade] = (acc[cidade] || 0) + 1;
@@ -51,16 +51,15 @@ export function ResumoCards({ passageiros }: ResumoCardsProps) {
           <div className="space-y-2">
             {Object.entries(cidadeResumo)
               .sort(([, a], [, b]) => b - a)
-              .slice(0, 3)
               .map(([cidade, count]) => (
                 <div key={cidade} className="flex justify-between text-sm">
-                  <span className="text-gray-600">{cidade}</span>
+                  <span className="text-gray-600 truncate" title={cidade}>{cidade}</span>
                   <span className="font-medium">{count}</span>
                 </div>
               ))}
-            {Object.keys(cidadeResumo).length > 3 && (
-              <div className="text-xs text-gray-500 pt-1">
-                +{Object.keys(cidadeResumo).length - 3} outras cidades
+            {Object.keys(cidadeResumo).length === 0 && (
+              <div className="text-xs text-gray-500 text-center py-2">
+                Nenhuma cidade informada
               </div>
             )}
           </div>
@@ -77,16 +76,15 @@ export function ResumoCards({ passageiros }: ResumoCardsProps) {
           <div className="space-y-2">
             {Object.entries(setorResumo)
               .sort(([, a], [, b]) => b - a)
-              .slice(0, 3)
               .map(([setor, count]) => (
                 <div key={setor} className="flex justify-between text-sm">
-                  <span className="text-gray-600">{setor}</span>
+                  <span className="text-gray-600 truncate" title={setor}>{setor}</span>
                   <span className="font-medium">{count}</span>
                 </div>
               ))}
-            {Object.keys(setorResumo).length > 3 && (
-              <div className="text-xs text-gray-500 pt-1">
-                +{Object.keys(setorResumo).length - 3} outros setores
+            {Object.keys(setorResumo).length === 0 && (
+              <div className="text-xs text-gray-500 text-center py-2">
+                Nenhum setor informado
               </div>
             )}
           </div>
@@ -101,22 +99,24 @@ export function ResumoCards({ passageiros }: ResumoCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <div className="flex justify-between text-sm font-medium">
-              <span className="text-gray-600">Total participantes</span>
-              <span className="text-blue-600">{totalComPasseios}</span>
-            </div>
-            {Object.entries(passeioResumo)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 2)
-              .map(([passeio, count]) => (
-                <div key={passeio} className="flex justify-between text-sm">
-                  <span className="text-gray-600 truncate">{passeio}</span>
-                  <span className="font-medium">{count}</span>
+            {totalComPasseios > 0 ? (
+              <>
+                <div className="flex justify-between text-sm font-medium">
+                  <span className="text-gray-600">Total participantes</span>
+                  <span className="text-blue-600">{totalComPasseios}</span>
                 </div>
-              ))}
-            {Object.keys(passeioResumo).length > 2 && (
-              <div className="text-xs text-gray-500 pt-1">
-                +{Object.keys(passeioResumo).length - 2} outros passeios
+                {Object.entries(passeioResumo)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([passeio, count]) => (
+                    <div key={passeio} className="flex justify-between text-sm">
+                      <span className="text-gray-600 truncate" title={passeio}>{passeio}</span>
+                      <span className="font-medium">{count}</span>
+                    </div>
+                  ))}
+              </>
+            ) : (
+              <div className="text-xs text-gray-500 text-center py-2">
+                Nenhum passageiro em passeios
               </div>
             )}
           </div>

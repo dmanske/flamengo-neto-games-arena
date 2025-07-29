@@ -68,6 +68,46 @@ Valor restante: *[VALOR_PENDENTE]*
 Posso parcelar em até 3x sem juros!
 
 Entre em contato para acertarmos 📱`
+  },
+
+  // Templates específicos por categoria
+  cobranca_viagem: {
+    nome: 'Cobrança - Só Viagem',
+    template: `Oi [NOME]! 👋
+
+Falta apenas o valor da *VIAGEM* para garantir sua vaga: *[VALOR_VIAGEM]*
+
+💳 PIX: (11) 99999-9999
+🔗 Link: https://pay.exemplo.com/123
+
+Seus passeios já estão pagos! ✅`
+  },
+
+  cobranca_passeios: {
+    nome: 'Cobrança - Só Passeios',
+    template: `Oi [NOME]! 🎯
+
+Sua viagem já está paga! ✅
+Falta apenas o valor dos *PASSEIOS*: *[VALOR_PASSEIOS]*
+
+💳 PIX: (11) 99999-9999
+🔗 Link: https://pay.exemplo.com/123
+
+Não perca essas experiências incríveis! 🏛️`
+  },
+
+  cobranca_completa: {
+    nome: 'Cobrança - Viagem + Passeios',
+    template: `Oi [NOME]! 👋
+
+Para garantir sua vaga completa, faltam: *[VALOR_PENDENTE]*
+
+📋 Detalhamento:
+• Viagem: *[VALOR_VIAGEM]*
+• Passeios: *[VALOR_PASSEIOS]*
+
+💳 PIX: (11) 99999-9999
+🔗 Link: https://pay.exemplo.com/123`
   }
 };
 
@@ -80,6 +120,7 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
   const [observacoes, setObservacoes] = useState('');
   const [isEnviando, setIsEnviando] = useState(false);
   const [filtro, setFiltro] = useState('');
+  const [categoriaCobranca, setCategoriaCobranca] = useState<'geral' | 'viagem' | 'passeios' | 'tudo'>('geral');
 
   // Filtrar passageiros
   const passageirosFiltrados = passageirosPendentes.filter(p => 
@@ -95,6 +136,8 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
     template = template
       .replace(/\[NOME\]/g, passageiro.nome.split(' ')[0])
       .replace(/\[VALOR_PENDENTE\]/g, formatCurrency(passageiro.valor_pendente))
+      .replace(/\[VALOR_VIAGEM\]/g, formatCurrency(passageiro.pendente_viagem || 0))
+      .replace(/\[VALOR_PASSEIOS\]/g, formatCurrency(passageiro.pendente_passeios || 0))
       .replace(/\[DIAS_ATRASO\]/g, passageiro.dias_atraso.toString())
       .replace(/\[DATA_LIMITE\]/g, new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'));
 
@@ -104,7 +147,25 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
   // Abrir modal de cobrança
   const abrirCobranca = (passageiro: PassageiroPendente) => {
     setPassageiroSelecionado(passageiro);
+    setCategoriaCobranca('geral');
     setMensagem(gerarMensagem(templateSelecionado, passageiro));
+    setShowCobrancaModal(true);
+  };
+
+  // Abrir modal de cobrança específica por categoria
+  const abrirCobrancaEspecifica = (passageiro: PassageiroPendente, categoria: 'viagem' | 'passeios' | 'tudo') => {
+    setPassageiroSelecionado(passageiro);
+    setCategoriaCobranca(categoria);
+    
+    // Selecionar template apropriado
+    let templateKey = 'lembrete';
+    if (categoria === 'viagem') templateKey = 'cobranca_viagem';
+    else if (categoria === 'passeios') templateKey = 'cobranca_passeios';
+    else if (categoria === 'tudo') templateKey = 'cobranca_completa';
+    
+    setTemplateSelecionado(templateKey);
+    setMensagem(gerarMensagem(templateKey, passageiro));
+    setObservacoes(`Cobrança específica: ${categoria}`);
     setShowCobrancaModal(true);
   };
 
@@ -221,6 +282,12 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
                             </p>
                             <div className="text-xs text-gray-500">
                               <p>deve</p>
+                              {/* Breakdown viagem/passeios se disponível */}
+                              {(passageiro.pendente_viagem > 0 || passageiro.pendente_passeios > 0) && (
+                                <p className="text-xs text-gray-600 mt-1">
+                                  V: {formatCurrency(passageiro.pendente_viagem)} | P: {formatCurrency(passageiro.pendente_passeios)}
+                                </p>
+                              )}
                               {passageiro.proxima_parcela && (
                                 <p className={`font-medium ${
                                   passageiro.proxima_parcela.dias_para_vencer < 0 ? 'text-red-600' :
@@ -269,15 +336,54 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => abrirCobranca(passageiro)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Cobrar
-                    </Button>
+                  <div className="flex flex-col gap-2">
+                    {/* Botões específicos por categoria */}
+                    {(passageiro.pendente_viagem > 0 || passageiro.pendente_passeios > 0) ? (
+                      <div className="flex flex-col gap-1">
+                        {passageiro.pendente_viagem > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => abrirCobrancaEspecifica(passageiro, 'viagem')}
+                            className="text-xs"
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Cobrar Viagem ({formatCurrency(passageiro.pendente_viagem)})
+                          </Button>
+                        )}
+                        {passageiro.pendente_passeios > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => abrirCobrancaEspecifica(passageiro, 'passeios')}
+                            className="text-xs"
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Cobrar Passeios ({formatCurrency(passageiro.pendente_passeios)})
+                          </Button>
+                        )}
+                        {passageiro.pendente_viagem > 0 && passageiro.pendente_passeios > 0 && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => abrirCobrancaEspecifica(passageiro, 'tudo')}
+                            className="text-xs bg-red-600 hover:bg-red-700"
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Cobrar Tudo ({formatCurrency(passageiro.valor_pendente)})
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => abrirCobranca(passageiro)}
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Cobrar
+                      </Button>
+                    )}
                     
                     <Button
                       variant="outline"
@@ -286,8 +392,9 @@ export default function SistemaCobranca({ passageirosPendentes, onRegistrarCobra
                         // TODO: Implementar modal de histórico de parcelas
                         toast.info('Histórico de parcelas em desenvolvimento');
                       }}
+                      className="text-xs"
                     >
-                      <User className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4 mr-1" />
                       Parcelas
                     </Button>
                   </div>

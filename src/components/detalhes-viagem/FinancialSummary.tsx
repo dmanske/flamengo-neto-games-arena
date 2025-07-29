@@ -103,11 +103,17 @@ export function FinancialSummary({
                 <span>Valor Total Potencial:</span>
                 <span className="font-medium">{formatCurrency(valorPotencialTotal)}</span>
               </div>
+              {sistemaPasseios === 'novo' && valorPasseios > 0 && (
+                <div className="flex justify-between text-xs text-gray-600 ml-2">
+                  <span>• Potencial Passeios:</span>
+                  <span>{formatCurrency(valorPasseios * totalPassageiros)}</span>
+                </div>
+              )}
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span>Valor Restante Potencial:</span>
-                <span className="font-medium">{formatCurrency(valorPotencialTotal - totalArrecadado)}</span>
+                <span>Valor Restante:</span>
+                <span className="font-medium text-amber-600">{formatCurrency(Math.max(0, valorPotencialTotal - totalArrecadado))}</span>
               </div>
             </div>
             <div>

@@ -123,53 +123,53 @@ export function ModernViagemDetailsLayout({
 
           {/* Hero Section */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
               {/* Team Logos */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
                 {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
                   <>
                     <div className="relative">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                      <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white shadow-lg">
                         <AvatarImage 
                           src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
                           alt={viagem.adversario}
                         />
-                        <AvatarFallback className="bg-gray-600 text-white font-bold text-lg">
+                        <AvatarFallback className="bg-gray-600 text-white font-bold text-sm sm:text-lg">
                           {viagem.adversario.substring(0, 3).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </div>
-                    <div className="text-3xl font-bold text-gray-400">×</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-gray-400">×</div>
                     <div className="relative">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                      <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white shadow-lg">
                         <AvatarImage 
                           src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
                           alt="Flamengo" 
                         />
-                        <AvatarFallback className="bg-red-600 text-white font-bold text-lg">FLA</AvatarFallback>
+                        <AvatarFallback className="bg-red-600 text-white font-bold text-sm sm:text-lg">FLA</AvatarFallback>
                       </Avatar>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="relative">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                      <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white shadow-lg">
                         <AvatarImage 
                           src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
                           alt="Flamengo" 
                         />
-                        <AvatarFallback className="bg-red-600 text-white font-bold text-lg">FLA</AvatarFallback>
+                        <AvatarFallback className="bg-red-600 text-white font-bold text-sm sm:text-lg">FLA</AvatarFallback>
                       </Avatar>
                     </div>
-                    <div className="text-3xl font-bold text-gray-400">×</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-gray-400">×</div>
                     <div className="relative">
-                      <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                      <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white shadow-lg">
                         <AvatarImage 
                           src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
                           alt={viagem.adversario}
                         />
-                        <AvatarFallback className="bg-gray-600 text-white font-bold text-lg">
+                        <AvatarFallback className="bg-gray-600 text-white font-bold text-sm sm:text-lg">
                           {viagem.adversario.substring(0, 3).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -183,18 +183,18 @@ export function ModernViagemDetailsLayout({
                 <Badge className={`${getStatusColor(viagem.status_viagem)} px-3 py-1 text-sm font-medium rounded-full border mb-3`}>
                   {viagem.status_viagem}
                 </Badge>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                   {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
                     `${viagem.adversario} × Flamengo` : 
                     `Flamengo × ${viagem.adversario}`
                   }
                 </h1>
-                <p className="text-gray-600 text-lg">Caravana Rubro-Negra</p>
+                <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Caravana Rubro-Negra</p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {onOpenFilters && (
                 <Button variant="outline" onClick={onOpenFilters} className="bg-white hover:bg-purple-50 border-purple-200 text-purple-700">
                   <Filter className="h-4 w-4 mr-2" />
@@ -241,7 +241,7 @@ export function ModernViagemDetailsLayout({
         {/* Responsáveis Card - Sempre exibido com todos os responsáveis */}
         <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">

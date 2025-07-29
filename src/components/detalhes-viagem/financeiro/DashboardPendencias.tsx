@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,10 +33,21 @@ export default function DashboardPendencias({
   onRegistrarCobranca
 }: DashboardPendenciasProps) {
   
-  // Categorizar pendências por urgência
-  const urgentes = passageirosPendentes.filter(p => p.dias_atraso > 7);
-  const atencao = passageirosPendentes.filter(p => p.dias_atraso >= 3 && p.dias_atraso <= 7);
-  const emDia = passageirosPendentes.filter(p => p.dias_atraso < 3);
+  const [filtroCategoria, setFiltroCategoria] = useState<'todos' | 'so_viagem' | 'so_passeios' | 'ambos'>('todos');
+  
+  // Filtrar passageiros por categoria de pendência
+  const passageirosFiltrados = passageirosPendentes.filter(passageiro => {
+    if (filtroCategoria === 'todos') return true;
+    if (filtroCategoria === 'so_viagem') return passageiro.pendente_viagem > 0 && passageiro.pendente_passeios === 0;
+    if (filtroCategoria === 'so_passeios') return passageiro.pendente_passeios > 0 && passageiro.pendente_viagem === 0;
+    if (filtroCategoria === 'ambos') return passageiro.pendente_viagem > 0 && passageiro.pendente_passeios > 0;
+    return true;
+  });
+  
+  // Categorizar pendências por urgência (usando passageiros filtrados)
+  const urgentes = passageirosFiltrados.filter(p => p.dias_atraso > 7);
+  const atencao = passageirosFiltrados.filter(p => p.dias_atraso >= 3 && p.dias_atraso <= 7);
+  const emDia = passageirosFiltrados.filter(p => p.dias_atraso < 3);
 
   const valorUrgente = urgentes.reduce((sum, p) => sum + p.valor_pendente, 0);
   const valorAtencao = atencao.reduce((sum, p) => sum + p.valor_pendente, 0);
@@ -80,6 +92,50 @@ export default function DashboardPendencias({
 
   return (
     <div className="space-y-6">
+      {/* Filtros por Categoria */}
+      {passageirosPendentes.some(p => p.pendente_viagem > 0 || p.pendente_passeios > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Filtrar Pendências por Categoria
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={filtroCategoria === 'todos' ? 'default' : 'outline'}
+                onClick={() => setFiltroCategoria('todos')}
+              >
+                Todas ({passageirosPendentes.length})
+              </Button>
+              <Button
+                size="sm"
+                variant={filtroCategoria === 'so_viagem' ? 'default' : 'outline'}
+                onClick={() => setFiltroCategoria('so_viagem')}
+              >
+                Só Viagem ({passageirosPendentes.filter(p => p.pendente_viagem > 0 && p.pendente_passeios === 0).length})
+              </Button>
+              <Button
+                size="sm"
+                variant={filtroCategoria === 'so_passeios' ? 'default' : 'outline'}
+                onClick={() => setFiltroCategoria('so_passeios')}
+              >
+                Só Passeios ({passageirosPendentes.filter(p => p.pendente_passeios > 0 && p.pendente_viagem === 0).length})
+              </Button>
+              <Button
+                size="sm"
+                variant={filtroCategoria === 'ambos' ? 'default' : 'outline'}
+                onClick={() => setFiltroCategoria('ambos')}
+              >
+                Ambos ({passageirosPendentes.filter(p => p.pendente_viagem > 0 && p.pendente_passeios > 0).length})
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Resumo de Situação */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border-red-200 bg-red-50">
@@ -157,7 +213,8 @@ export default function DashboardPendencias({
                 Ações de Cobrança
               </span>
               <Badge variant="destructive">
-                {passageirosPendentes.length} pendências
+                {passageirosFiltrados.length} pendências
+                {filtroCategoria !== 'todos' && ` (${passageirosPendentes.length} total)`}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -190,7 +247,7 @@ export default function DashboardPendencias({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {passageirosPendentes.length === 0 ? (
+          {passageirosFiltrados.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
               <p className="text-lg font-medium">🎉 Parabéns!</p>
@@ -198,7 +255,7 @@ export default function DashboardPendencias({
             </div>
           ) : (
             <div className="space-y-3">
-              {passageirosPendentes.map((passageiro) => (
+              {passageirosFiltrados.map((passageiro) => (
                 <div 
                   key={passageiro.viagem_passageiro_id}
                   className={`p-4 rounded-lg border ${getUrgenciaColor(passageiro.dias_atraso)}`}
@@ -226,6 +283,12 @@ export default function DashboardPendencias({
                               </p>
                               <div className="text-xs text-gray-500">
                                 <p>deve</p>
+                                {/* Breakdown viagem/passeios se disponível */}
+                                {(passageiro.pendente_viagem > 0 || passageiro.pendente_passeios > 0) && (
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    V: {formatCurrency(passageiro.pendente_viagem)} | P: {formatCurrency(passageiro.pendente_passeios)}
+                                  </p>
+                                )}
                                 {passageiro.proxima_parcela && (
                                   <p className={`font-medium ${
                                     passageiro.proxima_parcela.dias_para_vencer < 0 ? 'text-red-600' :

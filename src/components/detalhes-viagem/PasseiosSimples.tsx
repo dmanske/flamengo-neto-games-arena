@@ -20,7 +20,7 @@ export function PasseiosSimples({ passeios = [] }: PasseiosSimples) {
   });
 
   if (!passeios || passeios.length === 0) {
-    return <span className="text-muted-foreground text-xs">Nenhum</span>;
+    return <span className="text-gray-400 text-xs">-</span>;
   }
 
   // Filtrar passeios válidos (com nome)
@@ -28,23 +28,23 @@ export function PasseiosSimples({ passeios = [] }: PasseiosSimples) {
   
   if (passeiosValidos.length === 0) {
     console.log('⚠️ Nenhum passeio válido encontrado:', passeios);
-    return <span className="text-muted-foreground text-xs">Nenhum</span>;
+    return <span className="text-gray-400 text-xs">-</span>;
   }
 
-  // Mostrar apenas os nomes dos passeios, separados por vírgula
-  const nomesPasseios = passeiosValidos.map(p => p.nome).join(', ');
-  
-  // Se for muito longo, truncar
-  const nomesTruncados = nomesPasseios.length > 30 
-    ? nomesPasseios.substring(0, 30) + '...' 
-    : nomesPasseios;
-
   return (
-    <div className="text-xs text-gray-700" title={nomesPasseios}>
-      {nomesTruncados}
-      {passeiosValidos.some(p => p.gratuito) && (
-        <span className="ml-1">🎁</span>
-      )}
+    <div className="flex flex-wrap gap-1">
+      {passeiosValidos.map((passeio, idx) => (
+        <span 
+          key={idx} 
+          className={`text-xs px-1 py-0.5 rounded ${
+            passeio.gratuito || (passeio.valor || 0) === 0 
+              ? 'bg-blue-100 text-blue-700' 
+              : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {passeio.nome}
+        </span>
+      ))}
     </div>
   );
 }

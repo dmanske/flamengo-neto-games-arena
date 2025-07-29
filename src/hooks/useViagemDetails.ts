@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { matchesAllTerms, createSearchableText, normalizeText } from "@/lib/search-utils";
 
 export interface Viagem {
   id: string;
@@ -82,7 +83,17 @@ export interface PassageiroDisplay {
   passeios?: Array<{
     passeio_nome: string;
     status: string;
+    valor_cobrado?: number;
+    passeio?: {
+      nome: string;
+      valor: number;
+    };
   }>;
+  // Campos para busca otimizada
+  searchableText?: string;
+  normalizedSearchText?: string;
+  passeioNames?: string[];
+  hasPasseios?: boolean;
 }
 
 export interface Onibus {
@@ -162,6 +173,18 @@ export function useViagemDetails(viagemId: string | undefined) {
       agruparPassageirosPorOnibus(resultFiltered);
     }
   }, [searchTerm, passageiros, filterStatus]);
+
+  // Efeito para calcular valor potencial quando viagem e ônibus estiverem carregados
+  useEffect(() => {
+    if (viagem && onibusList.length > 0) {
+      const capacidadeTotal = onibusList.reduce(
+        (total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0),
+        0
+      );
+      const valorPotencial = capacidadeTotal * (viagem.valor_padrao || 0);
+      setValorPotencialTotal(valorPotencial);
+    }
+  }, [viagem, onibusList]);
 
   const fetchViagemData = async (id: string) => {
     console.log('🚀 DEBUG: fetchViagemData chamado com id:', id);
@@ -330,38 +353,65 @@ export function useViagemDetails(viagemId: string | undefined) {
         }))
       });
       
-      // Formatar os dados para exibição
-      const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => ({
-        id: item.clientes.id,
-        nome: item.clientes.nome,
-        telefone: item.clientes.telefone,
-        email: item.clientes.email,
-        cpf: item.clientes.cpf,
-        cidade: item.clientes.cidade,
-        estado: item.clientes.estado,
-        endereco: item.clientes.endereco,
-        numero: item.clientes.numero,
-        bairro: item.clientes.bairro,
-        cep: item.clientes.cep,
-        complemento: item.clientes.complemento,
-        data_nascimento: item.clientes.data_nascimento,
-        setor_maracana: item.setor_maracana,
-        status_pagamento: item.status_pagamento,
-        forma_pagamento: item.forma_pagamento || "Pix",
-        cliente_id: item.cliente_id,
-        viagem_passageiro_id: item.id,
-        valor: item.valor || 0,
-        desconto: item.desconto || 0,
-        onibus_id: item.onibus_id,
-        viagem_id: item.viagem_id,
-        passeio_cristo: item.clientes.passeio_cristo,
-        foto: item.clientes.foto || null,
-        cidade_embarque: item.cidade_embarque,
-        observacoes: item.observacoes,
-        is_responsavel_onibus: item.is_responsavel_onibus || false,
-        historico_pagamentos: item.historico_pagamentos_categorizado,
-        passeios: item.passageiro_passeios || []
-      }));
+      // Formatar os dados para exibição com pré-processamento para busca
+      const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => {
+        const passeios = item.passageiro_passeios || [];
+        const passeioNames = passeios.map((p: any) => p.passeio_nome).filter(Boolean);
+        
+        // Campos básicos para busca
+        const searchFields = [
+          item.clientes.nome,
+          item.clientes.telefone,
+          item.clientes.email,
+          item.clientes.cpf,
+          item.clientes.cidade,
+          item.setor_maracana,
+          item.cidade_embarque,
+          item.observacoes,
+          item.status_pagamento,
+          item.forma_pagamento,
+          ...passeioNames
+        ];
+        
+        const searchableText = createSearchableText(searchFields);
+        
+        return {
+          id: item.clientes.id,
+          nome: item.clientes.nome,
+          telefone: item.clientes.telefone,
+          email: item.clientes.email,
+          cpf: item.clientes.cpf,
+          cidade: item.clientes.cidade,
+          estado: item.clientes.estado,
+          endereco: item.clientes.endereco,
+          numero: item.clientes.numero,
+          bairro: item.clientes.bairro,
+          cep: item.clientes.cep,
+          complemento: item.clientes.complemento,
+          data_nascimento: item.clientes.data_nascimento,
+          setor_maracana: item.setor_maracana,
+          status_pagamento: item.status_pagamento,
+          forma_pagamento: item.forma_pagamento || "Pix",
+          cliente_id: item.cliente_id,
+          viagem_passageiro_id: item.id,
+          valor: item.valor || 0,
+          desconto: item.desconto || 0,
+          onibus_id: item.onibus_id,
+          viagem_id: item.viagem_id,
+          passeio_cristo: item.clientes.passeio_cristo,
+          foto: item.clientes.foto || null,
+          cidade_embarque: item.cidade_embarque,
+          observacoes: item.observacoes,
+          is_responsavel_onibus: item.is_responsavel_onibus || false,
+          historico_pagamentos: item.historico_pagamentos_categorizado,
+          passeios: passeios,
+          // Campos para busca otimizada
+          searchableText,
+          normalizedSearchText: normalizeText(searchableText),
+          passeioNames,
+          hasPasseios: passeios.length > 0
+        };
+      });
       
       // Sort passengers alphabetically by name
       const sortedPassageiros = formattedPassageiros.sort((a, b) => 
@@ -412,6 +462,9 @@ export function useViagemDetails(viagemId: string | undefined) {
       setCountPendentePayment(countPendente);
       setTotalDescontos(descontos);
       setValorBrutoTotal(valorBruto);
+      
+      // Calcular valor potencial total (capacidade total * valor padrão)
+      // Será atualizado quando os dados da viagem estiverem disponíveis
       
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
@@ -496,25 +549,32 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   // Filtro de passageiros
   const filterPassageiros = (passageiros: PassageiroDisplay[], searchTerm: string): PassageiroDisplay[] => {
-    if (!searchTerm) return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    const termLower = searchTerm.toLowerCase();
-    return passageiros.filter(p => 
-      p.nome.toLowerCase().includes(termLower) ||
-      p.cpf.includes(termLower) ||
-      p.telefone.includes(termLower) ||
-      p.cidade.toLowerCase().includes(termLower) ||
-      p.setor_maracana.toLowerCase().includes(termLower) ||
-      p.status_pagamento.toLowerCase().includes(termLower) ||
-      p.forma_pagamento.toLowerCase().includes(termLower) ||
-      p.cidade_embarque.toLowerCase().includes(termLower) ||
-      (p.valor !== null && p.valor.toString().includes(termLower)) ||
-      (p.desconto !== null && p.desconto.toString().includes(termLower)) ||
-      (p.passeio_cristo && (
-        (termLower === 'sim' && p.passeio_cristo === 'sim') ||
-        (termLower === 'nao' && p.passeio_cristo === 'nao') ||
-        (termLower === 'passeio' && (p.passeio_cristo === 'sim' || p.passeio_cristo === 'nao'))
-      ))
-    ).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    if (!searchTerm.trim()) return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    
+    return passageiros.filter(passageiro => {
+      // Usar texto pré-processado para busca mais rápida
+      if (passageiro.normalizedSearchText) {
+        const normalizedSearchTerm = normalizeText(searchTerm);
+        return passageiro.normalizedSearchText.includes(normalizedSearchTerm);
+      }
+      
+      // Fallback para busca tradicional se não houver pré-processamento
+      const searchFields = [
+        passageiro.nome,
+        passageiro.telefone,
+        passageiro.email,
+        passageiro.cpf,
+        passageiro.cidade,
+        passageiro.setor_maracana,
+        passageiro.cidade_embarque,
+        passageiro.observacoes,
+        passageiro.status_pagamento,
+        passageiro.forma_pagamento,
+        ...(passageiro.passeioNames || [])
+      ];
+      
+      return matchesAllTerms(searchFields, searchTerm);
+    }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   };
 
   // Buscar dados financeiros da viagem (receitas e despesas)

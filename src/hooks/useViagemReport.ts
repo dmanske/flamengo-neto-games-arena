@@ -99,7 +99,7 @@ export function useViagemReport() {
       // Filtro por passeios específicos (para viagens novas)
       if (filters.passeiosSelecionados.length > 0) {
         // Verificar se o passageiro tem algum dos passeios selecionados
-        const passageiroPasseios = passageiro.passageiro_passeios || [];
+        const passageiroPasseios = passageiro.passeios || [];
         const temPasseioSelecionado = passageiroPasseios.some(pp => 
           filters.passeiosSelecionados.includes(pp.passeio_id)
         );
@@ -110,7 +110,7 @@ export function useViagemReport() {
 
       // Filtro por tipo de passeios (pagos/gratuitos)
       if (filters.tipoPasseios !== 'todos') {
-        const passageiroPasseios = passageiro.passageiro_passeios || [];
+        const passageiroPasseios = passageiro.passeios || [];
         if (passageiroPasseios.length > 0) {
           const temPasseioDoTipo = passageiroPasseios.some(pp => {
             const passeio = pp.passeio;

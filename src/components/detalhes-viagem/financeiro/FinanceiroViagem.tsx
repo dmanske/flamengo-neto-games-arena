@@ -15,7 +15,8 @@ import {
   Download,
   Edit,
   Trash2,
-  CheckCircle
+  CheckCircle,
+  Users
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatCurrency } from '@/lib/utils';
@@ -24,6 +25,7 @@ import DashboardPendencias from './DashboardPendencias';
 import SistemaCobranca from './SistemaCobranca';
 import DespesaForm from './DespesaForm';
 import ReceitaForm from './ReceitaForm';
+import { RelatorioFinanceiro } from './RelatorioFinanceiro';
 
 interface FinanceiroViagemProps {
   viagemId: string;
@@ -40,11 +42,17 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
   }
 
   const {
+    viagem,
     resumoFinanceiro,
     receitas,
     despesas,
     passageirosPendentes,
+    todosPassageiros,
     isLoading,
+    sistema,
+    valorPasseios,
+    temPasseios,
+    shouldUseNewSystem,
     adicionarReceita,
     editarReceita,
     excluirReceita,
@@ -127,15 +135,27 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
   return (
     <div className="space-y-6">
       {/* Header com Resumo Financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Receita Total</p>
                 <p className="text-2xl font-bold text-green-600">
                   {formatCurrency(resumoFinanceiro?.total_receitas || 0)}
                 </p>
+                {shouldUseNewSystem && temPasseios && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Viagem:</span>
+                      <span>{formatCurrency(resumoFinanceiro?.receitas_viagem || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Passeios:</span>
+                      <span>{formatCurrency(resumoFinanceiro?.receitas_passeios || 0)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
             </div>
@@ -175,13 +195,94 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Pendências</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {passageirosPendentes?.length || 0}
+                  {formatCurrency(resumoFinanceiro?.total_pendencias || 0)}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {passageirosPendentes?.length || 0} passageiros
+                </p>
+                {shouldUseNewSystem && temPasseios && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Viagem:</span>
+                      <span>{formatCurrency(resumoFinanceiro?.pendencias_viagem || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Passeios:</span>
+                      <span>{formatCurrency(resumoFinanceiro?.pendencias_passeios || 0)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Novo Card - Taxa de Conversão de Passeios */}
+        {shouldUseNewSystem && temPasseios && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {resumoFinanceiro?.receitas_passeios > 0 
+                      ? Math.round((resumoFinanceiro.receitas_passeios / (resumoFinanceiro.receitas_viagem + resumoFinanceiro.receitas_passeios)) * 100)
+                      : 0
+                    }%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Passageiros com passeios
+                  </p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Novo Card - Receita Média por Passageiro */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Receita Média</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {passageirosPendentes?.length > 0 
+                    ? formatCurrency((resumoFinanceiro?.receitas_viagem + resumoFinanceiro?.receitas_passeios) / passageirosPendentes.length)
+                    : formatCurrency(0)
+                  }
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Por passageiro
+                </p>
+                {shouldUseNewSystem && temPasseios && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Viagem:</span>
+                      <span>
+                        {passageirosPendentes?.length > 0 
+                          ? formatCurrency((resumoFinanceiro?.receitas_viagem || 0) / passageirosPendentes.length)
+                          : formatCurrency(0)
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>• Passeios:</span>
+                      <span>
+                        {passageirosPendentes?.length > 0 
+                          ? formatCurrency((resumoFinanceiro?.receitas_passeios || 0) / passageirosPendentes.length)
+                          : formatCurrency(0)
+                        }
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Users className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -224,13 +325,14 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
 
       {/* Tabs de Conteúdo */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
           <TabsTrigger value="despesas">Despesas</TabsTrigger>
           <TabsTrigger value="parcelas">Parcelas</TabsTrigger>
           <TabsTrigger value="cobranca">Cobrança</TabsTrigger>
           <TabsTrigger value="pendencias">Pendências</TabsTrigger>
+          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumo" className="space-y-6">
@@ -358,13 +460,81 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="receitas">
+        <TabsContent value="receitas" className="space-y-6">
+          {/* Seção de Receitas Automáticas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Receitas Automáticas (Passageiros)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-medium text-blue-800">Receita de Viagem</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(resumoFinanceiro?.receitas_viagem || 0)}
+                  </p>
+                </div>
+                {shouldUseNewSystem && temPasseios && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h3 className="font-medium text-green-800">Receita de Passeios</h3>
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatCurrency(resumoFinanceiro?.receitas_passeios || 0)}
+                    </p>
+                  </div>
+                )}
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <h3 className="font-medium text-purple-800">Total Passageiros</h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatCurrency((resumoFinanceiro?.receitas_viagem || 0) + (resumoFinanceiro?.receitas_passeios || 0))}
+                  </p>
+                </div>
+              </div>
+              
+              {passageirosPendentes && passageirosPendentes.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-700 mb-3">Detalhamento por Passageiro:</h4>
+                  {passageirosPendentes.slice(0, 5).map((passageiro) => (
+                    <div key={passageiro.viagem_passageiro_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{passageiro.nome}</p>
+                        <p className="text-sm text-gray-600">{passageiro.telefone}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">
+                          {formatCurrency(passageiro.valor_total)}
+                        </p>
+                        {shouldUseNewSystem && temPasseios && (
+                          <p className="text-xs text-gray-500">
+                            V: {formatCurrency(passageiro.valor_viagem)} | P: {formatCurrency(passageiro.valor_passeios)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {passageirosPendentes.length > 5 && (
+                    <p className="text-sm text-gray-500 text-center py-2">
+                      +{passageirosPendentes.length - 5} outros passageiros
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">
+                  Nenhum passageiro cadastrado ainda
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Seção de Receitas Manuais */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Todas as Receitas
+                  Receitas Manuais (Extras)
                 </span>
                 <Button 
                   onClick={() => setShowReceitaForm(true)}
@@ -607,6 +777,21 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
           <DashboardPendencias 
             passageirosPendentes={passageirosPendentes}
             onRegistrarCobranca={registrarCobranca}
+          />
+        </TabsContent>
+
+        <TabsContent value="relatorios">
+          <RelatorioFinanceiro
+            viagemId={viagemId}
+            resumo={resumoFinanceiro}
+            despesas={despesas}
+            passageiros={passageirosPendentes}
+            adversario={viagem?.adversario || 'Adversário'}
+            dataJogo={viagem?.data_jogo || new Date().toISOString()}
+            sistema={sistema}
+            valorPasseios={valorPasseios}
+            temPasseios={temPasseios}
+            todosPassageiros={todosPassageiros}
           />
         </TabsContent>
       </Tabs>
