@@ -322,6 +322,7 @@ const DetalhesViagem = () => {
                 setPassageiros={setPassageiros}
                 setIsLoading={setIsLoadingPassageiros}
                 toast={toast}
+                onUpdatePassageiros={() => id && fetchPassageiros(id)}
               />
             </div>
           )}

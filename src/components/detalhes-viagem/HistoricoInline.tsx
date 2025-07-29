@@ -10,25 +10,31 @@ import {
   ChevronUp, 
   DollarSign,
   Calendar,
-  CreditCard
+  CreditCard,
+  Edit3
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { HistoricoPagamentoCategorizado } from '@/types/pagamentos-separados';
+import { EditarPagamentoModal } from './financeiro/EditarPagamentoModal';
 
 interface HistoricoInlineProps {
   historicoPagamentos: HistoricoPagamentoCategorizado[];
   onVerCompleto: () => void;
   onDeletarPagamento?: (pagamentoId: string) => Promise<boolean>;
+  onEditarPagamento?: (pagamentoId: string, dadosAtualizados: Partial<HistoricoPagamentoCategorizado>) => Promise<boolean>;
 }
 
 export const HistoricoInline: React.FC<HistoricoInlineProps> = ({
   historicoPagamentos,
   onVerCompleto,
-  onDeletarPagamento
+  onDeletarPagamento,
+  onEditarPagamento
 }) => {
   const [expandido, setExpandido] = useState(false);
   const [pagamentoParaDeletar, setPagamentoParaDeletar] = useState<any>(null);
+  const [pagamentoParaEditar, setPagamentoParaEditar] = useState<HistoricoPagamentoCategorizado | null>(null);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
   
   const getCategoriaColor = (categoria: string) => {
     switch (categoria) {
@@ -145,64 +151,92 @@ export const HistoricoInline: React.FC<HistoricoInlineProps> = ({
                   )}
                 </div>
                 
-                {/* Botão Deletar com confirmação inline */}
-                {pagamentoParaDeletar?.id === pagamento.id ? (
-                  // Mostrar confirmação inline
-                  <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded px-2 py-1">
-                    <span className="text-xs text-red-700 font-medium">Deletar?</span>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (onDeletarPagamento) {
-                          await onDeletarPagamento(pagamento.id);
+                {/* Botões de Ação */}
+                <div className="flex items-center gap-1">
+                  {pagamentoParaDeletar?.id === pagamento.id ? (
+                    // Mostrar confirmação inline
+                    <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded px-2 py-1">
+                      <span className="text-xs text-red-700 font-medium">Deletar?</span>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (onDeletarPagamento) {
+                            await onDeletarPagamento(pagamento.id);
+                            setPagamentoParaDeletar(null);
+                          }
+                        }}
+                        className="h-5 px-1 text-xs"
+                      >
+                        Sim
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           setPagamentoParaDeletar(null);
-                        }
-                      }}
-                      className="h-5 px-1 text-xs"
-                    >
-                      Sim
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setPagamentoParaDeletar(null);
-                      }}
-                      className="h-5 px-1 text-xs"
-                    >
-                      Não
-                    </Button>
-                  </div>
-                ) : (
-                  // Botão normal de deletar
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      if (!pagamento.id) {
-                        console.error('❌ ID do pagamento não encontrado');
-                        return;
-                      }
+                        }}
+                        className="h-5 px-1 text-xs"
+                      >
+                        Não
+                      </Button>
+                    </div>
+                  ) : (
+                    // Botões normais
+                    <>
+                      {/* Botão Editar */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          if (!pagamento.id) {
+                            console.error('❌ ID do pagamento não encontrado');
+                            return;
+                          }
 
-                      setPagamentoParaDeletar(pagamento);
-                    }}
-                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Deletar pagamento"
-                  >
-                    🗑️
-                  </Button>
-                )}
+                          setPagamentoParaEditar(pagamento);
+                          setModalEditarAberto(true);
+                        }}
+                        className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Editar pagamento"
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+
+                      {/* Botão Deletar */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          if (!pagamento.id) {
+                            console.error('❌ ID do pagamento não encontrado');
+                            return;
+                          }
+
+                          setPagamentoParaDeletar(pagamento);
+                        }}
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Deletar pagamento"
+                      >
+                        🗑️
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -236,6 +270,27 @@ export const HistoricoInline: React.FC<HistoricoInlineProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* Modal de Edição */}
+      <EditarPagamentoModal
+        isOpen={modalEditarAberto}
+        onClose={() => {
+          setModalEditarAberto(false);
+          setPagamentoParaEditar(null);
+        }}
+        pagamento={pagamentoParaEditar}
+        onSalvar={async (pagamentoId, dadosAtualizados) => {
+          if (onEditarPagamento) {
+            const sucesso = await onEditarPagamento(pagamentoId, dadosAtualizados);
+            if (sucesso) {
+              setModalEditarAberto(false);
+              setPagamentoParaEditar(null);
+            }
+            return sucesso;
+          }
+          return false;
+        }}
+      />
     </Card>
   );
 };

@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Removido ConfirmDialog - usando confirmação inline
-import { Calendar, CreditCard, FileText, DollarSign } from "lucide-react";
+import { Calendar, CreditCard, FileText, DollarSign, Edit3 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { HistoricoPagamentoCategorizado } from "@/types/pagamentos-separados";
+import { EditarPagamentoModal } from './financeiro/EditarPagamentoModal';
 
 interface HistoricoPagamentosModalProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface HistoricoPagamentosModalProps {
   valorViagem: number;
   valorPasseios: number;
   onDeletarPagamento?: (pagamentoId: string) => Promise<boolean>;
+  onEditarPagamento?: (pagamentoId: string, dadosAtualizados: Partial<HistoricoPagamentoCategorizado>) => Promise<boolean>;
 }
 
 export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> = ({
@@ -33,9 +35,12 @@ export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> =
   historicoPagamentos,
   valorViagem,
   valorPasseios,
-  onDeletarPagamento
+  onDeletarPagamento,
+  onEditarPagamento
 }) => {
   const [pagamentoParaDeletar, setPagamentoParaDeletar] = useState<any>(null);
+  const [pagamentoParaEditar, setPagamentoParaEditar] = useState<HistoricoPagamentoCategorizado | null>(null);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
 
   console.log('🔍 [MODAL] HistoricoPagamentosModal renderizado:', {
     open,
@@ -270,27 +275,53 @@ export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> =
                               </Button>
                             </div>
                           ) : (
-                            // Botão normal de deletar
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                
-                                if (!pagamento.id) {
-                                  console.error('❌ ID do pagamento não encontrado');
-                                  return;
-                                }
+                            // Botões normais
+                            <>
+                              {/* Botão Editar */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  if (!pagamento.id) {
+                                    console.error('❌ ID do pagamento não encontrado');
+                                    return;
+                                  }
 
-                                setPagamentoParaDeletar(pagamento);
-                              }}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Deletar pagamento"
-                            >
-                              🗑️
-                            </Button>
+                                  setPagamentoParaEditar(pagamento);
+                                  setModalEditarAberto(true);
+                                }}
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Editar pagamento"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+
+                              {/* Botão Deletar */}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  if (!pagamento.id) {
+                                    console.error('❌ ID do pagamento não encontrado');
+                                    return;
+                                  }
+
+                                  setPagamentoParaDeletar(pagamento);
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Deletar pagamento"
+                              >
+                                🗑️
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -300,6 +331,27 @@ export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> =
             </CardContent>
           </Card>
         </div>
+
+        {/* Modal de Edição */}
+        <EditarPagamentoModal
+          isOpen={modalEditarAberto}
+          onClose={() => {
+            setModalEditarAberto(false);
+            setPagamentoParaEditar(null);
+          }}
+          pagamento={pagamentoParaEditar}
+          onSalvar={async (pagamentoId, dadosAtualizados) => {
+            if (onEditarPagamento) {
+              const sucesso = await onEditarPagamento(pagamentoId, dadosAtualizados);
+              if (sucesso) {
+                setModalEditarAberto(false);
+                setPagamentoParaEditar(null);
+              }
+              return sucesso;
+            }
+            return false;
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

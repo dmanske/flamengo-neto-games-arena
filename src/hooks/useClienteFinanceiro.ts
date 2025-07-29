@@ -53,7 +53,7 @@ export const useClienteFinanceiro = (clienteId: string) => {
       setLoading(true);
       setError(null);
 
-      // 1. Buscar todas as participações do cliente em viagens
+      // 1. Buscar todas as participações do cliente em viagens com passeios
       const { data: viagensPassageiro, error: viagensError } = await supabase
         .from('viagem_passageiros')
         .select(`
@@ -61,6 +61,16 @@ export const useClienteFinanceiro = (clienteId: string) => {
           valor,
           desconto,
           created_at,
+          gratuito,
+          passageiro_passeios(valor_cobrado),
+          historico_pagamentos_categorizado(
+            id,
+            categoria,
+            valor_pago,
+            data_pagamento,
+            forma_pagamento,
+            observacoes
+          ),
           viagens!viagem_passageiros_viagem_id_fkey (
             id,
             adversario,
@@ -96,20 +106,7 @@ export const useClienteFinanceiro = (clienteId: string) => {
         return;
       }
 
-      // 2. Buscar todas as parcelas do cliente
-      const viagemPassageiroIds = viagensPassageiro.map(vp => vp.id);
-      
-      const { data: parcelas, error: parcelasError } = await supabase
-        .from('viagem_passageiros_parcelas')
-        .select('*')
-        .in('viagem_passageiro_id', viagemPassageiroIds)
-        .order('data_vencimento', { ascending: true });
-
-      if (parcelasError) {
-        throw parcelasError;
-      }
-
-      // 3. Processar dados financeiros
+      // 2. Processar dados financeiros com sistema novo
       const hoje = new Date();
       const parcelasPendentes: ParcelaPendente[] = [];
       const historicoPagamentos: HistoricoPagamento[] = [];
@@ -118,92 +115,109 @@ export const useClienteFinanceiro = (clienteId: string) => {
       let valorPendente = 0;
       let ultimaCompra = '';
 
-      // Processar cada viagem
+      // Processar cada viagem com sistema novo
       viagensPassageiro.forEach(vp => {
-        const valorLiquido = (vp.valor || 0) - (vp.desconto || 0);
-        totalGasto += valorLiquido;
+        // Calcular valor da viagem
+        const valorViagem = (vp.valor || 0) - (vp.desconto || 0);
+        
+        // Calcular valor dos passeios
+        const valorPasseios = (vp.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+        
+        // Se passageiro gratuito, zerar valores
+        const valorTotal = vp.gratuito ? 0 : (valorViagem + valorPasseios);
+        
+        totalGasto += valorTotal;
         
         if (!ultimaCompra || vp.created_at > ultimaCompra) {
           ultimaCompra = vp.created_at;
         }
 
-        // Processar parcelas desta viagem
-        const parcelasViagem = (parcelas || []).filter(p => p.viagem_passageiro_id === vp.id);
+        // Processar histórico de pagamentos
+        const pagamentos = vp.historico_pagamentos_categorizado || [];
+        const valorPago = pagamentos.reduce((sum: number, p: any) => 
+          p.data_pagamento ? sum + (p.valor_pago || 0) : sum, 0
+        );
         
-        parcelasViagem.forEach(parcela => {
-          if (parcela.data_pagamento) {
-            // Parcela paga - adicionar ao histórico
+        const pendente = valorTotal - valorPago;
+        
+        if (pendente > 0.01) {
+          // Criar "parcela pendente" baseada na data do jogo
+          const dataVencimento = new Date(vp.viagens?.data_jogo || vp.created_at);
+          const diasAtraso = Math.floor((hoje.getTime() - dataVencimento.getTime()) / (1000 * 60 * 60 * 24));
+          
+          valorPendente += pendente;
+          
+          parcelasPendentes.push({
+            id: vp.id,
+            numero_parcela: 1,
+            total_parcelas: 1,
+            valor_parcela: pendente,
+            data_vencimento: vp.viagens?.data_jogo || vp.created_at,
+            dias_atraso: Math.max(0, diasAtraso),
+            viagem_adversario: vp.viagens?.adversario || 'Adversário não informado',
+            viagem_data: vp.viagens?.data_jogo || '',
+            status: diasAtraso > 0 ? 'atrasado' : 'pendente',
+          });
+        }
+
+        // Adicionar pagamentos ao histórico
+        pagamentos.forEach((pagamento: any) => {
+          if (pagamento.data_pagamento) {
             historicoPagamentos.push({
-              id: parcela.id,
-              data_pagamento: parcela.data_pagamento,
-              valor_pago: parcela.valor_parcela || 0,
-              forma_pagamento: parcela.forma_pagamento || 'Não informado',
-              numero_parcela: parcela.numero_parcela || 1,
-              total_parcelas: parcela.total_parcelas || 1,
+              id: pagamento.id,
+              data_pagamento: pagamento.data_pagamento,
+              valor_pago: pagamento.valor_pago || 0,
+              forma_pagamento: pagamento.forma_pagamento || 'Não informado',
+              numero_parcela: 1,
+              total_parcelas: 1,
               viagem_adversario: vp.viagens?.adversario || 'Adversário não informado',
               viagem_data: vp.viagens?.data_jogo || '',
-            });
-          } else {
-            // Parcela pendente
-            const dataVencimento = new Date(parcela.data_vencimento);
-            const diasAtraso = Math.floor((hoje.getTime() - dataVencimento.getTime()) / (1000 * 60 * 60 * 24));
-            
-            valorPendente += parcela.valor_parcela || 0;
-            
-            parcelasPendentes.push({
-              id: parcela.id,
-              numero_parcela: parcela.numero_parcela || 1,
-              total_parcelas: parcela.total_parcelas || 1,
-              valor_parcela: parcela.valor_parcela || 0,
-              data_vencimento: parcela.data_vencimento,
-              dias_atraso: Math.max(0, diasAtraso),
-              viagem_adversario: vp.viagens?.adversario || 'Adversário não informado',
-              viagem_data: vp.viagens?.data_jogo || '',
-              status: diasAtraso > 0 ? 'atrasado' : 'pendente',
             });
           }
         });
       });
 
-      // 4. Calcular score de crédito baseado em dados reais
+      // 3. Calcular score de crédito baseado em dados reais do sistema novo
       const totalViagens = viagensPassageiro.length;
       const ticketMedio = totalViagens > 0 ? totalGasto / totalViagens : 0;
       
-      // Algoritmo de score simplificado e realista
+      // Algoritmo de score baseado no sistema novo
       let score = 100;
       let classificacao: 'bom' | 'atencao' | 'inadimplente';
       let motivo = '';
       
-      const totalParcelas = parcelasPendentes.length + historicoPagamentos.length;
-      const parcelasAtrasadas = parcelasPendentes.filter(p => p.dias_atraso > 0).length;
-      const parcelasVencidas = parcelasPendentes.filter(p => p.dias_atraso > 0);
+      const totalPendencias = parcelasPendentes.length;
+      const pendenciasAtrasadas = parcelasPendentes.filter(p => p.dias_atraso > 0).length;
+      const pendenciasVencidas = parcelasPendentes.filter(p => p.dias_atraso > 0);
       
       // Debug logs
-      console.log('🔍 Debug Score de Crédito:', {
-        totalParcelas,
-        parcelasAtrasadas,
+      console.log('🔍 Debug Score de Crédito (Sistema Novo):', {
+        totalPendencias,
+        pendenciasAtrasadas,
         valorPendente,
-        parcelasVencidas: parcelasVencidas.length,
-        historicoPagamentos: historicoPagamentos.length
+        pendenciasVencidas: pendenciasVencidas.length,
+        historicoPagamentos: historicoPagamentos.length,
+        totalGasto
       });
 
-      // Lógica baseada em situação real
-      if (parcelasAtrasadas === 0 && valorPendente === 0) {
+      // Lógica baseada no sistema novo de pagamentos
+      if (pendenciasAtrasadas === 0 && valorPendente <= 0.01) {
         // Cliente em dia - score alto
         score = 100;
         classificacao = 'bom';
-        motivo = 'Cliente em dia com todos os pagamentos';
+        motivo = 'Cliente em dia com todos os pagamentos (viagens + passeios)';
         console.log('✅ Cliente em dia completo');
-      } else if (parcelasAtrasadas === 0 && valorPendente > 0) {
+      } else if (pendenciasAtrasadas === 0 && valorPendente > 0.01) {
         // Tem pendências mas não em atraso - score bom
         score = 85;
         classificacao = 'bom';
-        motivo = 'Cliente pontual com parcelas em dia';
+        motivo = `Cliente pontual com R$ ${valorPendente.toFixed(2)} pendente`;
         console.log('⏳ Cliente pontual com pendências');
-      } else if (parcelasAtrasadas > 0) {
-        // Tem parcelas em atraso - calcular baseado na gravidade
-        const diasMaximoAtraso = Math.max(...parcelasVencidas.map(p => p.dias_atraso));
-        const percentualAtrasado = (parcelasAtrasadas / totalParcelas) * 100;
+      } else if (pendenciasAtrasadas > 0) {
+        // Tem pendências em atraso - calcular baseado na gravidade
+        const diasMaximoAtraso = Math.max(...pendenciasVencidas.map(p => p.dias_atraso));
+        const percentualAtrasado = totalPendencias > 0 ? (pendenciasAtrasadas / totalPendencias) * 100 : 0;
         
         console.log('🚨 Cliente com atrasos:', { diasMaximoAtraso, percentualAtrasado });
         
@@ -211,19 +225,19 @@ export const useClienteFinanceiro = (clienteId: string) => {
           // Atraso leve (até 7 dias)
           score = 70 - (percentualAtrasado * 0.2);
           classificacao = 'atencao';
-          motivo = `${parcelasAtrasadas} parcela(s) com atraso leve (até 7 dias)`;
+          motivo = `${pendenciasAtrasadas} viagem(ns) com atraso leve (até 7 dias)`;
           console.log('⚠️ Atraso leve');
         } else if (diasMaximoAtraso <= 30) {
           // Atraso moderado (8-30 dias)
           score = 50 - (percentualAtrasado * 0.3);
           classificacao = 'atencao';
-          motivo = `${parcelasAtrasadas} parcela(s) com atraso moderado (até 30 dias)`;
+          motivo = `${pendenciasAtrasadas} viagem(ns) com atraso moderado (até 30 dias)`;
           console.log('⚠️ Atraso moderado');
         } else {
           // Atraso grave (mais de 30 dias)
           score = 30 - (percentualAtrasado * 0.5);
           classificacao = 'inadimplente';
-          motivo = `${parcelasAtrasadas} parcela(s) com atraso grave (mais de 30 dias)`;
+          motivo = `${pendenciasAtrasadas} viagem(ns) com atraso grave (mais de 30 dias)`;
           console.log('🔴 Atraso grave');
         }
       } else {
@@ -236,8 +250,13 @@ export const useClienteFinanceiro = (clienteId: string) => {
       
       // Ajustar score baseado no histórico positivo
       if (historicoPagamentos.length > 0) {
-        const bonusHistorico = Math.min(10, historicoPagamentos.length * 2);
+        const bonusHistorico = Math.min(15, historicoPagamentos.length * 1.5);
         score += bonusHistorico;
+      }
+      
+      // Bonus para clientes com muitas viagens pagas
+      if (totalViagens >= 5 && valorPendente <= totalGasto * 0.1) {
+        score += 5; // Bonus cliente fiel
       }
       
       // Garantir que o score está entre 0 e 100
@@ -252,7 +271,7 @@ export const useClienteFinanceiro = (clienteId: string) => {
         classificacao = 'inadimplente';
       }
 
-      console.log('📊 Score Final:', { score, classificacao, motivo });
+      console.log('📊 Score Final (Sistema Novo):', { score, classificacao, motivo });
 
       // 5. Montar resultado final
       const resultado: FinanceiroCliente = {

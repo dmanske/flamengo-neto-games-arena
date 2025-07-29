@@ -11,6 +11,13 @@ export interface ResumoGeral {
   count_pendencias: number;
   crescimento_receitas: number;
   crescimento_despesas: number;
+  // Breakdown por categoria
+  receitas_viagem: number;
+  receitas_passeios: number;
+  receitas_extras: number;
+  percentual_viagem: number;
+  percentual_passeios: number;
+  percentual_extras: number;
 }
 
 export interface ViagemFinanceiro {
@@ -23,6 +30,13 @@ export interface ViagemFinanceiro {
   margem: number;
   total_passageiros: number;
   pendencias: number;
+  // Breakdown por categoria
+  receitas_viagem: number;
+  receitas_passeios: number;
+  receitas_extras: number;
+  percentual_viagem: number;
+  percentual_passeios: number;
+  percentual_extras: number;
 }
 
 export interface FluxoCaixaItem {
@@ -133,7 +147,14 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           total_pendencias: 0,
           count_pendencias: 0,
           crescimento_receitas: 0,
-          crescimento_despesas: 0
+          crescimento_despesas: 0,
+          // Breakdown por categoria
+          receitas_viagem: 0,
+          receitas_passeios: 0,
+          receitas_extras: 0,
+          percentual_viagem: 0,
+          percentual_passeios: 0,
+          percentual_extras: 0
         });
         return;
       }
@@ -154,8 +175,10 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         throw passageirosError;
       }
 
-      // Calcular totais dos dados REAIS que já existem
+      // Calcular totais dos dados REAIS que já existem com breakdown
       let totalReceitasPassageiros = 0;
+      let receitasViagem = 0;
+      let receitasPasseios = 0;
       let totalPendencias = 0;
       let countPendencias = 0;
 
@@ -164,6 +187,10 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         const valorPasseios = (p.passageiro_passeios || [])
           .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
         const valorLiquido = valorViagem + valorPasseios;
+        
+        // Breakdown por categoria
+        receitasViagem += valorViagem;
+        receitasPasseios += valorPasseios;
         
         // Calcular valor pago considerando apenas pagamentos NO PERÍODO
         const historicoPagamentos = p.historico_pagamentos_categorizado || [];
@@ -205,6 +232,11 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
       const lucroLiquido = totalReceitas - totalDespesas;
       const margemLucro = totalReceitas > 0 ? (lucroLiquido / totalReceitas) * 100 : 0;
 
+      // Calcular percentuais por categoria
+      const percentualViagem = totalReceitas > 0 ? (receitasViagem / totalReceitas) * 100 : 0;
+      const percentualPasseios = totalReceitas > 0 ? (receitasPasseios / totalReceitas) * 100 : 0;
+      const percentualExtras = totalReceitas > 0 ? (receitasExtras / totalReceitas) * 100 : 0;
+
       setResumoGeral({
         total_receitas: totalReceitas,
         total_despesas: totalDespesas,
@@ -213,7 +245,14 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         total_pendencias: totalPendencias,
         count_pendencias: countPendencias,
         crescimento_receitas: 0, // TODO: Calcular vs período anterior
-        crescimento_despesas: 0  // TODO: Calcular vs período anterior
+        crescimento_despesas: 0, // TODO: Calcular vs período anterior
+        // Breakdown por categoria
+        receitas_viagem: receitasViagem,
+        receitas_passeios: receitasPasseios,
+        receitas_extras: receitasExtras,
+        percentual_viagem: percentualViagem,
+        percentual_passeios: percentualPasseios,
+        percentual_extras: percentualExtras
       });
 
     } catch (error) {
@@ -299,22 +338,25 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
       const viagensFinanceiroData: ViagemFinanceiro[] = viagensData.map((viagem: any) => {
         const passageirosViagem = passageirosPorViagem[viagem.id] || [];
         
-        // Calcular receitas de passageiros
-        let receitasPassageiros = 0;
+        // Calcular receitas de passageiros com breakdown
+        let receitasViagemTotal = 0;
+        let receitasPasseiosTotal = 0;
         let pendencias = 0;
         
         passageirosViagem.forEach((p: any) => {
           const valorViagem = (p.valor || 0) - (p.desconto || 0);
           const valorPasseios = (p.passageiro_passeios || [])
             .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
-          const valorLiquido = valorViagem + valorPasseios;
+          
+          // Breakdown por categoria
+          receitasViagemTotal += valorViagem;
+          receitasPasseiosTotal += valorPasseios;
           
           const historicoPagamentos = p.historico_pagamentos_categorizado || [];
           const valorPago = historicoPagamentos
             .reduce((sum: number, pagamento: any) => pagamento.data_pagamento ? sum + (pagamento.valor_pago || 0) : sum, 0);
           
-          receitasPassageiros += valorLiquido;
-          
+          const valorLiquido = valorViagem + valorPasseios;
           const pendente = valorLiquido - valorPago;
           if (pendente > 0.01) {
             pendencias += pendente;
@@ -326,10 +368,16 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         const despesasViagemExtras = despesasPorViagem[viagem.id] || 0;
         
         // TOTAL: Receitas reais (passageiros) + extras (se houver)
+        const receitasPassageiros = receitasViagemTotal + receitasPasseiosTotal;
         const totalReceitas = receitasPassageiros + receitasExtrasViagem;
         const totalDespesas = despesasViagemExtras; // Por enquanto só extras
         const lucro = totalReceitas - totalDespesas;
         const margem = totalReceitas > 0 ? (lucro / totalReceitas) * 100 : 0;
+
+        // Calcular percentuais por categoria
+        const percentualViagem = totalReceitas > 0 ? (receitasViagemTotal / totalReceitas) * 100 : 0;
+        const percentualPasseios = totalReceitas > 0 ? (receitasPasseiosTotal / totalReceitas) * 100 : 0;
+        const percentualExtras = totalReceitas > 0 ? (receitasExtrasViagem / totalReceitas) * 100 : 0;
 
         return {
           id: viagem.id,
@@ -340,7 +388,14 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           lucro: lucro,
           margem: margem,
           total_passageiros: passageirosViagem.length,
-          pendencias: pendencias
+          pendencias: pendencias,
+          // Breakdown por categoria
+          receitas_viagem: receitasViagemTotal,
+          receitas_passeios: receitasPasseiosTotal,
+          receitas_extras: receitasExtrasViagem,
+          percentual_viagem: percentualViagem,
+          percentual_passeios: percentualPasseios,
+          percentual_extras: percentualExtras
         };
       });
 

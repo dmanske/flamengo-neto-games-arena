@@ -31,6 +31,7 @@ interface OnibusCardsProps {
   setPassageiros: (p: any[]) => void;
   setIsLoading: (b: boolean) => void;
   toast: any;
+  onUpdatePassageiros?: () => void;
 }
 
 export function OnibusCards({ 
@@ -43,7 +44,8 @@ export function OnibusCards({
   viagemId,
   setPassageiros,
   setIsLoading,
-  toast
+  toast,
+  onUpdatePassageiros
 }: OnibusCardsProps) {
   const [busImages, setBusImages] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -115,7 +117,7 @@ export function OnibusCards({
           setLastUpdate(new Date());
           
           // Recarregar dados quando houver mudanças
-          fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+          // A função fetchPassageiros será chamada pelo componente pai
           
           // Mostrar notificação discreta sobre a atualização
           if (payload.eventType === 'UPDATE' && payload.new?.is_responsavel_onibus !== payload.old?.is_responsavel_onibus) {
@@ -321,7 +323,9 @@ export function OnibusCards({
                                     
                                   if (error) throw error;
                                   
-                                  await fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+                                  if (onUpdatePassageiros) {
+                                    onUpdatePassageiros();
+                                  }
                                   toast.success('Responsável removido!');
                                 } catch (e) {
                                   console.error('Erro ao remover responsável:', e);
@@ -365,7 +369,9 @@ export function OnibusCards({
                               
                             if (error) throw error;
                             
-                            await fetchPassageiros(viagemId, setPassageiros, setIsLoading, toast);
+                            if (onUpdatePassageiros) {
+                              onUpdatePassageiros();
+                            }
                             toast.success('Responsável adicionado!');
                           } catch (e) {
                             console.error('Erro ao adicionar responsável:', e);

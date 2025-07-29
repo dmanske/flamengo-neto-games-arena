@@ -192,16 +192,61 @@ export function RelatoriosTab({ resumoGeral, viagensFinanceiro, filtroData }: Re
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChart className="h-5 w-5" />
-              Distribuição de Receitas
+              Breakdown de Receitas por Categoria
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* TODO: Implementar gráfico de pizza */}
-              <div className="text-center py-8 text-gray-500">
-                <PieChart className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Gráfico de distribuição será implementado</p>
-              </div>
+              {resumoGeral && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm">Viagens</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">{formatCurrency(resumoGeral.receitas_viagem)}</div>
+                      <div className="text-xs text-gray-500">{resumoGeral.percentual_viagem.toFixed(1)}%</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm">Passeios</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">{formatCurrency(resumoGeral.receitas_passeios)}</div>
+                      <div className="text-xs text-gray-500">{resumoGeral.percentual_passeios.toFixed(1)}%</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm">Extras</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">{formatCurrency(resumoGeral.receitas_extras)}</div>
+                      <div className="text-xs text-gray-500">{resumoGeral.percentual_extras.toFixed(1)}%</div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-3 mt-4">
+                    <div className="flex items-center justify-between font-semibold">
+                      <span>Total</span>
+                      <span>{formatCurrency(resumoGeral.total_receitas)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {!resumoGeral && (
+                <div className="text-center py-8 text-gray-500">
+                  <PieChart className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Carregando dados de receitas...</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -239,6 +284,9 @@ export function RelatoriosTab({ resumoGeral, viagensFinanceiro, filtroData }: Re
                       <div className="text-sm text-gray-600">Receitas</div>
                       <div className="font-medium text-green-600">
                         {formatCurrency(viagem.total_receitas)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        V: {formatCurrency(viagem.receitas_viagem)} | P: {formatCurrency(viagem.receitas_passeios)}
                       </div>
                     </div>
                     <div className="text-right">
@@ -324,6 +372,8 @@ export function RelatoriosTab({ resumoGeral, viagensFinanceiro, filtroData }: Re
           </div>
         </CardContent>
       </Card>
+
+
     </div>
   );
 }

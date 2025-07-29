@@ -13,11 +13,13 @@ import { RankingAdversariosCard } from "@/components/dashboard/RankingAdversario
 import { DashboardChartsGrid } from "@/components/dashboard/DashboardChartsGrid";
 import { DashboardPerformanceSummary } from "@/components/dashboard/DashboardPerformanceSummary";
 import { RecentActivitiesCard } from "@/components/dashboard/RecentActivitiesCard";
+import { ReceitasBreakdownCard } from "@/components/dashboard/ReceitasBreakdownCard";
 import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
 import { Users, Calendar, DollarSign, Bus, TrendingUp, Activity, BarChart3, Clock, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFinanceiroGeral } from '@/hooks/useFinanceiroGeral';
 import { OcupacaoViagensChart } from "@/components/dashboard/graficos/OcupacaoViagensChart";
 import { ClientesPorCidadePieChart } from "@/components/dashboard/graficos/ClientesPorCidadePieChart";
 import { ClientesPorMesChart } from "@/components/dashboard/graficos/ClientesPorMesChart";
@@ -50,8 +52,21 @@ const Dashboard = () => {
     totalReceita: 0
   });
   
+  // Hook para dados financeiros gerais
+  const [filtroFinanceiro] = useState(() => {
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    return {
+      inicio: inicioMes.toISOString().split('T')[0],
+      fim: hoje.toISOString().split('T')[0]
+    };
+  });
+  
   // Use the BusStats hook to get bus data
   const { stats: busStats } = useBusStats();
+  
+  // Hook para dados financeiros com breakdown
+  const { resumoGeral, isLoading: isLoadingFinanceiro } = useFinanceiroGeral(filtroFinanceiro);
   
   useEffect(() => {
     const fetchCounts = async () => {
@@ -387,6 +402,12 @@ const Dashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+                
+                {/* Breakdown de Receitas */}
+                <ReceitasBreakdownCard 
+                  resumoGeral={resumoGeral}
+                  isLoading={isLoadingFinanceiro}
+                />
                 
                 {/* Performance Summary Card */}
                 <Card className="shadow-md border-0">

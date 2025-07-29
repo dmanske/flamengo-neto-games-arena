@@ -43,6 +43,7 @@ export function SecaoFinanceiraAvancada({
     pagarPasseios,
     pagarTudo,
     deletarPagamento,
+    editarPagamento,
     obterStatusAtual,
     refetch
   } = usePagamentosSeparados(passageiroId);
@@ -183,6 +184,7 @@ export function SecaoFinanceiraAvancada({
           setModalHistoricoAberto(true);
         }}
         onDeletarPagamento={deletarPagamento}
+        onEditarPagamento={editarPagamento}
       />
 
       {/* Card de Resumo Rápido */}
@@ -223,6 +225,7 @@ export function SecaoFinanceiraAvancada({
         valorViagem={breakdown.valor_viagem}
         valorPasseios={breakdown.valor_passeios}
         onDeletarPagamento={deletarPagamento}
+        onEditarPagamento={editarPagamento}
       />
     </div>
   );

@@ -392,6 +392,10 @@ export default function FinanceiroGeral() {
                         <p className="font-semibold text-green-600">
                           {formatCurrency(viagem.total_receitas)}
                         </p>
+                        <p className="text-xs text-gray-500">
+                          V: {formatCurrency(viagem.receitas_viagem)} | P: {formatCurrency(viagem.receitas_passeios)}
+                          {viagem.receitas_extras > 0 && ` | E: ${formatCurrency(viagem.receitas_extras)}`}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Despesas</p>

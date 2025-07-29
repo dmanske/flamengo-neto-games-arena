@@ -53,7 +53,7 @@ export const useClienteViagens = (clienteId: string) => {
         setLoading(true);
         setError(null);
 
-        // 1. Buscar viagens do cliente com dados completos
+        // 1. Buscar viagens do cliente com dados completos (sistema novo)
         const { data: viagensData, error: viagensError } = await supabase
           .from('viagem_passageiros')
           .select(`
@@ -63,6 +63,13 @@ export const useClienteViagens = (clienteId: string) => {
             setor_maracana,
             status_pagamento,
             created_at,
+            gratuito,
+            passageiro_passeios(valor_cobrado),
+            historico_pagamentos_categorizado(
+              categoria,
+              valor_pago,
+              data_pagamento
+            ),
             viagens!viagem_passageiros_viagem_id_fkey (
               id,
               adversario,
@@ -90,22 +97,35 @@ export const useClienteViagens = (clienteId: string) => {
           return;
         }
 
-        // 2. Buscar parcelas para cada viagem
-        const viagemPassageiroIds = viagensData.map(v => v.id);
-        const { data: parcelasData, error: parcelasError } = await supabase
-          .from('viagem_passageiros_parcelas')
-          .select('viagem_passageiro_id, data_pagamento')
-          .in('viagem_passageiro_id', viagemPassageiroIds);
-
-        if (parcelasError) {
-          console.error('Erro ao buscar parcelas:', parcelasError);
-        }
-
-        // 3. Processar dados das viagens
+        // 2. Processar dados das viagens com sistema novo
         const viagensProcessadas: ViagemCliente[] = viagensData.map(vp => {
-          const parcelas = (parcelasData || []).filter(p => p.viagem_passageiro_id === vp.id);
-          const parcelasPagas = parcelas.filter(p => p.data_pagamento).length;
-          const totalParcelas = parcelas.length;
+          // Calcular valores com sistema novo
+          const valorViagem = (vp.valor || 0) - (vp.desconto || 0);
+          const valorPasseios = (vp.passageiro_passeios || [])
+            .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+          
+          // Se passageiro gratuito, zerar valores
+          const valorTotal = vp.gratuito ? 0 : (valorViagem + valorPasseios);
+          
+          // Calcular pagamentos
+          const pagamentos = vp.historico_pagamentos_categorizado || [];
+          const valorPago = pagamentos.reduce((sum: number, p: any) => 
+            p.data_pagamento ? sum + (p.valor_pago || 0) : sum, 0
+          );
+          
+          // Determinar status de pagamento baseado no sistema novo
+          let statusPagamento = 'Pendente';
+          if (vp.gratuito) {
+            statusPagamento = 'Brinde';
+          } else if (valorPago >= valorTotal - 0.01) {
+            statusPagamento = 'Pago';
+          } else if (valorPago > 0) {
+            statusPagamento = 'Parcial';
+          }
+          
+          // Simular parcelas baseado nos pagamentos
+          const totalPagamentos = pagamentos.length;
+          const pagamentosPagos = pagamentos.filter((p: any) => p.data_pagamento).length;
           
           // Determinar status baseado na data do jogo e status da viagem
           let status: 'confirmado' | 'cancelado' | 'finalizado' = 'confirmado';
@@ -126,15 +146,15 @@ export const useClienteViagens = (clienteId: string) => {
             id: vp.viagens?.id || vp.id,
             adversario: vp.viagens?.adversario || 'Adversário não informado',
             data_jogo: vp.viagens?.data_jogo || '',
-            valor_pago: vp.valor || 0,
-            valor_original: vp.valor || 0,
+            valor_pago: valorTotal, // Valor total incluindo passeios
+            valor_original: valorViagem + valorPasseios, // Valor original sem considerar gratuidade
             desconto: vp.desconto || 0,
             status,
             setor_maracana: vp.setor_maracana || '',
             numero_onibus: '', // Campo não existe na tabela
-            status_pagamento: vp.status_pagamento || 'Pendente',
-            parcelas_pagas: parcelasPagas,
-            total_parcelas: totalParcelas || 1,
+            status_pagamento: statusPagamento, // Status calculado pelo sistema novo
+            parcelas_pagas: pagamentosPagos,
+            total_parcelas: Math.max(totalPagamentos, 1),
             avaliacao: undefined,
           };
         });

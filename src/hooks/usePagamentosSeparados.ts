@@ -28,6 +28,10 @@ export interface UsePagamentosSeparadosReturn {
   pagarPasseios: (valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
   pagarTudo: (valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
   
+  // Gestão de pagamentos
+  deletarPagamento: (pagamentoId: string) => Promise<boolean>;
+  editarPagamento: (pagamentoId: string, dadosAtualizados: Partial<HistoricoPagamentoCategorizado>) => Promise<boolean>;
+  
   // Utilitários
   calcularValorViagem: () => number;
   calcularValorPasseios: () => number;
@@ -274,6 +278,56 @@ export const usePagamentosSeparados = (
     }
   }, [fetchDadosPassageiro]);
 
+  // Editar pagamento
+  const editarPagamento = useCallback(async (
+    pagamentoId: string, 
+    dadosAtualizados: Partial<HistoricoPagamentoCategorizado>
+  ): Promise<boolean> => {
+    if (!pagamentoId) return false;
+
+    try {
+      console.log('✏️ Editando pagamento:', pagamentoId, dadosAtualizados);
+      
+      // Preparar dados para atualização (apenas campos permitidos)
+      const dadosParaAtualizar: any = {};
+      
+      if (dadosAtualizados.valor_pago !== undefined) {
+        dadosParaAtualizar.valor_pago = dadosAtualizados.valor_pago;
+      }
+      if (dadosAtualizados.data_pagamento !== undefined) {
+        dadosParaAtualizar.data_pagamento = dadosAtualizados.data_pagamento;
+      }
+      if (dadosAtualizados.categoria !== undefined) {
+        dadosParaAtualizar.categoria = dadosAtualizados.categoria;
+      }
+      if (dadosAtualizados.forma_pagamento !== undefined) {
+        dadosParaAtualizar.forma_pagamento = dadosAtualizados.forma_pagamento;
+      }
+      if (dadosAtualizados.observacoes !== undefined) {
+        dadosParaAtualizar.observacoes = dadosAtualizados.observacoes;
+      }
+
+      // Adicionar timestamp de atualização
+      dadosParaAtualizar.updated_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('historico_pagamentos_categorizado')
+        .update(dadosParaAtualizar)
+        .eq('id', pagamentoId);
+
+      if (error) throw error;
+
+      toast.success('Pagamento editado com sucesso!');
+      await fetchDadosPassageiro(); // Recarregar dados
+      return true;
+
+    } catch (error: any) {
+      console.error('Erro ao editar pagamento:', error);
+      toast.error('Erro ao editar pagamento');
+      return false;
+    }
+  }, [fetchDadosPassageiro]);
+
   // Utilitários de cálculo
   const calcularValorViagem = useCallback((): number => {
     if (!passageiro) return 0;
@@ -323,6 +377,7 @@ export const usePagamentosSeparados = (
     pagarPasseios,
     pagarTudo,
     deletarPagamento,
+    editarPagamento,
     
     // Utilitários
     calcularValorViagem,
