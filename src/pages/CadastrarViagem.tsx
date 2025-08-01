@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { CalendarDays, MapPin, Users, Plus, Trash2 } from "lucide-react";
 import { formatInputDateToISO } from "@/lib/date-utils";
+import { getEstadioByAdversario, getSetorOptions, shouldShowNomeEstadio } from "@/data/estadios";
 
 // Removido: passeiosDisponiveis - agora vem do banco de dados
 
@@ -34,6 +35,7 @@ const viagemSchema = z.object({
   capacidade_onibus: z.string().min(1, "Capacidade do ônibus é obrigatória"),
   status_viagem: z.string().default("Aberta"),
   setor_padrao: z.string().optional(),
+  nome_estadio: z.string().optional(),
   cidade_embarque: z.string().default("Blumenau"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default(LOGO_FLAMENGO_PADRAO),
@@ -88,7 +90,11 @@ const CadastrarViagem = () => {
   // Cidades e setores
   const cidadesEmbarque = ["Agrolandia", "Agronomica", "Apiuna", "Barra Velha", "Blumenau", "Curitiba", "Gaspar", "Ibirama", "Ilhota", "Indaial", "Itajai", "Ituporanga", "Joinville", "Lontras", "Navegantes", "Piçarras", "Presidente Getulio", "Rio do Sul", "Rodeio", "Trombudo Central"];
   const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Brasília", "Salvador", "Recife", "Fortaleza"];
-  const setoresEstadio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Setor padrão do estádio visitante", "Sem ingresso"];
+  // Função para obter setores dinamicamente baseado no local do jogo
+  const getSetoresDisponiveis = () => {
+    const localJogo = form.watch("local_jogo");
+    return getSetorOptions(localJogo);
+  };
 
   // Inicializar o formulário
   const form = useForm<ViagemFormData>({
@@ -102,6 +108,7 @@ const CadastrarViagem = () => {
       capacidade_onibus: "46",
       status_viagem: "Aberta",
       setor_padrao: "Norte",
+      nome_estadio: "",
       cidade_embarque: "Blumenau",
       logo_adversario: "",
       logo_flamengo: LOGO_FLAMENGO_PADRAO,
@@ -187,23 +194,36 @@ const CadastrarViagem = () => {
     form.setValue("capacidade_onibus", totalCapacidade.toString());
   }, [onibusItems, form]);
 
-  // Atualizar setor padrão baseado no local do jogo
+  // Atualizar setor padrão e nome do estádio baseado no adversário e local do jogo
   useEffect(() => {
+    const adversario = form.watch("adversario");
     const localJogo = form.watch("local_jogo");
-    const setorAtual = form.watch("setor_padrao");
     
-    if (localJogo && localJogo !== "Rio de Janeiro") {
-      // Se não é no Rio de Janeiro e o setor ainda é um setor do Maracanã, mudar para setor visitante
-      if (["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais"].includes(setorAtual)) {
-        form.setValue("setor_padrao", "Setor padrão do estádio visitante");
-      }
-    } else if (localJogo === "Rio de Janeiro") {
-      // Se é no Rio de Janeiro e o setor é visitante, mudar para Norte
-      if (setorAtual === "Setor padrão do estádio visitante") {
+    // Auto-preencher nome do estádio baseado no adversário
+    if (adversario && localJogo !== "Rio de Janeiro") {
+      const estadio = getEstadioByAdversario(adversario);
+      form.setValue("nome_estadio", estadio);
+    } else {
+      form.setValue("nome_estadio", "");
+    }
+    
+    // Atualizar opções de setor baseado no local do jogo
+    const setorAtual = form.watch("setor_padrao");
+    const setoresRio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais"];
+    const setoresVisitante = ["Setor Casa", "Setor Visitante"];
+    
+    if (localJogo === "Rio de Janeiro") {
+      // Jogo no Rio - usar setores do Maracanã
+      if (!setoresRio.includes(setorAtual) && setorAtual !== "Sem ingresso") {
         form.setValue("setor_padrao", "Norte");
       }
+    } else {
+      // Jogo fora do Rio - usar setores visitante
+      if (!setoresVisitante.includes(setorAtual) && setorAtual !== "Sem ingresso") {
+        form.setValue("setor_padrao", "Setor Visitante");
+      }
     }
-  }, [form.watch("local_jogo"), form]);
+  }, [form.watch("adversario"), form.watch("local_jogo"), form]);
 
   // Adicionar um novo ônibus
   const addOnibusItem = () => {
@@ -282,6 +302,7 @@ const CadastrarViagem = () => {
           capacidade_onibus: parseInt(data.capacidade_onibus),
           status_viagem: data.status_viagem,
           setor_padrao: data.setor_padrao,
+          nome_estadio: data.nome_estadio || null,
           cidade_embarque: data.cidade_embarque,
           logo_adversario: data.logo_adversario,
           logo_flamengo: data.logo_flamengo || LOGO_FLAMENGO_PADRAO,
@@ -756,7 +777,7 @@ const CadastrarViagem = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {setoresEstadio.map((setor) => (
+                          {getSetoresDisponiveis().map((setor) => (
                             <SelectItem key={setor} value={setor}>
                               {setor}
                             </SelectItem>
@@ -773,6 +794,29 @@ const CadastrarViagem = () => {
                     </FormItem>
                   )}
                 />
+
+                {/* Campo Nome do Estádio - só aparece para jogos fora do Rio */}
+                {shouldShowNomeEstadio(form.watch("local_jogo")) && (
+                  <FormField
+                    control={form.control}
+                    name="nome_estadio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Estádio</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ex: Arena do Grêmio, Estádio Beira-Rio"
+                            {...field}
+                          />
+                        </FormControl>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Preenchido automaticamente para Grêmio e Internacional
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

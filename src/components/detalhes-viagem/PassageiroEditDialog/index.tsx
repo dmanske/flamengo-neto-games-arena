@@ -38,11 +38,13 @@ import { SetorSelectField } from "./SetorSelectField";
 // ParcelasEditManager removido - usando apenas sistema avançado
 import { PasseiosEditSectionSimples } from "./PasseiosEditSectionSimples";
 import { SecaoFinanceiraAvancada } from "./SecaoFinanceiraAvancada";
+import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 
 export function PassageiroEditDialog({
   open,
   onOpenChange,
   passageiro,
+  viagem,
   onSuccess,
 }: PassageiroEditDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -296,7 +298,9 @@ export function PassageiroEditDialog({
                     name="setor_maracana"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700">Setor do Maracanã</FormLabel>
+                        <FormLabel className="text-gray-700">
+                          {getSetorLabel(viagem?.local_jogo || "Rio de Janeiro", viagem?.nome_estadio)}
+                        </FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -307,14 +311,11 @@ export function PassageiroEditDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                            <SelectItem value="A definir">A definir</SelectItem>
-                            <SelectItem value="Norte">Norte</SelectItem>
-                            <SelectItem value="Sul">Sul</SelectItem>
-                            <SelectItem value="Leste Inferior">Leste Inferior</SelectItem>
-                            <SelectItem value="Leste Superior">Leste Superior</SelectItem>
-                            <SelectItem value="Oeste">Oeste</SelectItem>
-                            <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-                            <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+                            {getSetorOptions(viagem?.local_jogo || "Rio de Janeiro").map((setor) => (
+                              <SelectItem key={setor} value={setor}>
+                                {setor}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />

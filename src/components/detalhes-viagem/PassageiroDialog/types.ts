@@ -29,4 +29,8 @@ export interface PassageiroDialogProps {
   valorPadrao?: number;
   setorPadrao?: string;
   defaultOnibusId?: string | null;
+  viagem?: {
+    local_jogo?: string;
+    nome_estadio?: string;
+  };
 }

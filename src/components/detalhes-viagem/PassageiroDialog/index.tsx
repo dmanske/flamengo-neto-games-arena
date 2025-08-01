@@ -35,6 +35,7 @@ import { OnibusSelectField } from "./OnibusSelectField";
 import { PasseiosViagemSection } from "./PasseiosViagemSection";
 import { formSchema, FormData } from "./formSchema";
 import { PassageiroDialogProps } from "./types";
+import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 
 import { Users, MapPin, CreditCard, Ticket, Bus, Home, Zap, Settings, Info } from "lucide-react";
 
@@ -46,6 +47,7 @@ export function PassageiroDialog({
   valorPadrao,
   setorPadrao,
   defaultOnibusId,
+  viagem,
 }: PassageiroDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [passeiosDaViagem, setPasseiosDaViagem] = useState<any[]>([]);
@@ -600,7 +602,7 @@ export function PassageiroDialog({
                   <FormItem>
                     <FormLabel className="text-gray-700 flex items-center gap-2">
                       <Ticket className="h-4 w-4 text-blue-600" />
-                      Setor do Maracanã
+                      {getSetorLabel(viagem?.local_jogo || "Rio de Janeiro", viagem?.nome_estadio)}
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -612,14 +614,15 @@ export function PassageiroDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                        <SelectItem value="A definir" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">A definir</SelectItem>
-                        <SelectItem value="Norte" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Norte</SelectItem>
-                        <SelectItem value="Sul" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Sul</SelectItem>
-                        <SelectItem value="Leste Inferior" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Leste Inferior</SelectItem>
-                        <SelectItem value="Leste Superior" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Leste Superior</SelectItem>
-                        <SelectItem value="Oeste" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Oeste</SelectItem>
-                        <SelectItem value="Maracanã Mais" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Maracanã Mais</SelectItem>
-                        <SelectItem value="Sem ingresso" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Sem ingresso</SelectItem>
+                        {getSetorOptions(viagem?.local_jogo || "Rio de Janeiro").map((setor) => (
+                          <SelectItem 
+                            key={setor} 
+                            value={setor} 
+                            className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+                          >
+                            {setor}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

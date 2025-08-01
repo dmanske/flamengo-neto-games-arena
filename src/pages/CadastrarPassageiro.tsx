@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StatusPagamento } from "@/types/entities";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 
 // Define the form validation schema
 const formSchema = z.object({

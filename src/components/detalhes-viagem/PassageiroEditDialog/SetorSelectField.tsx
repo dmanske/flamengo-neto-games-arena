@@ -14,19 +14,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 
 interface SetorSelectFieldProps {
   control: any;
+  viagem?: {
+    local_jogo?: string;
+    nome_estadio?: string;
+  };
 }
 
-export function SetorSelectField({ control }: SetorSelectFieldProps) {
+export function SetorSelectField({ control, viagem }: SetorSelectFieldProps) {
   return (
     <FormField
       control={control}
       name="setor_maracana"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-gray-700">Setor do Maracanã</FormLabel>
+          <FormLabel className="text-gray-700">
+            {getSetorLabel(viagem?.local_jogo || "Rio de Janeiro", viagem?.nome_estadio)}
+          </FormLabel>
           <Select
             onValueChange={field.onChange}
             value={field.value}
@@ -37,14 +44,11 @@ export function SetorSelectField({ control }: SetorSelectFieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent className="bg-white border-gray-200">
-              <SelectItem value="A definir">A definir</SelectItem>
-              <SelectItem value="Norte">Norte</SelectItem>
-              <SelectItem value="Sul">Sul</SelectItem>
-              <SelectItem value="Leste Inferior">Leste Inferior</SelectItem>
-              <SelectItem value="Leste Superior">Leste Superior</SelectItem>
-              <SelectItem value="Oeste">Oeste</SelectItem>
-              <SelectItem value="Maracanã Mais">Maracanã Mais</SelectItem>
-              <SelectItem value="Sem ingresso">Sem ingresso</SelectItem>
+              {getSetorOptions(viagem?.local_jogo || "Rio de Janeiro").map((setor) => (
+                <SelectItem key={setor} value={setor}>
+                  {setor}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <FormMessage />

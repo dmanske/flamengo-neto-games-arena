@@ -1489,6 +1489,7 @@ export type Database = {
           local_jogo: string
           logo_adversario: string | null
           logo_flamengo: string | null
+          nome_estadio: string | null
           outro_passeio: string | null
           passeios_pagos: string[] | null
           setor_padrao: string | null
@@ -1508,6 +1509,7 @@ export type Database = {
           local_jogo?: string
           logo_adversario?: string | null
           logo_flamengo?: string | null
+          nome_estadio?: string | null
           outro_passeio?: string | null
           passeios_pagos?: string[] | null
           setor_padrao?: string | null
@@ -1527,6 +1529,7 @@ export type Database = {
           local_jogo?: string
           logo_adversario?: string | null
           logo_flamengo?: string | null
+          nome_estadio?: string | null
           outro_passeio?: string | null
           passeios_pagos?: string[] | null
           setor_padrao?: string | null

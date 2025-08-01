@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 import { formatCurrency } from "@/lib/utils";
 
 // Schema de validação do formulário
@@ -49,6 +50,8 @@ interface Viagem {
   adversario: string;
   data_jogo: string;
   valor_padrao?: number;
+  local_jogo?: string;
+  nome_estadio?: string;
 }
 
 const CadastrarPassageiroSimples = () => {
@@ -80,7 +83,7 @@ const CadastrarPassageiroSimples = () => {
       try {
         const { data, error } = await supabase
           .from('viagens')
-          .select('id, adversario, data_jogo, valor_padrao')
+          .select('id, adversario, data_jogo, valor_padrao, local_jogo, nome_estadio')
           .gte('data_jogo', new Date().toISOString().split('T')[0])
           .order('data_jogo', { ascending: true });
 
@@ -255,10 +258,23 @@ const CadastrarPassageiroSimples = () => {
                     name="setor_maracana"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Setor no Maracanã</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Setor" {...field} />
-                        </FormControl>
+                        <FormLabel>
+                          {getSetorLabel(viagemSelecionada?.local_jogo || "Rio de Janeiro", viagemSelecionada?.nome_estadio)}
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um setor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {getSetorOptions(viagemSelecionada?.local_jogo || "Rio de Janeiro").map((setor) => (
+                              <SelectItem key={setor} value={setor}>
+                                {setor}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

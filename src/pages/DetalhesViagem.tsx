@@ -366,12 +366,14 @@ const DetalhesViagem = () => {
         valorPadrao={viagem.valor_padrao}
         setorPadrao={viagem.setor_padrao}
         defaultOnibusId={selectedOnibusId || ''}
+        viagem={viagem}
       />
       
       <PassageiroEditDialog
         open={editPassageiroOpen}
         onOpenChange={setEditPassageiroOpen}
         passageiro={selectedPassageiro}
+        viagem={viagem}
         onSuccess={() => id && fetchPassageiros(id)}
       />
 

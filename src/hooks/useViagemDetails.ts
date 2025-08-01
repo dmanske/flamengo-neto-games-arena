@@ -18,6 +18,8 @@ export interface Viagem {
   logo_flamengo: string | null;
   valor_padrao: number | null;
   setor_padrao: string | null;
+  local_jogo?: string;
+  nome_estadio?: string | null;
   passeios_pagos?: string[];
   outro_passeio?: string | null;
   // Novos campos do sistema avançado de pagamento

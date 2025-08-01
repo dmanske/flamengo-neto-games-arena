@@ -36,5 +36,9 @@ export interface PassageiroEditDialogProps {
     observacoes?: string;
     passeios?: { passeio_id: string; passeio_nome: string; status: string }[];
   } | null;
+  viagem?: {
+    local_jogo?: string;
+    nome_estadio?: string;
+  };
   onSuccess: () => void;
 }

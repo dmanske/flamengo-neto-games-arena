@@ -17,8 +17,8 @@ export const PASSEIOS_CONFIG = {
       "Tour do Maracanã",
       "Rocinha",
       "Vidigal",
+      "Rocinha + Vidigal",
       "Tour da Gávea",
-      "Parque Lage",
       "Museu do Mar"
     ]
   },
@@ -37,7 +37,8 @@ export const PASSEIOS_CONFIG = {
       "Museu do Amanhã",
       "Boulevard Olímpico",
       "Cidade do Samba",
-      "Pedra do Sal"
+      "Pedra do Sal",
+      "Parque Lage"
     ]
   }
 } as const;

@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarDays, MapPin, Users, Save, ArrowLeft, Loader2 } from "lucide-react";
 import { OnibusForm } from "@/components/viagem/OnibusForm";
 import { ViagemOnibus } from "@/types/entities";
+import { getEstadioByAdversario, getSetorOptions, shouldShowNomeEstadio } from "@/data/estadios";
 import { formatDateOnlyForInput, formatDateForInput, formatInputDateToISO } from "@/lib/date-utils";
 
 // Schema de validação
@@ -29,6 +30,7 @@ const viagemSchema = z.object({
   valor_padrao: z.string().optional(),
   status_viagem: z.string().default("Aberta"),
   setor_padrao: z.string().optional(),
+  nome_estadio: z.string().optional(),
   cidade_embarque: z.string().default("Blumenau"),
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().optional(),
@@ -58,7 +60,11 @@ export default function EditarViagem() {
   // Opções para selects
   const cidadesEmbarque = ["Agrolandia", "Agronomica", "Apiuna", "Barra Velha", "Blumenau", "Curitiba", "Gaspar", "Ibirama", "Ilhota", "Indaial", "Itajai", "Ituporanga", "Joinville", "Lontras", "Navegantes", "Piçarras", "Presidente Getulio", "Rio do Sul", "Rodeio", "Trombudo Central"];
   const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Porto Alegre - RS", "Brasília"];
-  const setoresEstadio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Setor padrão do estádio visitante", "Sem ingresso", "A definir"];
+  // Função para obter setores dinamicamente baseado no local do jogo
+  const getSetoresDisponiveis = () => {
+    const localJogo = form.watch("local_jogo");
+    return getSetorOptions(localJogo);
+  };
   const statusOptions = ["Aberta", "Fechada", "Cancelada", "Finalizada", "Em andamento"];
 
   const form = useForm<ViagemFormData>({
@@ -71,6 +77,7 @@ export default function EditarViagem() {
       valor_padrao: "",
       status_viagem: "Aberta",
       setor_padrao: "Norte",
+      nome_estadio: "",
       cidade_embarque: "Blumenau",
       logo_adversario: "",
       logo_flamengo: "",
@@ -133,6 +140,7 @@ export default function EditarViagem() {
             valor_padrao: data.valor_padrao?.toString() || "",
             status_viagem: data.status_viagem || "Aberta",
             setor_padrao: data.setor_padrao || "Norte",
+            nome_estadio: data.nome_estadio || "",
             cidade_embarque: data.cidade_embarque || "Blumenau",
             logo_adversario: data.logo_adversario || "",
             logo_flamengo: data.logo_flamengo || "",
@@ -159,6 +167,37 @@ export default function EditarViagem() {
     carregarViagem();
   }, [id, form, navigate]);
 
+  // Atualizar setor padrão e nome do estádio baseado no adversário e local do jogo
+  useEffect(() => {
+    const adversario = form.watch("adversario");
+    const localJogo = form.watch("local_jogo");
+    
+    // Auto-preencher nome do estádio baseado no adversário
+    if (adversario && localJogo !== "Rio de Janeiro") {
+      const estadio = getEstadioByAdversario(adversario);
+      form.setValue("nome_estadio", estadio);
+    } else {
+      form.setValue("nome_estadio", "");
+    }
+    
+    // Atualizar opções de setor baseado no local do jogo
+    const setorAtual = form.watch("setor_padrao");
+    const setoresRio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais"];
+    const setoresVisitante = ["Setor Casa", "Setor Visitante"];
+    
+    if (localJogo === "Rio de Janeiro") {
+      // Jogo no Rio - usar setores do Maracanã
+      if (!setoresRio.includes(setorAtual) && setorAtual !== "Sem ingresso") {
+        form.setValue("setor_padrao", "Norte");
+      }
+    } else {
+      // Jogo fora do Rio - usar setores visitante
+      if (!setoresVisitante.includes(setorAtual) && setorAtual !== "Sem ingresso") {
+        form.setValue("setor_padrao", "Setor Visitante");
+      }
+    }
+  }, [form.watch("adversario"), form.watch("local_jogo"), form]);
+
   const onSubmit = async (data: ViagemFormData) => {
     if (!id || onibusArray.length === 0) {
       if (onibusArray.length === 0) {
@@ -184,6 +223,7 @@ export default function EditarViagem() {
         capacidade_onibus: capacidadeTotal,
         status_viagem: data.status_viagem,
         setor_padrao: data.setor_padrao,
+        nome_estadio: data.nome_estadio || null,
         cidade_embarque: data.cidade_embarque,
         logo_adversario: data.logo_adversario,
         logo_flamengo: data.logo_flamengo,
@@ -565,7 +605,7 @@ export default function EditarViagem() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {setoresEstadio.map((setor) => (
+                              {getSetoresDisponiveis().map((setor) => (
                                 <SelectItem key={setor} value={setor}>
                                   {setor}
                                 </SelectItem>
@@ -576,6 +616,30 @@ export default function EditarViagem() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Campo Nome do Estádio - só aparece para jogos fora do Rio */}
+                    {shouldShowNomeEstadio(form.watch("local_jogo")) && (
+                      <FormField
+                        control={form.control}
+                        name="nome_estadio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-slate-700 font-medium">Nome do Estádio</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: Arena do Grêmio, Estádio Beira-Rio"
+                                className="border-slate-200 focus:border-blue-500"
+                                {...field}
+                              />
+                            </FormControl>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Preenchido automaticamente para Grêmio e Internacional
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
 
                   <FormField
