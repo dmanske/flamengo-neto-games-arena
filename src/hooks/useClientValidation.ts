@@ -21,25 +21,29 @@ export const useClientValidation = () => {
     setIsValidating(true);
     
     try {
-      console.log('🔍 Iniciando validação de cliente...', { cpf: cpf?.substring(0, 3) + '***', telefone: telefone?.substring(0, 3) + '***', email });
+      console.log('🔍 Iniciando validação de cliente...', { cpf: cpf?.substring(0, 3) + '***' });
       
       const cleanedCPF = cleanCPF(cpf);
-      const cleanedPhone = cleanPhone(telefone);
       
-      console.log('🧹 Dados limpos:', { cleanedCPF: cleanedCPF?.substring(0, 3) + '***', cleanedPhone: cleanedPhone?.substring(0, 3) + '***' });
+      console.log('🧹 CPF limpo:', { cleanedCPF: cleanedCPF?.substring(0, 3) + '***' });
       
-      // Check for existing client by CPF, phone or email
+      // Verificar apenas CPF duplicado (email e telefone podem duplicar)
+      if (!cleanedCPF) {
+        console.log('✅ CPF vazio, validação aprovada');
+        return { isValid: true };
+      }
+      
       let query = supabase
         .from('clientes')
         .select('*')
-        .or(`cpf.eq.${cleanedCPF},telefone.eq.${cleanedPhone},email.eq.${email.toLowerCase()}`);
+        .eq('cpf', cleanedCPF);
       
       // Exclude current client if editing
       if (excludeId) {
         query = query.neq('id', excludeId);
       }
       
-      console.log('📡 Executando query de validação...');
+      console.log('📡 Executando query de validação de CPF...');
       const { data: existingClients, error } = await query.maybeSingle();
       
       if (error) {
@@ -58,26 +62,17 @@ export const useClientValidation = () => {
       
       if (existingClients) {
         const existingClient = existingClients;
-        let conflictType = '';
         
-        if (cleanCPF(existingClient.cpf) === cleanedCPF) {
-          conflictType = 'CPF';
-        } else if (cleanPhone(existingClient.telefone) === cleanedPhone) {
-          conflictType = 'telefone';
-        } else if (existingClient.email.toLowerCase() === email.toLowerCase()) {
-          conflictType = 'email';
-        }
-        
-        console.log('⚠️ Cliente duplicado encontrado:', { conflictType, existingClientName: existingClient.nome });
+        console.log('⚠️ Cliente com CPF duplicado encontrado:', { existingClientName: existingClient.nome });
         
         return {
           isValid: false,
           existingClient,
-          message: `Já existe um cliente cadastrado com este ${conflictType}: ${existingClient.nome}`
+          message: `Já existe um cliente cadastrado com este CPF: ${existingClient.nome}`
         };
       }
       
-      console.log('✅ Validação concluída - cliente não encontrado, pode prosseguir');
+      console.log('✅ Validação concluída - CPF não encontrado, pode prosseguir');
       return { isValid: true };
     } catch (error) {
       console.error('💥 Erro inesperado ao validar cliente:', error);

@@ -17,7 +17,7 @@ export const ContactInfoFields: React.FC<ContactInfoFieldsProps> = ({ form }) =>
         name="telefone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Telefone/WhatsApp</FormLabel>
+            <FormLabel>Telefone/WhatsApp *</FormLabel>
             <FormControl>
               <Input 
                 placeholder="(11) 99999-9999" 

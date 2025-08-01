@@ -47,7 +47,7 @@ export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
           name="cpf"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CPF</FormLabel>
+              <FormLabel>CPF *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="000.000.000-00" 
@@ -69,7 +69,7 @@ export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
           name="data_nascimento"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data de Nascimento</FormLabel>
+              <FormLabel>Data de Nascimento *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="DD/MM/AAAA"
@@ -93,7 +93,7 @@ export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
           name="telefone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone/WhatsApp</FormLabel>
+              <FormLabel>Telefone/WhatsApp *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="(11) 99999-9999" 
@@ -115,7 +115,7 @@ export const PersonalInfoFields = ({ form }: PersonalInfoFieldsProps) => {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail</FormLabel>
+              <FormLabel>E-mail *</FormLabel>
               <FormControl>
                 <Input 
                   type="email" 

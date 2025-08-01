@@ -49,7 +49,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
           name="cpf"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CPF</FormLabel>
+              <FormLabel>CPF *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="000.000.000-00" 
@@ -73,7 +73,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail</FormLabel>
+              <FormLabel>E-mail *</FormLabel>
               <FormControl>
                 <Input 
                   type="email"
@@ -94,7 +94,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({ form }) 
           name="data_nascimento"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Data de Nascimento</FormLabel>
+              <FormLabel>Data de Nascimento *</FormLabel>
               <div className="flex">
                 <FormControl>
                   <Input

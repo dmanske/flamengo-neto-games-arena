@@ -18,17 +18,9 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
     { value: "facebook", label: "Facebook" },
     { value: "whatsapp", label: "WhatsApp" },
     { value: "google", label: "Google / Pesquisa na Internet" },
-    { value: "youtube", label: "YouTube" },
-    { value: "tiktok", label: "TikTok" },
+    { value: "site_neto_turs", label: "Site da Neto Tours Viagens" },
     { value: "indicacao_amigo", label: "Indicação de Amigo/Familiar" },
     { value: "indicacao_cliente", label: "Indicação de Cliente Antigo" },
-    { value: "site_neto_turs", label: "Site da Neto Tours Viagens" },
-    { value: "panfleto_flyer", label: "Panfleto/Flyer" },
-    { value: "radio", label: "Rádio" },
-    { value: "televisao", label: "Televisão" },
-    { value: "jornal_revista", label: "Jornal/Revista" },
-    { value: "evento_feira", label: "Evento/Feira" },
-    { value: "parceiro_comercial", label: "Parceiro Comercial" },
     { value: "ja_era_cliente", label: "Já era Cliente" },
     { value: "outro", label: "Outro" }
   ];
@@ -41,13 +33,13 @@ export const ReferralFields: React.FC<ReferralFieldsProps> = ({ form }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Como conheceu a Neto Tours Viagens?</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || ""}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione como conheceu a Neto Tours Viagens" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto">
                 {opcoesComoConheceu.map((opcao) => (
                   <SelectItem key={opcao.value} value={opcao.value}>
                     {opcao.label}

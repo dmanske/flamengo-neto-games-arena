@@ -51,7 +51,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="cep"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CEP</FormLabel>
+              <FormLabel>CEP *</FormLabel>
                 <FormControl>
                  <Input 
                    placeholder="00000-000" 
@@ -73,7 +73,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="cidade"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cidade</FormLabel>
+              <FormLabel>Cidade *</FormLabel>
               <FormControl>
                 <Input placeholder="Ex: Rio de Janeiro" {...field} />
               </FormControl>
@@ -87,18 +87,17 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="estado"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Estado</FormLabel>
+              <FormLabel>Estado *</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
-                value={field.value}
-                defaultValue={field.value}
+                value={field.value || ""}
               >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o estado" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="max-h-60 overflow-y-auto">
                   {estadosBrasileiros.map((estado) => (
                     <SelectItem key={estado.sigla} value={estado.sigla}>
                       {estado.nome} ({estado.sigla})
@@ -119,7 +118,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
             name="endereco"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Logradouro</FormLabel>
+                <FormLabel>Logradouro *</FormLabel>
                 <FormControl>
                   <Input placeholder="Ex: Rua das Flores, Av. Brasil" {...field} />
                 </FormControl>
@@ -134,7 +133,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="numero"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número</FormLabel>
+              <FormLabel>Número *</FormLabel>
               <FormControl>
                 <Input placeholder="123" {...field} />
               </FormControl>
@@ -148,7 +147,7 @@ export const AddressFields: React.FC<AddressFieldsProps> = ({ form }) => {
           name="bairro"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Bairro</FormLabel>
+              <FormLabel>Bairro *</FormLabel>
               <FormControl>
                 <Input placeholder="Ex: Copacabana" {...field} />
               </FormControl>

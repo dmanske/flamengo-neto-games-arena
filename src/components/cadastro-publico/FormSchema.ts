@@ -40,7 +40,7 @@ const isAdult = (birthDate: string) => {
 };
 
 export const publicRegistrationSchema = z.object({
-  // Dados pessoais - APENAS NOME OBRIGATÓRIO
+  // Dados pessoais - TODOS OBRIGATÓRIOS
   nome: z.string()
     .min(1, "Nome é obrigatório")
     .max(100, "Nome muito longo")
@@ -51,39 +51,39 @@ export const publicRegistrationSchema = z.object({
     .transform(val => val.trim()),
   
   cpf: z.string()
-    .optional()
+    .min(1, "CPF é obrigatório")
     .transform(val => val?.replace(/\D/g, '') || "")
-    .refine(val => !val || val.length === 0 || isValidCPF(val), "CPF inválido"),
+    .refine(val => val.length === 11, "CPF deve ter 11 dígitos")
+    .refine(val => isValidCPF(val), "CPF inválido"),
   
   data_nascimento: z.string()
-    .optional()
-    .transform(val => val?.trim() || "")
-    .refine(val => !val || val.length === 0 || /^\d{2}\/\d{2}\/\d{4}$/.test(val), "Data deve estar no formato DD/MM/AAAA"),
+    .min(1, "Data de nascimento é obrigatória")
+    .refine(val => /^\d{2}\/\d{2}\/\d{4}$/.test(val), "Data deve estar no formato DD/MM/AAAA"),
   
   telefone: z.string()
-    .optional()
+    .min(1, "Telefone é obrigatório")
     .transform(val => val?.replace(/\D/g, '') || "")
-    .refine(val => !val || val.length === 0 || val.length >= 10, "Telefone deve ter pelo menos 10 dígitos"),
+    .refine(val => val.length >= 10, "Telefone deve ter pelo menos 10 dígitos"),
   
   email: z.string()
-    .optional()
-    .transform(val => val?.toLowerCase().trim() || "")
-    .refine(val => !val || val.length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email inválido"),
+    .min(1, "Email é obrigatório")
+    .email("Email inválido")
+    .transform(val => val?.toLowerCase().trim() || ""),
 
-  // Endereço - TODOS OPCIONAIS
+  // Endereço - TODOS OBRIGATÓRIOS
   cep: z.string()
-    .optional()
+    .min(1, "CEP é obrigatório")
     .transform(val => val?.replace(/\D/g, '') || "")
-    .refine(val => !val || val.length === 0 || val.length === 8, "CEP deve ter 8 dígitos"),
+    .refine(val => val.length === 8, "CEP deve ter 8 dígitos"),
   
   endereco: z.string()
+    .min(1, "Endereço é obrigatório")
     .max(200, "Endereço muito longo")
-    .optional()
     .transform(val => val?.trim() || ""),
   
   numero: z.string()
+    .min(1, "Número é obrigatório")
     .max(10, "Número muito longo")
-    .optional()
     .transform(val => val?.trim() || ""),
   
   complemento: z.string()
@@ -92,21 +92,21 @@ export const publicRegistrationSchema = z.object({
     .transform(val => val?.trim() || null),
   
   bairro: z.string()
+    .min(1, "Bairro é obrigatório")
     .max(100, "Bairro muito longo")
-    .optional()
     .transform(val => val?.trim() || ""),
   
   cidade: z.string()
+    .min(1, "Cidade é obrigatória")
     .max(100, "Cidade muito longa")
-    .optional()
     .transform(val => val?.trim() || ""),
   
   estado: z.string()
+    .min(1, "Estado é obrigatório")
     .max(2, "Estado deve ter no máximo 2 caracteres")
-    .optional()
     .transform(val => val?.toUpperCase().trim() || ""),
 
-  // Como conheceu - OPCIONAL com valores específicos
+  // Como conheceu - OPCIONAL
   como_conheceu: z.string()
     .optional()
     .transform(val => val?.trim() || ""),
