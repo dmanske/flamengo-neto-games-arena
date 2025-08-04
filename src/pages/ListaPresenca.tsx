@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatCPF, formatPhone } from "@/utils/formatters";
 
 interface Passageiro {
   id: string;
@@ -674,7 +675,8 @@ const ListaPresenca = () => {
                                     )}
                                   </div>
                                   <div className="text-xs text-muted-foreground space-y-1">
-                                    <p>CPF: {passageiro.cpf}</p>
+                                    <p>CPF: {formatCPF(passageiro.cpf)}</p>
+                                    <p>Telefone: {formatPhone(passageiro.telefone)}</p>
                                     <p>Setor: {passageiro.setor_maracana}</p>
                                   </div>
                                   {passageiro.passeios && passageiro.passeios.length > 0 && (
@@ -759,7 +761,8 @@ const ListaPresenca = () => {
                             <div className="w-full">
                               <p className="font-medium text-sm">{passageiro.nome}</p>
                               <div className="text-xs text-muted-foreground space-y-1">
-                                <p>CPF: {passageiro.cpf}</p>
+                                <p>CPF: {formatCPF(passageiro.cpf)}</p>
+                                <p>Telefone: {formatPhone(passageiro.telefone)}</p>
                                 <p>Setor: {passageiro.setor_maracana}</p>
                               </div>
                               {passageiro.passeios && passageiro.passeios.length > 0 && (

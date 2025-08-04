@@ -1486,4 +1486,16 @@ O sistema de passeios com valores está completo e funcionando perfeitamente! �
   - ✅ `src/components/detalhes-viagem/financeiro/*.tsx` (4 arquivos)
 - **Status**: ✅ IMPLEMENTADO
 
-**Resultado**: Todos os telefones agora são exibidos no formato brasileiro padrão com espaço após o primeiro dígito do celular.
+**Resultado**: Todos os telefones agora são exibidos no formato brasileiro padrão com espaço após o primeiro dígito do celular.### **✅ Me
+lhorias na Lista de Presença**
+- **Solicitação**: Melhorar visualização do CPF e adicionar telefone na lista de presença
+- **Implementação**:
+  - ✅ CPF formatado: `000.000.000-00` (usando formatCPF)
+  - ✅ Telefone adicionado: `(47) 9 9751-3993` (usando formatPhone)
+  - ✅ Ordem dos dados: CPF → Telefone → Setor
+  - ✅ Aplicado em ambas as visualizações da lista de presença
+- **Arquivos Modificados**:
+  - ✅ `src/pages/ListaPresenca.tsx`
+- **Status**: ✅ IMPLEMENTADO
+
+**Resultado**: A lista de presença agora exibe CPF formatado e telefone formatado para cada passageiro, facilitando a identificação e contato.
