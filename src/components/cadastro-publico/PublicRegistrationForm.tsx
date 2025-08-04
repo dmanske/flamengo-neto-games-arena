@@ -48,10 +48,22 @@ export const PublicRegistrationForm = () => {
 
   const onSubmit = async (data: PublicRegistrationFormData) => {
     console.log('🚀 Iniciando submissão do formulário público...', { fonte });
+    console.log('📋 Dados do formulário:', {
+      nome: data.nome,
+      estado: data.estado,
+      como_conheceu: data.como_conheceu,
+      hasEstado: !!data.estado,
+      hasComoConheceu: !!data.como_conheceu
+    });
 
     setIsSubmitting(true);
 
     try {
+      // Validar dados críticos antes de prosseguir
+      if (!data.estado || data.estado.trim() === '') {
+        throw new Error('Estado é obrigatório');
+      }
+
       // Validar cliente
       console.log('🔍 Validando cliente...');
       const validation = await validateClient(data.cpf, data.telefone, data.email);
@@ -62,27 +74,36 @@ export const PublicRegistrationForm = () => {
         return;
       }
 
-      // Preparar dados para inserção
+      // Preparar dados para inserção com validação extra
+      console.log('🔧 Preparando dados para inserção...');
+      
       const clienteData = {
-        nome: data.nome.trim(),
-        cpf: cleanCPF(data.cpf),
+        nome: data.nome?.trim() || '',
+        cpf: cleanCPF(data.cpf || ''),
         data_nascimento: data.data_nascimento ? convertBrazilianDateToISO(data.data_nascimento) : null,
-        telefone: cleanPhone(data.telefone),
-        email: data.email.toLowerCase().trim(),
-        cep: data.cep.replace(/\D/g, ''),
-        endereco: data.endereco.trim(),
-        numero: data.numero.trim(),
+        telefone: cleanPhone(data.telefone || ''),
+        email: (data.email || '').toLowerCase().trim(),
+        cep: (data.cep || '').replace(/\D/g, ''),
+        endereco: (data.endereco || '').trim(),
+        numero: (data.numero || '').trim(),
         complemento: data.complemento?.trim() || null,
-        bairro: data.bairro.trim(),
-        cidade: data.cidade.trim(),
-        estado: data.estado.toUpperCase().trim(),
-        como_conheceu: data.como_conheceu,
+        bairro: (data.bairro || '').trim(),
+        cidade: (data.cidade || '').trim(),
+        estado: (data.estado || '').toUpperCase().trim(),
+        como_conheceu: data.como_conheceu || '',
         indicacao_nome: data.indicacao_nome?.trim() || null,
         observacoes: data.observacoes?.trim() || null,
         foto: data.foto || null,
         fonte_cadastro: fonte,
         created_at: new Date().toISOString(),
       };
+
+      console.log('✅ Dados preparados:', {
+        nome: clienteData.nome,
+        estado: clienteData.estado,
+        como_conheceu: clienteData.como_conheceu,
+        fonte_cadastro: clienteData.fonte_cadastro
+      });
 
       console.log('💾 Inserindo cliente no banco...', { nome: clienteData.nome, fonte });
 
@@ -112,6 +133,12 @@ export const PublicRegistrationForm = () => {
 
     } catch (error: any) {
       console.error('💥 Erro no cadastro público:', error);
+      console.error('📊 Stack trace:', error?.stack);
+      console.error('📋 Dados que causaram erro:', {
+        estado: data?.estado,
+        como_conheceu: data?.como_conheceu,
+        fonte
+      });
 
       let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
 
@@ -122,6 +149,15 @@ export const PublicRegistrationForm = () => {
       }
 
       toast.error(errorMessage);
+      
+      // Em desenvolvimento, mostrar erro detalhado
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔍 Erro detalhado para debug:', {
+          error,
+          formData: data,
+          fonte
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

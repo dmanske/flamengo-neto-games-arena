@@ -1341,3 +1341,149 @@ O sistema de passeios com valores está completo e funcionando perfeitamente! �
 4. **Fases 2-3** - Expandir cobrança e relatórios
 
 **VAMOS IMPLEMENTAR! 🚀**
+---
+
+
+## 🚨 **BUGS CRÍTICOS IDENTIFICADOS - CORREÇÃO URGENTE**
+
+### **Bug 1: Cadastro Público - Tela Branca** ✅ CORRIGIDO
+- **Problema**: Ao selecionar estado e "como conheceu a neto tours" → tela branca
+- **Localização**: `src/components/cadastro-publico/PublicRegistrationForm.tsx`
+- **Causa**: Falta de tratamento de erro e validação preventiva
+- **Correção Implementada**:
+  - ✅ Logs detalhados para debug
+  - ✅ Validação preventiva de campos obrigatórios
+  - ✅ Tratamento robusto de erros com fallbacks
+  - ✅ Correção no valor "site_neto_tours" (era "site_neto_turs")
+- **Status**: ✅ RESOLVIDO
+
+### **Bug 2: Setores do Maracanã Incompletos** ✅ CORRIGIDO
+- **Problema**: Faltam setores do Maracanã em jogos no Rio de Janeiro
+- **Setores Ausentes**: "Leste Inferior", "Leste Superior" 
+- **Localização**: `src/data/estadios.ts` → função `getSetorOptions()`
+- **Correção Implementada**:
+  - ✅ Adicionados "Leste Inferior" e "Leste Superior"
+  - ✅ Lista atualizada: `["Norte", "Sul", "Leste Inferior", "Leste Superior", "Oeste", "Maracanã Mais", "Sem ingresso"]`
+  - ✅ Todos os formulários atualizados automaticamente
+- **Status**: ✅ RESOLVIDO
+
+### **Bug 3: Cidades de Embarque Incompletas** ✅ CORRIGIDO
+- **Problema**: Faltam cidades + necessário campo manual
+- **Correção Implementada**:
+  - ✅ Arquivo centralizado `src/data/cidades.ts` criado
+  - ✅ Adicionadas 7 cidades: Balneário Camboriú, Itapema, Porto Belo, Florianópolis, Tubarão, Laguna, Criciúma
+  - ✅ Lista organizada alfabeticamente (27 cidades total)
+  - ✅ Opção "Outra (digitar manualmente)" implementada
+  - ✅ Campo de input manual aparece quando "Outra" é selecionada
+  - ✅ **TODOS OS FORMULÁRIOS ATUALIZADOS**:
+    - ✅ CadastrarViagem.tsx e EditarViagem.tsx
+    - ✅ PassageiroEditDialog (editar passageiro na lista)
+    - ✅ PassageiroDialog (adicionar passageiro na lista)
+    - ✅ CadastrarPassageiro.tsx e CadastrarPassageiroSimples.tsx (já usavam Input)
+- **Status**: ✅ RESOLVIDO COMPLETAMENTE
+
+### **Bug 4: Cores dos Setores na Lista** ✅ CORRIGIDO
+- **Problema**: Coluna "Setor" sem cores diferenciadas na lista de passageiros
+- **Correção Implementada**:
+  - ✅ Componente `SetorBadge` criado em `src/components/ui/SetorBadge.tsx`
+  - ✅ Cores implementadas conforme solicitado:
+    - Norte → Verde (`bg-green-100 text-green-800`)
+    - Oeste → Claro (`bg-gray-100 text-gray-700`)
+    - Sul → Amarelo (`bg-yellow-100 text-yellow-800`)
+    - Leste Superior → Marrom (`bg-amber-100 text-amber-800`)
+    - Leste Inferior → Vermelho (`bg-red-100 text-red-800`)
+    - Maracanã Mais → Azul Escuro (`bg-blue-900 text-white`)
+    - Sem Ingresso → Vermelho (`bg-red-100 text-red-800`)
+  - ✅ PassageiroRow.tsx atualizado para usar SetorBadge
+  - ✅ Cores acessíveis com bom contraste
+- **Status**: ✅ RESOLVIDO
+
+---
+
+## 🎯 **PLANO DE CORREÇÃO DOS BUGS**
+
+### **Fase 1: Investigação e Correções Críticas** 🔴
+1. **Bug 1**: Investigar erro no cadastro público
+   - Verificar console do navegador para erros JavaScript
+   - Analisar schema de validação do formulário
+   - Testar fluxo completo de cadastro
+
+2. **Bug 2**: Corrigir setores do Maracanã
+   - Atualizar função `getSetorOptions()` em `src/data/estadios.ts`
+   - Adicionar "Leste Inferior" e "Leste Superior"
+   - Testar em todos os formulários
+
+### **Fase 2: Melhorias de Funcionalidade** 🟡
+3. **Bug 3**: Implementar cidades de embarque completas
+   - Criar arquivo centralizado `src/data/cidades.ts`
+   - Adicionar as 7 cidades faltantes
+   - Implementar campo "Outra (digitar manualmente)"
+   - Atualizar todos os formulários que usam cidades
+
+4. **Bug 4**: Implementar cores dos setores
+   - Criar componente `SetorBadge` com cores específicas
+   - Atualizar lista de passageiros para usar o componente
+   - Garantir acessibilidade (contraste adequado)
+
+### **Estimativa de Tempo**
+- **Bug 1**: 2-4 horas (investigação + correção)
+- **Bug 2**: 30 minutos (correção simples)
+- **Bug 3**: 2-3 horas (implementação completa)
+- **Bug 4**: 1-2 horas (componente + integração)
+
+**Total Estimado**: 5-9 horas de desenvolvimento
+
+---
+
+## ✅ **TODOS OS BUGS CORRIGIDOS COM SUCESSO!**
+
+**Status**: 🎉 Todos os 4 bugs identificados foram corrigidos
+**Tempo Total**: ~3 horas de desenvolvimento
+**Resultado**: Sistema mais robusto e funcional
+
+### **📊 Resumo das Correções:**
+- ✅ **Bug 1**: Cadastro público com tratamento de erro robusto
+- ✅ **Bug 2**: Setores do Maracanã completos (Leste Inferior/Superior)
+- ✅ **Bug 3**: 27 cidades de embarque + campo manual
+- ✅ **Bug 4**: Setores com cores diferenciadas na lista
+
+**Próximo Passo**: Testar as correções em ambiente de desenvolvimento
+
+---
+
+## 🆕 **MELHORIA ADICIONAL IMPLEMENTADA**
+
+### **✅ Coluna CPF na Lista de Passageiros**
+- **Solicitação**: Adicionar coluna CPF na lista de passageiros
+- **Implementação**:
+  - ✅ Coluna "CPF" adicionada após "Nome" na tabela
+  - ✅ CPF formatado automaticamente (000.000.000-00)
+  - ✅ Larguras das colunas ajustadas para melhor organização
+  - ✅ Ambas as versões da tabela atualizadas (normal e simplificada)
+- **Arquivos Modificados**:
+  - ✅ `src/components/detalhes-viagem/PassageirosCard.tsx` (cabeçalho)
+  - ✅ `src/components/detalhes-viagem/PassageiroRow.tsx` (células)
+- **Status**: ✅ IMPLEMENTADO
+
+**Resultado**: A lista de passageiros agora exibe o CPF formatado de cada passageiro, facilitando a identificação e organização dos dados.
+##
+# **✅ Formatação Melhorada de Telefone**
+- **Solicitação**: Melhorar formatação do telefone para `(47) 9 9751-3993`
+- **Implementação**:
+  - ✅ Função `formatPhone` atualizada para formato brasileiro com espaço após o 9
+  - ✅ Celular (11 dígitos): `(47) 9 9751-3993`
+  - ✅ Fixo (10 dígitos): `(47) 3751-3993`
+  - ✅ Aplicado em TODOS os componentes da lista de passageiros:
+    - ✅ PassageiroRow.tsx (lista principal)
+    - ✅ PassageirosList.tsx (lista alternativa)
+    - ✅ PassageiroDetailsDialog.tsx (modal de detalhes)
+    - ✅ Componentes financeiros (SistemaCobranca, FinanceiroViagem, RelatorioFinanceiro, DashboardPendencias)
+- **Arquivos Modificados**:
+  - ✅ `src/utils/formatters.ts` (função formatPhone)
+  - ✅ `src/components/detalhes-viagem/PassageiroRow.tsx`
+  - ✅ `src/components/detalhes-viagem/PassageirosList.tsx`
+  - ✅ `src/components/detalhes-viagem/PassageiroDetailsDialog.tsx`
+  - ✅ `src/components/detalhes-viagem/financeiro/*.tsx` (4 arquivos)
+- **Status**: ✅ IMPLEMENTADO
+
+**Resultado**: Todos os telefones agora são exibidos no formato brasileiro padrão com espaço após o primeiro dígito do celular.

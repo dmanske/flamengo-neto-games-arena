@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { User, MapPin, CreditCard, Phone, Mail, Calendar, CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatBirthDate } from "@/utils/formatters";
+import { formatBirthDate, formatPhone } from "@/utils/formatters";
 import { usePasseios } from "@/hooks/usePasseios";
 import { formatCurrency } from "@/lib/utils";
 // ControleFinanceiroAvancado removido - usando apenas Resumo Financeiro compacto
@@ -240,7 +240,7 @@ export function PassageiroDetailsDialog({
                     <label className="text-sm font-medium text-gray-600">Telefone</label>
                     <p className="text-sm bg-gray-50 p-2 rounded flex items-center gap-2">
                       <Phone className="h-4 w-4 text-gray-500" />
-                      {passageiro.telefone}
+                      {formatPhone(passageiro.telefone)}
                     </p>
                   </div>
                   <div className="space-y-1">

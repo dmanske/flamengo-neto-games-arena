@@ -39,6 +39,7 @@ import { SetorSelectField } from "./SetorSelectField";
 import { PasseiosEditSectionSimples } from "./PasseiosEditSectionSimples";
 import { SecaoFinanceiraAvancada } from "./SecaoFinanceiraAvancada";
 import { getSetorLabel, getSetorOptions } from "@/data/estadios";
+import { CIDADES_EMBARQUE_COMPLETA, isCidadeOutra, isCidadePredefinida } from "@/data/cidades";
 
 export function PassageiroEditDialog({
   open,
@@ -49,6 +50,7 @@ export function PassageiroEditDialog({
 }: PassageiroEditDialogProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const [cidadeEmbarqueCustom, setCidadeEmbarqueCustom] = React.useState("");
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -257,38 +259,51 @@ export function PassageiroEditDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">Cidade de Embarque</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                              <SelectValue placeholder="Selecione uma cidade" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
-                            <SelectItem value="Agrolandia" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Agrolandia</SelectItem>
-                            <SelectItem value="Agronomica" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Agronomica</SelectItem>
-                            <SelectItem value="Apiuna" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Apiuna</SelectItem>
-                            <SelectItem value="Barra Velha" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Barra Velha</SelectItem>
-                            <SelectItem value="Blumenau" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Blumenau</SelectItem>
-                            <SelectItem value="Curitiba" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Curitiba</SelectItem>
-                            <SelectItem value="Gaspar" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Gaspar</SelectItem>
-                            <SelectItem value="Ibirama" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Ibirama</SelectItem>
-                            <SelectItem value="Ilhota" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Ilhota</SelectItem>
-                            <SelectItem value="Indaial" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Indaial</SelectItem>
-                            <SelectItem value="Itajai" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Itajai</SelectItem>
-                            <SelectItem value="Ituporanga" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Ituporanga</SelectItem>
-                            <SelectItem value="Joinville" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Joinville</SelectItem>
-                            <SelectItem value="Lontras" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Lontras</SelectItem>
-                            <SelectItem value="Navegantes" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Navegantes</SelectItem>
-                            <SelectItem value="Piçarras" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Piçarras</SelectItem>
-                            <SelectItem value="Presidente Getulio" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Presidente Getulio</SelectItem>
-                            <SelectItem value="Rio do Sul" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Rio do Sul</SelectItem>
-                            <SelectItem value="Rodeio" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Rodeio</SelectItem>
-                            <SelectItem value="Trombudo Central" className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white">Trombudo Central</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <Select
+                            onValueChange={(value) => {
+                              if (isCidadeOutra(value)) {
+                                setCidadeEmbarqueCustom("");
+                                field.onChange(""); // Limpar para permitir input manual
+                              } else {
+                                setCidadeEmbarqueCustom("");
+                                field.onChange(value);
+                              }
+                            }}
+                            value={isCidadePredefinida(field.value) ? field.value : ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-white text-gray-900 border-gray-300">
+                                <SelectValue placeholder="Selecione uma cidade" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-white border-gray-200 z-50 text-gray-900">
+                              {CIDADES_EMBARQUE_COMPLETA.map((cidade) => (
+                                <SelectItem 
+                                  key={cidade} 
+                                  value={cidade}
+                                  className="hover:bg-blue-50 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white"
+                                >
+                                  {cidade}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          {/* Campo manual quando "Outra" for selecionada ou valor não está na lista predefinida */}
+                          {(field.value === "" || !isCidadePredefinida(field.value)) && (
+                            <Input
+                              placeholder="Digite o nome da cidade"
+                              value={cidadeEmbarqueCustom || field.value}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setCidadeEmbarqueCustom(value);
+                                field.onChange(value);
+                              }}
+                              className="bg-white text-gray-900 border-gray-300"
+                            />
+                          )}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

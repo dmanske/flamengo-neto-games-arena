@@ -62,7 +62,7 @@ export const shouldShowNomeEstadio = (localJogo: string): boolean => {
  */
 export const getSetorOptions = (localJogo: string) => {
   if (localJogo === "Rio de Janeiro") {
-    return ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais", "Sem ingresso"];
+    return ["Norte", "Sul", "Leste Inferior", "Leste Superior", "Oeste", "Maracanã Mais", "Sem ingresso"];
   }
   
   return ["Setor Casa", "Setor Visitante", "Sem ingresso"];

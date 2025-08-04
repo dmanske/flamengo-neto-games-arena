@@ -4,10 +4,11 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Trash2, Pencil, Eye } from "lucide-react";
-import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
+import { formatBirthDate, formatarNomeComPreposicoes, formatCPF, formatPhone } from "@/utils/formatters";
 import { StatusBadgeAvancado, BreakdownVisual } from "./StatusBadgeAvancado";
 import { BotoesAcaoRapida } from "./BotoesAcaoRapida";
 import { PasseiosSimples } from "./PasseiosSimples";
+import { SetorBadge } from "@/components/ui/SetorBadge";
 import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 import type { StatusPagamentoAvancado } from "@/types/pagamentos-separados";
 
@@ -76,7 +77,10 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
           </div>
         </TableCell>
         <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap px-2">
-          {passageiro.clientes?.telefone || passageiro.telefone}
+          {formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
+        </TableCell>
+        <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap px-2">
+          {formatPhone(passageiro.clientes?.telefone || passageiro.telefone)}
         </TableCell>
         <TableCell className="font-cinzel font-semibold text-center text-black px-2">
           {formatBirthDate(passageiro.clientes?.data_nascimento || passageiro.data_nascimento)}
@@ -84,8 +88,8 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
         <TableCell className="font-cinzel font-semibold text-center text-black px-2">
           {passageiro.cidade_embarque || 'Blumenau'}
         </TableCell>
-        <TableCell className="font-cinzel font-semibold text-center text-black px-2">
-          {passageiro.setor_maracana}
+        <TableCell className="text-center px-2">
+          <SetorBadge setor={passageiro.setor_maracana || "Não informado"} />
         </TableCell>
         <TableCell className="text-center px-2">
           <StatusBadgeAvancado status={statusAvancado} size="sm" />
@@ -150,7 +154,10 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
         </div>
       </TableCell>
       <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">
-        {passageiro.clientes?.telefone || passageiro.telefone}
+        {formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
+      </TableCell>
+      <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">
+        {formatPhone(passageiro.clientes?.telefone || passageiro.telefone)}
       </TableCell>
       <TableCell className="font-cinzel font-semibold text-center text-black">
         {formatBirthDate(passageiro.clientes?.data_nascimento || passageiro.data_nascimento)}
@@ -158,8 +165,8 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
       <TableCell className="font-cinzel font-semibold text-center text-black">
         {passageiro.cidade_embarque || 'Blumenau'}
       </TableCell>
-      <TableCell className="font-cinzel font-semibold text-center text-black">
-        {passageiro.setor_maracana}
+      <TableCell className="text-center">
+        <SetorBadge setor={passageiro.setor_maracana || "Não informado"} />
       </TableCell>
       <TableCell className="text-center">
         <StatusBadgeAvancado 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatPhone } from '@/utils/formatters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DollarSign, 
@@ -500,7 +501,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
                     <div key={passageiro.viagem_passageiro_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{passageiro.nome}</p>
-                        <p className="text-sm text-gray-600">{passageiro.telefone}</p>
+                        <p className="text-sm text-gray-600">{formatPhone(passageiro.telefone)}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-green-600">

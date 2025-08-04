@@ -456,14 +456,15 @@ export function PassageirosCard({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px] px-2">#</TableHead>
-                <TableHead className="px-2">Nome</TableHead>
-                <TableHead className="text-center px-2">Telefone</TableHead>
-                <TableHead className="text-center px-2">Data Nasc.</TableHead>
-                <TableHead className="text-center px-2">Cidade Embarque</TableHead>
-                <TableHead className="text-center px-2">Setor</TableHead>
-                <TableHead className="text-center px-2">Status</TableHead>
-                <TableHead className="text-center px-2">Passeios</TableHead>
-                <TableHead className="text-center px-2">Ações</TableHead>
+                <TableHead className="min-w-[180px] px-2">Nome</TableHead>
+                <TableHead className="w-[120px] text-center px-2">CPF</TableHead>
+                <TableHead className="w-[120px] text-center px-2">Telefone</TableHead>
+                <TableHead className="w-[100px] text-center px-2">Data Nasc.</TableHead>
+                <TableHead className="w-[120px] text-center px-2">Cidade Embarque</TableHead>
+                <TableHead className="w-[120px] text-center px-2">Setor</TableHead>
+                <TableHead className="w-[100px] text-center px-2">Status</TableHead>
+                <TableHead className="w-[150px] text-center px-2">Passeios</TableHead>
+                <TableHead className="w-[120px] text-center px-2">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

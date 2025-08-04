@@ -25,12 +25,17 @@ export const ReferralFields = ({ form }: ReferralFieldsProps) => {
     { value: "facebook", label: "Facebook" },
     { value: "whatsapp", label: "WhatsApp" },
     { value: "google", label: "Google / Pesquisa na Internet" },
-    { value: "site_neto_turs", label: "Site da Neto Tours Viagens" },
+    { value: "site_neto_tours", label: "Site da Neto Tours Viagens" },
     { value: "indicacao_amigo", label: "Indicação de Amigo/Familiar" },
     { value: "indicacao_cliente", label: "Indicação de Cliente Antigo" },
     { value: "ja_era_cliente", label: "Já era Cliente" },
     { value: "outro", label: "Outro" }
   ];
+
+  // Debug para identificar problemas
+  React.useEffect(() => {
+    console.log('🔍 ReferralFields - Como conheceu mudou:', watchComoConheceu);
+  }, [watchComoConheceu]);
 
   return (
     <div className="space-y-4">

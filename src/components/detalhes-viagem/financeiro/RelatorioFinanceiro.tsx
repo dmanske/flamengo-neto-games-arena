@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { converterStatusParaInteligente } from '@/lib/status-utils';
+import { formatPhone } from '@/utils/formatters';
 import { 
   Download, 
   FileText, 
@@ -665,7 +666,7 @@ export function RelatorioFinanceiro({
                 {(todosPassageiros.length > 0 ? todosPassageiros : passageiros).map((passageiro) => (
                   <tr key={passageiro.viagem_passageiro_id || passageiro.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium">{passageiro.nome}</td>
-                    <td className="p-2">{passageiro.telefone}</td>
+                    <td className="p-2">{formatPhone(passageiro.telefone)}</td>
                     <td className="p-2">{passageiro.setor_maracana || '-'}</td>
                     <td className="p-2">
                       {sistema === 'novo' && passageiro.passeios && passageiro.passeios.length > 0 ? (

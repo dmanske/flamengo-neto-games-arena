@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { CalendarDays, MapPin, Users, Plus, Trash2 } from "lucide-react";
 import { formatInputDateToISO } from "@/lib/date-utils";
 import { getEstadioByAdversario, getSetorOptions, shouldShowNomeEstadio } from "@/data/estadios";
+import { CIDADES_EMBARQUE_COMPLETA, isCidadeOutra, isCidadePredefinida } from "@/data/cidades";
 
 // Removido: passeiosDisponiveis - agora vem do banco de dados
 
@@ -87,8 +88,8 @@ const CadastrarViagem = () => {
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>("");
 
-  // Cidades e setores
-  const cidadesEmbarque = ["Agrolandia", "Agronomica", "Apiuna", "Barra Velha", "Blumenau", "Curitiba", "Gaspar", "Ibirama", "Ilhota", "Indaial", "Itajai", "Ituporanga", "Joinville", "Lontras", "Navegantes", "Piçarras", "Presidente Getulio", "Rio do Sul", "Rodeio", "Trombudo Central"];
+  // Estados para cidade de embarque
+  const [cidadeEmbarqueCustom, setCidadeEmbarqueCustom] = useState("");
   const cidadesJogo = ["Rio de Janeiro", "São Paulo", "Belo Horizonte", "Porto Alegre", "Brasília", "Salvador", "Recife", "Fortaleza"];
   // Função para obter setores dinamicamente baseado no local do jogo
   const getSetoresDisponiveis = () => {
@@ -824,23 +825,46 @@ const CadastrarViagem = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cidade de Embarque</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione a cidade de embarque" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cidadesEmbarque.map((cidade) => (
-                            <SelectItem key={cidade} value={cidade}>
-                              {cidade}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-2">
+                        <Select 
+                          onValueChange={(value) => {
+                            if (isCidadeOutra(value)) {
+                              setCidadeEmbarqueCustom("");
+                              field.onChange(""); // Limpar para permitir input manual
+                            } else {
+                              setCidadeEmbarqueCustom("");
+                              field.onChange(value);
+                            }
+                          }} 
+                          value={isCidadePredefinida(field.value) ? field.value : ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a cidade de embarque" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CIDADES_EMBARQUE_COMPLETA.map((cidade) => (
+                              <SelectItem key={cidade} value={cidade}>
+                                {cidade}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Campo manual quando "Outra" for selecionada ou valor não está na lista predefinida */}
+                        {(field.value === "" || !isCidadePredefinida(field.value)) && (
+                          <Input
+                            placeholder="Digite o nome da cidade"
+                            value={cidadeEmbarqueCustom || field.value}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setCidadeEmbarqueCustom(value);
+                              field.onChange(value);
+                            }}
+                          />
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

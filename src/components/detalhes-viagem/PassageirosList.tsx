@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
+import { formatPhone } from "@/utils/formatters";
 import { PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { PasseiosCompactos } from "./PasseiosCompactos";
 import { calcularValorFinalPassageiro } from "@/utils/passageiroCalculos";
@@ -53,7 +54,7 @@ export function PassageirosList({
               <TableRow key={passageiro.viagem_passageiro_id}>
                 <TableCell className="text-center">{index + 1}</TableCell>
                 <TableCell>{passageiro.nome}</TableCell>
-                <TableCell>{passageiro.telefone}</TableCell>
+                <TableCell>{formatPhone(passageiro.telefone)}</TableCell>
                 <TableCell>{passageiro.cidade}</TableCell>
                 <TableCell>{passageiro.cpf}</TableCell>
                 <TableCell>{passageiro.setor_maracana}</TableCell>

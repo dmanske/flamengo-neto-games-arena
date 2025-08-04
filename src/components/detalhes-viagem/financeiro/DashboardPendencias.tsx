@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { formatPhone } from '@/utils/formatters';
 import { 
   AlertTriangle, 
   Clock, 
@@ -269,7 +270,7 @@ export default function DashboardPendencias({
                             <div>
                               <h4 className="font-semibold">{passageiro.nome}</h4>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm opacity-75">{passageiro.telefone}</p>
+                                <p className="text-sm opacity-75">{formatPhone(passageiro.telefone)}</p>
                                 {passageiro.parcelas_pendentes > 0 && (
                                   <Badge variant="outline" className="text-xs">
                                     {passageiro.parcelas_pendentes}/{passageiro.total_parcelas} parcelas

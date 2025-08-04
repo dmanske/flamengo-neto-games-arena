@@ -6,8 +6,8 @@ export const formatPhone = (phone: string): string => {
   
   // Format based on length
   if (numbers.length === 11) {
-    // Mobile: (XX) XXXXX-XXXX
-    return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    // Mobile: (XX) 9 XXXX-XXXX - formato brasileiro com espaço após o 9
+    return numbers.replace(/(\d{2})(\d{1})(\d{4})(\d{4})/, '($1) $2 $3-$4');
   } else if (numbers.length === 10) {
     // Landline: (XX) XXXX-XXXX
     return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
