@@ -12,15 +12,13 @@ export interface ClienteDetalhes {
     email: string;
     data_nascimento: string | null;
     foto?: string;
-    endereco: {
-      cep: string;
-      rua: string;
-      numero: string;
-      complemento?: string;
-      bairro: string;
-      cidade: string;
-      estado: string;
-    };
+    cep: string;
+    endereco: string;
+    numero: string;
+    complemento?: string | null;
+    bairro: string;
+    cidade: string;
+    estado: string;
     como_conheceu: string;
     observacoes?: string;
     created_at: string;
@@ -174,15 +172,13 @@ export const useClienteDetalhes = (clienteId: string) => {
             email: clienteData.email || '',
             data_nascimento: clienteData.data_nascimento,
             foto: clienteData.foto,
-            endereco: {
-              cep: clienteData.cep || '',
-              rua: clienteData.endereco || '',
-              numero: '',
-              complemento: '',
-              bairro: clienteData.bairro || '',
-              cidade: clienteData.cidade || '',
-              estado: clienteData.estado || '',
-            },
+            cep: clienteData.cep || '',
+            endereco: clienteData.endereco || '',
+            numero: clienteData.numero || '',
+            complemento: clienteData.complemento || null,
+            bairro: clienteData.bairro || '',
+            cidade: clienteData.cidade || '',
+            estado: clienteData.estado || '',
             como_conheceu: clienteData.como_conheceu || 'Não informado',
             observacoes: clienteData.observacoes,
             created_at: clienteData.created_at,

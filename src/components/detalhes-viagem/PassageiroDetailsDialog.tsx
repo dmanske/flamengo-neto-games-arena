@@ -14,7 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { User, MapPin, CreditCard, Phone, Mail, Calendar, CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatBirthDate, formatPhone } from "@/utils/formatters";
+import { formatBirthDate, formatPhone, formatCPF } from "@/utils/formatters";
+import { formatCEP, capitalizeWords } from "@/utils/cepUtils";
 import { usePasseios } from "@/hooks/usePasseios";
 import { formatCurrency } from "@/lib/utils";
 // ControleFinanceiroAvancado removido - usando apenas Resumo Financeiro compacto
@@ -221,7 +222,7 @@ export function PassageiroDetailsDialog({
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-600">CPF</label>
                     <p className="text-sm font-mono bg-gray-50 p-2 rounded">
-                      {passageiro.cpf || 'Não informado'}
+                      {formatCPF(passageiro.cpf) || 'Não informado'}
                     </p>
                   </div>
                   {passageiro.data_nascimento && (
@@ -266,27 +267,27 @@ export function PassageiroDetailsDialog({
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-600">Logradouro</label>
                   <p className="text-sm bg-gray-50 p-3 rounded">
-                    {passageiro.endereco}, {passageiro.numero}
-                    {passageiro.complemento && ` - ${passageiro.complemento}`}
+                    {capitalizeWords(passageiro.endereco)}, {passageiro.numero}
+                    {passageiro.complemento && ` - ${capitalizeWords(passageiro.complemento)}`}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-600">Bairro</label>
-                    <p className="text-sm bg-gray-50 p-2 rounded">{passageiro.bairro}</p>
+                    <p className="text-sm bg-gray-50 p-2 rounded">{capitalizeWords(passageiro.bairro)}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-600">Cidade</label>
-                    <p className="text-sm bg-gray-50 p-2 rounded">{passageiro.cidade}</p>
+                    <p className="text-sm bg-gray-50 p-2 rounded">{capitalizeWords(passageiro.cidade)}</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-600">Estado</label>
-                    <p className="text-sm bg-gray-50 p-2 rounded">{passageiro.estado}</p>
+                    <p className="text-sm bg-gray-50 p-2 rounded">{passageiro.estado?.toUpperCase()}</p>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-600">CEP</label>
-                  <p className="text-sm font-mono bg-gray-50 p-2 rounded">{passageiro.cep}</p>
+                  <p className="text-sm font-mono bg-gray-50 p-2 rounded">{formatCEP(passageiro.cep)}</p>
                 </div>
               </CardContent>
             </Card>

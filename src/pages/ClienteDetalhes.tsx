@@ -183,7 +183,7 @@ const ClienteDetalhes = () => {
                 
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-4 w-4 text-red-600" />
-                  <span>{cliente.cliente.endereco?.cidade}, {cliente.cliente.endereco?.estado}</span>
+                  <span>{cliente.cliente.cidade}, {cliente.cliente.estado}</span>
                 </div>
                 
                 <div className="flex items-center space-x-1">

@@ -6,12 +6,12 @@ import {
   Phone, 
   Mail, 
   MapPin, 
-  Calendar, 
-  CreditCard,
+  Calendar,
   Info,
   ExternalLink
 } from 'lucide-react';
 import { formatPhone, formatCPF } from '@/utils/formatters';
+import { formatCEP, formatAddressLines, capitalizeWords } from '@/utils/cepUtils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -22,15 +22,13 @@ interface Cliente {
   telefone: string;
   email: string;
   data_nascimento: string | null;
-  endereco: {
-    cep: string;
-    rua: string;
-    numero: string;
-    complemento?: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-  };
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento?: string | null;
+  bairro: string;
+  cidade: string;
+  estado: string;
   como_conheceu: string;
   observacoes?: string;
   created_at: string;
@@ -45,7 +43,7 @@ const InformacoesPessoais: React.FC<InformacoesPessoaisProps> = ({ cliente }) =>
     const hoje = new Date();
     
     // Garantir que a data seja interpretada corretamente
-    let nascimento;
+    let nascimento: Date;
     if (dataNascimento.includes('-') && !dataNascimento.includes('T')) {
       nascimento = new Date(dataNascimento + 'T00:00:00');
     } else {
@@ -107,7 +105,7 @@ const InformacoesPessoais: React.FC<InformacoesPessoaisProps> = ({ cliente }) =>
                       {(() => {
                         // Garantir que a data seja interpretada corretamente
                         const dataString = cliente.data_nascimento;
-                        let data;
+                        let data: Date;
                         
                         // Se a data está no formato YYYY-MM-DD, adicionar horário para evitar problemas de timezone
                         if (dataString.includes('-') && !dataString.includes('T')) {
@@ -179,39 +177,119 @@ const InformacoesPessoais: React.FC<InformacoesPessoaisProps> = ({ cliente }) =>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">CEP</label>
-                <p className="text-gray-900 font-mono">
-                  {cliente.endereco.cep || 'Não informado'}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-500">Endereço</label>
-                <p className="text-gray-900">
-                  {cliente.endereco.rua || 'Não informado'}
-                  {cliente.endereco.numero && `, ${cliente.endereco.numero}`}
-                  {cliente.endereco.complemento && `, ${cliente.endereco.complemento}`}
-                </p>
-              </div>
-            </div>
+          {(() => {
+            // Criar objeto de endereço compatível com as funções de formatação
+            const enderecoObj = {
+              cep: cliente.cep,
+              rua: cliente.endereco,
+              numero: cliente.numero,
+              complemento: cliente.complemento,
+              bairro: cliente.bairro,
+              cidade: cliente.cidade,
+              estado: cliente.estado
+            };
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Bairro</label>
-                <p className="text-gray-900">{cliente.endereco.bairro || 'Não informado'}</p>
+            const addressLines = formatAddressLines(enderecoObj);
+            const hasAddress = addressLines.length > 0;
+            
+            if (!hasAddress) {
+              return (
+                <div className="text-center py-8">
+                  <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Endereço não informado</p>
+                </div>
+              );
+            }
+            
+            return (
+              <div className="space-y-6">
+                {/* Detalhes Separados */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cliente.cep && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">CEP</label>
+                      <p className="text-sm font-mono text-gray-900 mt-1">
+                        {formatCEP(cliente.cep)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.endereco && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Logradouro</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {capitalizeWords(cliente.endereco)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.numero && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Número</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {cliente.numero}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.complemento && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Complemento</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {capitalizeWords(cliente.complemento)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.bairro && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Bairro</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {capitalizeWords(cliente.bairro)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.cidade && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cidade</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {capitalizeWords(cliente.cidade)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {cliente.estado && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estado</label>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {cliente.estado.toUpperCase()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Botão Google Maps */}
+                {hasAddress && (
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const enderecoCompleto = addressLines.slice(0, -1).join(', '); // Remove CEP
+                        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`;
+                        window.open(url, '_blank');
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ver no Google Maps
+                    </Button>
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-500">Cidade / Estado</label>
-                <p className="text-gray-900">
-                  {cliente.endereco.cidade || 'Não informado'} - {cliente.endereco.estado || 'Não informado'}
-                </p>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </CardContent>
       </Card>
 

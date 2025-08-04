@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
   Edit,
   Settings
 } from 'lucide-react';
+import InscricaoViagemModal from './InscricaoViagemModal';
 
 interface Cliente {
   id: number;
@@ -24,6 +25,7 @@ interface AcoesRapidasProps {
 }
 
 const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
+  const [inscricaoModalOpen, setInscricaoModalOpen] = useState(false);
   const abrirWhatsApp = () => {
     const telefone = cliente.telefone.replace(/\D/g, '');
     const mensagem = `Olá ${cliente.nome.split(' ')[0]}! Como posso ajudá-lo?`;
@@ -53,8 +55,13 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
   };
 
   const inscreverViagem = () => {
-    // TODO: Implementar modal de inscrição em viagem
-    alert('Modal de inscrição em viagem será implementado em breve!');
+    setInscricaoModalOpen(true);
+  };
+
+  const handleInscricaoSuccess = () => {
+    // Aqui você pode adicionar lógica para atualizar a lista de viagens do cliente
+    // Por exemplo, recarregar os dados ou mostrar uma notificação
+    console.log('Inscrição realizada com sucesso!');
   };
 
   return (
@@ -178,6 +185,14 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Inscrição em Viagem */}
+      <InscricaoViagemModal
+        isOpen={inscricaoModalOpen}
+        onClose={() => setInscricaoModalOpen(false)}
+        cliente={cliente}
+        onSuccess={handleInscricaoSuccess}
+      />
     </div>
   );
 };

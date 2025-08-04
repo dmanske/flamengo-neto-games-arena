@@ -57,6 +57,96 @@ export const formatTelefone = (telefone: string): string => {
   return `(${telClean.slice(0, 2)}) ${telClean.slice(2, 3)} ${telClean.slice(3, 7)}-${telClean.slice(7, 11)}`;
 };
 
+// Função para capitalizar primeira letra de cada palavra
+export const capitalizeWords = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// Função para formatar endereço completo
+export const formatFullAddress = (endereco: {
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+}): string => {
+  const parts = [];
+  
+  if (endereco.rua) {
+    let enderecoFormatado = capitalizeWords(endereco.rua);
+    if (endereco.numero) {
+      enderecoFormatado += `, ${endereco.numero}`;
+    }
+    if (endereco.complemento) {
+      enderecoFormatado += `, ${capitalizeWords(endereco.complemento)}`;
+    }
+    parts.push(enderecoFormatado);
+  }
+  
+  if (endereco.bairro) {
+    parts.push(capitalizeWords(endereco.bairro));
+  }
+  
+  if (endereco.cidade && endereco.estado) {
+    parts.push(`${capitalizeWords(endereco.cidade)} - ${endereco.estado.toUpperCase()}`);
+  }
+  
+  if (endereco.cep) {
+    parts.push(`CEP: ${formatCEP(endereco.cep)}`);
+  }
+  
+  return parts.join(' • ');
+};
+
+// Função para formatar endereço em linhas separadas
+export const formatAddressLines = (endereco: {
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+}) => {
+  const lines = [];
+  
+  // Linha 1: Rua, número e complemento
+  if (endereco.rua) {
+    let linha1 = capitalizeWords(endereco.rua);
+    if (endereco.numero) {
+      linha1 += `, ${endereco.numero}`;
+    }
+    if (endereco.complemento) {
+      linha1 += ` - ${capitalizeWords(endereco.complemento)}`;
+    }
+    lines.push(linha1);
+  }
+  
+  // Linha 2: Bairro
+  if (endereco.bairro) {
+    lines.push(capitalizeWords(endereco.bairro));
+  }
+  
+  // Linha 3: Cidade - Estado
+  if (endereco.cidade && endereco.estado) {
+    lines.push(`${capitalizeWords(endereco.cidade)} - ${endereco.estado.toUpperCase()}`);
+  }
+  
+  // Linha 4: CEP
+  if (endereco.cep) {
+    lines.push(`CEP: ${formatCEP(endereco.cep)}`);
+  }
+  
+  return lines;
+};
+
 export const fetchAddressByCEP = async (cep: string): Promise<AddressData | null> => {
   try {
     const cleanCEP = cep.replace(/\D/g, '');
