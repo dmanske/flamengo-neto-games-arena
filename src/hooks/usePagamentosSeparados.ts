@@ -267,8 +267,13 @@ export const usePagamentosSeparados = (
 
       if (error) throw error;
 
+      // Atualizar o estado local imediatamente para feedback visual
+      setHistoricoPagamentos(prev => 
+        prev.filter(pagamento => pagamento.id !== pagamentoId)
+      );
+
       toast.success('Pagamento deletado com sucesso!');
-      await fetchDadosPassageiro(); // Recarregar dados
+      await fetchDadosPassageiro(); // Recarregar dados completos
       return true;
 
     } catch (error: any) {
@@ -317,8 +322,17 @@ export const usePagamentosSeparados = (
 
       if (error) throw error;
 
+      // Atualizar o estado local imediatamente para feedback visual
+      setHistoricoPagamentos(prev => 
+        prev.map(pagamento => 
+          pagamento.id === pagamentoId 
+            ? { ...pagamento, ...dadosAtualizados }
+            : pagamento
+        )
+      );
+
       toast.success('Pagamento editado com sucesso!');
-      await fetchDadosPassageiro(); // Recarregar dados
+      await fetchDadosPassageiro(); // Recarregar dados completos
       return true;
 
     } catch (error: any) {

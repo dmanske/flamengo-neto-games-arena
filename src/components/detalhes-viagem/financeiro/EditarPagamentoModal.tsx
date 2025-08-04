@@ -45,10 +45,20 @@ export function EditarPagamentoModal({
   // Preencher formulário quando pagamento mudar
   useEffect(() => {
     if (pagamento) {
+      // Converter data para formato local sem problemas de fuso horário
+      let dataFormatada = '';
+      if (pagamento.data_pagamento) {
+        const data = new Date(pagamento.data_pagamento);
+        // Usar getFullYear, getMonth, getDate para evitar problemas de fuso horário
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        dataFormatada = `${ano}-${mes}-${dia}`;
+      }
+
       setFormData({
         valor_pago: pagamento.valor_pago?.toString() || '',
-        data_pagamento: pagamento.data_pagamento ? 
-          new Date(pagamento.data_pagamento).toISOString().split('T')[0] : '',
+        data_pagamento: dataFormatada,
         categoria: pagamento.categoria || 'ambos',
         forma_pagamento: pagamento.forma_pagamento || 'pix',
         observacoes: pagamento.observacoes || ''
@@ -87,9 +97,13 @@ export function EditarPagamentoModal({
 
     setIsLoading(true);
     try {
+      // Criar data local sem problemas de fuso horário
+      const [ano, mes, dia] = formData.data_pagamento.split('-').map(Number);
+      const dataLocal = new Date(ano, mes - 1, dia, 12, 0, 0); // Meio-dia para evitar problemas de fuso
+
       const dadosAtualizados: Partial<HistoricoPagamentoCategorizado> = {
         valor_pago: parseFloat(formData.valor_pago),
-        data_pagamento: new Date(formData.data_pagamento).toISOString(),
+        data_pagamento: dataLocal.toISOString(),
         categoria: formData.categoria,
         forma_pagamento: formData.forma_pagamento,
         observacoes: formData.observacoes || null

@@ -95,31 +95,61 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     !filters.incluirPassageirosNaoAlocados ||
     !filters.agruparPorOnibus ||
     filters.modoResponsavel ||
+    filters.modoPassageiro ||
     !filters.mostrarStatusPagamento ||
     !filters.mostrarValorPadrao ||
-    !filters.mostrarValoresPassageiros;
+    !filters.mostrarValoresPassageiros ||
+    !filters.mostrarTelefone ||
+    filters.mostrarFotoOnibus ||
+    filters.mostrarNumeroPassageiro;
 
   const applyResponsavelMode = () => {
     const responsavelFilters = {
       ...filters,
       modoResponsavel: true,
+      modoPassageiro: false,
       incluirResumoFinanceiro: false,
       mostrarValorPadrao: false,
       mostrarValoresPassageiros: false,
       mostrarStatusPagamento: false,
+      mostrarTelefone: true,
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: false,
       mostrarNomesPasseios: true,
     };
     onFiltersChange(responsavelFilters);
+  };
+
+  const applyPassageiroMode = () => {
+    const passageiroFilters = {
+      ...filters,
+      modoResponsavel: false,
+      modoPassageiro: true,
+      incluirResumoFinanceiro: false,
+      mostrarValorPadrao: false,
+      mostrarValoresPassageiros: false,
+      mostrarStatusPagamento: false,
+      mostrarTelefone: false,
+      mostrarFotoOnibus: true,
+      mostrarNumeroPassageiro: true,
+      mostrarNomesPasseios: true,
+      agruparPorOnibus: true,
+    };
+    onFiltersChange(passageiroFilters);
   };
 
   const resetToNormalMode = () => {
     const normalFilters = {
       ...filters,
       modoResponsavel: false,
+      modoPassageiro: false,
       incluirResumoFinanceiro: true,
       mostrarValorPadrao: true,
       mostrarValoresPassageiros: true,
       mostrarStatusPagamento: true,
+      mostrarTelefone: true,
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: false,
     };
     onFiltersChange(normalFilters);
   };
@@ -127,30 +157,49 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   return (
     <div className="space-y-6">
       {/* Filtros Rápidos */}
-      <Card className={filters.modoResponsavel ? 'border-orange-200 bg-orange-50' : ''}>
+      <Card className={
+        filters.modoResponsavel ? 'border-orange-200 bg-orange-50' : 
+        filters.modoPassageiro ? 'border-blue-200 bg-blue-50' : ''
+      }>
         <CardHeader>
           <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {!filters.modoResponsavel ? (
-              <Button
-                onClick={applyResponsavelMode}
-                variant="outline"
-                className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
-              >
-                📋 Lista para Responsável do Ônibus
-              </Button>
+            {!filters.modoResponsavel && !filters.modoPassageiro ? (
+              <>
+                <Button
+                  onClick={applyResponsavelMode}
+                  variant="outline"
+                  className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+                >
+                  📋 Lista para Responsável do Ônibus
+                </Button>
+                <Button
+                  onClick={applyPassageiroMode}
+                  variant="outline"
+                  className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                >
+                  👥 Lista para Passageiros
+                </Button>
+              </>
             ) : (
               <div className="flex items-center gap-3">
-                <Badge className="bg-orange-100 text-orange-700 px-3 py-1">
-                  📋 Modo: Lista para Responsável
-                </Badge>
+                {filters.modoResponsavel && (
+                  <Badge className="bg-orange-100 text-orange-700 px-3 py-1">
+                    📋 Modo: Lista para Responsável
+                  </Badge>
+                )}
+                {filters.modoPassageiro && (
+                  <Badge className="bg-blue-100 text-blue-700 px-3 py-1">
+                    👥 Modo: Lista para Passageiros
+                  </Badge>
+                )}
                 <Button
                   onClick={resetToNormalMode}
                   variant="outline"
                   size="sm"
-                  className="text-orange-700 border-orange-300"
+                  className={filters.modoResponsavel ? "text-orange-700 border-orange-300" : "text-blue-700 border-blue-300"}
                 >
                   Voltar ao Normal
                 </Button>
@@ -172,6 +221,36 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 <Label htmlFor="mostrar-status-responsavel" className="text-sm text-orange-800">
                   Mostrar status de pagamento
                 </Label>
+              </div>
+            </div>
+          )}
+
+          {filters.modoPassageiro && (
+            <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                <strong>Modo Passageiro Ativo:</strong> Lista simplificada (número, nome, cidade, setor, passeios)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="mostrar-foto-onibus"
+                    checked={filters.mostrarFotoOnibus}
+                    onCheckedChange={(checked) => updateFilter('mostrarFotoOnibus', checked)}
+                  />
+                  <Label htmlFor="mostrar-foto-onibus" className="text-sm text-blue-800">
+                    Mostrar foto do ônibus
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="mostrar-numero-passageiro"
+                    checked={filters.mostrarNumeroPassageiro}
+                    onCheckedChange={(checked) => updateFilter('mostrarNumeroPassageiro', checked)}
+                  />
+                  <Label htmlFor="mostrar-numero-passageiro" className="text-sm text-blue-800">
+                    Mostrar número do passageiro
+                  </Label>
+                </div>
               </div>
             </div>
           )}
@@ -391,11 +470,12 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                   id="resumo-financeiro"
                   checked={filters.incluirResumoFinanceiro}
                   onCheckedChange={(checked) => updateFilter('incluirResumoFinanceiro', checked)}
-                  disabled={filters.modoResponsavel}
+                  disabled={filters.modoResponsavel || filters.modoPassageiro}
                 />
                 <Label htmlFor="resumo-financeiro" className="text-sm">
                   Incluir Resumo Financeiro
                   {filters.modoResponsavel && <span className="text-orange-600 ml-1">(Desabilitado no modo responsável)</span>}
+                  {filters.modoPassageiro && <span className="text-blue-600 ml-1">(Desabilitado no modo passageiro)</span>}
                 </Label>
               </div>
 
@@ -454,11 +534,12 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                   id="mostrar-valor-padrao"
                   checked={filters.mostrarValorPadrao}
                   onCheckedChange={(checked) => updateFilter('mostrarValorPadrao', checked)}
-                  disabled={filters.modoResponsavel}
+                  disabled={filters.modoResponsavel || filters.modoPassageiro}
                 />
                 <Label htmlFor="mostrar-valor-padrao" className="text-sm">
                   Mostrar valor padrão da viagem
                   {filters.modoResponsavel && <span className="text-orange-600 ml-1">(Oculto no modo responsável)</span>}
+                  {filters.modoPassageiro && <span className="text-blue-600 ml-1">(Oculto no modo passageiro)</span>}
                 </Label>
               </div>
 
@@ -467,11 +548,24 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                   id="mostrar-valores-passageiros"
                   checked={filters.mostrarValoresPassageiros}
                   onCheckedChange={(checked) => updateFilter('mostrarValoresPassageiros', checked)}
-                  disabled={filters.modoResponsavel}
+                  disabled={filters.modoResponsavel || filters.modoPassageiro}
                 />
                 <Label htmlFor="mostrar-valores-passageiros" className="text-sm">
                   Mostrar valores na lista de passageiros
                   {filters.modoResponsavel && <span className="text-orange-600 ml-1">(Oculto no modo responsável)</span>}
+                  {filters.modoPassageiro && <span className="text-blue-600 ml-1">(Oculto no modo passageiro)</span>}
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mostrar-telefone"
+                  checked={filters.mostrarTelefone}
+                  onCheckedChange={(checked) => updateFilter('mostrarTelefone', checked)}
+                />
+                <Label htmlFor="mostrar-telefone" className="text-sm">
+                  Mostrar telefone na lista
+                  {filters.modoPassageiro && <span className="text-blue-600 ml-1">(Oculto no modo passageiro)</span>}
                 </Label>
               </div>
 

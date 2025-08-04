@@ -346,6 +346,8 @@ export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> =
               if (sucesso) {
                 setModalEditarAberto(false);
                 setPagamentoParaEditar(null);
+                // Forçar re-render do componente pai pode ser necessário
+                // mas com a atualização do estado no hook, deve funcionar automaticamente
               }
               return sucesso;
             }
