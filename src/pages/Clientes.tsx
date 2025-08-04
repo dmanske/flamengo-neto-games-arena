@@ -18,7 +18,8 @@ import {
   Users,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
@@ -344,8 +345,26 @@ const Clientes = () => {
                         </div>
                       </Link>
 
-                      {/* Dropdown menu - posicionado absolutamente */}
-                      <div className="absolute top-2 right-2 z-10">
+                      {/* Botões de ação - posicionados absolutamente */}
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                        {/* Botão WhatsApp */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-green-50 text-green-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const telefone = cliente.telefone.replace(/\D/g, '');
+                            const mensagem = `Olá ${cliente.nome.split(' ')[0]}! Aqui é da equipe do Flamengo Viagens. Como posso ajudá-lo?`;
+                            const url = `https://web.whatsapp.com/send?phone=55${telefone}&text=${encodeURIComponent(mensagem)}`;
+                            window.open(url, '_blank');
+                          }}
+                          disabled={!cliente.telefone}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Dropdown menu */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

@@ -7,11 +7,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { converterStatusParaInteligente } from "@/lib/status-utils";
 import { StatusBadgeAvancado } from "./StatusBadgeAvancado";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { User, MapPin, CreditCard, Phone, Mail, Calendar, CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
+import { User, MapPin, CreditCard, Phone, Mail, Calendar, CheckCircle, XCircle, Clock, DollarSign, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatBirthDate, formatPhone, formatCPF } from "@/utils/formatters";
@@ -20,6 +21,7 @@ import { usePasseios } from "@/hooks/usePasseios";
 import { formatCurrency } from "@/lib/utils";
 // ControleFinanceiroAvancado removido - usando apenas Resumo Financeiro compacto
 import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
+import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 
 interface PassageiroDetails {
   viagem_passageiro_id: string;
@@ -125,13 +127,28 @@ export function PassageiroDetailsDialog({
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-1">
                 {passageiro.nome}
               </DialogTitle>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-2">
                 <StatusBadgeAvancado 
                   status={statusAvancado}
                   size="md"
                 />
                 <span className="text-sm text-gray-600">
                   {passageiro.cidade}, {passageiro.estado}
+                </span>
+              </div>
+              {/* Botão WhatsApp - Desabilitado temporariamente */}
+              <div className="flex gap-2">
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  disabled
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat (Em breve)
+                </Button>
+                <span className="text-xs text-gray-500 self-center ml-2">
+                  💬 Disponível na lista de passageiros
                 </span>
               </div>
             </div>

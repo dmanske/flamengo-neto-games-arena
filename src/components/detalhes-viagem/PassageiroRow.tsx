@@ -29,14 +29,26 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
   onDeletePassageiro,
   handlePagamento
 }) => {
-  // USAR MESMO SISTEMA DO MODAL DE EDIÇÃO
+  // Verificação de segurança para evitar erros
+  if (!passageiro) {
+    return (
+      <TableRow>
+        <TableCell colSpan={10} className="text-center text-gray-500">
+          Dados do passageiro não disponíveis
+        </TableCell>
+      </TableRow>
+    );
+  }
+  // USAR MESMO SISTEMA DO MODAL DE EDIÇÃO - com verificação de segurança
+  const passageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+  
   const {
     breakdown,
     historicoPagamentos,
     loading: loadingPagamentos,
     error: errorPagamentos,
     obterStatusAtual
-  } = usePagamentosSeparados(passageiro.viagem_passageiro_id || passageiro.id);
+  } = usePagamentosSeparados(passageiroId || 'fallback-id');
 
   // Se ainda carregando ou erro, mostrar dados básicos
   if (loadingPagamentos || !breakdown || errorPagamentos) {

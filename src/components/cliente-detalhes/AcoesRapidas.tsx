@@ -12,6 +12,7 @@ import {
   Settings
 } from 'lucide-react';
 import InscricaoViagemModal from './InscricaoViagemModal';
+import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 
 interface Cliente {
   id: number;
@@ -72,13 +73,29 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           <CardTitle className="text-lg">Comunicação</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Chat Integrado - Funcionalidade Futura */}
+          <div className="space-y-2">
+            <WhatsAppButton 
+              telefone={cliente.telefone}
+              nome={cliente.nome}
+              clienteId={cliente.id.toString()}
+              size="md"
+              variant="default"
+              fullWidth={true}
+            />
+            <p className="text-xs text-gray-500 text-center">
+              💡 Chat integrado - Para implementar no futuro
+            </p>
+          </div>
+
+          {/* WhatsApp Web - Funcional */}
           <Button
             onClick={abrirWhatsApp}
             className="w-full bg-green-600 hover:bg-green-700 text-white"
             disabled={!cliente.telefone}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
-            WhatsApp
+            WhatsApp Web
           </Button>
 
           <Button

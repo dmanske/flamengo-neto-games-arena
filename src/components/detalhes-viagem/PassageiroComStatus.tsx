@@ -8,9 +8,13 @@ interface PassageiroComStatusProps {
 }
 
 export function PassageiroComStatus({ passageiro, children }: PassageiroComStatusProps) {
-  const { obterStatusAtual, loading, error } = usePagamentosSeparados(
-    passageiro.viagem_passageiro_id || passageiro.id
-  );
+  // Verificação de segurança
+  if (!passageiro) {
+    return <>{children('Pendente')}</>;
+  }
+
+  const passageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+  const { obterStatusAtual, loading, error } = usePagamentosSeparados(passageiroId);
 
   // Se carregando ou erro, usar fallback
   let statusCalculado: StatusPagamentoAvancado = 'Pendente';
