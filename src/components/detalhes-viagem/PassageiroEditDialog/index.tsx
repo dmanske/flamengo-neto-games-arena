@@ -225,7 +225,10 @@ export function PassageiroEditDialog({
     }
   };
 
-  if (!passageiro) return null;
+  if (!passageiro || !passageiro.viagem_passageiro_id) {
+    console.warn('PassageiroEditDialog: passageiro ou viagem_passageiro_id não fornecido', passageiro);
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -444,9 +447,14 @@ export function PassageiroEditDialog({
                   key={refreshKey}
                   passageiroId={passageiro.viagem_passageiro_id?.toString() || passageiro.id?.toString() || ''}
                   nomePassageiro={passageiro.nome}
-                  onPagamentoRealizado={() => {
-                    // Recarregar dados se necessário
-                    console.log('Pagamento realizado, dados atualizados');
+                  onPagamentoRealizado={async () => {
+                    console.log('💰 Pagamento realizado, atualizando dados...');
+                    // Chamar onSuccess para atualizar os dados financeiros
+                    if (onSuccess) {
+                      console.log('🔄 Chamando onSuccess...');
+                      await onSuccess();
+                      console.log('✅ onSuccess executado');
+                    }
                   }}
                 />
                 

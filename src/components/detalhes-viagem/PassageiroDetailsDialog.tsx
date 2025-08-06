@@ -60,22 +60,24 @@ interface PassageiroDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   passageiro: PassageiroDetails | null;
+  onSuccess?: () => void; // Callback para quando houver mudanças nos dados
 }
 
 export function PassageiroDetailsDialog({
   open,
   onOpenChange,
   passageiro,
+  onSuccess,
 }: PassageiroDetailsDialogProps) {
   const { passeios } = usePasseios();
   
-  // Usar sistema novo de pagamentos separados
+  // Usar sistema novo de pagamentos separados - só chama se passageiro existe
   const {
     breakdown,
     historicoPagamentos,
     loading: loadingPagamentos,
     obterStatusAtual
-  } = usePagamentosSeparados(passageiro?.viagem_passageiro_id);
+  } = usePagamentosSeparados(passageiro?.viagem_passageiro_id || undefined);
   
   if (!passageiro) return null;
 
@@ -87,7 +89,7 @@ export function PassageiroDetailsDialog({
   const valorPendente = breakdown?.pendente_total || (valorTotal - valorPago);
 
   // Status usando sistema novo (mesmo da lista e modal de edição)
-  const statusAvancado = breakdown ? obterStatusAtual() : 'Pendente';
+  const statusAvancado = breakdown && obterStatusAtual ? obterStatusAtual() : 'Pendente';
 
   // Passeios selecionados usando dados corretos
   const passeiosSelecionados = passageiro.passeios || [];
@@ -454,7 +456,10 @@ export function PassageiroDetailsDialog({
                                 <p className="font-medium text-gray-900">Parcela {index + 1}</p>
                                 <p className="text-sm text-gray-600 flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  {format(new Date(parcela.data_pagamento), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                                  {parcela.data_pagamento && !isNaN(new Date(parcela.data_pagamento).getTime())
+                                    ? format(new Date(parcela.data_pagamento), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+                                    : "Data inválida"
+                                  }
                                 </p>
                                 {parcela.observacoes && (
                                   <p className="text-xs text-gray-500 mt-1 italic">"{parcela.observacoes}"</p>
@@ -516,7 +521,10 @@ export function PassageiroDetailsDialog({
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium text-gray-900">
-                          {format(new Date(pagamento.data_pagamento), "dd/MM/yyyy", { locale: ptBR })}
+                          {pagamento.data_pagamento && !isNaN(new Date(pagamento.data_pagamento).getTime()) 
+                            ? format(new Date(pagamento.data_pagamento), "dd/MM/yyyy", { locale: ptBR })
+                            : "Data inválida"
+                          }
                         </div>
                         {pagamento.forma_pagamento && (
                           <div className="text-xs text-gray-500">

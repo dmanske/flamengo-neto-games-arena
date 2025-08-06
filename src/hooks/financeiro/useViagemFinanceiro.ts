@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useViagemCompatibility } from '@/hooks/useViagemCompatibility';
+import { formatCurrency } from '@/lib/utils';
 
 export interface ViagemReceita {
   id: string;
@@ -90,9 +91,11 @@ export interface ResumoFinanceiro {
   passageiros_viagem_paga: number;
   passageiros_passeios_pagos: number;
   passageiros_pago_completo: number;
+  // Novo campo para descontos
+  total_descontos: number;
 }
 
-export function useViagemFinanceiro(viagemId: string | undefined) {
+export function useViagemFinanceiro(viagemId: string | undefined, customFetchAllData?: () => Promise<void>) {
   const [viagem, setViagem] = useState<any>(null);
   const [receitas, setReceitas] = useState<ViagemReceita[]>([]);
   const [despesas, setDespesas] = useState<ViagemDespesa[]>([]);
@@ -113,16 +116,17 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     pendencias_passeios: 0,
     passageiros_viagem_paga: 0,
     passageiros_passeios_pagos: 0,
-    passageiros_pago_completo: 0
+    passageiros_pago_completo: 0,
+    total_descontos: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
   // Hook para compatibilidade com sistema de passeios
-  const { 
-    sistema, 
-    valorPasseios, 
-    temPasseios, 
-    shouldUseNewSystem 
+  const {
+    sistema,
+    valorPasseios,
+    temPasseios,
+    shouldUseNewSystem
   } = useViagemCompatibility(viagem);
 
   // Buscar dados da viagem (necessário para compatibilidade de passeios)
@@ -201,11 +205,13 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         .select(`
           id,
           cliente_id,
+          setor_maracana,
           valor,
           desconto,
           status_pagamento,
           viagem_paga,
           passeios_pagos,
+          gratuito,
           created_at,
           clientes!viagem_passageiros_cliente_id_fkey (
             nome,
@@ -226,22 +232,63 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
       if (error) throw error;
 
-      const todosFormatados = (data || []).map((item: any) => ({
-        id: item.clientes.id,
-        viagem_passageiro_id: item.id,
-        nome: item.clientes.nome,
-        telefone: item.clientes.telefone,
-        setor_maracana: item.setor_maracana || '-',
-        valor: item.valor || 0,
-        valor_total: item.valor || 0,
-        desconto: item.desconto || 0,
-        status_pagamento: item.status_pagamento,
-        passeios: item.passageiro_passeios || [],
-        // Calcular valores de viagem e passeios
-        valor_viagem: (item.valor || 0) - (item.desconto || 0),
-        valor_passeios: (item.passageiro_passeios || [])
-          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0)
-      }));
+      const todosFormatados = (data || []).map((item: any) => {
+        const valorViagem = (item.valor || 0) - (item.desconto || 0);
+        const valorPasseios = (item.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
+
+        // Calcular status correto
+        let statusCalculado = item.status_pagamento;
+
+        // Verificar se é passageiro gratuito
+        if (item.gratuito === true) {
+          statusCalculado = '🎁 Brinde';
+        } else if (valorViagem + valorPasseios === 0) {
+          statusCalculado = '🎁 Brinde';
+        } else {
+          // Calcular pagamentos por categoria
+          const historicoPagamentos = item.historico_pagamentos_categorizado || [];
+          const pagoViagem = historicoPagamentos
+            .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
+            .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+          const pagoPasseios = historicoPagamentos
+            .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
+            .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+          // Determinar status baseado em pagamentos separados
+          const viagemPaga = pagoViagem >= valorViagem - 0.01;
+          const passeiosPagos = valorPasseios === 0 || pagoPasseios >= valorPasseios - 0.01;
+
+          if (viagemPaga && passeiosPagos) {
+            statusCalculado = 'Pago Completo';
+          } else if (viagemPaga && !passeiosPagos) {
+            statusCalculado = 'Viagem Paga';
+          } else if (!viagemPaga && passeiosPagos) {
+            statusCalculado = 'Passeios Pagos';
+          } else {
+            statusCalculado = 'Pendente';
+          }
+        }
+
+        return {
+          id: item.clientes.id,
+          viagem_passageiro_id: item.id,
+          nome: item.clientes.nome,
+          telefone: item.clientes.telefone,
+          setor_maracana: item.setor_maracana || item.clientes.setor_maracana || '-',
+          valor: item.valor || 0,
+          valor_total: valorViagem + valorPasseios,
+          desconto: item.desconto || 0,
+          gratuito: item.gratuito || false,
+          status_pagamento: item.status_pagamento, // Status da tabela
+          status_calculado: statusCalculado, // Status calculado corretamente
+          passeios: item.passageiro_passeios || [],
+          historico_pagamentos_categorizado: item.historico_pagamentos_categorizado || [],
+          // Calcular valores de viagem e passeios
+          valor_viagem: valorViagem,
+          valor_passeios: valorPasseios
+        };
+      });
 
       setTodosPassageiros(todosFormatados);
     } catch (error) {
@@ -303,12 +350,31 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
         // Calcular pagamentos por categoria (novo sistema)
         const historicoPagamentos = passageiro.historico_pagamentos_categorizado || [];
-        const pagoViagem = historicoPagamentos
-          .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
-          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
-        const pagoPasseios = historicoPagamentos
-          .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
-          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+        // Calcular pagamentos usando a mesma lógica da função principal
+        let pagoViagem = 0;
+        let pagoPasseios = 0;
+
+        historicoPagamentos.forEach((h: any) => {
+          if (h.categoria === 'viagem') {
+            pagoViagem += h.valor_pago;
+          } else if (h.categoria === 'passeios') {
+            pagoPasseios += h.valor_pago;
+          } else if (h.categoria === 'ambos') {
+            // CATEGORIA 'AMBOS' = APENAS QUITAÇÃO COMPLETA
+            const valorTotalDevido = valorViagem + valorPasseios;
+
+            if (h.valor_pago >= valorTotalDevido) {
+              // Pagamento suficiente - quitar completamente
+              pagoViagem += valorViagem;
+              pagoPasseios += valorPasseios;
+            } else {
+              // ERRO: Categoria 'ambos' com valor insuficiente não deveria existir
+              console.warn(`⚠️ Pagamento 'ambos' com valor insuficiente: R$ ${h.valor_pago} < R$ ${valorTotalDevido}`);
+              // Não processar este pagamento (ignorar)
+            }
+          }
+        });
 
         // SISTEMA UNIFICADO - Apenas sistema novo
         const valorPago = pagoViagem + pagoPasseios;
@@ -448,6 +514,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       let passageirosViagemPaga = 0;
       let passageirosPasseiosPagos = 0;
       let passageirosPagoCompleto = 0;
+      let totalDescontos = 0;
 
       console.log('🔍 DEBUG - Calculando resumo financeiro para viagem:', viagemId);
       console.log('📊 Passageiros encontrados:', passageiros?.length || 0);
@@ -457,15 +524,50 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         const valorPasseios = (p.passageiro_passeios || [])
           .reduce((sum: number, pp: any) => sum + (pp.valor_cobrado || 0), 0);
         const valorTotal = valorViagem + valorPasseios;
+        const desconto = p.desconto || 0;
 
-        // Calcular pagamentos por categoria (novo sistema)
+        // Calcular pagamentos por categoria (novo sistema) - CORRIGIDO
         const historicoPagamentos = p.historico_pagamentos_categorizado || [];
-        const pagoViagem = historicoPagamentos
-          .filter((h: any) => h.categoria === 'viagem' || h.categoria === 'ambos')
-          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
-        const pagoPasseios = historicoPagamentos
-          .filter((h: any) => h.categoria === 'passeios' || h.categoria === 'ambos')
-          .reduce((sum: number, h: any) => sum + h.valor_pago, 0);
+
+        let pagoViagem = 0;
+        let pagoPasseios = 0;
+
+        historicoPagamentos.forEach((h: any) => {
+          if (h.categoria === 'viagem') {
+            console.log(`💰 Pagamento viagem encontrado: R$ ${h.valor_pago}`);
+            pagoViagem += h.valor_pago;
+          } else if (h.categoria === 'passeios') {
+            console.log(`🎢 Pagamento passeios encontrado: R$ ${h.valor_pago}`);
+            pagoPasseios += h.valor_pago;
+          } else if (h.categoria === 'ambos') {
+            // CATEGORIA 'AMBOS' = APENAS QUITAÇÃO COMPLETA
+            // Só deve ser usado quando o valor é suficiente para quitar tudo
+            const valorTotalDevido = valorViagem + valorPasseios;
+
+            if (h.valor_pago >= valorTotalDevido) {
+              // Pagamento suficiente - quitar completamente
+              console.log(`🎯 Pagamento 'ambos' processado: R$ ${h.valor_pago}`);
+              pagoViagem += valorViagem;
+              pagoPasseios += valorPasseios;
+            } else {
+              // ERRO: Categoria 'ambos' com valor insuficiente não deveria existir
+              console.warn(`⚠️ Pagamento 'ambos' com valor insuficiente: R$ ${h.valor_pago} < R$ ${valorTotalDevido}`);
+              // Não processar este pagamento (ignorar)
+            }
+          }
+        });
+
+        console.log(`👤 Passageiro ${index + 1} - Cálculo final:`, {
+          nome: p.clientes?.nome || 'Nome não encontrado',
+          valorViagem,
+          valorPasseios,
+          pagoViagem: pagoViagem.toFixed(2),
+          pagoPasseios: pagoPasseios.toFixed(2),
+          historicoPagamentos: historicoPagamentos.map((h: any) => ({
+            categoria: h.categoria,
+            valor: h.valor_pago
+          }))
+        });
 
         // Fallback para sistema antigo se não houver dados novos
         const valorPagoTotal = pagoViagem + pagoPasseios;
@@ -492,13 +594,24 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
           passageirosPagoCompleto++;
         }
 
+        // Somar descontos (apenas de passageiros que não são brindes)
+        if (desconto > 0) {
+          totalDescontos += desconto;
+        }
+
         console.log(`👤 Passageiro ${index + 1}:`, {
+          nome: p.clientes?.nome || 'Nome não encontrado',
           valor_viagem: valorViagem,
           valor_passeios: valorPasseios,
-          pago_viagem: pagoViagem,
-          pago_passeios: pagoPasseios,
-          pendente_viagem: pendenteViagem,
-          pendente_passeios: pendentePasseios
+          pago_viagem: pagoViagem.toFixed(2),
+          pago_passeios: pagoPasseios.toFixed(2),
+          pendente_viagem: pendenteViagem.toFixed(2),
+          pendente_passeios: pendentePasseios.toFixed(2),
+          historico_pagamentos: historicoPagamentos.map((h: any) => ({
+            categoria: h.categoria,
+            valor: h.valor_pago
+          })),
+          status_pagamento: p.status_pagamento
         });
       });
 
@@ -529,7 +642,8 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         pendencias_passeios: pendenciasPasseios,
         passageiros_viagem_paga: passageirosViagemPaga,
         passageiros_passeios_pagos: passageirosPasseiosPagos,
-        passageiros_pago_completo: passageirosPagoCompleto
+        passageiros_pago_completo: passageirosPagoCompleto,
+        total_descontos: totalDescontos
       });
     } catch (error) {
       console.error('Erro ao calcular resumo:', error);
@@ -576,7 +690,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Receita adicionada com sucesso!');
-      await fetchAllData(); // Recarregar todos os dados
+      await (customFetchAllData || fetchAllData)(); // Usar função customizada se disponível
     } catch (error) {
       console.error('Erro ao adicionar receita:', error);
       toast.error('Erro ao adicionar receita');
@@ -594,7 +708,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Receita atualizada com sucesso!');
-      await fetchAllData();
+      await (customFetchAllData || fetchAllData)();
     } catch (error) {
       console.error('Erro ao editar receita:', error);
       toast.error('Erro ao editar receita');
@@ -612,7 +726,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Receita excluída com sucesso!');
-      await fetchAllData();
+      await (customFetchAllData || fetchAllData)();
     } catch (error) {
       console.error('Erro ao excluir receita:', error);
       toast.error('Erro ao excluir receita');
@@ -629,7 +743,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Despesa adicionada com sucesso!');
-      await fetchAllData(); // Recarregar todos os dados
+      await (customFetchAllData || fetchAllData)(); // Usar função customizada se disponível
     } catch (error) {
       console.error('Erro ao adicionar despesa:', error);
       toast.error('Erro ao adicionar despesa');
@@ -647,7 +761,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Despesa atualizada com sucesso!');
-      await fetchAllData();
+      await (customFetchAllData || fetchAllData)();
     } catch (error) {
       console.error('Erro ao editar despesa:', error);
       toast.error('Erro ao editar despesa');
@@ -665,7 +779,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success('Despesa excluída com sucesso!');
-      await fetchAllData();
+      await (customFetchAllData || fetchAllData)();
     } catch (error) {
       console.error('Erro ao excluir despesa:', error);
       toast.error('Erro ao excluir despesa');
@@ -910,7 +1024,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
       if (error) throw error;
 
       toast.success(`Pagamento de ${categoria} registrado com sucesso!`);
-      await fetchAllData();
+      await (customFetchAllData || fetchAllData)();
       return true;
 
     } catch (error: any) {
@@ -940,15 +1054,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     return registrarPagamentoSeparado(viagemPassageiroId, 'passeios', valor, formaPagamento, observacoes);
   };
 
-  // Pagar tudo (viagem + passeios)
-  const pagarTudo = async (
-    viagemPassageiroId: string,
-    valor: number,
-    formaPagamento: string = 'pix',
-    observacoes?: string
-  ) => {
-    return registrarPagamentoSeparado(viagemPassageiroId, 'ambos', valor, formaPagamento, observacoes);
-  };
+  // Função pagarTudo removida
 
   // Obter breakdown de pagamento de um passageiro específico
   const obterBreakdownPassageiro = async (viagemPassageiroId: string) => {
@@ -1007,7 +1113,10 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
 
   // Carregar todos os dados
   const fetchAllData = async () => {
-    if (!viagemId) return;
+    if (!viagemId) {
+      console.warn('fetchAllData: viagemId não definido');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -1020,6 +1129,8 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
         fetchHistoricoCobranca()
       ]);
       await calcularResumoFinanceiro();
+    } catch (error) {
+      console.error('Erro ao carregar dados financeiros:', error);
     } finally {
       setIsLoading(false);
     }
@@ -1075,7 +1186,7 @@ export function useViagemFinanceiro(viagemId: string | undefined) {
     registrarPagamentoSeparado,
     pagarViagem,
     pagarPasseios,
-    pagarTudo,
+    // pagarTudo removido
     obterBreakdownPassageiro
   };
 }

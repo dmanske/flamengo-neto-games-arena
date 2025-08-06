@@ -33,7 +33,7 @@ import {
   ChevronDown, 
   DollarSign, 
   MapPin, 
-  Wallet,
+  // Wallet removido (era usado no botão Pagar Tudo)
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
@@ -105,14 +105,7 @@ export function BotoesAcaoRapida({
           categoria: 'passeios'
         };
         break;
-      case 'ambos':
-        modalData = {
-          tipo: 'ambos',
-          titulo: 'Pagar Tudo',
-          valorSugerido: pendenteTotal,
-          categoria: 'ambos'
-        };
-        break;
+      // Caso 'ambos' removido - função "Pagar Tudo" desabilitada
     }
     
     setDadosModal(modalData);
@@ -127,6 +120,9 @@ export function BotoesAcaoRapida({
     if (!dadosModal) return;
     
     const valorNumerico = parseFloat(valor);
+    
+    // Debug removido - função "Pagar Tudo" desabilitada
+    
     if (isNaN(valorNumerico) || valorNumerico <= 0) {
       toast.error('Valor inválido');
       return;
@@ -137,6 +133,7 @@ export function BotoesAcaoRapida({
       // Usar data personalizada ou atual
       const dataFinal = dataPagamento || new Date().toISOString();
       
+      console.log('🚀 Chamando onPagamento...');
       const sucesso = await onPagamento(
         dadosModal.categoria,
         valorNumerico,
@@ -145,9 +142,13 @@ export function BotoesAcaoRapida({
         dataFinal
       );
 
+      console.log('✅ Resultado onPagamento:', sucesso);
+
       if (sucesso) {
         setModalAberto(false);
         toast.success(`Pagamento de ${dadosModal.titulo.toLowerCase()} registrado!`);
+      } else {
+        toast.error('Erro ao processar pagamento');
       }
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);
@@ -212,20 +213,7 @@ export function BotoesAcaoRapida({
             </DropdownMenuItem>
           )}
           
-          {pendenteTotal > 0.01 && (pendenteViagem > 0.01 || pendentePasseios > 0.01) && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => abrirModal('ambos')}>
-                <Wallet className="h-4 w-4 mr-2 text-green-600" />
-                <div className="flex flex-col">
-                  <span>Pagar Tudo</span>
-                  <span className="text-xs text-muted-foreground">
-                    R$ {pendenteTotal.toFixed(2)}
-                  </span>
-                </div>
-              </DropdownMenuItem>
-            </>
-          )}
+          {/* Botão "Pagar Tudo" removido */}
           
 
         </DropdownMenuContent>
@@ -270,6 +258,7 @@ export function BotoesAcaoRapida({
                   onChange={(e) => setValor(e.target.value)}
                   className="pl-8"
                   placeholder="0,00"
+                  // Validações para "Pagar Tudo" removidas
                 />
               </div>
               {dadosModal && parseFloat(valor) > dadosModal.valorSugerido && (

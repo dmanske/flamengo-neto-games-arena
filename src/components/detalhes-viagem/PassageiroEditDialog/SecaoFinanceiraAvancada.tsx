@@ -57,27 +57,43 @@ export function SecaoFinanceiraAvancada({
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
+    console.log('🎯 handlePagamento chamado:', { categoria, valor, formaPagamento, observacoes, dataPagamento });
+    
     let sucesso = false;
     
     switch (categoria) {
       case 'viagem':
+        console.log('💰 Chamando pagarViagem...');
         sucesso = await pagarViagem(valor, formaPagamento, observacoes, dataPagamento);
         break;
       case 'passeios':
+        console.log('🎢 Chamando pagarPasseios...');
         sucesso = await pagarPasseios(valor, formaPagamento, observacoes, dataPagamento);
         break;
-      case 'ambos':
-        sucesso = await pagarTudo(valor, formaPagamento, observacoes, dataPagamento);
-        break;
+      // Caso 'ambos' removido - função "Pagar Tudo" desabilitada
     }
+    
+    console.log('📊 Resultado handlePagamento:', sucesso);
 
     if (sucesso) {
+      console.log('💰 Pagamento bem-sucedido, atualizando dados...');
+      
       // Atualizar dados do modal
       await refetch();
       
-      if (onPagamentoRealizado) {
-        onPagamentoRealizado();
-      }
+      // FORÇAR REFRESH com delay para pagamentos que quitam completamente
+      setTimeout(async () => {
+        console.log('🔄 Refresh com delay executando...');
+        await refetch();
+        
+        if (onPagamentoRealizado) {
+          console.log('🔄 Executando onPagamentoRealizado...');
+          await onPagamentoRealizado();
+          console.log('✅ onPagamentoRealizado concluído');
+        } else {
+          console.warn('⚠️ onPagamentoRealizado não definido');
+        }
+      }, 500); // 500ms de delay
     }
 
     return sucesso;

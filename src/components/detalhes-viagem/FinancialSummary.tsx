@@ -18,6 +18,21 @@ export interface FinancialSummaryProps {
   valorBrutoTotal?: number;
   valorPasseios?: number;
   sistemaPasseios?: 'novo' | 'antigo' | 'sem_dados';
+  valorPadraoViagem?: number;
+  quantidadeBrindes?: number;
+  
+  // Breakdown por categoria
+  receitaViagem?: number;
+  receitaPasseios?: number;
+  pagoViagem?: number;
+  pagoPasseios?: number;
+  pendenteViagem?: number;
+  pendentePasseios?: number;
+  
+  // Novo campo para total de descontos
+  totalDescontosPassageiros?: number;
+  // Novo campo para quantidade de passageiros com desconto
+  quantidadeComDesconto?: number;
 }
 
 export function FinancialSummary({
@@ -34,9 +49,40 @@ export function FinancialSummary({
   valorBrutoTotal,
   valorPasseios = 0,
   sistemaPasseios = 'sem_dados',
+  valorPadraoViagem = 0,
+  quantidadeBrindes = 0,
+  
+  // Breakdown por categoria
+  receitaViagem = 0,
+  receitaPasseios = 0,
+  pagoViagem = 0,
+  pagoPasseios = 0,
+  pendenteViagem = 0,
+  pendentePasseios = 0,
+  
+  // Novo campo para total de descontos
+  totalDescontosPassageiros = 0,
+  // Novo campo para quantidade de passageiros com desconto
+  quantidadeComDesconto = 0,
 }: FinancialSummaryProps) {
+  // DEBUG: Verificar valores recebidos
+  console.log('🎯 FinancialSummary recebeu:', {
+    totalPendente,
+    pendenteViagem,
+    pendentePasseios,
+    totalPago,
+    pagoViagem,
+    pagoPasseios
+  });
+
   // Calculate percentage of bus occupation
   const percentualOcupacao = Math.round((totalPassageiros / capacidadeTotalOnibus) * 100);
+  
+  // Calculate passengers paying (excluding brindes)
+  const passageirosPagantes = totalPassageiros - quantidadeBrindes;
+  
+  // Use the adjusted potential value that already considers discounts
+  const valorTotalViagem = valorPotencialTotal;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -49,17 +95,41 @@ export function FinancialSummary({
                 <span>Valor Arrecadado:</span>
                 <span className="font-medium">{formatCurrency(totalArrecadado)}</span>
               </div>
-              {sistemaPasseios === 'novo' && valorPasseios > 0 && (
-                <div className="flex justify-between text-xs text-gray-600 ml-2">
-                  <span>• Receita Passeios:</span>
-                  <span>{formatCurrency(valorPasseios)}</span>
+              <div className="ml-2 space-y-1">
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>• Receita Viagem:</span>
+                  <span>{formatCurrency(receitaViagem)}</span>
                 </div>
-              )}
+                {receitaPasseios > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>• Receita Passeios:</span>
+                    <span>{formatCurrency(receitaPasseios)}</span>
+                  </div>
+                )}
+                {totalDescontosPassageiros > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>• Total de Descontos:</span>
+                    <span>{formatCurrency(totalDescontosPassageiros)}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Valor Pago:</span>
                 <span className="font-medium text-green-600">{formatCurrency(totalPago)}</span>
+              </div>
+              <div className="ml-2 space-y-1">
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>• Pago Viagem:</span>
+                  <span>{formatCurrency(pagoViagem)}</span>
+                </div>
+                {pagoPasseios > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>• Pago Passeios:</span>
+                    <span>{formatCurrency(pagoPasseios)}</span>
+                  </div>
+                )}
               </div>
               <Progress value={percentualPagamento} className="h-1" />
             </div>
@@ -67,6 +137,18 @@ export function FinancialSummary({
               <div className="flex justify-between text-sm mb-1">
                 <span>Valor Pendente:</span>
                 <span className="font-medium text-amber-600">{formatCurrency(totalPendente)}</span>
+              </div>
+              <div className="ml-2 space-y-1">
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>• Pendente Viagem:</span>
+                  <span>{formatCurrency(pendenteViagem)}</span>
+                </div>
+                {pendentePasseios > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>• Pendente Passeios:</span>
+                    <span>{formatCurrency(pendentePasseios)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -84,6 +166,26 @@ export function FinancialSummary({
               </div>
               <Progress value={percentualOcupacao} className="h-1" />
             </div>
+            {(quantidadeBrindes > 0 || quantidadeComDesconto > 0) && (
+              <div>
+                {quantidadeBrindes > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600 ml-2">
+                    <span>• Brindes:</span>
+                    <span>{quantidadeBrindes}</span>
+                  </div>
+                )}
+                {quantidadeComDesconto > 0 && (
+                  <div className="flex justify-between text-xs text-gray-600 ml-2">
+                    <span>• Com Desconto:</span>
+                    <span>{quantidadeComDesconto}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs text-gray-600 ml-2">
+                  <span>• Pagantes:</span>
+                  <span>{passageirosPagantes}</span>
+                </div>
+              </div>
+            )}
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Taxa de Ocupação:</span>
@@ -96,35 +198,35 @@ export function FinancialSummary({
 
       <Card>
         <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-2">Potencial</h3>
+          <h3 className="text-lg font-medium mb-2">Potencial da Viagem</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span>Valor Total Potencial:</span>
-                <span className="font-medium">{formatCurrency(valorPotencialTotal)}</span>
+                <span>Potencial Ajustado:</span>
+                <span className="font-medium text-blue-600">{formatCurrency(valorTotalViagem)}</span>
               </div>
-              {sistemaPasseios === 'novo' && valorPasseios > 0 && (
-                <div className="flex justify-between text-xs text-gray-600 ml-2">
-                  <span>• Potencial Passeios:</span>
-                  <span>{formatCurrency(valorPasseios * totalPassageiros)}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-xs text-gray-600 ml-2">
+                <span>• (Capacidade - brindes - descontos)</span>
+              </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span>Valor Restante:</span>
-                <span className="font-medium text-amber-600">{formatCurrency(Math.max(0, valorPotencialTotal - totalArrecadado))}</span>
+                <span>Valor a Receber:</span>
+                <span className="font-medium text-amber-600">{formatCurrency(Math.max(0, valorTotalViagem - totalArrecadado))}</span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-600 ml-2">
+                <span>• (Valor total - valor já arrecadado)</span>
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Percentual Arrecadado:</span>
                 <span className="font-medium">
-                  {valorPotencialTotal > 0 ? Math.round((totalArrecadado / valorPotencialTotal) * 100) : 0}%
+                  {valorTotalViagem > 0 ? Math.round((totalArrecadado / valorTotalViagem) * 100) : 0}%
                 </span>
               </div>
               <Progress 
-                value={valorPotencialTotal > 0 ? Math.round((totalArrecadado / valorPotencialTotal) * 100) : 0} 
+                value={valorTotalViagem > 0 ? Math.round((totalArrecadado / valorTotalViagem) * 100) : 0} 
                 className="h-1" 
               />
             </div>

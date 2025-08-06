@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Users, DollarSign } from "lucide-react";
@@ -64,7 +63,6 @@ const DetalhesViagem = () => {
     totalArrecadado,
     totalPago,
     totalPendente,
-    valorPotencialTotal,
     totalReceitas,
     totalDespesas,
     totalDescontos,
@@ -102,33 +100,7 @@ const DetalhesViagem = () => {
   } = useViagemCompatibility(viagem);
 
   // Hook para dados financeiros corretos (mesmo da aba financeiro)
-  // Função de refresh completo para ações financeiras
-  const refreshAllFinancialData = async () => {
-    await Promise.all([
-      fetchPassageiros(id),
-      refreshFinanceiro()
-    ]);
-  };
-
-  // Hook para dados financeiros corretos (ESTADO UNIFICADO - única instância)
-  const { 
-    viagem: viagemFinanceiro,
-    resumoFinanceiro, 
-    receitas,
-    despesas,
-    passageirosPendentes,
-    todosPassageiros,
-    fetchAllData: refreshFinanceiro, 
-    isLoading: loadingFinanceiro,
-    // Funções de ação
-    adicionarReceita,
-    editarReceita,
-    excluirReceita,
-    adicionarDespesa,
-    editarDespesa,
-    excluirDespesa,
-    registrarCobranca
-  } = useViagemFinanceiro(id || "", refreshAllFinancialData);
+  const { resumoFinanceiro } = useViagemFinanceiro(id || "");
 
   const { 
     reportRef, 
@@ -151,57 +123,6 @@ const DetalhesViagem = () => {
   const previewData = calculatePreviewData(originalPassageiros, filters);
 
   const passageirosListRef = React.useRef<HTMLDivElement>(null);
-
-  // Função para atualizar todos os dados quando há mudanças nos pagamentos
-  const refreshAllData = async () => {
-    console.log('🔄 refreshAllData chamado - Atualizando dados financeiros e passageiros...');
-    if (id) {
-      console.log('📊 Executando Promise.all para atualizar dados...');
-      await Promise.all([
-        fetchPassageiros(id),
-        refreshFinanceiro()
-      ]);
-      console.log('✅ refreshAllData concluído - Dados atualizados com sucesso!');
-    } else {
-      console.warn('⚠️ refreshAllData: ID não disponível');
-    }
-  };
-
-  // Valores financeiros corretos - usar APENAS dados do resumoFinanceiro
-  const valoresFinanceiros = {
-    totalArrecadado: resumoFinanceiro?.total_receitas ?? 0,
-    totalPago: (resumoFinanceiro?.total_receitas ?? 0) - (resumoFinanceiro?.total_pendencias ?? 0),
-    totalPendente: resumoFinanceiro?.total_pendencias ?? 0,
-    percentualPagamento: resumoFinanceiro?.total_receitas > 0 ? Math.round(((resumoFinanceiro.total_receitas - resumoFinanceiro.total_pendencias) / resumoFinanceiro.total_receitas) * 100) : 0,
-    receitaViagem: resumoFinanceiro?.receitas_viagem ?? 0,
-    receitaPasseios: resumoFinanceiro?.receitas_passeios ?? 0,
-    pagoViagem: (resumoFinanceiro?.receitas_viagem ?? 0) - (resumoFinanceiro?.pendencias_viagem ?? 0),
-    pagoPasseios: (resumoFinanceiro?.receitas_passeios ?? 0) - (resumoFinanceiro?.pendencias_passeios ?? 0),
-    pendenteViagem: resumoFinanceiro?.pendencias_viagem ?? 0,
-    pendentePasseios: resumoFinanceiro?.pendencias_passeios ?? 0
-  };
-
-  // Debug dos valores financeiros
-  console.log('💰 RESUMO FINANCEIRO:', resumoFinanceiro?.pendencias_viagem, resumoFinanceiro?.pendencias_passeios);
-  console.log('💰 VALORES CALCULADOS:', valoresFinanceiros.pendenteViagem, valoresFinanceiros.pendentePasseios);
-  console.log('💰 DEBUG - Valores Financeiros DETALHADO:', {
-    resumoFinanceiro: resumoFinanceiro ? {
-      total_receitas: resumoFinanceiro.total_receitas,
-      total_pendencias: resumoFinanceiro.total_pendencias,
-      pendencias_viagem: resumoFinanceiro.pendencias_viagem,
-      pendencias_passeios: resumoFinanceiro.pendencias_passeios,
-      receitas_viagem: resumoFinanceiro.receitas_viagem,
-      receitas_passeios: resumoFinanceiro.receitas_passeios
-    } : null,
-    valoresFinanceiros: {
-      totalPendente: valoresFinanceiros.totalPendente,
-      pendenteViagem: valoresFinanceiros.pendenteViagem,
-      pendentePasseios: valoresFinanceiros.pendentePasseios,
-      pagoViagem: valoresFinanceiros.pagoViagem,
-      pagoPasseios: valoresFinanceiros.pagoPasseios
-    },
-    loadingFinanceiro
-  });
 
 
 
@@ -293,7 +214,7 @@ const DetalhesViagem = () => {
         previewData={previewData}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue="passageiros" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="passageiros" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -309,10 +230,10 @@ const DetalhesViagem = () => {
           {originalPassageiros.length > 0 && (
             <div className="mb-6">
               <FinancialSummary
-                totalArrecadado={valoresFinanceiros.totalArrecadado}
-                totalPago={valoresFinanceiros.totalPago}
-                totalPendente={valoresFinanceiros.totalPendente}
-                percentualPagamento={valoresFinanceiros.percentualPagamento}
+                totalArrecadado={resumoFinanceiro?.total_receitas || totalArrecadado}
+                totalPago={(resumoFinanceiro?.total_receitas || 0) - (resumoFinanceiro?.total_pendencias || 0)}
+                totalPendente={resumoFinanceiro?.total_pendencias || totalPendente}
+                percentualPagamento={resumoFinanceiro?.total_receitas > 0 ? Math.round(((resumoFinanceiro.total_receitas - resumoFinanceiro.total_pendencias) / resumoFinanceiro.total_receitas) * 100) : 0}
                 totalPassageiros={originalPassageiros.length}
                 valorPotencialTotal={valorPotencialTotal}
                 capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
@@ -320,16 +241,16 @@ const DetalhesViagem = () => {
                 totalDespesas={totalDespesas}
                 totalDescontos={totalDescontos}
                 valorBrutoTotal={valorBrutoTotal}
-                valorPasseios={valoresFinanceiros.receitaPasseios || valorPasseiosReal}
+                valorPasseios={resumoFinanceiro?.receitas_passeios || valorPasseiosReal}
                 sistemaPasseios={sistema}
                 valorPadraoViagem={viagem?.valor_padrao || 0}
                 quantidadeBrindes={quantidadeBrindes}
-                receitaViagem={valoresFinanceiros.receitaViagem}
-                receitaPasseios={valoresFinanceiros.receitaPasseios}
-                pagoViagem={valoresFinanceiros.pagoViagem}
-                pagoPasseios={valoresFinanceiros.pagoPasseios}
-                pendenteViagem={valoresFinanceiros.pendenteViagem}
-                pendentePasseios={valoresFinanceiros.pendentePasseios}
+                receitaViagem={resumoFinanceiro?.receitas_viagem || receitaViagem}
+                receitaPasseios={resumoFinanceiro?.receitas_passeios || receitaPasseios}
+                pagoViagem={(resumoFinanceiro?.receitas_viagem || 0) - (resumoFinanceiro?.pendencias_viagem || 0)}
+                pagoPasseios={(resumoFinanceiro?.receitas_passeios || 0) - (resumoFinanceiro?.pendencias_passeios || 0)}
+                pendenteViagem={resumoFinanceiro?.pendencias_viagem || pendenteViagem}
+                pendentePasseios={resumoFinanceiro?.pendencias_passeios || pendentePasseios}
                 totalDescontosPassageiros={resumoFinanceiro?.total_descontos || 0}
                 quantidadeComDesconto={quantidadeComDesconto}
               />
@@ -394,7 +315,7 @@ const DetalhesViagem = () => {
                 passageiros={originalPassageiros}
                 viagemId={id || ""}
                 toast={toast}
-                onUpdatePassageiros={refreshAllData}
+                onUpdatePassageiros={() => id && fetchPassageiros(id)}
               />
             </div>
           )}
@@ -402,14 +323,14 @@ const DetalhesViagem = () => {
         </TabsContent>
 
         <TabsContent value="financeiro">
-          {/* Resumo Financeiro dos Passageiros - USANDO DADOS CORRETOS DO useViagemFinanceiro */}
+          {/* Resumo Financeiro dos Passageiros */}
           {originalPassageiros.length > 0 && (
             <div className="mb-6">
               <FinancialSummary
-                totalArrecadado={valoresFinanceiros.totalArrecadado}
-                totalPago={valoresFinanceiros.totalPago}
-                totalPendente={valoresFinanceiros.totalPendente}
-                percentualPagamento={valoresFinanceiros.percentualPagamento}
+                totalArrecadado={totalArrecadado}
+                totalPago={totalPago}
+                totalPendente={totalPendente}
+                percentualPagamento={totalArrecadado > 0 ? Math.round((totalPago / totalArrecadado) * 100) : 0}
                 totalPassageiros={originalPassageiros.length}
                 valorPotencialTotal={valorPotencialTotal}
                 capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
@@ -417,17 +338,17 @@ const DetalhesViagem = () => {
                 totalDespesas={totalDespesas}
                 totalDescontos={totalDescontos}
                 valorBrutoTotal={valorBrutoTotal}
-                valorPasseios={valoresFinanceiros.receitaPasseios}
+                valorPasseios={valorPasseiosReal}
                 sistemaPasseios={sistema}
                 valorPadraoViagem={viagem?.valor_padrao || 0}
                 quantidadeBrindes={quantidadeBrindes}
-                receitaViagem={valoresFinanceiros.receitaViagem}
-                receitaPasseios={valoresFinanceiros.receitaPasseios}
-                pagoViagem={valoresFinanceiros.pagoViagem}
-                pagoPasseios={valoresFinanceiros.pagoPasseios}
-                pendenteViagem={valoresFinanceiros.pendenteViagem}
-                pendentePasseios={valoresFinanceiros.pendentePasseios}
-                totalDescontosPassageiros={resumoFinanceiro?.total_descontos || 0}
+                receitaViagem={receitaViagem}
+                receitaPasseios={receitaPasseios}
+                pagoViagem={pagoViagem}
+                pagoPasseios={pagoPasseios}
+                pendenteViagem={pendenteViagem}
+                pendentePasseios={pendentePasseios}
+                totalDescontosPassageiros={totalDescontos}
                 quantidadeComDesconto={quantidadeComDesconto}
               />
             </div>
@@ -444,7 +365,7 @@ const DetalhesViagem = () => {
         open={addPassageiroOpen} 
         onOpenChange={setAddPassageiroOpen} 
         viagemId={id || ""} 
-        onSuccess={refreshAllData}
+        onSuccess={() => id && fetchPassageiros(id)}
         valorPadrao={viagem.valor_padrao}
         setorPadrao={viagem.setor_padrao}
         defaultOnibusId={selectedOnibusId || ''}
@@ -456,14 +377,13 @@ const DetalhesViagem = () => {
         onOpenChange={setEditPassageiroOpen}
         passageiro={selectedPassageiro}
         viagem={viagem}
-        onSuccess={refreshAllData}
+        onSuccess={() => id && fetchPassageiros(id)}
       />
 
       <PassageiroDetailsDialog
         open={detailsPassageiroOpen}
         onOpenChange={setDetailsPassageiroOpen}
         passageiro={selectedPassageiro}
-        onSuccess={refreshAllData}
       />
 
       {selectedPassageiro && (
@@ -472,7 +392,7 @@ const DetalhesViagem = () => {
           onOpenChange={setDeletePassageiroOpen}
           passageiroId={selectedPassageiro.viagem_passageiro_id}
           passageiroNome={selectedPassageiro.nome}
-          onSuccess={refreshAllData}
+          onSuccess={() => id && fetchPassageiros(id)}
         />
       )}
     </>

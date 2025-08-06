@@ -141,7 +141,7 @@ export function TesteCenariosPagamento({ viagemPassageiroId, onClose }: TesteCen
         const valorTotal = calcularValorTotal();
         
         if (valorTotal > 0) {
-          await pagarTudo(valorTotal, 'pix', 'Teste Cenário 3');
+          // pagarTudo removido
           await refetch();
         }
 

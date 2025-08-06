@@ -82,6 +82,13 @@ export interface PassageiroDisplay {
     data_pagamento: string;
     observacoes?: string;
   }>;
+  viagem_passageiros_parcelas?: Array<{
+    id: string;
+    valor_parcela: number;
+    forma_pagamento: string;
+    data_pagamento: string;
+    observacoes?: string;
+  }>;
   passeios?: Array<{
     passeio_nome: string;
     status: string;
@@ -118,17 +125,27 @@ export function useViagemDetails(viagemId: string | undefined) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
-  
+
   // Financeiro
   const [totalArrecadado, setTotalArrecadado] = useState<number>(0);
   const [totalPago, setTotalPago] = useState<number>(0);
   const [totalPendente, setTotalPendente] = useState<number>(0);
+  const [valorPasseiosReal, setValorPasseiosReal] = useState<number>(0);
+
+  // Breakdown por categoria
+  const [receitaViagem, setReceitaViagem] = useState<number>(0);
+  const [receitaPasseios, setReceitaPasseios] = useState<number>(0);
+  const [pagoViagem, setPagoViagem] = useState<number>(0);
+  const [pagoPasseios, setPagoPasseios] = useState<number>(0);
+  const [pendenteViagem, setPendenteViagem] = useState<number>(0);
+  const [pendentePasseios, setPendentePasseios] = useState<number>(0);
   const [valorPotencialTotal, setValorPotencialTotal] = useState<number>(0);
   const [countPendentePayment, setCountPendentePayment] = useState<number>(0);
   const [totalReceitas, setTotalReceitas] = useState<number>(0);
   const [totalDespesas, setTotalDespesas] = useState<number>(0);
   const [totalDescontos, setTotalDescontos] = useState<number>(0);
   const [valorBrutoTotal, setValorBrutoTotal] = useState<number>(0);
+  const [quantidadeComDesconto, setQuantidadeComDesconto] = useState<number>(0);
 
   // Ônibus
   const [onibusList, setOnibusList] = useState<Onibus[]>([]);
@@ -162,31 +179,61 @@ export function useViagemDetails(viagemId: string | undefined) {
     if (passageiros.length > 0) {
       // Filtrar todos os passageiros primeiro
       const passageirosFiltrados = filterPassageiros(passageiros, searchTerm);
-      
+
       // Apply status filter if active
       let resultFiltered = passageirosFiltrados;
       if (filterStatus === "pendente") {
         resultFiltered = passageirosFiltrados.filter(p => p.status_pagamento !== "Pago");
       }
-      
+
       setFilteredPassageiros(resultFiltered);
-      
+
       // Agrupar os passageiros filtrados por ônibus
       agruparPassageirosPorOnibus(resultFiltered);
     }
   }, [searchTerm, passageiros, filterStatus]);
 
-  // Efeito para calcular valor potencial quando viagem e ônibus estiverem carregados
+  // Efeito para calcular valor potencial quando viagem, ônibus e passageiros estiverem carregados
   useEffect(() => {
-    if (viagem && onibusList.length > 0) {
+    if (viagem && onibusList.length > 0 && passageiros.length >= 0) {
       const capacidadeTotal = onibusList.reduce(
         (total, onibus) => total + onibus.capacidade_onibus + (onibus.lugares_extras || 0),
         0
       );
-      const valorPotencial = capacidadeTotal * (viagem.valor_padrao || 0);
+
+      // Contar brindes (passageiros com valor total = 0)
+      const quantidadeBrindes = passageiros.filter(p => {
+        const valorViagem = (p.valor || 0) - (p.desconto || 0);
+        const valorPasseios = (p.passeios || []).reduce((sum, passeio) => {
+          return sum + (passeio.valor_cobrado || 0);
+        }, 0);
+        return (valorViagem + valorPasseios) === 0;
+      }).length;
+
+      // Calcular descontos totais (excluindo brindes)
+      const totalDescontosCalculado = passageiros.reduce((total, p) => {
+        const valorViagem = (p.valor || 0) - (p.desconto || 0);
+        const valorPasseios = (p.passeios || []).reduce((sum, passeio) => {
+          return sum + (passeio.valor_cobrado || 0);
+        }, 0);
+        const ehBrinde = (valorViagem + valorPasseios) === 0;
+
+        if (!ehBrinde && (p.desconto || 0) > 0) {
+          return total + (p.desconto || 0);
+        }
+        return total;
+      }, 0);
+
+      // Potencial base = (capacidade - brindes) × valor padrão
+      const vagasPagantes = capacidadeTotal - quantidadeBrindes;
+      const potencialBase = vagasPagantes * (viagem.valor_padrao || 0);
+
+      // Potencial ajustado = potencial base - descontos aplicados
+      const valorPotencial = potencialBase - totalDescontosCalculado;
+
       setValorPotencialTotal(valorPotencial);
     }
-  }, [viagem, onibusList]);
+  }, [viagem, onibusList, passageiros]);
 
   const fetchViagemData = async (id: string) => {
     console.log('🚀 DEBUG: fetchViagemData chamado com id:', id);
@@ -249,9 +296,9 @@ export function useViagemDetails(viagemId: string | undefined) {
         .from("viagem_onibus")
         .select("*")
         .eq("viagem_id", viagemId);
-      
+
       if (error) throw error;
-      
+
       if (data && data.length > 0) {
         setOnibusList(data as Onibus[]);
         // Seleciona o primeiro ônibus por padrão
@@ -265,11 +312,12 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   const fetchPassageiros = async (viagemId: string) => {
     console.log('🚀 DEBUG: fetchPassageiros chamado com viagemId:', viagemId);
-    
+
     if (!viagemId || viagemId === "undefined") {
       console.warn("ID da viagem inválido:", viagemId);
       return;
     }
+    console.log('🚀 DEBUG: ID válido, verificando UUID...');
 
     // Verificar se o ID é um UUID válido
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -277,11 +325,13 @@ export function useViagemDetails(viagemId: string | undefined) {
       console.warn("ID da viagem não é um UUID válido:", viagemId);
       return;
     }
+    console.log('🚀 DEBUG: UUID válido, prosseguindo...');
 
     try {
       // Buscar passageiros da viagem com dados do cliente usando a relação específica
       console.log('🚀 DEBUG: Executando query para viagemId:', viagemId);
-      
+      console.log('🚀 DEBUG: Iniciando query Supabase...');
+
       const { data, error } = await supabase
         .from("viagem_passageiros")
         .select(`
@@ -315,9 +365,9 @@ export function useViagemDetails(viagemId: string | undefined) {
             passeio_cristo,
             foto
           ),
-          historico_pagamentos_categorizado (
-            categoria,
-            valor_pago,
+          viagem_passageiros_parcelas (
+            id,
+            valor_parcela,
             forma_pagamento,
             data_pagamento,
             observacoes
@@ -329,19 +379,20 @@ export function useViagemDetails(viagemId: string | undefined) {
           )
         `)
         .eq("viagem_id", viagemId);
-      
-      console.log('🚀 DEBUG: Resultado da query:', { 
-        data, 
-        error, 
+
+      console.log('🚀 DEBUG: Resultado da query:', {
+        data,
+        error,
         viagemId,
         dataLength: data?.length,
         primeiroItem: data?.[0],
         primeiroItemPasseios: data?.[0]?.passageiro_passeios,
-        primeiroItemGratuito: data?.[0]?.gratuito
+        primeiroItemGratuito: data?.[0]?.gratuito,
+        primeiroItemHistorico: data?.[0]?.historico_pagamentos_categorizado
       });
-      
+
       if (error) throw error;
-      
+
       // Debug: verificar dados brutos da query
       console.log('🔍 DEBUG useViagemDetails - Dados brutos da query:', {
         viagemId,
@@ -354,12 +405,12 @@ export function useViagemDetails(viagemId: string | undefined) {
           passeios: p.passageiro_passeios?.length || 0
         }))
       });
-      
+
       // Formatar os dados para exibição com pré-processamento para busca
       const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => {
         const passeios = item.passageiro_passeios || [];
         const passeioNames = passeios.map((p: any) => p.passeio_nome).filter(Boolean);
-        
+
         // Campos básicos para busca
         const searchFields = [
           item.clientes.nome,
@@ -374,9 +425,9 @@ export function useViagemDetails(viagemId: string | undefined) {
           item.forma_pagamento,
           ...passeioNames
         ];
-        
+
         const searchableText = createSearchableText(searchFields);
-        
+
         return {
           id: item.clientes.id,
           nome: item.clientes.nome,
@@ -414,18 +465,18 @@ export function useViagemDetails(viagemId: string | undefined) {
           hasPasseios: passeios.length > 0
         };
       });
-      
+
       // Sort passengers alphabetically by name
-      const sortedPassageiros = formattedPassageiros.sort((a, b) => 
+      const sortedPassageiros = formattedPassageiros.sort((a, b) =>
         a.nome.localeCompare(b.nome, 'pt-BR')
       );
-      
+
       setPassageiros(sortedPassageiros);
       setFilteredPassageiros(sortedPassageiros);
-      
+
       // Agrupar passageiros por ônibus
       agruparPassageirosPorOnibus(sortedPassageiros);
-      
+
       // Calcular resumo financeiro
       let arrecadado = 0;
       let pago = 0;
@@ -433,41 +484,116 @@ export function useViagemDetails(viagemId: string | undefined) {
       let countPendente = 0;
       let descontos = 0;
       let valorBruto = 0;
-      
+      let valorPasseiosArrecadado = 0; // Valor real dos passeios arrecadados dos passageiros
+      let countComDesconto = 0; // Contador de passageiros com desconto
+
+      // Breakdown separado por categoria
+      let receitaViagem = 0;
+      let receitaPasseios = 0;
+      let pagoViagem = 0;
+      let pagoPasseios = 0;
+      let pendenteViagem = 0;
+      let pendentePasseios = 0;
+
       formattedPassageiros.forEach((passageiro, index) => {
         const valorOriginal = passageiro.valor || 0;
         const desconto = passageiro.desconto || 0;
-        const valorLiquido = valorOriginal - desconto;
-        
-        // Calcular valor efetivamente pago através das parcelas (apenas parcelas com data_pagamento)
-        const valorPagoParcelas = (passageiro.parcelas || []).reduce((sum, p) => {
-          const valorParcela = p.data_pagamento ? (p.valor_parcela || 0) : 0;
-          return sum + valorParcela;
+        const valorLiquidoViagem = valorOriginal - desconto;
+
+        // Calcular valor dos passeios do passageiro
+        const valorPasseiosPassageiro = (passageiro.passeios || []).reduce((sum, passeio) => {
+          return sum + (passeio.valor_cobrado || 0);
         }, 0);
-        
-        valorBruto += valorOriginal;
-        descontos += desconto;
-        arrecadado += valorLiquido;
-        pago += valorPagoParcelas;
-        
-        // Pendente é a diferença entre o valor líquido e o que foi pago
-        const valorPendente = valorLiquido - valorPagoParcelas;
-        if (valorPendente > 0.01) { // margem para centavos
-          pendente += valorPendente;
-          countPendente++;
+
+        // Valor total = viagem + passeios
+        const valorTotalPassageiro = valorLiquidoViagem + valorPasseiosPassageiro;
+
+        // Pular brindes dos cálculos financeiros
+        const ehBrinde = (passageiro.gratuito === true) || (valorTotalPassageiro === 0);
+
+        // Debug básico para todos os passageiros - VERSÃO NOVA
+        console.log(`[DEBUG NOVO] ${passageiro.nome}: ehBrinde=${ehBrinde}, valorTotal=${valorTotalPassageiro}, status=${passageiro.status_pagamento}`);
+
+        if (!ehBrinde) {
+          // Contar passageiros com desconto (apenas não-brindes)
+          if (desconto > 0) {
+            countComDesconto++;
+          }
+
+          // Calcular pagamentos baseado no status (incluindo pagamentos parciais)
+          let valorPagoViagem = 0;
+          let valorPagoPasseios = 0;
+
+          if (passageiro.status_pagamento === 'Pago Completo' || passageiro.status_pagamento === 'Pago') {
+            // Pago completo
+            valorPagoViagem = valorLiquidoViagem;
+            valorPagoPasseios = valorPasseiosPassageiro;
+          } else if (passageiro.status_pagamento === 'Viagem Paga') {
+            // Só viagem paga
+            valorPagoViagem = valorLiquidoViagem;
+            valorPagoPasseios = 0;
+          } else if (passageiro.status_pagamento === 'Passeios Pagos') {
+            // Só passeios pagos
+            valorPagoViagem = 0;
+            valorPagoPasseios = valorPasseiosPassageiro;
+          }
+
+          const valorPagoParcelas = valorPagoViagem + valorPagoPasseios;
+
+          // Debug do total pago por passageiro
+          console.log(`[DEBUG] ${passageiro.nome}: Status=${passageiro.status_pagamento}, PagoViagem=R$ ${valorPagoViagem}, PagoPasseios=R$ ${valorPagoPasseios}, Total=R$ ${valorPagoParcelas}`);
+
+          // Breakdown por categoria
+          receitaViagem += valorLiquidoViagem;
+          receitaPasseios += valorPasseiosPassageiro;
+
+          // Usar valores calculados diretamente (não proporcionalmente)
+          pagoViagem += valorPagoViagem;
+          pagoPasseios += valorPagoPasseios;
+
+          // Calcular pendências
+          const pendenteViagemPassageiro = valorLiquidoViagem - valorPagoViagem;
+          const pendentePasseiosPassageiro = valorPasseiosPassageiro - valorPagoPasseios;
+
+          if (pendenteViagemPassageiro > 0.01) pendenteViagem += pendenteViagemPassageiro;
+          if (pendentePasseiosPassageiro > 0.01) pendentePasseios += pendentePasseiosPassageiro;
+
+          // Totais gerais
+          valorBruto += valorOriginal + valorPasseiosPassageiro;
+          descontos += desconto;
+          arrecadado += valorTotalPassageiro;
+          valorPasseiosArrecadado += valorPasseiosPassageiro;
+          pago += valorPagoParcelas;
+
+          // Pendente total
+          const valorPendente = valorTotalPassageiro - valorPagoParcelas;
+          if (valorPendente > 0.01) {
+            pendente += valorPendente;
+            countPendente++;
+          }
         }
       });
-      
+
       setTotalArrecadado(arrecadado);
       setTotalPago(pago);
       setTotalPendente(pendente);
       setCountPendentePayment(countPendente);
       setTotalDescontos(descontos);
       setValorBrutoTotal(valorBruto);
-      
+      setValorPasseiosReal(valorPasseiosArrecadado);
+      setQuantidadeComDesconto(countComDesconto);
+
+      // Breakdown por categoria
+      setReceitaViagem(receitaViagem);
+      setReceitaPasseios(receitaPasseios);
+      setPagoViagem(pagoViagem);
+      setPagoPasseios(pagoPasseios);
+      setPendenteViagem(pendenteViagem);
+      setPendentePasseios(pendentePasseios);
+
       // Calcular valor potencial total (capacidade total * valor padrão)
       // Será atualizado quando os dados da viagem estiverem disponíveis
-      
+
     } catch (err) {
       console.error("Erro ao buscar passageiros:", err);
       toast.error("Erro ao carregar passageiros");
@@ -479,25 +605,25 @@ export function useViagemDetails(viagemId: string | undefined) {
     const agrupados: Record<string, PassageiroDisplay[]> = {
       semOnibus: []
     };
-    
+
     const contador: Record<string, number> = {};
-    
+
     passageiros.forEach(passageiro => {
       const onibusId = passageiro.onibus_id;
-      
+
       if (onibusId) {
         if (!agrupados[onibusId]) {
           agrupados[onibusId] = [];
         }
         agrupados[onibusId].push(passageiro);
-        
+
         // Incrementar contador
         contador[onibusId] = (contador[onibusId] || 0) + 1;
       } else {
         agrupados.semOnibus.push(passageiro);
       }
     });
-    
+
     setPassageiroPorOnibus(agrupados);
     setContadorPassageiros(contador);
   };
@@ -509,18 +635,18 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   const handleDelete = async () => {
     if (!viagemId) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Chamar a função delete_viagem que criamos
       const { error } = await supabase
         .rpc('delete_viagem', { viagem_id: viagemId });
-      
+
       if (error) {
         throw error;
       }
-      
+
       toast.success("Viagem excluída com sucesso!");
       navigate("/dashboard/viagens");
     } catch (err) {
@@ -552,14 +678,14 @@ export function useViagemDetails(viagemId: string | undefined) {
   // Filtro de passageiros
   const filterPassageiros = (passageiros: PassageiroDisplay[], searchTerm: string): PassageiroDisplay[] => {
     if (!searchTerm.trim()) return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    
+
     return passageiros.filter(passageiro => {
       // Usar texto pré-processado para busca mais rápida
       if (passageiro.normalizedSearchText) {
         const normalizedSearchTerm = normalizeText(searchTerm);
         return passageiro.normalizedSearchText.includes(normalizedSearchTerm);
       }
-      
+
       // Fallback para busca tradicional se não houver pré-processamento
       const searchFields = [
         passageiro.nome,
@@ -574,7 +700,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         passageiro.forma_pagamento,
         ...(passageiro.passeioNames || [])
       ];
-      
+
       return matchesAllTerms(searchFields, searchTerm);
     }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   };
@@ -592,7 +718,7 @@ export function useViagemDetails(viagemId: string | undefined) {
 
       // Buscar despesas da viagem
       const { data: despesasData, error: despesasError } = await supabase
-        .from('despesas')
+        .from('viagem_despesas')
         .select('valor')
         .eq('viagem_id', viagemId);
 
@@ -625,6 +751,16 @@ export function useViagemDetails(viagemId: string | undefined) {
     totalDespesas,
     totalDescontos,
     valorBrutoTotal,
+    valorPasseiosReal,
+    quantidadeComDesconto,
+
+    // Breakdown por categoria
+    receitaViagem,
+    receitaPasseios,
+    pagoViagem,
+    pagoPasseios,
+    pendenteViagem,
+    pendentePasseios,
     onibusList,
     selectedOnibusId,
     passageiroPorOnibus,

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
     );
   }
 
+  // Hook próprio - SIMPLES E DIRETO
   const {
     viagem,
     resumoFinanceiro,
@@ -700,7 +701,14 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {despesas && despesas.length > 0 ? (
+
+              
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Carregando despesas...</span>
+                </div>
+              ) : despesas && despesas.length > 0 ? (
                 <div className="space-y-3">
                   {despesas.map((despesa) => (
                     <div key={despesa.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -793,6 +801,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
             valorPasseios={valorPasseios}
             temPasseios={temPasseios}
             todosPassageiros={todosPassageiros}
+            capacidadeTotal={viagem?.capacidade_onibus || 50}
           />
         </TabsContent>
       </Tabs>
@@ -802,7 +811,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
         open={showReceitaForm}
         onOpenChange={handleCloseReceitaForm}
         viagemId={viagemId}
-        onSalvar={editingReceita ? editarReceita : adicionarReceita}
+        onSalvar={editingReceita ? (receita: any) => editarReceita(editingReceita.id, receita) : adicionarReceita}
         receita={editingReceita}
         isEditing={!!editingReceita}
       />
@@ -812,7 +821,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
         open={showDespesaForm}
         onOpenChange={handleCloseDespesaForm}
         viagemId={viagemId}
-        onSalvar={editingDespesa ? editarDespesa : adicionarDespesa}
+        onSalvar={editingDespesa ? (despesa: any) => editarDespesa(editingDespesa.id, despesa) : adicionarDespesa}
         despesa={editingDespesa}
         isEditing={!!editingDespesa}
       />

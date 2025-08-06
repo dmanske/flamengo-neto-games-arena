@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 import type {
   ViagemPassageiroComPagamentos,
   HistoricoPagamentoCategorizado,
@@ -26,7 +27,7 @@ export interface UsePagamentosSeparadosReturn {
   registrarPagamento: (request: RegistroPagamentoRequest) => Promise<boolean>;
   pagarViagem: (valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
   pagarPasseios: (valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
-  pagarTudo: (valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
+  // pagarTudo removido
   
   // Gestão de pagamentos
   deletarPagamento: (pagamentoId: string) => Promise<boolean>;
@@ -48,6 +49,8 @@ export interface UsePagamentosSeparadosReturn {
 export const usePagamentosSeparados = (
   viagemPassageiroId: string | undefined
 ): UsePagamentosSeparadosReturn => {
+  console.log('🎯 usePagamentosSeparados iniciado:', { viagemPassageiroId });
+  
   const [passageiro, setPassageiro] = useState<ViagemPassageiroComPagamentos | null>(null);
   const [breakdown, setBreakdown] = useState<BreakdownPagamento | null>(null);
   const [historicoPagamentos, setHistoricoPagamentos] = useState<HistoricoPagamentoCategorizado[]>([]);
@@ -56,7 +59,10 @@ export const usePagamentosSeparados = (
 
   // Buscar dados completos do passageiro com pagamentos
   const fetchDadosPassageiro = useCallback(async () => {
+    console.log('🔍 fetchDadosPassageiro iniciado:', { viagemPassageiroId });
+    
     if (!viagemPassageiroId) {
+      console.warn('⚠️ viagemPassageiroId não fornecido');
       setLoading(false);
       return;
     }
@@ -86,6 +92,8 @@ export const usePagamentosSeparados = (
         .single();
 
       if (passageiroError) throw passageiroError;
+      
+      console.log('📊 Dados do passageiro encontrados:', passageiroData);
 
       // 2. Buscar valor total dos passeios do passageiro
       const { data: passeiosData, error: passeiosError } = await supabase
@@ -151,15 +159,25 @@ export const usePagamentosSeparados = (
       };
 
       // 5. Calcular breakdown
+      console.log('🧮 Calculando breakdown para:', passageiroCompleto);
       const breakdownCalculado = calcularBreakdownPagamento(passageiroCompleto);
+      console.log('📊 Breakdown calculado:', breakdownCalculado);
 
       // 6. Atualizar estados
       setPassageiro(passageiroCompleto);
       setBreakdown(breakdownCalculado);
       setHistoricoPagamentos(historico || []);
+      
+      console.log('✅ Estados atualizados com sucesso');
 
     } catch (err: any) {
-      console.error('Erro ao buscar dados do passageiro:', err);
+      console.error('❌ Erro ao buscar dados do passageiro:', err);
+      console.error('❌ Detalhes do erro:', {
+        message: err.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint
+      });
       setError(err.message);
       toast.error('Erro ao carregar dados financeiros');
     } finally {
@@ -171,26 +189,51 @@ export const usePagamentosSeparados = (
   const registrarPagamento = useCallback(async (
     request: RegistroPagamentoRequest
   ): Promise<boolean> => {
+    console.log('📝 registrarPagamento iniciado:', request);
+    
     try {
+      const dadosInsert = {
+        viagem_passageiro_id: request.viagem_passageiro_id,
+        categoria: request.categoria,
+        valor_pago: request.valor_pago,
+        forma_pagamento: request.forma_pagamento || 'pix',
+        observacoes: request.observacoes,
+        data_pagamento: request.data_pagamento || new Date().toISOString()
+      };
+      
+      console.log('💾 Dados para inserir:', dadosInsert);
+      
       const { error } = await supabase
         .from('historico_pagamentos_categorizado')
-        .insert({
-          viagem_passageiro_id: request.viagem_passageiro_id,
-          categoria: request.categoria,
-          valor_pago: request.valor_pago,
-          forma_pagamento: request.forma_pagamento || 'pix',
-          observacoes: request.observacoes,
-          data_pagamento: request.data_pagamento || new Date().toISOString()
-        });
+        .insert(dadosInsert);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw error;
+      }
 
+      console.log('✅ Pagamento inserido com sucesso');
       toast.success(`Pagamento de ${request.categoria} registrado com sucesso!`);
+      
+      // Refresh duplo para garantir atualização
       await fetchDadosPassageiro();
+      
+      // Segundo refresh com delay para casos de quitação completa
+      setTimeout(async () => {
+        console.log('🔄 Segundo refresh com delay...');
+        await fetchDadosPassageiro();
+      }, 300);
+      
       return true;
 
     } catch (error: any) {
-      console.error('Erro ao registrar pagamento:', error);
+      console.error('❌ Erro ao registrar pagamento:', error);
+      console.error('❌ Detalhes do erro:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       toast.error('Erro ao registrar pagamento');
       return false;
     }
@@ -203,17 +246,43 @@ export const usePagamentosSeparados = (
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
-    if (!viagemPassageiroId) return false;
+    console.log('💰 pagarViagem iniciado:', { viagemPassageiroId, valor, formaPagamento });
+    
+    if (!viagemPassageiroId || !breakdown) {
+      console.error('❌ pagarViagem: dados insuficientes', { viagemPassageiroId, breakdown });
+      return false;
+    }
 
-    return registrarPagamento({
-      viagem_passageiro_id: viagemPassageiroId,
-      categoria: 'viagem',
-      valor_pago: valor,
-      forma_pagamento: formaPagamento,
-      observacoes: observacoes,
-      data_pagamento: dataPagamento
-    });
-  }, [viagemPassageiroId, registrarPagamento]);
+    // VALIDAÇÃO: Não permitir pagar mais que o pendente
+    const valorPendente = breakdown.pendente_viagem;
+    if (valor > valorPendente) {
+      console.warn('⚠️ Valor maior que pendente:', { valor, valorPendente });
+      toast.error(`Valor maior que o pendente da viagem: ${formatCurrency(valorPendente)}`);
+      return false;
+    }
+
+    if (valorPendente <= 0) {
+      toast.error('Viagem já está paga!');
+      return false;
+    }
+
+    try {
+      const resultado = await registrarPagamento({
+        viagem_passageiro_id: viagemPassageiroId,
+        categoria: 'viagem',
+        valor_pago: valor,
+        forma_pagamento: formaPagamento,
+        observacoes: observacoes,
+        data_pagamento: dataPagamento
+      });
+      
+      console.log('✅ Resultado pagarViagem:', resultado);
+      return resultado;
+    } catch (error) {
+      console.error('❌ Erro em pagarViagem:', error);
+      return false;
+    }
+  }, [viagemPassageiroId, breakdown, registrarPagamento]);
 
   // Pagar apenas passeios
   const pagarPasseios = useCallback(async (
@@ -222,36 +291,67 @@ export const usePagamentosSeparados = (
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
-    if (!viagemPassageiroId) return false;
+    console.log('🎢 pagarPasseios iniciado:', { viagemPassageiroId, valor, formaPagamento });
+    
+    if (!viagemPassageiroId) {
+      console.error('❌ pagarPasseios: viagemPassageiroId não fornecido');
+      return false;
+    }
 
-    return registrarPagamento({
-      viagem_passageiro_id: viagemPassageiroId,
-      categoria: 'passeios',
-      valor_pago: valor,
-      forma_pagamento: formaPagamento,
-      observacoes: observacoes,
-      data_pagamento: dataPagamento
-    });
+    // FALLBACK: Se breakdown estiver null, permitir pagamento sem validação rigorosa
+    if (!breakdown) {
+      console.warn('⚠️ Breakdown null, permitindo pagamento sem validação rigorosa');
+      
+      try {
+        const resultado = await registrarPagamento({
+          viagem_passageiro_id: viagemPassageiroId,
+          categoria: 'passeios',
+          valor_pago: valor,
+          forma_pagamento: formaPagamento,
+          observacoes: observacoes,
+          data_pagamento: dataPagamento
+        });
+        
+        console.log('✅ Resultado pagarPasseios (fallback):', resultado);
+        return resultado;
+      } catch (error) {
+        console.error('❌ Erro em pagarPasseios (fallback):', error);
+        return false;
+      }
+    }
+
+    // VALIDAÇÃO: Não permitir pagar mais que o pendente (quando breakdown disponível)
+    const valorPendente = breakdown.pendente_passeios;
+    if (valor > valorPendente) {
+      console.warn('⚠️ Valor maior que pendente:', { valor, valorPendente });
+      toast.error(`Valor maior que o pendente dos passeios: ${formatCurrency(valorPendente)}`);
+      return false;
+    }
+
+    if (valorPendente <= 0) {
+      toast.error('Passeios já estão pagos!');
+      return false;
+    }
+
+    try {
+      const resultado = await registrarPagamento({
+        viagem_passageiro_id: viagemPassageiroId,
+        categoria: 'passeios',
+        valor_pago: valor,
+        forma_pagamento: formaPagamento,
+        observacoes: observacoes,
+        data_pagamento: dataPagamento
+      });
+      
+      console.log('✅ Resultado pagarPasseios:', resultado);
+      return resultado;
+    } catch (error) {
+      console.error('❌ Erro em pagarPasseios:', error);
+      return false;
+    }
   }, [viagemPassageiroId, registrarPagamento]);
 
-  // Pagar tudo (viagem + passeios)
-  const pagarTudo = useCallback(async (
-    valor: number,
-    formaPagamento = 'pix',
-    observacoes?: string,
-    dataPagamento?: string
-  ): Promise<boolean> => {
-    if (!viagemPassageiroId) return false;
-
-    return registrarPagamento({
-      viagem_passageiro_id: viagemPassageiroId,
-      categoria: 'ambos',
-      valor_pago: valor,
-      forma_pagamento: formaPagamento,
-      observacoes: observacoes,
-      data_pagamento: dataPagamento
-    });
-  }, [viagemPassageiroId, registrarPagamento]);
+  // Função pagarTudo removida
 
   // Deletar pagamento
   const deletarPagamento = useCallback(async (pagamentoId: string): Promise<boolean> => {
@@ -375,6 +475,7 @@ export const usePagamentosSeparados = (
 
   // Carregar dados na inicialização
   useEffect(() => {
+    console.log('🔄 useEffect executado, chamando fetchDadosPassageiro...');
     fetchDadosPassageiro();
   }, [fetchDadosPassageiro]);
 
@@ -389,7 +490,7 @@ export const usePagamentosSeparados = (
     registrarPagamento,
     pagarViagem,
     pagarPasseios,
-    pagarTudo,
+    // pagarTudo removido
     deletarPagamento,
     editarPagamento,
     

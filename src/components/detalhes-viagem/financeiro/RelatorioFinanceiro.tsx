@@ -1,8 +1,9 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { converterStatusParaInteligente } from '@/lib/status-utils';
 import { formatPhone } from '@/utils/formatters';
 import { 
@@ -31,6 +32,8 @@ interface RelatorioFinanceiroProps {
   temPasseios?: boolean;
   // Todos os passageiros (não só pendentes)
   todosPassageiros?: any[];
+  // Capacidade total dos ônibus
+  capacidadeTotal?: number;
 }
 
 export function RelatorioFinanceiro({ 
@@ -43,8 +46,11 @@ export function RelatorioFinanceiro({
   sistema = 'sem_dados',
   valorPasseios = 0,
   temPasseios = false,
-  todosPassageiros = []
+  todosPassageiros = [],
+  capacidadeTotal = 50
 }: RelatorioFinanceiroProps) {
+  
+  const [filtroStatus, setFiltroStatus] = useState('todos');
   
   const gerarRelatorioPDF = () => {
     // Implementar geração de PDF
@@ -136,12 +142,44 @@ export function RelatorioFinanceiro({
     return acc;
   }, {} as Record<string, { total: number; quantidade: number }>);
 
-  const passageirosPorStatus = passageiros.reduce((acc, passageiro) => {
-    if (!acc[passageiro.status_pagamento]) {
-      acc[passageiro.status_pagamento] = { quantidade: 0, valor: 0 };
+  // Usar status que já vem calculado do sistema, com fallback para cálculo local
+  const obterStatusCorreto = (passageiro: any) => {
+    // Se o passageiro já tem status calculado corretamente, usar ele
+    if (passageiro.status_calculado) {
+      return passageiro.status_calculado;
     }
-    acc[passageiro.status_pagamento].quantidade += 1;
-    acc[passageiro.status_pagamento].valor += passageiro.valor;
+    
+    // Verificar se é passageiro gratuito
+    if (passageiro.gratuito === true) {
+      return '🎁 Brinde';
+    }
+
+    const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+    const valorPasseios = (passageiro.passeios || [])
+      .reduce((sum: number, p: any) => sum + (p.valor_cobrado || 0), 0);
+
+    // Se valor total é 0, é brinde
+    if (valorViagem + valorPasseios === 0) {
+      return '🎁 Brinde';
+    }
+
+    // Usar status da tabela como fallback se não conseguir calcular
+    return passageiro.status_pagamento || 'Pendente';
+  };
+
+  const passageirosPorStatus = todosPassageiros.reduce((acc, passageiro) => {
+    const status = obterStatusCorreto(passageiro);
+    if (!acc[status]) {
+      acc[status] = { quantidade: 0, valor: 0 };
+    }
+    acc[status].quantidade += 1;
+    
+    // Usar valores que já vêm calculados do hook, com fallback
+    const valorReal = passageiro.valor_total || 
+                     ((passageiro.valor || 0) - (passageiro.desconto || 0) + 
+                      (passageiro.passeios || []).reduce((sum: number, p: any) => sum + (p.valor_cobrado || 0), 0));
+    
+    acc[status].valor += valorReal;
     return acc;
   }, {} as Record<string, { quantidade: number; valor: number }>);
 
@@ -213,7 +251,7 @@ export function RelatorioFinanceiro({
               <div>
                 <p className="text-sm font-medium text-gray-600">Despesas Totais</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {formatCurrency(resumo.despesas_total)}
+                  {formatCurrency(resumo?.total_despesas || 0)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {despesas.length} lançamentos
@@ -340,7 +378,7 @@ export function RelatorioFinanceiro({
                       {formatCurrency(dados.total)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {((dados.total / resumo.despesas_total) * 100).toFixed(1)}%
+                      {resumo?.total_despesas > 0 ? ((dados.total / resumo.total_despesas) * 100).toFixed(1) : '0'}%
                     </p>
                   </div>
                 </div>
@@ -377,7 +415,7 @@ export function RelatorioFinanceiro({
                       {formatCurrency(dados.valor)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {((dados.valor / resumo.receita_total) * 100).toFixed(1)}%
+                      {resumo?.total_receitas > 0 ? ((dados.valor / resumo.total_receitas) * 100).toFixed(1) : '0'}%
                     </p>
                   </div>
                 </div>
@@ -539,16 +577,19 @@ export function RelatorioFinanceiro({
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Capacidade máxima:</span>
-                    <span className="font-medium">50 passageiros</span>
+                    <span className="font-medium">{capacidadeTotal} passageiros</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Ocupação atual:</span>
-                    <span className="font-medium">{passageiros.length} ({((passageiros.length / 50) * 100).toFixed(0)}%)</span>
+                    <span className="font-medium">{todosPassageiros.length} ({capacidadeTotal > 0 ? ((todosPassageiros.length / capacidadeTotal) * 100).toFixed(0) : 0}%)</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Receita potencial:</span>
                     <span className="font-medium text-green-600">
-                      {formatCurrency((resumo.total_receitas / Math.max(passageiros.length, 1)) * 50)}
+                      {todosPassageiros.length > 0 && capacidadeTotal > 0
+                        ? formatCurrency((resumo.total_receitas / todosPassageiros.length) * capacidadeTotal)
+                        : formatCurrency(0)
+                      }
                     </span>
                   </div>
                 </div>
@@ -644,9 +685,38 @@ export function RelatorioFinanceiro({
       </Card>
 
       {/* Detalhamento de Passageiros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalhamento de Passageiros</CardTitle>
+      {(() => {
+        // Preparar lista de passageiros com filtro e ordenação
+        const passageirosParaExibir = (todosPassageiros.length > 0 ? todosPassageiros : passageiros)
+          .filter(passageiro => {
+            if (filtroStatus === 'todos') return true;
+            const statusObtido = obterStatusCorreto(passageiro);
+            return statusObtido === filtroStatus;
+          })
+          .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR'));
+
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Detalhamento de Passageiros ({passageirosParaExibir.length})</CardTitle>
+            <div className="flex gap-2">
+              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Pago">Pago</SelectItem>
+                  <SelectItem value="Pendente">Pendente</SelectItem>
+                  <SelectItem value="🎁 Brinde">Brinde</SelectItem>
+                  <SelectItem value="Pago Completo">Pago Completo</SelectItem>
+                  <SelectItem value="Viagem Paga">Viagem Paga</SelectItem>
+                  <SelectItem value="Passeios Pagos">Passeios Pagos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -663,7 +733,7 @@ export function RelatorioFinanceiro({
                 </tr>
               </thead>
               <tbody>
-                {(todosPassageiros.length > 0 ? todosPassageiros : passageiros).map((passageiro) => (
+                {passageirosParaExibir.map((passageiro) => (
                   <tr key={passageiro.viagem_passageiro_id || passageiro.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium">{passageiro.nome}</td>
                     <td className="p-2">{formatPhone(passageiro.telefone)}</td>
@@ -682,10 +752,16 @@ export function RelatorioFinanceiro({
                       )}
                     </td>
                     <td className="p-2 text-right font-bold">
-                      {formatCurrency(passageiro.valor_total || passageiro.valor || 0)}
-                      {sistema === 'novo' && (passageiro.valor_viagem || passageiro.valor_passeios) && (
+                      {(() => {
+                        const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+                        const valorPasseios = (passageiro.passeios || [])
+                          .reduce((sum: number, p: any) => sum + (p.valor_cobrado || 0), 0);
+                        const valorTotal = valorViagem + valorPasseios;
+                        return formatCurrency(valorTotal);
+                      })()}
+                      {sistema === 'novo' && (
                         <div className="text-xs text-gray-500 mt-1">
-                          V: {formatCurrency(passageiro.valor_viagem || 0)} | P: {formatCurrency(passageiro.valor_passeios || 0)}
+                          V: {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))} | P: {formatCurrency((passageiro.passeios || []).reduce((sum: number, p: any) => sum + (p.valor_cobrado || 0), 0))}
                         </div>
                       )}
                     </td>
@@ -693,17 +769,24 @@ export function RelatorioFinanceiro({
                       {(passageiro.desconto || 0) > 0 ? `-${formatCurrency(passageiro.desconto)}` : '-'}
                     </td>
                     <td className="p-2 text-center">
-                      <Badge 
-                        className={
-                          passageiro.status_pagamento === 'Pago' || passageiro.status_pagamento === '🎁 Brinde'
-                            ? 'bg-green-100 text-green-800' 
-                            : passageiro.status_pagamento === 'Pendente'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }
-                      >
-                        {passageiro.status_pagamento || 'Pendente'}
-                      </Badge>
+                      {(() => {
+                        const statusObtido = obterStatusCorreto(passageiro);
+                        return (
+                          <Badge 
+                            className={
+                              statusObtido === 'Pago Completo' || statusObtido === '🎁 Brinde'
+                                ? 'bg-green-100 text-green-800' 
+                                : statusObtido === 'Pendente'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : statusObtido === 'Viagem Paga' || statusObtido === 'Passeios Pagos'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {statusObtido}
+                          </Badge>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -712,6 +795,8 @@ export function RelatorioFinanceiro({
           </div>
         </CardContent>
       </Card>
+        );
+      })()}
 
       {/* Rodapé do Relatório */}
       <Card className="bg-gray-50">
