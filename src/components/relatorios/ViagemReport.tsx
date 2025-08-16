@@ -6,6 +6,7 @@ import { converterStatusParaInteligente } from '@/lib/status-utils';
 import { ReportFilters } from '@/types/report-filters';
 import { useEmpresa } from '@/hooks/useEmpresa';
 import { supabase } from '@/lib/supabase';
+import { formatCPF, formatBirthDate, formatPhone } from '@/utils/formatters';
 
 interface Viagem {
   id: string;
@@ -261,7 +262,7 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
         </div>
 
         {/* Distribuição por Setor */}
-        {(!filters || filters.incluirDistribuicaoSetor) && (
+        {(!filters || filters.incluirDistribuicaoSetor) && !filters?.modoEmpresaOnibus && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-800 mb-4 text-lg">Distribuição por Setor do Maracanã</h3>
             <div className="grid grid-cols-2 gap-2">
@@ -322,20 +323,31 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                                 <th className="border p-1 text-center w-12">#</th>
                               )}
                               <th className="border p-1 text-left">Nome</th>
-                              {(!filters || filters.mostrarTelefone) && (
+                              {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
+                                <th className="border p-1 text-center">CPF</th>
+                              )}
+                              {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
+                                <th className="border p-1 text-center">Data Nasc.</th>
+                              )}
+                              {(!filters || filters.mostrarTelefone) && !filters?.modoEmpresaOnibus && (
                                 <th className="border p-1 text-left">Telefone</th>
                               )}
-                              {filters?.modoPassageiro && (
+                              {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
+                                <th className="border p-1 text-left">Local Embarque</th>
+                              )}
+                              {filters?.modoPassageiro && !filters?.modoEmpresaOnibus && (
                                 <th className="border p-1 text-left">Cidade</th>
                               )}
-                              <th className="border p-1 text-left">Setor</th>
-                              {(!filters || filters.mostrarNomesPasseios) && (
+                              {!filters?.modoEmpresaOnibus && (
+                                <th className="border p-1 text-left">Setor</th>
+                              )}
+                              {(!filters || filters.mostrarNomesPasseios) && !filters?.modoEmpresaOnibus && (
                                 <th className="border p-1 text-left">Passeios</th>
                               )}
-                              {(!filters || filters.mostrarValoresPassageiros) && (
+                              {(!filters || filters.mostrarValoresPassageiros) && !filters?.modoEmpresaOnibus && (
                                 <th className="border p-1 text-left">Valor</th>
                               )}
-                              {(!filters || filters.mostrarStatusPagamento) && (
+                              {(!filters || filters.mostrarStatusPagamento) && !filters?.modoEmpresaOnibus && (
                                 <th className="border p-1 text-left">Status</th>
                               )}
                             </tr>
@@ -349,14 +361,34 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                                     <td className="border p-1 text-center font-medium">{contadorGlobalPassageiros}</td>
                                   )}
                                   <td className="border p-1">{passageiro.nome}</td>
-                                  {(!filters || filters.mostrarTelefone) && (
-                                    <td className="border p-1">{passageiro.telefone}</td>
+                                  {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
+                                    <td className="border p-1 text-center">
+                                      {passageiro.cpf ? formatCPF(passageiro.cpf) : '-'}
+                                    </td>
                                   )}
-                                  {filters?.modoPassageiro && (
+                                  {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
+                                    <td className="border p-1 text-center">
+                                      {passageiro.data_nascimento 
+                                        ? formatBirthDate(passageiro.data_nascimento)
+                                        : '-'
+                                      }
+                                    </td>
+                                  )}
+                                  {(!filters || filters.mostrarTelefone) && !filters?.modoEmpresaOnibus && (
+                                    <td className="border p-1">
+                                      {passageiro.telefone ? formatPhone(passageiro.telefone) : '-'}
+                                    </td>
+                                  )}
+                                  {(filters?.modoEmpresaOnibus || filters?.modoResponsavel) && (
                                     <td className="border p-1">{passageiro.cidade_embarque || passageiro.cidade || '-'}</td>
                                   )}
-                                  <td className="border p-1">{passageiro.setor_maracana}</td>
-                                  {(!filters || filters.mostrarNomesPasseios) && (
+                                  {filters?.modoPassageiro && !filters?.modoEmpresaOnibus && (
+                                    <td className="border p-1">{passageiro.cidade_embarque || passageiro.cidade || '-'}</td>
+                                  )}
+                                  {!filters?.modoEmpresaOnibus && (
+                                    <td className="border p-1">{passageiro.setor_maracana}</td>
+                                  )}
+                                  {(!filters || filters.mostrarNomesPasseios) && !filters?.modoEmpresaOnibus && (
                                     <td className="border p-1">
                                       {passageiro.passeios && passageiro.passeios.length > 0 ? (
                                         <div className="flex flex-wrap gap-1">
@@ -371,12 +403,12 @@ export const ViagemReport = React.forwardRef<HTMLDivElement, ViagemReportProps>(
                                       )}
                                     </td>
                                   )}
-                                  {(!filters || filters.mostrarValoresPassageiros) && (
+                                  {(!filters || filters.mostrarValoresPassageiros) && !filters?.modoEmpresaOnibus && (
                                     <td className="border p-1">
                                       {formatCurrency((passageiro.valor || 0) - (passageiro.desconto || 0))}
                                     </td>
                                   )}
-                                  {(!filters || filters.mostrarStatusPagamento) && (
+                                  {(!filters || filters.mostrarStatusPagamento) && !filters?.modoEmpresaOnibus && (
                                     <td className="border p-1">
                                       {(() => {
                                         const statusInteligente = converterStatusParaInteligente({

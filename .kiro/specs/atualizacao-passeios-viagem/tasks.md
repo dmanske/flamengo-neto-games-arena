@@ -604,10 +604,69 @@
 
 **Task 33**: Correção Completa de Inconsistências Financeiras - Unificado sistema de despesas, corrigido card "R$ NaN", e implementado refresh automático entre abas. Sistema agora é 100% consistente (R$ 87.880,00 em todos os locais).
 
+- [x] **36. Implementação de Filtros Avançados para Relatórios PDF** ✅
+  - **OBJETIVO**: Adicionar novos filtros rápidos para diferentes tipos de relatórios
+  
+  **36.1 Novo Filtro: "Enviar para Empresa de Ônibus"** ✅
+  - ✅ **LOCALIZAÇÃO**: Seção "Filtros Rápidos" no modal de filtros de relatório
+  - ✅ **BOTÃO**: "🚌 Enviar para Empresa de Ônibus" (cor verde)
+  - ✅ **COLUNAS EXIBIDAS**: Número, Nome, CPF, Data de Nascimento, Local de Embarque
+  - ✅ **COLUNAS REMOVIDAS**: Telefone, Setor, Passeios, Valores, Status
+  - ✅ **SEÇÕES REMOVIDAS**: Distribuição por Setor do Maracanã, Resumo Financeiro
+  - ✅ **FORMATAÇÃO**: CPF xxx.xxx.xxx-xx, Data DD/MM/AAAA (centralizados)
+  - ✅ **IMPLEMENTAÇÃO**:
+    - Novo campo `modoEmpresaOnibus: boolean` nos tipos
+    - Preset `empresaOnibusModeFilters` configurado
+    - Função `applyEmpresaOnibusMode()` no ReportFilters
+    - Badge indicativo "🚌 Modo: Empresa de Ônibus"
+    - Lógica condicional no ViagemReport para colunas específicas
+  - _Requirements: 6.1, 7.1_
+  
+  **36.2 Melhorias no Filtro: "Lista para Responsável"** ✅
+  - ✅ **NOVAS COLUNAS ADICIONADAS**: CPF, Data de Nascimento, Local de Embarque
+  - ✅ **FORMATAÇÃO MELHORADA**: 
+    - CPF formatado xxx.xxx.xxx-xx (centralizado)
+    - Data de Nascimento DD/MM/AAAA (centralizada)
+    - Telefone formatado (xx) xxxx-xxxx ou (xx) x xxxx-xxxx
+  - ✅ **ESTRUTURA DA TABELA**:
+    - # | Nome | **CPF** | **Data Nasc.** | **Telefone** | **Local Embarque** | Setor | Passeios
+  - ✅ **OBJETIVO**: Lista completa para responsáveis de ônibus sem informações financeiras
+  - ✅ **IMPLEMENTAÇÃO**:
+    - Importação das funções `formatCPF`, `formatBirthDate`, `formatPhone`
+    - Colunas condicionais: `(filters?.modoEmpresaOnibus || filters?.modoResponsavel)`
+    - Formatação automática com fallback para dados vazios ("-")
+  - _Requirements: 6.1, 7.1_
+  
+  **36.3 Comparação dos Filtros Implementados** ✅
+  
+  | Filtro | Financeiro | CPF | Data Nasc. | Telefone | Local Embarque | Setor | Passeios |
+  |--------|------------|-----|------------|----------|----------------|-------|----------|
+  | **Normal** | ✅ Sim | ❌ Não | ❌ Não | ✅ Formatado | ❌ Não | ✅ Sim | ✅ Sim |
+  | **Responsável** | ❌ Não | ✅ **Novo** | ✅ **Novo** | ✅ **Melhorado** | ✅ **Novo** | ✅ Sim | ✅ Sim |
+  | **Passageiro** | ❌ Não | ❌ Não | ❌ Não | ❌ Não | ✅ Sim | ✅ Sim | ✅ Sim |
+  | **Empresa Ônibus** | ❌ Não | ✅ Sim | ✅ Sim | ❌ Não | ✅ Sim | ❌ Não | ❌ Não |
+  
+  **36.4 Arquivos Modificados** ✅
+  - ✅ `src/types/report-filters.ts` - Novos tipos e presets
+  - ✅ `src/components/relatorios/ReportFilters.tsx` - Interface e lógica dos filtros
+  - ✅ `src/components/relatorios/ReportFiltersDialog.tsx` - Reset de filtros
+  - ✅ `src/components/relatorios/ViagemReport.tsx` - Renderização das colunas
+  - ✅ `src/utils/formatters.ts` - Funções de formatação (já existentes)
+  - _Requirements: 6.1, 7.1_
+  
+  **36.5 Benefícios da Implementação** ✅
+  - ✅ **EMPRESA DE ÔNIBUS**: Lista limpa com dados essenciais para embarque
+  - ✅ **RESPONSÁVEL**: Identificação completa sem confusão financeira
+  - ✅ **FORMATAÇÃO PROFISSIONAL**: CPF, telefone e datas padronizados
+  - ✅ **FLEXIBILIDADE**: Diferentes relatórios para diferentes necessidades
+  - ✅ **USABILIDADE**: Interface intuitiva com badges indicativos
+  - _Requirements: 6.1, 7.1_
+
 ### 🔄 **PRÓXIMAS MELHORIAS SUGERIDAS**
 1. **Relatórios PDF** - Incluir total de descontos nos relatórios
 2. **Dashboard Geral** - Integrar descontos no financeiro geral da empresa
 3. **Análise de Rentabilidade** - Usar potencial ajustado para métricas de performance
+4. **Novos Filtros** - Implementar filtros por faixa etária, histórico de viagens, etc.
 
 ---
 

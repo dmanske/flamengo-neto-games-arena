@@ -135,7 +135,7 @@ export default function EditarViagem() {
           // Preencher o formulário com os dados existentes
           form.reset({
             adversario: data.adversario || "",
-            data_jogo: data.data_jogo ? formatDateOnlyForInput(data.data_jogo) : "",
+            data_jogo: data.data_jogo ? formatDateForInput(data.data_jogo) : "",
             data_saida: data.data_saida ? formatDateForInput(data.data_saida) : "",
             local_jogo: data.local_jogo || "Rio de Janeiro",
             valor_padrao: data.valor_padrao?.toString() || "",
@@ -451,10 +451,10 @@ export default function EditarViagem() {
                       name="data_jogo"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-700 font-medium">Data do Jogo</FormLabel>
+                          <FormLabel className="text-slate-700 font-medium">Data e Hora do Jogo</FormLabel>
                           <FormControl>
                             <Input
-                              type="date"
+                              type="datetime-local"
                               {...field}
                               className="border-slate-200 focus:border-blue-500"
                             />

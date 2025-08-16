@@ -77,9 +77,14 @@ export const ReportFiltersDialog: React.FC<ReportFiltersDialogProps> = ({
       agruparPorOnibus: true,
       apenasComDesconto: false,
       modoResponsavel: false,
+      modoPassageiro: false,
+      modoEmpresaOnibus: false,
       mostrarStatusPagamento: true,
       mostrarValorPadrao: true,
       mostrarValoresPassageiros: true,
+      mostrarTelefone: true,
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: false,
     };
     setLocalFilters(defaultFilters);
   };

@@ -26,6 +26,7 @@ export interface ReportFilters {
   // Filtros Rápidos
   modoResponsavel: boolean; // Remove informações financeiras
   modoPassageiro: boolean; // Lista simplificada para passageiros
+  modoEmpresaOnibus: boolean; // Lista para empresa de ônibus (CPF, data nascimento, embarque)
   mostrarStatusPagamento: boolean; // Para modo responsável
   mostrarValorPadrao: boolean; // Mostrar valor padrão nas informações da viagem
   mostrarValoresPassageiros: boolean; // Mostrar valores na lista de passageiros
@@ -56,6 +57,7 @@ export const defaultReportFilters: ReportFilters = {
   apenasComDesconto: false,
   modoResponsavel: false,
   modoPassageiro: false,
+  modoEmpresaOnibus: false,
   mostrarStatusPagamento: true,
   mostrarValorPadrao: true,
   mostrarValoresPassageiros: true,
@@ -85,5 +87,22 @@ export const passageiroModeFilters: Partial<ReportFilters> = {
   mostrarFotoOnibus: true,
   mostrarNumeroPassageiro: true,
   mostrarNomesPasseios: true,
+  agruparPorOnibus: true,
+};
+
+// Preset para modo empresa de ônibus
+export const empresaOnibusModeFilters: Partial<ReportFilters> = {
+  modoEmpresaOnibus: true,
+  modoResponsavel: false,
+  modoPassageiro: false,
+  incluirResumoFinanceiro: false,
+  incluirDistribuicaoSetor: false, // Remove distribuição por setor
+  mostrarValorPadrao: false,
+  mostrarValoresPassageiros: false,
+  mostrarStatusPagamento: false,
+  mostrarTelefone: false,
+  mostrarNomesPasseios: false,
+  mostrarFotoOnibus: false,
+  mostrarNumeroPassageiro: true,
   agruparPorOnibus: true,
 };
