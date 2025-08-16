@@ -117,7 +117,6 @@ export interface Onibus {
 }
 
 export function useViagemDetails(viagemId: string | undefined) {
-  console.log('🚀 DEBUG: useViagemDetails iniciado com viagemId:', viagemId);
   const navigate = useNavigate();
   const [viagem, setViagem] = useState<Viagem | null>(null);
   const [passageiros, setPassageiros] = useState<PassageiroDisplay[]>([]);
@@ -236,7 +235,6 @@ export function useViagemDetails(viagemId: string | undefined) {
   }, [viagem, onibusList, passageiros]);
 
   const fetchViagemData = async (id: string) => {
-    console.log('🚀 DEBUG: fetchViagemData chamado com id:', id);
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -311,13 +309,11 @@ export function useViagemDetails(viagemId: string | undefined) {
   };
 
   const fetchPassageiros = async (viagemId: string) => {
-    console.log('🚀 DEBUG: fetchPassageiros chamado com viagemId:', viagemId);
 
     if (!viagemId || viagemId === "undefined") {
       console.warn("ID da viagem inválido:", viagemId);
       return;
     }
-    console.log('🚀 DEBUG: ID válido, verificando UUID...');
 
     // Verificar se o ID é um UUID válido
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

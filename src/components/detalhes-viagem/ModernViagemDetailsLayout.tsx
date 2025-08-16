@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ResponsaveisCard } from "./ResponsaveisCard";
 import { formatCurrency } from "@/lib/utils";
 import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -201,6 +202,31 @@ export function ModernViagemDetailsLayout({
                   Filtros do Relatório
                 </Button>
               )}
+
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    const url = `${window.location.origin}/viagem/${viagem.id}/meu-onibus`;
+                    await navigator.clipboard.writeText(url);
+                    toast.success("🚌 Link copiado!", {
+                      description: "Compartilhe com os passageiros para eles encontrarem seu ônibus.",
+                      duration: 4000,
+                    });
+                  } catch (error) {
+                    // Fallback se clipboard não funcionar
+                    toast.info("🔗 Link gerado!", {
+                      description: `Copie manualmente: ${window.location.origin}/viagem/${viagem.id}/meu-onibus`,
+                      duration: 6000,
+                    });
+                  }
+                }}
+                className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700"
+                title="Copiar link para passageiros encontrarem seu ônibus"
+              >
+                <Bus className="h-4 w-4 mr-2" />
+                Meu Ônibus
+              </Button>
 
 
               

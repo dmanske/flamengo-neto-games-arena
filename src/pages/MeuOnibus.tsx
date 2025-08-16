@@ -1,0 +1,354 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Search, MapPin, Bus, Phone, Ticket, Users } from 'lucide-react';
+import { formatPhone, formatCPF } from '@/utils/formatters';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useViagemDetails } from '@/hooks/useViagemDetails';
+import { supabase } from '@/lib/supabase';
+
+// Usando tipos do hook existente - dados sempre consistentes
+
+const MeuOnibus = () => {
+  const { id } = useParams<{ id: string }>();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [busImages, setBusImages] = useState<Record<string, string>>({});
+
+  // Usar hook existente - dados sempre consistentes
+  const { 
+    viagem, 
+    passageiros: todosPassageiros, 
+    onibusList, 
+    isLoading 
+  } = useViagemDetails(id || '');
+
+  // Filtrar apenas passageiros alocados em ônibus
+  const passageirosComOnibus = todosPassageiros.filter(p => p.onibus_id);
+
+  // Carregar imagens dos ônibus
+  useEffect(() => {
+    const loadBusImages = async () => {
+      if (!onibusList.length) return;
+      
+      try {
+        // Usar a mesma query do ViagemReport
+        const { data, error } = await supabase
+          .from('onibus_images')
+          .select('tipo_onibus, image_url');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const images: Record<string, string> = {};
+          data.forEach(item => {
+            if (item.image_url) {
+              images[item.tipo_onibus] = item.image_url;
+            }
+          });
+          
+          setBusImages(images);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar imagens dos ônibus:', error);
+      }
+    };
+
+    if (onibusList.length > 0) {
+      loadBusImages();
+    }
+  }, [onibusList]);
+
+  // Função para buscar passageiro - BUSCA INTELIGENTE
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      setSearchResult(null);
+      setSearchPerformed(false);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+    
+    // Buscar por nome ou CPF usando estrutura do useViagemDetails
+    const found = passageirosComOnibus.find(p => {
+      const nome = (p.clientes?.nome || p.nome || '').toLowerCase();
+      const cpf = p.clientes?.cpf || p.cpf || '';
+      
+      // BUSCA POR NOME - mais flexível
+      // Remove acentos e permite busca parcial
+      const nomeNormalizado = nome
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9\s]/g, ''); // Remove caracteres especiais
+      
+      const termNormalizado = term
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '');
+      
+      // Busca por palavras individuais (permite busca por nome ou sobrenome)
+      const palavrasNome = nomeNormalizado.split(' ').filter(p => p.length > 0);
+      const palavrasTerm = termNormalizado.split(' ').filter(p => p.length > 0);
+      
+      const nomeMatch = palavrasTerm.every(palavra => 
+        palavrasNome.some(nomePalavra => nomePalavra.includes(palavra))
+      ) || nomeNormalizado.includes(termNormalizado);
+      
+      // BUSCA POR CPF - muito flexível
+      // Aceita: 12345678901, 123.456.789-01, 123456789-01, etc.
+      const cpfLimpo = cpf.replace(/\D/g, ''); // Remove tudo que não é número
+      const termLimpo = term.replace(/\D/g, ''); // Remove tudo que não é número
+      
+      const cpfMatch = termLimpo.length >= 3 && cpfLimpo.includes(termLimpo);
+      
+      return nomeMatch || cpfMatch;
+    });
+
+    setSearchResult(found || null);
+    setSearchPerformed(true);
+  };
+
+  const getOnibusInfo = (onibusId: string) => {
+    return onibusList.find(o => o.id === onibusId);
+  };
+
+  const getBusImage = (onibusInfo: any) => {
+    // Usar a imagem carregada da tabela onibus_images
+    return busImages[onibusInfo?.tipo_onibus] || '/images/onibus-default.jpg';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!viagem) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Viagem não encontrada</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-black">
+      {/* Header */}
+      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-center gap-4">
+            {viagem.logo_flamengo && (
+              <img 
+                src={viagem.logo_flamengo} 
+                alt="Flamengo" 
+                className="h-12 w-12 object-contain"
+              />
+            )}
+            <div className="text-center">
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                Onde Estou no Ônibus?
+              </h1>
+              <p className="text-red-100 mt-1">
+                {viagem.adversario} • {format(new Date(viagem.data_jogo), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+              </p>
+              <p className="text-red-200 text-sm mt-2">
+                📍 Consulte apenas passageiros já alocados nos ônibus
+              </p>
+            </div>
+            {viagem.logo_adversario && (
+              <img 
+                src={viagem.logo_adversario} 
+                alt={viagem.adversario} 
+                className="h-12 w-12 object-contain"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Conteúdo Principal */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Campo de Busca */}
+        <Card className="mb-8 border-white/20 bg-white/10 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-white text-center">
+              <Search className="h-6 w-6 mx-auto mb-2" />
+              Digite seu nome ou CPF
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Input
+                type="text"
+                placeholder="Ex: João, Silva, 123456789, 123.456.789-00..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="bg-white/20 border-white/30 text-white placeholder:text-white/70"
+              />
+              <Button 
+                onClick={handleSearch}
+                className="bg-red-600 hover:bg-red-700 text-white px-6"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Resultado da Busca */}
+        {searchPerformed && (
+          <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
+            <CardContent className="p-6">
+              {searchResult ? (
+                <div className="text-center">
+                  {/* Informações do Passageiro */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                      👋 Olá, {searchResult.clientes?.nome || searchResult.nome}!
+                    </h2>
+                    <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100">
+                      {(searchResult.clientes?.cpf || searchResult.cpf) && (
+                        <span>📄 CPF: {formatCPF(searchResult.clientes?.cpf || searchResult.cpf)}</span>
+                      )}
+                      {(searchResult.clientes?.telefone || searchResult.telefone) && (
+                        <span>📞 {formatPhone(searchResult.clientes?.telefone || searchResult.telefone)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Informações do Ônibus */}
+                  {searchResult.onibus_id && (() => {
+                    const onibusInfo = getOnibusInfo(searchResult.onibus_id);
+                    const onibusIndex = onibusList.findIndex(o => o.id === searchResult.onibus_id) + 1;
+                    
+                    return onibusInfo ? (
+                      <div className="bg-white/20 rounded-lg p-6 mb-6">
+                        <h3 className="text-xl font-bold text-white mb-4">
+                          🚌 Você está no ÔNIBUS {onibusIndex}
+                        </h3>
+                        
+                        {/* Foto do Ônibus */}
+                        <div className="mb-4">
+                          <img 
+                            src={getBusImage(onibusInfo)}
+                            alt={`Ônibus ${onibusInfo.tipo_onibus}`}
+                            className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+                            onError={(e) => {
+                              e.currentTarget.src = '/images/onibus-default.jpg';
+                            }}
+                          />
+                        </div>
+
+                        {/* Detalhes do Ônibus */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-white">
+                              <Bus className="h-4 w-4" />
+                              <span className="font-medium">Tipo:</span>
+                              <span>{onibusInfo.tipo_onibus}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-white">
+                              <Users className="h-4 w-4" />
+                              <span className="font-medium">Empresa:</span>
+                              <span>{onibusInfo.empresa}</span>
+                            </div>
+                            {onibusInfo.numero_identificacao && (
+                              <div className="flex items-center gap-2 text-white">
+                                <span className="font-medium">Número:</span>
+                                <span>{onibusInfo.numero_identificacao}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-white">
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium">Embarque:</span>
+                              <span>{searchResult.cidade_embarque || searchResult.clientes?.cidade || searchResult.cidade}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-white">
+                              <Ticket className="h-4 w-4" />
+                              <span className="font-medium">Setor:</span>
+                              <span>{searchResult.setor_maracana}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-500/20 rounded-lg p-4 mb-6">
+                        <p className="text-yellow-100">
+                          ⚠️ Você ainda não foi alocado em um ônibus. Entre em contato com a organização.
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Passeios Contratados */}
+                  {searchResult.passageiro_passeios && searchResult.passageiro_passeios.length > 0 && (
+                    <div className="bg-white/20 rounded-lg p-6">
+                      <h4 className="text-lg font-bold text-white mb-3">
+                        🎢 Seus Passeios Contratados
+                      </h4>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {searchResult.passageiro_passeios.map((pp: any, index: number) => (
+                          <Badge 
+                            key={index}
+                            className={`${
+                              (pp.valor_cobrado || 0) > 0 
+                                ? 'bg-green-600 text-white' 
+                                : 'bg-blue-600 text-white'
+                            } px-3 py-1`}
+                          >
+                            {pp.passeios?.nome || 'Passeio'}
+                            {(pp.valor_cobrado || 0) === 0 && ' 🎁'}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-6xl mb-4">😔</div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    Passageiro não encontrado
+                  </h3>
+                  <p className="text-red-100">
+                    Verifique se digitou o nome ou CPF corretamente.
+                    <br />
+                    <strong>Importante:</strong> Só aparecem passageiros que já foram alocados em ônibus.
+                    <br />
+                    Se você não foi alocado ainda, entre em contato com a organização.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Informações de Contato */}
+        <div className="mt-8 text-center">
+          <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <p className="text-red-100 text-sm">
+                <Phone className="h-4 w-4 inline mr-1" />
+                Dúvidas? Entre em contato: (47) 9 9992-1907
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MeuOnibus;

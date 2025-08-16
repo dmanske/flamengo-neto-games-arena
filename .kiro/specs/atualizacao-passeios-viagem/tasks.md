@@ -662,11 +662,100 @@
   - ✅ **USABILIDADE**: Interface intuitiva com badges indicativos
   - _Requirements: 6.1, 7.1_
 
+- [x] **37. Funcionalidade "Onde Estou no Ônibus?" para Passageiros** ✅
+  - **OBJETIVO**: Criar página pública para passageiros encontrarem seu ônibus facilmente
+  
+  **37.1 Página Pública de Consulta** ✅
+  - ✅ **URL**: `/viagem/{id}/meu-onibus` (rota pública, sem autenticação)
+  - ✅ **Design**: Interface moderna com cores do Flamengo (gradiente vermelho/preto)
+  - ✅ **Responsivo**: Mobile-first, otimizado para celular
+  - ✅ **Busca inteligente**: Por nome ou CPF (com/sem formatação)
+  - ✅ **Dados consistentes**: Reutiliza `useViagemDetails` (mesma fonte da página admin)
+  - ✅ **Filtro automático**: Mostra apenas passageiros alocados em ônibus
+  - _Requirements: 6.1, 7.1_
+  
+  **37.2 Informações Exibidas** ✅
+  - ✅ **Dados do Passageiro**: Nome, CPF formatado (xxx.xxx.xxx-xx), Telefone formatado
+  - ✅ **Informações do Ônibus**: Número, Tipo, Empresa, Foto real do banco de dados
+  - ✅ **Localização**: Local de embarque (cidade_embarque ou cidade do cliente)
+  - ✅ **Ingresso**: Setor do Maracanã
+  - ✅ **Passeios Contratados**: Lista com indicador gratuito (🎁) e valores
+  - ✅ **Tratamento de Erros**: Mensagens claras para passageiro não encontrado/não alocado
+  - _Requirements: 6.1, 7.1_
+  
+  **37.3 Integração com Página Administrativa** ✅
+  - ✅ **Botão "Meu Ônibus"**: Adicionado no header da página de detalhes da viagem
+  - ✅ **Cópia automática**: Link copiado para clipboard ao clicar
+  - ✅ **Feedback visual**: Alert confirmando que link foi copiado
+  - ✅ **Compartilhamento fácil**: Um clique para gerar e compartilhar link
+  - _Requirements: 6.1, 7.1_
+  
+  **37.4 Arquitetura e Consistência** ✅
+  - ✅ **Reutilização de código**: Usa `useViagemDetails` (zero duplicação)
+  - ✅ **Dados sempre sincronizados**: Mesma fonte de dados da página administrativa
+  - ✅ **Performance otimizada**: Hook já otimizado, filtro client-side eficiente
+  - ✅ **Manutenibilidade**: Uma fonte de verdade, fácil manutenção
+  - ✅ **Estrutura de dados**: `passageiro.clientes.nome`, `passageiro.onibus_id`, etc.
+  - _Requirements: 4.2, 6.1_
+  
+  **37.5 Funcionalidades Técnicas** ✅
+  - ✅ **Busca inteligente**: Remove acentos, case-insensitive, busca parcial
+  - ✅ **Formatação automática**: CPF (xxx.xxx.xxx-xx), telefone ((xx) xxxx-xxxx)
+  - ✅ **Imagens reais**: Busca `foto_onibus` do banco com fallback
+  - ✅ **Tratamento de dados**: Fallback para campos opcionais (clientes vs dados diretos)
+  - ✅ **Validação**: Só mostra passageiros com `onibus_id` não nulo
+  - ✅ **Interface clara**: Mensagens explicativas sobre limitações
+  - _Requirements: 6.1, 7.1_
+  
+  **37.6 Exemplo de Uso** ✅
+  ```
+  1. Admin acessa /dashboard/viagem/abc123
+  2. Clica em "🚌 Meu Ônibus" 
+  3. Link copiado: /viagem/abc123/meu-onibus
+  4. Compartilha com passageiros
+  5. Passageiro acessa, digita "João Silva"
+  6. Vê: Ônibus 2, Foto, Empresa, Setor, Passeios
+  ```
+  
+  **37.7 Arquivos Implementados** ✅
+  - ✅ `src/pages/MeuOnibus.tsx` - Página principal (reutiliza useViagemDetails)
+  - ✅ `src/App.tsx` - Rota pública adicionada
+  - ✅ `src/components/detalhes-viagem/ModernViagemDetailsLayout.tsx` - Botão integrado
+  - ✅ Removido: Query duplicada, interfaces desnecessárias
+  - ✅ Mantido: Interface limpa, dados consistentes
+  - _Requirements: 6.1, 7.1_
+
+- [x] **38. Correção: Edição de Hora do Jogo** ✅
+  - **OBJETIVO**: Permitir editar hora do jogo no formulário de edição de viagem
+  
+  **38.1 Problema Identificado** ✅
+  - ✅ **Inconsistência**: Cadastro permitia hora, edição apenas data
+  - ✅ **Campo incorreto**: `type="date"` em vez de `type="datetime-local"`
+  - ✅ **Label incorreto**: "Data do Jogo" em vez de "Data e Hora do Jogo"
+  - ✅ **Formatação incorreta**: `formatDateOnlyForInput` em vez de `formatDateForInput`
+  - _Requirements: 1.3, 2.1_
+  
+  **38.2 Correções Aplicadas** ✅
+  - ✅ **Input corrigido**: `type="datetime-local"` para permitir data e hora
+  - ✅ **Label atualizado**: "Data e Hora do Jogo" (consistente com cadastro)
+  - ✅ **Formatação corrigida**: `formatDateForInput` para carregar hora corretamente
+  - ✅ **Compatibilidade mantida**: Funciona com dados existentes
+  - ✅ **Interface nativa**: Usa seletor datetime-local do navegador
+  - _Requirements: 1.3, 2.1_
+  
+  **38.3 Arquivo Modificado** ✅
+  - ✅ `src/pages/EditarViagem.tsx` - Correções implementadas
+  - ✅ Build funcionando sem erros
+  - ✅ Funcionalidade testada e validada
+  - _Requirements: 1.3, 2.1_
+
 ### 🔄 **PRÓXIMAS MELHORIAS SUGERIDAS**
 1. **Relatórios PDF** - Incluir total de descontos nos relatórios
 2. **Dashboard Geral** - Integrar descontos no financeiro geral da empresa
 3. **Análise de Rentabilidade** - Usar potencial ajustado para métricas de performance
 4. **Novos Filtros** - Implementar filtros por faixa etária, histórico de viagens, etc.
+5. **QR Codes Individuais** - Evoluir "Meu Ônibus" para links personalizados por passageiro
+6. **Notificações WhatsApp** - Integrar envio automático do link "Meu Ônibus"
 
 ---
 

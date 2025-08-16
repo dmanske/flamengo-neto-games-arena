@@ -63,6 +63,11 @@ import FinanceiroGeral from "@/pages/FinanceiroGeral";
 // Import página de configuração da empresa
 import EmpresaConfigPage from "@/pages/EmpresaConfigPage";
 
+// Import página pública Meu Ônibus
+import MeuOnibus from "@/pages/MeuOnibus";
+import MeuOnibusTest from "@/pages/MeuOnibusTest";
+import MeuOnibusSimple from "@/pages/MeuOnibusSimple";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -84,6 +89,11 @@ function App() {
               {/* Galeria pública */}
               <Route path="/galeria-fotos" element={<GaleriaFotos />} />
               <Route path="/galeria-videos" element={<GaleriaVideos />} />
+              
+              {/* Página pública Meu Ônibus */}
+              <Route path="/viagem/:id/meu-onibus" element={<MeuOnibus />} />
+              <Route path="/viagem/:id/test" element={<MeuOnibusTest />} />
+              <Route path="/viagem/:id/simple" element={<MeuOnibusSimple />} />
               
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />

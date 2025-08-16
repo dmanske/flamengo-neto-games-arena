@@ -56,7 +56,7 @@ const DetalhesViagem = () => {
   const [detailsPassageiroOpen, setDetailsPassageiroOpen] = useState(false);
   const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("passageiros");
-  
+
   const {
     viagem,
     passageiros: originalPassageiros,
@@ -71,7 +71,7 @@ const DetalhesViagem = () => {
     valorBrutoTotal,
     valorPasseiosReal,
     quantidadeComDesconto,
-    
+
     // Breakdown por categoria
     receitaViagem,
     receitaPasseios,
@@ -94,11 +94,11 @@ const DetalhesViagem = () => {
   } = useViagemDetails(id);
 
   // Hook para compatibilidade entre sistemas antigo e novo
-  const { 
-    sistema, 
-    valorPasseios, 
-    temPasseios, 
-    shouldUseNewSystem 
+  const {
+    sistema,
+    valorPasseios,
+    temPasseios,
+    shouldUseNewSystem
   } = useViagemCompatibility(viagem);
 
   // Hook para dados financeiros corretos (mesmo da aba financeiro)
@@ -111,14 +111,14 @@ const DetalhesViagem = () => {
   };
 
   // Hook para dados financeiros corretos (ESTADO UNIFICADO - única instância)
-  const { 
+  const {
     viagem: viagemFinanceiro,
-    resumoFinanceiro, 
+    resumoFinanceiro,
     receitas,
     despesas,
     passageirosPendentes,
     todosPassageiros,
-    fetchAllData: refreshFinanceiro, 
+    fetchAllData: refreshFinanceiro,
     isLoading: loadingFinanceiro,
     // Funções de ação
     adicionarReceita,
@@ -130,14 +130,14 @@ const DetalhesViagem = () => {
     registrarCobranca
   } = useViagemFinanceiro(id || "", refreshAllFinancialData);
 
-  const { 
-    reportRef, 
-    handlePrint, 
-    handleExportPDF, 
-    filters, 
-    setFilters, 
-    filterPassageiros, 
-    calculatePreviewData 
+  const {
+    reportRef,
+    handlePrint,
+    handleExportPDF,
+    filters,
+    setFilters,
+    filterPassageiros,
+    calculatePreviewData
   } = useViagemReport();
 
   // Hook para carregar passeios (para filtros de viagens novas)
@@ -256,7 +256,7 @@ const DetalhesViagem = () => {
   }
 
   const totalPassageirosNaoAlocados = originalPassageiros.filter(p => !p.onibus_id).length;
-  
+
   // Calcular quantidade de brindes (passageiros com valor 0)
   const quantidadeBrindes = originalPassageiros.filter(p => (p.valor || 0) === 0).length;
 
@@ -345,8 +345,8 @@ const DetalhesViagem = () => {
                 <h3 className="text-lg font-medium mb-4">
                   Passeios da Viagem {shouldUseNewSystem && '(com Valores)'}
                 </h3>
-                <PasseiosExibicaoHibrida 
-                  viagem={viagem} 
+                <PasseiosExibicaoHibrida
+                  viagem={viagem}
                   formato="detalhado"
                   className="max-w-2xl"
                 />
@@ -432,7 +432,7 @@ const DetalhesViagem = () => {
               />
             </div>
           )}
-          
+
           {/* Sistema Financeiro Completo da Viagem */}
           <FinanceiroViagem
             viagemId={id || ""}
@@ -440,17 +440,17 @@ const DetalhesViagem = () => {
         </TabsContent>
       </Tabs>
 
-      <PassageiroDialog 
-        open={addPassageiroOpen} 
-        onOpenChange={setAddPassageiroOpen} 
-        viagemId={id || ""} 
+      <PassageiroDialog
+        open={addPassageiroOpen}
+        onOpenChange={setAddPassageiroOpen}
+        viagemId={id || ""}
         onSuccess={refreshAllData}
         valorPadrao={viagem.valor_padrao}
         setorPadrao={viagem.setor_padrao}
         defaultOnibusId={selectedOnibusId || ''}
         viagem={viagem}
       />
-      
+
       <PassageiroEditDialog
         open={editPassageiroOpen}
         onOpenChange={setEditPassageiroOpen}
