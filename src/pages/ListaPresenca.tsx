@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Users, UserCheck, UserX, Search, Bus, Filter, TrendingUp, MapPin, Ticket, X } from "lucide-react";
+import { ArrowLeft, Users, UserCheck, UserX, Search, Bus, Filter, TrendingUp, MapPin, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,11 +22,23 @@ interface Passageiro {
   cidade_embarque: string;
   setor_maracana: string;
   status_presenca: 'pendente' | 'presente' | 'ausente';
+  status_pagamento: string;
+  valor: number;
+  desconto: number;
   onibus_id: string;
   is_responsavel_onibus: boolean;
   passeios: Array<{
     passeio_nome: string;
     status: string;
+    valor_cobrado?: number;
+  }>;
+  historico_pagamentos?: Array<{
+    id: string;
+    categoria: 'viagem' | 'passeios' | 'ambos';
+    valor_pago: number;
+    forma_pagamento: string;
+    data_pagamento: string;
+    observacoes?: string;
   }>;
 }
 
@@ -96,12 +108,15 @@ const ListaPresenca = () => {
       if (onibusError) throw onibusError;
       setOnibus(onibusData || []);
 
-      // Buscar passageiros com dados do cliente
+      // Buscar passageiros com dados do cliente e informações financeiras
       const { data: passageirosData, error: passageirosError } = await supabase
         .from("viagem_passageiros")
         .select(`
           id,
           status_presenca,
+          status_pagamento,
+          valor,
+          desconto,
           onibus_id,
           cidade_embarque,
           setor_maracana,
@@ -114,7 +129,16 @@ const ListaPresenca = () => {
           ),
           passageiro_passeios (
             passeio_nome,
-            status
+            status,
+            valor_cobrado
+          ),
+          historico_pagamentos_categorizado (
+            id,
+            categoria,
+            valor_pago,
+            forma_pagamento,
+            data_pagamento,
+            observacoes
           )
         `)
         .eq("viagem_id", viagemId);
@@ -131,9 +155,13 @@ const ListaPresenca = () => {
         cidade_embarque: item.cidade_embarque,
         setor_maracana: item.setor_maracana,
         status_presenca: item.status_presenca || 'pendente',
+        status_pagamento: item.status_pagamento || 'Pendente',
+        valor: item.valor || 0,
+        desconto: item.desconto || 0,
         onibus_id: item.onibus_id,
         is_responsavel_onibus: item.is_responsavel_onibus || false,
-        passeios: item.passageiro_passeios || []
+        passeios: item.passageiro_passeios || [],
+        historico_pagamentos: item.historico_pagamentos_categorizado || []
       }));
 
       setPassageiros(passageirosFormatados);
@@ -227,7 +255,127 @@ const ListaPresenca = () => {
     const total = todosPassageiros.length;
     const presentes = todosPassageiros.filter(p => p.status_presenca === 'presente').length;
     const pendentes = todosPassageiros.filter(p => p.status_presenca === 'pendente').length;
-    return { total, presentes, pendentes };
+    
+    // Estatísticas financeiras
+    let pagosCompletos = 0;
+    let pendentesFinanceiro = 0;
+    let valorTotalPendente = 0;
+    
+    todosPassageiros.forEach(p => {
+      const valorViagem = (p.valor || 0) - (p.desconto || 0);
+      const valorPasseios = (p.passeios || []).reduce((sum, passeio) => sum + (passeio.valor_cobrado || 0), 0);
+      const valorTotal = valorViagem + valorPasseios;
+      
+      if (valorTotal === 0) return; // Pular brindes
+      
+      // Calcular valores pagos usando historico_pagamentos_categorizado
+      const historico = p.historico_pagamentos || [];
+      
+      const pagoViagem = historico
+        .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
+        .reduce((sum, h) => sum + h.valor_pago, 0);
+      
+      const pagoPasseios = historico
+        .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
+        .reduce((sum, h) => sum + h.valor_pago, 0);
+
+      // Calcular pendências reais
+      const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
+      const pendentePasseios = Math.max(0, valorPasseios - pagoPasseios);
+      const totalPendente = pendenteViagem + pendentePasseios;
+      
+      if (totalPendente <= 0.01) {
+        pagosCompletos++;
+      } else {
+        pendentesFinanceiro++;
+        valorTotalPendente += totalPendente;
+      }
+    });
+    
+    return { 
+      total, 
+      presentes, 
+      pendentes, 
+      pagosCompletos, 
+      pendentesFinanceiro, 
+      valorTotalPendente 
+    };
+  };
+
+  // Calcular informações financeiras do passageiro (usando mesma lógica do sistema real)
+  const getInfoFinanceira = (passageiro: Passageiro) => {
+    const valorViagem = (passageiro.valor || 0) - (passageiro.desconto || 0);
+    const valorPasseios = (passageiro.passeios || []).reduce((sum, passeio) => {
+      return sum + (passeio.valor_cobrado || 0);
+    }, 0);
+    const valorTotal = valorViagem + valorPasseios;
+
+    // Calcular valores pagos por categoria usando historico_pagamentos_categorizado
+    const historico = passageiro.historico_pagamentos || [];
+    
+    const pagoViagem = historico
+      .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
+      .reduce((sum, h) => sum + h.valor_pago, 0);
+    
+    const pagoPasseios = historico
+      .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
+      .reduce((sum, h) => sum + h.valor_pago, 0);
+
+    const totalPago = pagoViagem + pagoPasseios;
+
+    // Calcular pendências
+    const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
+    const pendentePasseios = Math.max(0, valorPasseios - pagoPasseios);
+    const totalPendente = pendenteViagem + pendentePasseios;
+
+    // Verificar se é brinde (valor total = 0)
+    const ehBrinde = valorTotal === 0;
+
+    if (ehBrinde) {
+      return {
+        status: 'brinde',
+        texto: '🎁 Cortesia',
+        cor: 'text-purple-600 bg-purple-50 border-purple-200'
+      };
+    }
+
+    // Determinar status baseado nos valores reais pagos
+    if (totalPendente <= 0.01) {
+      // Pago completo
+      return {
+        status: 'pago',
+        texto: '✅ Pago Completo',
+        cor: 'text-green-600 bg-green-50 border-green-200'
+      };
+    } else if (pendenteViagem <= 0.01 && pendentePasseios > 0.01) {
+      // Só viagem paga
+      return {
+        status: 'parcial',
+        texto: `🎫 Viagem Paga - Passeios: R$ ${pendentePasseios.toFixed(2)}`,
+        cor: 'text-blue-600 bg-blue-50 border-blue-200'
+      };
+    } else if (pendentePasseios <= 0.01 && pendenteViagem > 0.01) {
+      // Só passeios pagos
+      return {
+        status: 'parcial',
+        texto: `🎢 Passeios Pagos - Viagem: R$ ${pendenteViagem.toFixed(2)}`,
+        cor: 'text-blue-600 bg-blue-50 border-blue-200'
+      };
+    } else if (totalPago > 0.01) {
+      // Pagamento parcial
+      return {
+        status: 'parcial',
+        texto: `💳 Pago: R$ ${totalPago.toFixed(2)} - Pendente: R$ ${totalPendente.toFixed(2)}`,
+        cor: 'text-orange-600 bg-orange-50 border-orange-200'
+      };
+    } else {
+      // Nada pago
+      return {
+        status: 'pendente',
+        texto: `⚠️ Pendente: R$ ${totalPendente.toFixed(2)}`,
+        cor: 'text-red-600 bg-red-50 border-red-200'
+      };
+    }
   };
 
   if (loading) {
@@ -358,6 +506,79 @@ const ListaPresenca = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Resumo Financeiro */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            💰 Resumo Financeiro
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(() => {
+              let pagosCompletos = 0;
+              let pendentesFinanceiro = 0;
+              let valorTotalPendente = 0;
+              let brindes = 0;
+
+              passageiros.forEach(p => {
+                const valorViagem = (p.valor || 0) - (p.desconto || 0);
+                const valorPasseios = (p.passeios || []).reduce((sum, passeio) => sum + (passeio.valor_cobrado || 0), 0);
+                const valorTotal = valorViagem + valorPasseios;
+
+                if (valorTotal === 0) {
+                  brindes++;
+                  return;
+                }
+
+                // Calcular valores pagos usando historico_pagamentos_categorizado
+                const historico = p.historico_pagamentos || [];
+                
+                const pagoViagem = historico
+                  .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
+                  .reduce((sum, h) => sum + h.valor_pago, 0);
+                
+                const pagoPasseios = historico
+                  .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
+                  .reduce((sum, h) => sum + h.valor_pago, 0);
+
+                // Calcular pendências reais
+                const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
+                const pendentePasseios = Math.max(0, valorPasseios - pagoPasseios);
+                const totalPendente = pendenteViagem + pendentePasseios;
+                
+                if (totalPendente <= 0.01) {
+                  pagosCompletos++;
+                } else {
+                  pendentesFinanceiro++;
+                  valorTotalPendente += totalPendente;
+                }
+              });
+
+              return (
+                <>
+                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-2xl font-bold text-green-600">{pagosCompletos}</p>
+                    <p className="text-sm text-green-700">Pagamentos Completos</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                    <p className="text-2xl font-bold text-red-600">{pendentesFinanceiro}</p>
+                    <p className="text-sm text-red-700">Pendências Financeiras</p>
+                    <p className="text-xs text-red-600 mt-1">R$ {valorTotalPendente.toFixed(2)}</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-2xl font-bold text-purple-600">{brindes}</p>
+                    <p className="text-sm text-purple-700">Cortesias</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Responsáveis por Ônibus */}
       {passageiros.filter(p => p.is_responsavel_onibus).length > 0 && (
@@ -387,14 +608,9 @@ const ListaPresenca = () => {
                         <p className="text-xs text-muted-foreground">{responsavel.cidade_embarque}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => toggleResponsavel(responsavel.viagem_passageiro_id, responsavel.is_responsavel_onibus)}
-                    >
-                      <UserX className="h-4 w-4" />
-                    </Button>
+                    <Badge variant="outline" className="text-xs">
+                      Responsável
+                    </Badge>
                   </div>
                 ))
               }
@@ -596,7 +812,7 @@ const ListaPresenca = () => {
                     <Bus className="h-5 w-5" />
                     <span>{onibusItem.numero_identificacao || `${onibusItem.tipo_onibus} - ${onibusItem.empresa}`}</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">
                       Total: {stats.total}
                     </Badge>
@@ -606,6 +822,14 @@ const ListaPresenca = () => {
                     <Badge className="bg-orange-100 text-orange-700">
                       Pendentes: {stats.pendentes}
                     </Badge>
+                    <Badge className="bg-green-100 text-green-700">
+                      💰 Pagos: {stats.pagosCompletos}
+                    </Badge>
+                    {stats.pendentesFinanceiro > 0 && (
+                      <Badge className="bg-red-100 text-red-700">
+                        💳 Pendentes: {stats.pendentesFinanceiro} (R$ {stats.valorTotalPendente.toFixed(2)})
+                      </Badge>
+                    )}
                   </div>
                 </CardTitle>
                 
@@ -618,11 +842,9 @@ const ListaPresenca = () => {
                       .map(responsavel => (
                         <Badge 
                           key={responsavel.viagem_passageiro_id} 
-                          className="bg-blue-100 text-blue-800 flex items-center gap-1 cursor-pointer"
-                          onClick={() => toggleResponsavel(responsavel.viagem_passageiro_id, responsavel.is_responsavel_onibus)}
+                          className="bg-blue-100 text-blue-800"
                         >
                           {responsavel.nome.split(' ')[0]}
-                          <X className="h-3 w-3" />
                         </Badge>
                       ))
                     }
@@ -678,6 +900,18 @@ const ListaPresenca = () => {
                                     <p>CPF: {formatCPF(passageiro.cpf)}</p>
                                     <p>Telefone: {formatPhone(passageiro.telefone)}</p>
                                     <p>Setor: {passageiro.setor_maracana}</p>
+                                  </div>
+                                  
+                                  {/* Informações Financeiras */}
+                                  <div className="mt-2">
+                                    {(() => {
+                                      const infoFinanceira = getInfoFinanceira(passageiro);
+                                      return (
+                                        <div className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${infoFinanceira.cor}`}>
+                                          {infoFinanceira.texto}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                   {passageiro.passeios && passageiro.passeios.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-2">
