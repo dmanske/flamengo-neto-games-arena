@@ -8,7 +8,7 @@ import { Search, MapPin, Bus, Phone, Ticket, Users } from 'lucide-react';
 import { formatPhone, formatCPF } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useViagemDetails } from '@/hooks/useViagemDetails';
+// Removido useViagemDetails para evitar redirecionamentos
 import { supabase } from '@/lib/supabase';
 
 // Usando tipos do hook existente - dados sempre consistentes
@@ -20,13 +20,146 @@ const MeuOnibus = () => {
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [busImages, setBusImages] = useState<Record<string, string>>({});
 
-  // Usar hook existente - dados sempre consistentes
-  const { 
-    viagem, 
-    passageiros: todosPassageiros, 
-    onibusList, 
-    isLoading 
-  } = useViagemDetails(id || '');
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Estados para dados da viagem (versão pública sem redirecionamentos)
+  const [viagem, setViagem] = useState<any>(null);
+  const [todosPassageiros, setTodosPassageiros] = useState<any[]>([]);
+  const [onibusList, setOnibusList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Autenticação automática com usuário padrão
+  useEffect(() => {
+    const loginAutomatico = async () => {
+      try {
+        console.log('🔐 Verificando autenticação...');
+
+        // Verificar se já está autenticado
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          console.log('✅ Já autenticado');
+          setAuthLoading(false);
+          return;
+        }
+
+        console.log('🔑 Fazendo login automático com usuário padrão...');
+
+        // Credenciais do usuário padrão para clientes
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: 'meulugar@netoviagens.com',
+          password: 'meulugar'
+        });
+
+        if (error) {
+          console.error('❌ Erro no login automático:', error);
+        } else {
+          console.log('✅ Login automático realizado com sucesso');
+        }
+
+      } catch (error) {
+        console.error('❌ Erro na autenticação automática:', error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    loginAutomatico();
+  }, []);
+
+  // Buscar dados da viagem após autenticação
+  useEffect(() => {
+    const fetchDadosViagem = async () => {
+      if (authLoading || !id) return;
+
+      // Verificar se o ID é um UUID válido
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        console.warn("ID da viagem não é um UUID válido:", id);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        // Buscar dados da viagem
+        const { data: viagemData, error: viagemError } = await supabase
+          .from('viagens')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (viagemError) throw viagemError;
+        setViagem(viagemData);
+
+        // Buscar ônibus da viagem
+        const { data: onibusData, error: onibusError } = await supabase
+          .from("viagem_onibus")
+          .select("*")
+          .eq("viagem_id", id);
+
+        if (onibusError) throw onibusError;
+        setOnibusList(onibusData || []);
+
+        // Buscar passageiros com dados do cliente
+        const { data: passageirosData, error: passageirosError } = await supabase
+          .from("viagem_passageiros")
+          .select(`
+            id,
+            cliente_id,
+            setor_maracana,
+            valor,
+            desconto,
+            onibus_id,
+            cidade_embarque,
+            clientes!viagem_passageiros_cliente_id_fkey (
+              id,
+              nome,
+              telefone,
+              cpf
+            ),
+            passageiro_passeios (
+              passeio_nome,
+              status,
+              valor_cobrado
+            )
+          `)
+          .eq("viagem_id", id);
+
+        if (passageirosError) throw passageirosError;
+
+        // Formatar dados dos passageiros
+        const passageirosFormatados = (passageirosData || []).map((item: any) => ({
+          id: item.clientes.id,
+          nome: item.clientes.nome,
+          telefone: item.clientes.telefone,
+          cpf: item.clientes.cpf,
+          cidade_embarque: item.cidade_embarque,
+          setor_maracana: item.setor_maracana,
+          valor: item.valor || 0,
+          desconto: item.desconto || 0,
+          onibus_id: item.onibus_id,
+          cidade: item.clientes.cidade || item.cidade_embarque,
+          passageiro_passeios: item.passageiro_passeios || []
+        }));
+
+        setTodosPassageiros(passageirosFormatados);
+
+        console.log('✅ Dados da viagem carregados:', {
+          viagem: viagemData.adversario,
+          onibus: onibusData?.length || 0,
+          passageiros: passageirosFormatados.length
+        });
+
+      } catch (error) {
+        console.error('❌ Erro ao buscar dados da viagem:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDadosViagem();
+  }, [authLoading, id]);
 
   // Filtrar apenas passageiros alocados em ônibus
   const passageirosComOnibus = todosPassageiros.filter(p => p.onibus_id);
@@ -35,7 +168,7 @@ const MeuOnibus = () => {
   useEffect(() => {
     const loadBusImages = async () => {
       if (!onibusList.length) return;
-      
+
       try {
         // Usar a mesma query do ViagemReport
         const { data, error } = await supabase
@@ -51,7 +184,7 @@ const MeuOnibus = () => {
               images[item.tipo_onibus] = item.image_url;
             }
           });
-          
+
           setBusImages(images);
         }
       } catch (error) {
@@ -73,39 +206,39 @@ const MeuOnibus = () => {
     }
 
     const term = searchTerm.toLowerCase().trim();
-    
+
     // Buscar por nome ou CPF usando estrutura do useViagemDetails
     const found = passageirosComOnibus.find(p => {
-      const nome = (p.clientes?.nome || p.nome || '').toLowerCase();
-      const cpf = p.clientes?.cpf || p.cpf || '';
-      
+      const nome = (p.nome || '').toLowerCase();
+      const cpf = p.cpf || '';
+
       // BUSCA POR NOME - mais flexível
       // Remove acentos e permite busca parcial
       const nomeNormalizado = nome
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace(/[^a-z0-9\s]/g, ''); // Remove caracteres especiais
-      
+
       const termNormalizado = term
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9\s]/g, '');
-      
+
       // Busca por palavras individuais (permite busca por nome ou sobrenome)
       const palavrasNome = nomeNormalizado.split(' ').filter(p => p.length > 0);
       const palavrasTerm = termNormalizado.split(' ').filter(p => p.length > 0);
-      
-      const nomeMatch = palavrasTerm.every(palavra => 
+
+      const nomeMatch = palavrasTerm.every(palavra =>
         palavrasNome.some(nomePalavra => nomePalavra.includes(palavra))
       ) || nomeNormalizado.includes(termNormalizado);
-      
+
       // BUSCA POR CPF - muito flexível
       // Aceita: 12345678901, 123.456.789-01, 123456789-01, etc.
       const cpfLimpo = cpf.replace(/\D/g, ''); // Remove tudo que não é número
       const termLimpo = term.replace(/\D/g, ''); // Remove tudo que não é número
-      
+
       const cpfMatch = termLimpo.length >= 3 && cpfLimpo.includes(termLimpo);
-      
+
       return nomeMatch || cpfMatch;
     });
 
@@ -122,10 +255,12 @@ const MeuOnibus = () => {
     return busImages[onibusInfo?.tipo_onibus] || '/images/onibus-default.jpg';
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-black flex items-center justify-center">
-        <div className="text-white text-xl">Carregando...</div>
+        <div className="text-white text-xl">
+          {authLoading ? 'Conectando...' : 'Carregando...'}
+        </div>
       </div>
     );
   }
@@ -145,9 +280,9 @@ const MeuOnibus = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center gap-4">
             {viagem.logo_flamengo && (
-              <img 
-                src={viagem.logo_flamengo} 
-                alt="Flamengo" 
+              <img
+                src={viagem.logo_flamengo}
+                alt="Flamengo"
                 className="h-12 w-12 object-contain"
               />
             )}
@@ -163,9 +298,9 @@ const MeuOnibus = () => {
               </p>
             </div>
             {viagem.logo_adversario && (
-              <img 
-                src={viagem.logo_adversario} 
-                alt={viagem.adversario} 
+              <img
+                src={viagem.logo_adversario}
+                alt={viagem.adversario}
                 className="h-12 w-12 object-contain"
               />
             )}
@@ -193,7 +328,7 @@ const MeuOnibus = () => {
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="bg-white/20 border-white/30 text-white placeholder:text-white/70"
               />
-              <Button 
+              <Button
                 onClick={handleSearch}
                 className="bg-red-600 hover:bg-red-700 text-white px-6"
               >
@@ -213,14 +348,14 @@ const MeuOnibus = () => {
                   {/* Informações do Passageiro */}
                   <div className="mb-6">
                     <h2 className="text-2xl font-bold text-white mb-2">
-                      👋 Olá, {searchResult.clientes?.nome || searchResult.nome}!
+                      👋 Olá, {searchResult.nome}!
                     </h2>
                     <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100">
-                      {(searchResult.clientes?.cpf || searchResult.cpf) && (
-                        <span>📄 CPF: {formatCPF(searchResult.clientes?.cpf || searchResult.cpf)}</span>
+                      {searchResult.cpf && (
+                        <span>📄 CPF: {formatCPF(searchResult.cpf)}</span>
                       )}
-                      {(searchResult.clientes?.telefone || searchResult.telefone) && (
-                        <span>📞 {formatPhone(searchResult.clientes?.telefone || searchResult.telefone)}</span>
+                      {searchResult.telefone && (
+                        <span>📞 {formatPhone(searchResult.telefone)}</span>
                       )}
                     </div>
                   </div>
@@ -229,16 +364,16 @@ const MeuOnibus = () => {
                   {searchResult.onibus_id && (() => {
                     const onibusInfo = getOnibusInfo(searchResult.onibus_id);
                     const onibusIndex = onibusList.findIndex(o => o.id === searchResult.onibus_id) + 1;
-                    
+
                     return onibusInfo ? (
                       <div className="bg-white/20 rounded-lg p-6 mb-6">
                         <h3 className="text-xl font-bold text-white mb-4">
                           🚌 Você está no ÔNIBUS {onibusIndex}
                         </h3>
-                        
+
                         {/* Foto do Ônibus */}
                         <div className="mb-4">
-                          <img 
+                          <img
                             src={getBusImage(onibusInfo)}
                             alt={`Ônibus ${onibusInfo.tipo_onibus}`}
                             className="w-full max-w-md mx-auto rounded-lg shadow-lg"
@@ -268,12 +403,12 @@ const MeuOnibus = () => {
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-white">
                               <MapPin className="h-4 w-4" />
                               <span className="font-medium">Embarque:</span>
-                              <span>{searchResult.cidade_embarque || searchResult.clientes?.cidade || searchResult.cidade}</span>
+                              <span>{searchResult.cidade_embarque || searchResult.cidade}</span>
                             </div>
                             <div className="flex items-center gap-2 text-white">
                               <Ticket className="h-4 w-4" />
@@ -300,13 +435,12 @@ const MeuOnibus = () => {
                       </h4>
                       <div className="flex flex-wrap justify-center gap-2">
                         {searchResult.passageiro_passeios.map((pp: any, index: number) => (
-                          <Badge 
+                          <Badge
                             key={index}
-                            className={`${
-                              (pp.valor_cobrado || 0) > 0 
-                                ? 'bg-green-600 text-white' 
-                                : 'bg-blue-600 text-white'
-                            } px-3 py-1`}
+                            className={`${(pp.valor_cobrado || 0) > 0
+                              ? 'bg-green-600 text-white'
+                              : 'bg-blue-600 text-white'
+                              } px-3 py-1`}
                           >
                             {pp.passeios?.nome || 'Passeio'}
                             {(pp.valor_cobrado || 0) === 0 && ' 🎁'}
