@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, MapPin, Bus, Phone, Ticket, Users } from 'lucide-react';
+import { Search, MapPin, Bus, Phone, Ticket, Users, Instagram } from 'lucide-react';
 import { formatPhone, formatCPF } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -288,10 +288,10 @@ const MeuOnibus = () => {
             )}
             <div className="text-center">
               <h1 className="text-2xl md:text-3xl font-bold text-white">
-                Onde Estou no Ônibus?
+                Confira aqui em qual ônibus você estará 🚍
               </h1>
               <p className="text-red-100 mt-1">
-                {viagem.adversario} • {format(new Date(viagem.data_jogo), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                {format(new Date(viagem.data_jogo), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
               </p>
               <p className="text-red-200 text-sm mt-2">
                 📍 Consulte apenas passageiros já alocados nos ônibus
@@ -350,9 +350,12 @@ const MeuOnibus = () => {
                     <h2 className="text-2xl font-bold text-white mb-2">
                       👋 Olá, {searchResult.nome}!
                     </h2>
+                    <p className="text-xl font-bold text-yellow-300 mb-4">
+                      Se prepara, campeão! O Maracanã te espera pra um jogão histórico! 🏟️🔥
+                    </p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100">
                       {searchResult.cpf && (
-                        <span>📄 CPF: {formatCPF(searchResult.cpf)}</span>
+                        <span>�  CPF: {formatCPF(searchResult.cpf)}</span>
                       )}
                       {searchResult.telefone && (
                         <span>📞 {formatPhone(searchResult.telefone)}</span>
@@ -469,8 +472,32 @@ const MeuOnibus = () => {
           </Card>
         )}
 
-        {/* Informações de Contato */}
+        {/* Card do Instagram */}
         <div className="mt-8 text-center">
+          <Card className="border-white/20 bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-white mb-3 flex items-center justify-center gap-2">
+                <Instagram className="h-6 w-6" />
+                📸✨ Siga nosso Instagram!
+              </h3>
+              <p className="text-white mb-4">
+                Siga nosso Instagram e marque a gente nas fotos da sua viagem 📸✨
+              </p>
+              <a
+                href="https://www.instagram.com/neto.viagens?igsh=MWRkODhvbjh3dW1lbg=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-2xl font-bold text-yellow-300 hover:text-yellow-200 transition-colors duration-200 cursor-pointer"
+              >
+                <Instagram className="h-8 w-8" />
+                @neto.viagens - Clique aqui
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Informações de Contato */}
+        <div className="mt-6 text-center">
           <Card className="border-white/20 bg-white/10 backdrop-blur-sm">
             <CardContent className="p-4">
               <p className="text-red-100 text-sm">

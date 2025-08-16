@@ -16,7 +16,7 @@ const MeuOnibusSimple = () => {
   const handleSearch = () => {
     console.log('🔍 Buscando:', searchTerm);
     const found = passageiros.find(p => 
-      (p.clientes?.nome || p.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (p.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setSearchResult(found || null);
     console.log('📊 Resultado:', found);
@@ -32,8 +32,7 @@ const MeuOnibusSimple = () => {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h1>🚌 Teste Simples - Meu Ônibus</h1>
-      <p><strong>Viagem:</strong> {viagem.adversario}</p>
+      <h1>Confira aqui em qual ônibus você estará 🚍</h1>
       <p><strong>Total de passageiros:</strong> {passageiros.length}</p>
       
       <div style={{ margin: '20px 0' }}>
@@ -56,8 +55,11 @@ const MeuOnibusSimple = () => {
             <CardTitle>✅ Passageiro Encontrado!</CardTitle>
           </CardHeader>
           <CardContent>
-            <p><strong>Nome:</strong> {searchResult.clientes?.nome || searchResult.nome}</p>
-            <p><strong>CPF:</strong> {searchResult.clientes?.cpf || searchResult.cpf || 'Não informado'}</p>
+            <p><strong>Olá, {searchResult.nome}!</strong></p>
+            <p style={{ color: '#d97706', fontWeight: 'bold', margin: '10px 0' }}>
+              Se prepara, campeão! O Maracanã te espera pra um jogão histórico! 🏟️🔥
+            </p>
+            <p><strong>CPF:</strong> {searchResult.cpf || 'Não informado'}</p>
             <p><strong>Ônibus:</strong> {searchResult.onibus_id || 'Não alocado'}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
               <Users style={{ width: '16px', height: '16px' }} />
@@ -72,6 +74,37 @@ const MeuOnibusSimple = () => {
           ❌ Nenhum passageiro encontrado com o nome "{searchTerm}"
         </div>
       )}
+
+      {/* Card do Instagram */}
+      <Card style={{ marginTop: '30px', backgroundColor: '#f8fafc', border: '2px solid #e2e8f0' }}>
+        <CardHeader>
+          <CardTitle style={{ color: '#1e40af', textAlign: 'center' }}>
+            📸✨ Siga nosso Instagram!
+          </CardTitle>
+        </CardHeader>
+        <CardContent style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', marginBottom: '10px' }}>
+            Siga nosso Instagram e marque a gente nas fotos da sua viagem 📸✨
+          </p>
+          <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#dc2626' }}>
+            @NetoToursViagens
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Card de Dúvidas */}
+      <Card style={{ marginTop: '20px', backgroundColor: '#fef3c7', border: '2px solid #f59e0b' }}>
+        <CardHeader>
+          <CardTitle style={{ color: '#92400e', textAlign: 'center' }}>
+            ❓ Dúvidas?
+          </CardTitle>
+        </CardHeader>
+        <CardContent style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '16px' }}>
+            Entre em contato conosco para qualquer dúvida sobre sua viagem!
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
