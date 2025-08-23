@@ -596,13 +596,69 @@
 - Integração completa com página de clientes (4 abas)
 - Testes finais e documentação
 
-## 🎯 **PRÓXIMO PASSO**
-**Sistema Financeiro Completo** - Todas as funcionalidades principais implementadas e funcionando.
+---
 
-### ✅ **ÚLTIMAS IMPLEMENTAÇÕES CONCLUÍDAS: Tasks 32-33**
+## 🎫 **SISTEMA DE INGRESSOS - IMPLEMENTADO**
+
+### **Task 37. Sistema de Ingressos Completo** ✅
+- **OBJETIVO**: Implementar sistema administrativo para controle de vendas de ingressos separados das viagens
+
+**37.1 Estrutura Base do Sistema** ✅
+- ✅ **TABELA**: `ingressos` criada com campos completos
+- ✅ **TIPOS**: TypeScript interfaces para Ingresso e FiltrosIngressos
+- ✅ **HOOKS**: `useIngressos`, `usePagamentosIngressos`, `useSetoresMaracana`
+- ✅ **VALIDAÇÕES**: Zod schemas para formulários e filtros
+- _Requirements: Sistema separado de viagens_
+
+**37.2 Interface Principal** ✅
+- ✅ **PÁGINA**: `/ingressos` com cards de resumo financeiro
+- ✅ **ORGANIZAÇÃO**: Accordion por mês (Janeiro 2024, Dezembro 2023, etc.)
+- ✅ **FILTROS**: Modal avançado com busca por cliente, status, local, setor, período
+- ✅ **AÇÕES**: Ver detalhes, editar, deletar ingressos
+- ✅ **BUSCA**: Por adversário, cliente ou setor em tempo real
+- _Requirements: Interface administrativa completa_
+
+**37.3 Gestão de Clientes** ✅
+- ✅ **COMPONENTE**: `ClienteSearchSelect` com busca avançada
+- ✅ **BUSCA**: Por nome, telefone e email simultaneamente
+- ✅ **INTEGRAÇÃO**: Aba "Ingressos" na página de detalhes do cliente
+- ✅ **ORGANIZAÇÃO**: Accordion por mês também na página do cliente
+- ✅ **RESUMO**: Cards específicos por cliente (total, pago, pendente)
+- _Requirements: Integração com sistema de clientes_
+
+**37.4 Modais e Formulários** ✅
+- ✅ **CADASTRO**: `IngressoFormModal` com validação completa
+- ✅ **DETALHES**: `IngressoDetailsModal` com informações completas
+- ✅ **PAGAMENTOS**: `PagamentoIngressoModal` para controle financeiro
+- ✅ **FILTROS**: `FiltrosIngressosModal` sem erros de SelectItem vazio
+- ✅ **SETORES**: Integração com setores do Maracanã pré-definidos
+- _Requirements: Interface completa de gestão_
+
+**37.5 Sistema Financeiro** ✅
+- ✅ **RESUMO**: Cards com total de ingressos, receita, lucro e pendências
+- ✅ **STATUS**: Pago, Pendente, Cancelado com badges coloridos
+- ✅ **CÁLCULOS**: Valor final, lucro, margem automáticos
+- ✅ **RELATÓRIOS**: Organização por mês com resumo por período
+- ✅ **PAGAMENTOS**: Histórico e controle de situação financeira
+- _Requirements: Controle financeiro separado das viagens_
+
+**37.6 Correções e Melhorias** ✅
+- ✅ **BUG CORRIGIDO**: SelectItem com valor vazio causando erro
+- ✅ **FILTROS**: Valores "todos" em vez de string vazia
+- ✅ **ORGANIZAÇÃO**: Mês mais recente primeiro, primeiro mês aberto
+- ✅ **PERFORMANCE**: Build sem erros, sistema estável
+- ✅ **UX**: Interface consistente com resto do sistema
+- _Requirements: Sistema robusto e confiável_
+
+## 🎯 **PRÓXIMO PASSO**
+**Sistema de Créditos de Viagem** - Nova funcionalidade para pagamentos antecipados sem viagem definida.
+
+### ✅ **ÚLTIMAS IMPLEMENTAÇÕES CONCLUÍDAS: Tasks 32-36**
 **Task 32**: Total de Descontos e Potencial Ajustado - Sistema financeiro agora mostra descontos aplicados e calcula potencial real da viagem considerando descontos.
 
 **Task 33**: Correção Completa de Inconsistências Financeiras - Unificado sistema de despesas, corrigido card "R$ NaN", e implementado refresh automático entre abas. Sistema agora é 100% consistente (R$ 87.880,00 em todos os locais).
+
+**Task 36**: Filtros Avançados para Relatórios PDF - Implementado filtro "Empresa de Ônibus" e melhorado filtro "Responsável" com CPF, data de nascimento e local de embarque.
 
 - [x] **36. Implementação de Filtros Avançados para Relatórios PDF** ✅
   - **OBJETIVO**: Adicionar novos filtros rápidos para diferentes tipos de relatórios
@@ -2051,3 +2107,188 @@ Math.max(0, valorTotalViagem - totalArrecadado)
 - **Performance validada** (testes aprovados)
 
 **O sistema de passeios com valores está pronto para produção! 🚀**
+---
+
+#
+# 🎫 **NOVA FUNCIONALIDADE - SISTEMA DE INGRESSOS (Tasks 37-42)**
+
+### **PRIORIDADE ALTA - Sistema Administrativo de Ingressos**
+
+- [x] **37. Estrutura de Banco de Dados para Sistema de Ingressos**
+  - **OBJETIVO**: Criar tabelas e estrutura necessária para controle de ingressos separados
+  
+  **37.1 Criar tabela principal de ingressos**
+  - Tabela `ingressos` com campos: cliente_id, jogo_data, adversario, local_jogo, setor_estadio
+  - Campos financeiros: preco_custo, preco_venda, desconto, valor_final, lucro, margem_percentual
+  - Campos de controle: situacao_financeira, observacoes, viagem_id (nullable)
+  - Relacionamento opcional com viagens existentes
+  - _Requirements: Sistema de Ingressos_
+  
+  **37.2 Criar tabela de histórico de pagamentos de ingressos**
+  - Tabela `historico_pagamentos_ingressos` para controle financeiro
+  - Campos: ingresso_id, valor_pago, data_pagamento, forma_pagamento, observacoes
+  - Relacionamento com tabela principal de ingressos
+  - _Requirements: Sistema de Ingressos_
+  
+  **37.3 Configurar políticas RLS e permissões**
+  - Políticas de segurança para acesso administrativo
+  - Permissões adequadas para CRUD de ingressos
+  - Índices para performance nas consultas
+  - _Requirements: Sistema de Ingressos_
+
+- [x] **38. Tipos TypeScript e Interfaces para Ingressos**
+  - **OBJETIVO**: Criar tipagem completa para o sistema de ingressos
+  
+  **38.1 Definir interfaces principais**
+  - Interface `Ingresso` com todos os campos necessários
+  - Interface `HistoricoPagamentoIngresso` para pagamentos
+  - Interface `ResumoFinanceiroIngressos` para relatórios
+  - Tipos para status de pagamento e situação financeira
+  - _Requirements: Sistema de Ingressos_
+  
+  **38.2 Criar schemas de validação Zod**
+  - Schema para cadastro de novo ingresso
+  - Schema para edição de ingresso existente
+  - Schema para registro de pagamentos
+  - Validações específicas para valores e datas
+  - _Requirements: Sistema de Ingressos_
+  
+  **38.3 Configurar tipos do Supabase**
+  - Atualizar tipos gerados do Supabase
+  - Integrar com interfaces TypeScript existentes
+  - Garantir compatibilidade com sistema atual
+  - _Requirements: Sistema de Ingressos_
+
+- [x] **39. Hook para Gerenciamento de Ingressos**
+  - **OBJETIVO**: Criar hook principal para operações CRUD de ingressos
+  
+  **39.1 Implementar useIngressos**
+  - Funções para listar, criar, editar e deletar ingressos
+  - Integração com Supabase para operações de banco
+  - Estados de loading e error handling
+  - Cache e otimização de queries
+  - _Requirements: Sistema de Ingressos_
+  
+  **39.2 Implementar cálculos financeiros automáticos**
+  - Cálculo automático de lucro (venda - custo)
+  - Cálculo de margem percentual
+  - Aplicação de descontos no valor final
+  - Validações de valores mínimos e máximos
+  - _Requirements: Sistema de Ingressos_
+  
+  **39.3 Integração com sistema de pagamentos**
+  - Hook para histórico de pagamentos de ingressos
+  - Funções para registrar e editar pagamentos
+  - Cálculo de status financeiro automático
+  - Relatórios de inadimplência específicos
+  - _Requirements: Sistema de Ingressos_
+
+- [x] **40. Página Principal do Sistema de Ingressos**
+  - **OBJETIVO**: Criar interface administrativa para gestão de ingressos
+  
+  **40.1 Lista de ingressos cadastrados**
+  - Tabela com todos os ingressos e informações principais
+  - Filtros por cliente, jogo, status de pagamento, data
+  - Ordenação por diferentes campos (data, cliente, valor)
+  - Paginação para performance com muitos registros
+  - _Requirements: Sistema de Ingressos_
+  
+  **40.2 Botões de ação e navegação**
+  - Botão "Novo Ingresso" para cadastro
+  - Ações rápidas: visualizar, editar, deletar
+  - Botões para relatórios e exportação
+  - Integração com sistema de busca global
+  - _Requirements: Sistema de Ingressos_
+  
+  **40.3 Cards de resumo financeiro**
+  - Card com total de ingressos vendidos no mês
+  - Card com receita total e lucro do período
+  - Card com inadimplência e pendências
+  - Gráficos simples de performance
+  - _Requirements: Sistema de Ingressos_
+
+- [x] **41. Modal de Cadastro e Edição de Ingressos**
+  - **OBJETIVO**: Interface para cadastrar e editar ingressos individuais
+  
+  **41.1 Formulário de dados do jogo**
+  - Seleção de cliente (dropdown com busca)
+  - Campos para data, adversário, local do jogo
+  - Opção de vincular a viagem existente (opcional)
+  - Validações de data e campos obrigatórios
+  - _Requirements: Sistema de Ingressos_
+  
+  **41.2 Seleção de setor inteligente**
+  - Dropdown com setores do Maracanã (jogos em casa)
+  - Campo livre para inserção manual (jogos fora)
+  - Detecção automática baseada no local do jogo
+  - Sugestões baseadas em ingressos anteriores
+  - _Requirements: Sistema de Ingressos_
+  
+  **41.3 Controle financeiro detalhado**
+  - Campos para preço de custo e preço de venda
+  - Campo de desconto com cálculo automático
+  - Exibição em tempo real do lucro e margem
+  - Campo de observações para informações extras
+  - Status de pagamento com opções predefinidas
+  - _Requirements: Sistema de Ingressos_
+
+- [x] **42. Modal de Detalhes e Histórico Financeiro**
+  - **OBJETIVO**: Visualização completa de informações do ingresso
+  
+  **42.1 Informações detalhadas do ingresso**
+  - Dados completos do jogo e cliente
+  - Breakdown financeiro: custo, venda, desconto, lucro
+  - Status atual de pagamento com indicadores visuais
+  - Histórico de alterações no ingresso
+  - _Requirements: Sistema de Ingressos_
+  
+  **42.2 Histórico de pagamentos**
+  - Lista completa de pagamentos realizados
+  - Opções para adicionar, editar e remover pagamentos
+  - Cálculo automático de saldo devedor
+  - Indicadores de inadimplência e alertas
+  - _Requirements: Sistema de Ingressos_
+  
+  **42.3 Ações administrativas**
+  - Botões para imprimir comprovante do ingresso
+  - Opção de enviar informações por email/WhatsApp
+  - Histórico de comunicações com o cliente
+  - Botão para cancelar ingresso (com confirmação)
+  - _Requirements: Sistema de Ingressos_
+
+---
+
+## 📊 **RELATÓRIOS E INTEGRAÇÕES FUTURAS (Tasks 43-45)**
+
+- [ ] **43. Relatórios Específicos de Ingressos**
+  - **OBJETIVO**: Criar relatórios financeiros específicos para ingressos
+  
+  **43.1 Relatório de rentabilidade por jogo**
+  - Análise de lucro por partida/evento
+  - Comparativo de margem por setor
+  - Identificação de jogos mais rentáveis
+  - _Requirements: Sistema de Ingressos_
+  
+  **43.2 Relatório de inadimplência**
+  - Lista de ingressos com pagamento pendente
+  - Aging de recebíveis por cliente
+  - Alertas automáticos de vencimento
+  - _Requirements: Sistema de Ingressos_
+
+- [ ] **44. Integração com Sistema de Viagens**
+  - **OBJETIVO**: Conectar ingressos com viagens quando aplicável
+  
+  **44.1 Vinculação automática**
+  - Sugestão de viagens existentes ao cadastrar ingresso
+  - Sincronização de dados entre sistemas
+  - Relatórios combinados viagem + ingressos
+  - _Requirements: Sistema de Ingressos_
+
+- [ ] **45. Dashboard Unificado**
+  - **OBJETIVO**: Integrar métricas de ingressos no dashboard principal
+  
+  **45.1 Métricas consolidadas**
+  - Receita total: viagens + ingressos separados
+  - Análise de rentabilidade por tipo de produto
+  - Tendências de vendas mensais
+  - _Requirements: Sistema de Ingressos_

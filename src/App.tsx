@@ -68,6 +68,9 @@ import MeuOnibus from "@/pages/MeuOnibus";
 import MeuOnibusTest from "@/pages/MeuOnibusTest";
 import MeuOnibusSimple from "@/pages/MeuOnibusSimple";
 
+// Import Sistema de Ingressos
+import Ingressos from "@/pages/Ingressos";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -130,6 +133,9 @@ function App() {
                   <Route path="pagamentos" element={<Pagamentos />} />
                   <Route path="loja" element={<Loja />} />
                   <Route path="loja-admin" element={<LojaAdmin />} />
+                  
+                  {/* Sistema de Ingressos */}
+                  <Route path="ingressos" element={<Ingressos />} />
                   
                   {/* Rotas Financeiras */}
                   <Route path="financeiro" element={<FinanceiroGeral />} />
