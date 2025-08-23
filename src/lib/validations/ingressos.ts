@@ -39,6 +39,12 @@ export const ingressoSchema = z.object({
     .max(100, "Nome do adversário muito longo")
     .trim(),
   
+  logo_adversario: z.string()
+    .url("URL do logo inválida")
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  
   local_jogo: z.enum(['casa', 'fora'] as const, {
     errorMap: () => ({ message: "Local deve ser 'casa' ou 'fora'" })
   }),
@@ -87,6 +93,7 @@ export const editarIngressoSchema = z.object({
   viagem_id: z.string().uuid("ID da viagem inválido").optional().nullable(),
   jogo_data: dataSchema.optional(),
   adversario: z.string().min(2).max(100).trim().optional(),
+  logo_adversario: z.string().url("URL do logo inválida").optional().nullable().or(z.literal('')),
   local_jogo: z.enum(['casa', 'fora'] as const).optional(),
   setor_estadio: z.string().min(2).max(100).trim().optional(),
   preco_custo: valorMonetarioSchema.optional(),

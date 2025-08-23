@@ -199,7 +199,7 @@ export const ReceitaFormSimples: React.FC<ReceitaFormSimplesProps> = ({
                   <SelectValue placeholder="Selecione o método" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Não informado</SelectItem>
+                  <SelectItem value="nao_informado">Não informado</SelectItem>
                   {metodosPagamento.map((metodo) => (
                     <SelectItem key={metodo.value} value={metodo.value}>
                       {metodo.label}

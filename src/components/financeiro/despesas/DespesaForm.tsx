@@ -331,7 +331,7 @@ export const DespesaForm: React.FC<DespesaFormProps> = ({
                   <SelectValue placeholder="Selecione uma viagem" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma viagem</SelectItem>
+                  <SelectItem value="nenhuma">Nenhuma viagem</SelectItem>
                   {viagens.map((viagem) => (
                     <SelectItem key={viagem.id} value={viagem.id}>
                       {viagem.adversario} - {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')}
@@ -349,7 +349,7 @@ export const DespesaForm: React.FC<DespesaFormProps> = ({
                     <SelectValue placeholder="Selecione o método" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Não informado</SelectItem>
+                    <SelectItem value="nao_informado">Não informado</SelectItem>
                     {metodosPagemento.map((metodo) => (
                       <SelectItem key={metodo} value={metodo}>
                         {metodo === 'dinheiro' ? 'Dinheiro' :

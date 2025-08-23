@@ -167,6 +167,12 @@ const MainLayout = () => {
             onClick={closeMenu} 
           />
           <NavItem 
+            icon={<Calculator className="h-5 w-5" />} 
+            title="Créditos de Viagem" 
+            to="/dashboard/creditos" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
             icon={<Store className="h-5 w-5" />} 
             title="Loja Pública" 
             to="/dashboard/loja" 

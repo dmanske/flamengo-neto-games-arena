@@ -369,7 +369,7 @@ const ContasPagar = () => {
                         <SelectValue placeholder="Todas as categorias" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as categorias</SelectItem>
+                        <SelectItem value="todas">Todas as categorias</SelectItem>
                         {categorias.map((categoria) => (
                           <SelectItem key={categoria.nome} value={categoria.nome}>
                             <div className="flex items-center gap-2">
@@ -394,7 +394,7 @@ const ContasPagar = () => {
                         <SelectValue placeholder="Todos os status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos os status</SelectItem>
+                        <SelectItem value="todos">Todos os status</SelectItem>
                         <SelectItem value="pendente">Pendente</SelectItem>
                         <SelectItem value="pago">Pago</SelectItem>
                         <SelectItem value="vencido">Vencido</SelectItem>

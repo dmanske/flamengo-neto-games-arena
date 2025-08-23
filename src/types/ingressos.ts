@@ -30,6 +30,7 @@ export interface Ingresso {
   // Dados do jogo
   jogo_data: string; // ISO date string
   adversario: string;
+  logo_adversario?: string | null;
   local_jogo: LocalJogo;
   setor_estadio: string;
   
@@ -55,6 +56,8 @@ export interface Ingresso {
     nome: string;
     telefone?: string;
     email?: string;
+    cpf?: string;
+    data_nascimento?: string;
   };
   viagem?: {
     id: string;
@@ -103,6 +106,7 @@ export interface IngressoFormData {
   viagem_id?: string | null;
   jogo_data: string;
   adversario: string;
+  logo_adversario?: string | null;
   local_jogo: LocalJogo;
   setor_estadio: string;
   preco_custo: number;

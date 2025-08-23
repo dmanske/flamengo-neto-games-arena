@@ -650,8 +650,207 @@
 - ✅ **UX**: Interface consistente com resto do sistema
 - _Requirements: Sistema robusto e confiável_
 
+---
+
+## 💳 **SISTEMA DE CRÉDITOS DE VIAGEM - PLANEJADO**
+
+### **Task 38. Sistema de Créditos de Viagem** ⏳
+- **OBJETIVO**: Implementar sistema para pagamentos antecipados sem viagem definida
+
+**38.1 Estrutura de Banco de Dados** ⏳
+- ⏳ **TABELA PRINCIPAL**: `cliente_creditos` com campos completos
+  - `id`, `cliente_id`, `valor_credito`, `tipo_credito`, `data_pagamento`
+  - `forma_pagamento`, `observacoes`, `status`, `saldo_disponivel`
+- ⏳ **TABELA VINCULAÇÕES**: `credito_viagem_vinculacoes`
+  - `credito_id`, `viagem_id`, `valor_utilizado`, `data_vinculacao`
+- ⏳ **TABELA HISTÓRICO**: `credito_historico` para auditoria
+  - `tipo_movimentacao`, `valor_anterior`, `valor_movimentado`, `valor_posterior`
+- _Requirements: Nova estrutura de dados para créditos_
+
+**38.2 Tipos TypeScript e Interfaces** ⏳
+- ⏳ **INTERFACE**: `Credito` com todos os campos e relacionamentos
+- ⏳ **INTERFACE**: `CreditoVinculacao` para vinculações com viagens
+- ⏳ **INTERFACE**: `CalculoCredito` para cálculos de sobra/falta
+- ⏳ **INTERFACE**: `ResumoCreditos` para dashboards financeiros
+- ⏳ **VALIDAÇÕES**: Zod schemas para formulários e filtros
+- _Requirements: Tipagem completa do sistema_
+
+**38.3 Hooks de Gerenciamento** ⏳
+- ⏳ **HOOK**: `useCreditos` para operações CRUD básicas
+- ⏳ **HOOK**: `useCreditoCalculos` para cálculos de sobra/falta
+- ⏳ **HOOK**: `useCreditoVinculacoes` para vincular com viagens
+- ⏳ **HOOK**: `useCreditoResumo` para dashboards e relatórios
+- ⏳ **FUNÇÕES**: Cálculo automático de diferenças e saldos
+- _Requirements: Lógica de negócio centralizada_
+
+**38.4 Página Principal de Créditos** ⏳
+- ⏳ **ROTA**: `/creditos` com interface administrativa
+- ⏳ **CARDS RESUMO**: Total, disponível, utilizado, reembolsado
+- ⏳ **ORGANIZAÇÃO**: Accordion por mês (igual sistema de ingressos)
+- ⏳ **FILTROS**: Por cliente, status, tipo, período
+- ⏳ **AÇÕES**: Novo crédito, vincular viagem, reembolsar
+- _Requirements: Interface administrativa completa_
+
+**38.5 Calculadora de Crédito vs Viagem** ⏳
+- ⏳ **COMPONENTE**: `CalculadoraCreditoViagem` para cálculos
+- ⏳ **LÓGICA**: Crédito > Viagem → Sobra | Crédito < Viagem → Falta
+- ⏳ **INTERFACE**: Seleção de viagem disponível + cálculo automático
+- ⏳ **FEEDBACK**: "Sobra R$ X" ou "Falta R$ Y" em tempo real
+- ⏳ **TIPOS**: Suporte a crédito geral, viagem completa, passeios
+- _Requirements: Cálculo automático de diferenças_
+
+**38.6 Modais e Formulários** ⏳
+- ⏳ **MODAL**: `CreditoFormModal` para cadastro/edição
+- ⏳ **MODAL**: `VincularCreditoModal` com lista de viagens
+- ⏳ **MODAL**: `CreditoDetailsModal` com histórico completo
+- ⏳ **MODAL**: `ReembolsoCreditoModal` para devoluções
+- ⏳ **INTEGRAÇÃO**: Com sistema de clientes existente
+- _Requirements: Interface completa de gestão_
+
+**38.7 Integração com Página do Cliente** ⏳
+- ⏳ **ABA**: "Créditos" na página de detalhes do cliente
+- ⏳ **ORGANIZAÇÃO**: Por mês, igual sistema de ingressos
+- ⏳ **RESUMO**: Cards específicos do cliente
+- ⏳ **AÇÕES**: Novo crédito, usar crédito, histórico
+- ⏳ **VINCULAÇÕES**: Lista de viagens onde crédito foi usado
+- _Requirements: Integração com sistema de clientes_
+
+**38.8 Sistema Financeiro e Relatórios** ⏳
+- ⏳ **CONTABILIZAÇÃO**: Receita antecipada → Receita da viagem
+- ⏳ **FLUXO CAIXA**: Impacto de créditos no financeiro
+- ⏳ **RELATÓRIOS**: Por mês com breakdown detalhado
+- ⏳ **MÉTRICAS**: Créditos não utilizados, tempo médio de uso
+- ⏳ **ALERTAS**: Créditos antigos não utilizados
+- _Requirements: Controle financeiro completo_
+
+---
+
+## 🎫 **REFORMULAÇÃO DO SISTEMA DE INGRESSOS - NOVA INTERFACE**
+
+### **Task 39. Reformulação da Interface de Ingressos com Cards de Jogos** ⏳
+- **OBJETIVO**: Transformar a página de ingressos em interface baseada em cards de jogos, similar ao sistema de viagens
+
+**39.1 Reutilização dos Cards de Viagem** ⏳
+- ⏳ **BASE**: Usar exatamente os mesmos cards do sistema de viagens existente
+- ⏳ **COMPONENTES**: Reutilizar `CleanViagemCard`, `ModernViagemCard`, etc.
+- ⏳ **LAYOUT**: Grid responsivo idêntico ao das viagens
+- ⏳ **ADAPTAÇÃO**: Trocar dados de viagem por dados de jogo/ingresso
+- ⏳ **FILTRO AUTOMÁTICO**: Esconder jogos já passados automaticamente
+- ⏳ **ORDENAÇÃO**: Jogos mais próximos primeiro (data crescente)
+- ⏳ **BOTÃO**: Trocar "Ver Detalhes" por "Ver Ingressos"
+- _Requirements: Reutilizar componentes existentes 100%_
+
+**39.2 Reutilização do Sistema de Logos** ⏳
+- ⏳ **TABELA**: Usar tabela `adversarios` existente (id, nome, logo_url)
+- ⏳ **COMPONENTE**: Criar `LogosJogo.tsx` baseado nos componentes de viagem
+- ⏳ **FALLBACK**: Logo padrão para adversários sem logo cadastrado
+- ⏳ **FLAMENGO**: Logo fixo "https://logodetimes.com/times/flamengo/logo-flamengo-256.png"
+- ⏳ **RESPONSIVIDADE**: Logos adaptativos (h-16 w-16 mobile, h-20 w-20 desktop)
+- _Requirements: Reutilizar infraestrutura existente_
+
+**39.3 Modal de Ingressos por Jogo** ⏳
+- ⏳ **COMPONENTE**: `IngressosJogoModal.tsx` para exibir lista específica
+- ⏳ **DADOS**: Mesmas informações da lista atual de passageiros:
+  - Nome do cliente, telefone, email
+  - Setor do estádio, valor pago, status do pagamento
+  - Ações: editar, excluir, ver detalhes, pagamentos
+- ⏳ **EXCLUSÕES**: Remover "cidade de embarque" (não se aplica)
+- ⏳ **FUNCIONALIDADES**: Manter todas as ações existentes do sistema
+- _Requirements: Funcionalidade completa por jogo_
+
+**39.4 Atualização da Página Principal** ⏳
+- ⏳ **SUBSTITUIÇÃO**: Trocar accordion por mês por grid de cards de jogos
+- ⏳ **MANTER**: Cards de resumo financeiro no topo (Total, Receita, Lucro, Pendências)
+- ⏳ **MANTER**: Barra de busca (por adversário, cliente, setor)
+- ⏳ **MANTER**: Filtros avançados e botão "Novo Ingresso"
+- ⏳ **MELHORAR**: Busca agora também filtra por jogo específico
+- _Requirements: Manter funcionalidades existentes_
+
+**39.5 Hook de Agrupamento por Jogo** ⏳
+- ⏳ **FUNÇÃO**: `agruparIngressosPorJogo()` no `useIngressos.ts`
+- ⏳ **LÓGICA**: Agrupar por `adversario + jogo_data + local_jogo`
+- ⏳ **FILTRO**: Apenas jogos futuros (data >= hoje)
+- ⏳ **ORDENAÇÃO**: Por data crescente (próximos primeiro)
+- ⏳ **CONTADORES**: Total de ingressos, receita e lucro por jogo
+- _Requirements: Lógica de agrupamento eficiente_
+
+**39.6 Adaptação dos Componentes Existentes** ⏳
+- ⏳ **REUTILIZAR**: Cards de viagem existentes (`CleanViagemCard`, etc.)
+- ⏳ **ADAPTAR**: Props para receber dados de jogos em vez de viagens
+- ⏳ **MANTER**: Mesmo visual, layout, responsividade e animações
+- ⏳ **TROCAR**: Apenas textos e ações específicas (botões, contadores)
+- ⏳ **INTEGRAÇÃO**: Com sistema de adversários e logos existente
+- _Requirements: Máxima reutilização de código existente_
+
+**39.7 Manter UX Existente** ⏳
+- ⏳ **VISUAL**: Exatamente igual aos cards de viagem (gradiente, sombras, etc.)
+- ⏳ **RESPONSIVIDADE**: Grid idêntico ao sistema de viagens
+- ⏳ **LOADING**: Mesmos estados de carregamento existentes
+- ⏳ **EMPTY STATE**: Adaptar mensagem para "Nenhum jogo futuro"
+- ⏳ **HOVER**: Mesmos efeitos visuais dos cards de viagem
+- _Requirements: Consistência visual total com sistema existente_
+
+**39.8 Funcionalidade de Deletar Jogo** ✅
+- ✅ **BOTÃO DELETAR**: Adicionado nos cards de jogo (ícone lixeira)
+- ✅ **CONFIRMAÇÃO**: Dialog de confirmação antes de deletar
+- ✅ **LÓGICA**: Deleta todos os ingressos de um jogo específico
+- ✅ **FEEDBACK**: Mensagens de sucesso/erro para o usuário
+- ✅ **ATUALIZAÇÃO**: Recarrega dados automaticamente após deletar
+- _Requirements: Controle completo de jogos e ingressos_
+
+**39.9 Manter Compatibilidade** ✅
+- ✅ **FORMULÁRIOS**: Cadastro de novo ingresso sem alterações
+- ✅ **MODAIS**: Todos os modais existentes funcionando
+- ✅ **FILTROS**: Sistema de filtros avançados mantido
+- ✅ **RELATÓRIOS**: Exportação e relatórios sem alteração
+- ✅ **INTEGRAÇÃO**: Página do cliente com ingressos mantida
+- _Requirements: Zero breaking changes_
+
+---
+
+## �  **MELHORIAS NO SISTEMA DE INGRESSOS**
+
+### **Task 40. Campo de Logo do Adversário no Formulário de Ingressos** ⏳
+- **OBJETIVO**: Adicionar campo para editar/definir logo do adversário ao cadastrar/editar ingressos
+
+**40.1 Atualizar Formulário de Ingresso** ⏳
+- ⏳ **CAMPO NOVO**: Input para URL do logo do adversário (opcional)
+- ⏳ **PREVIEW**: Mostrar preview do logo quando URL for inserida
+- ⏳ **INTEGRAÇÃO**: Buscar logo automaticamente da tabela `adversarios` quando adversário for digitado
+- ⏳ **FALLBACK**: Permitir inserção manual quando logo não existir
+- ⏳ **VALIDAÇÃO**: URL opcional, mas se preenchida deve ser válida
+- _Requirements: Controle completo de logos nos ingressos_
+
+**40.2 Atualizar Tipos e Validações** ⏳
+- ⏳ **TIPOS**: Adicionar `logo_adversario` nos tipos de ingresso
+- ⏳ **SCHEMA**: Atualizar validação Zod para incluir logo opcional
+- ⏳ **BANCO**: Verificar se campo existe na tabela `ingressos`
+- ⏳ **HOOK**: Atualizar `useIngressos` para salvar logo
+- _Requirements: Estrutura de dados completa_
+
+**40.3 Melhorar Busca Automática de Logos** ⏳
+- ⏳ **AUTO-COMPLETE**: Buscar logo automaticamente ao digitar adversário
+- ⏳ **SUGESTÕES**: Mostrar adversários cadastrados com logos
+- ⏳ **ATUALIZAÇÃO**: Permitir atualizar logo de adversário existente
+- ⏳ **SINCRONIZAÇÃO**: Sincronizar com tabela `adversarios`
+- _Requirements: UX intuitiva para logos_
+
+**40.4 Interface Visual** ⏳
+- ⏳ **LAYOUT**: Campo logo abaixo do campo adversário
+- ⏳ **PREVIEW**: Mostrar logo em tempo real (similar ao cadastro de viagem)
+- ⏳ **PLACEHOLDER**: Sugestão de sites para buscar logos
+- ⏳ **RESPONSIVIDADE**: Layout adaptativo para mobile
+- _Requirements: Interface consistente com sistema de viagens_
+
+---
+
 ## 🎯 **PRÓXIMO PASSO**
-**Sistema de Créditos de Viagem** - Nova funcionalidade para pagamentos antecipados sem viagem definida.
+**Implementar Task 40 - Campo de Logo do Adversário no Sistema de Ingressos.**
+
+---
+
+## 📋 **REGRA IMPORTANTE**
+**SEMPRE usar esta task principal (.kiro/specs/atualizacao-passeios-viagem/tasks.md) para TODAS as tarefas do projeto. Não criar tasks separadas.**
 
 ### ✅ **ÚLTIMAS IMPLEMENTAÇÕES CONCLUÍDAS: Tasks 32-36**
 **Task 32**: Total de Descontos e Potencial Ajustado - Sistema financeiro agora mostra descontos aplicados e calcula potencial real da viagem considerando descontos.
@@ -2292,3 +2491,97 @@ Math.max(0, valorTotalViagem - totalArrecadado)
   - Análise de rentabilidade por tipo de produto
   - Tendências de vendas mensais
   - _Requirements: Sistema de Ingressos_
+---
+
+
+## 💳 **SISTEMA DE CRÉDITOS DE VIAGEM - PLANEJADO**
+
+### **Task 38. Sistema de Créditos de Viagem** ⏳
+- **OBJETIVO**: Implementar sistema para pagamentos antecipados sem viagem definida
+
+- [ ] **38.1 Estrutura de Banco de Dados**
+  - **OBJETIVO**: Criar tabelas para gerenciar créditos de clientes
+  
+  - Criar tabela `cliente_creditos` com campos completos
+  - Criar tabela `credito_viagem_vinculacoes` para vinculações
+  - Criar tabela `credito_historico` para auditoria
+  - Configurar políticas RLS e índices
+  - _Requirements: Nova estrutura de dados para créditos_
+
+- [ ] **38.2 Tipos TypeScript e Interfaces**
+  - **OBJETIVO**: Criar tipagem completa do sistema
+  
+  - Interface `Credito` com todos os campos e relacionamentos
+  - Interface `CreditoVinculacao` para vinculações com viagens
+  - Interface `CalculoCredito` para cálculos de sobra/falta
+  - Interface `ResumoCreditos` para dashboards financeiros
+  - Validações Zod para formulários e filtros
+  - _Requirements: Tipagem completa do sistema_
+
+- [ ] **38.3 Hooks de Gerenciamento**
+  - **OBJETIVO**: Implementar lógica de negócio centralizada
+  
+  - Hook `useCreditos` para operações CRUD básicas
+  - Hook `useCreditoCalculos` para cálculos de sobra/falta
+  - Hook `useCreditoVinculacoes` para vincular com viagens
+  - Hook `useCreditoResumo` para dashboards e relatórios
+  - Funções de cálculo automático de diferenças e saldos
+  - _Requirements: Lógica de negócio centralizada_
+
+- [ ] **38.4 Página Principal de Créditos**
+  - **OBJETIVO**: Interface administrativa completa
+  
+  - Rota `/creditos` com interface administrativa
+  - Cards de resumo: Total, disponível, utilizado, reembolsado
+  - Organização por accordion por mês (igual sistema de ingressos)
+  - Filtros por cliente, status, tipo, período
+  - Ações: Novo crédito, vincular viagem, reembolsar
+  - _Requirements: Interface administrativa completa_
+
+- [ ] **38.5 Calculadora de Crédito vs Viagem**
+  - **OBJETIVO**: Cálculo automático de diferenças
+  
+  - Componente `CalculadoraCreditoViagem` para cálculos
+  - Lógica: Crédito > Viagem → Sobra | Crédito < Viagem → Falta
+  - Interface de seleção de viagem disponível + cálculo automático
+  - Feedback visual: "Sobra R$ X" ou "Falta R$ Y" em tempo real
+  - Suporte a tipos: crédito geral, viagem completa, passeios
+  - _Requirements: Cálculo automático de diferenças_
+
+- [ ] **38.6 Modais e Formulários**
+  - **OBJETIVO**: Interface completa de gestão
+  
+  - Modal `CreditoFormModal` para cadastro/edição
+  - Modal `VincularCreditoModal` com lista de viagens
+  - Modal `CreditoDetailsModal` com histórico completo
+  - Modal `ReembolsoCreditoModal` para devoluções
+  - Integração com sistema de clientes existente
+  - _Requirements: Interface completa de gestão_
+
+- [ ] **38.7 Integração com Página do Cliente**
+  - **OBJETIVO**: Integração com sistema de clientes
+  
+  - Aba "Créditos" na página de detalhes do cliente
+  - Organização por mês, igual sistema de ingressos
+  - Cards de resumo específicos do cliente
+  - Ações: Novo crédito, usar crédito, histórico
+  - Lista de viagens onde crédito foi usado
+  - _Requirements: Integração com sistema de clientes_
+
+- [ ] **38.8 Sistema Financeiro e Relatórios**
+  - **OBJETIVO**: Controle financeiro completo
+  
+  - Contabilização: Receita antecipada → Receita da viagem
+  - Impacto de créditos no fluxo de caixa
+  - Relatórios por mês com breakdown detalhado
+  - Métricas: Créditos não utilizados, tempo médio de uso
+  - Alertas para créditos antigos não utilizados
+  - _Requirements: Controle financeiro completo_
+
+## 🎯 **PRÓXIMO PASSO**
+**Implementar Task 38.1 - Estrutura de Banco de Dados para Sistema de Créditos de Viagem**
+
+---
+
+## 📋 **REGRA IMPORTANTE**
+**SEMPRE usar esta task principal (.kiro/specs/atualizacao-passeios-viagem/tasks.md) para TODAS as tarefas do projeto. Não criar tasks separadas.**

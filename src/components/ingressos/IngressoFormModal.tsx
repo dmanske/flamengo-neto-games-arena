@@ -46,6 +46,7 @@ import { Ingresso, LocalJogo, SituacaoFinanceiraIngresso } from '@/types/ingress
 import { formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { ClienteSearchSelect } from './ClienteSearchSelect';
+import { AdversarioSearchInput } from './AdversarioSearchInput';
 import { getSetorOptions } from '@/data/estadios';
 
 interface IngressoFormModalProps {
@@ -63,11 +64,13 @@ export function IngressoFormModal({
 }: IngressoFormModalProps) {
   const { criarIngresso, atualizarIngresso, calcularValores, estados } = useIngressos();
   const { viagens, buscarViagensAtivas } = useViagens();
+  const { buscarLogosAdversarios } = useIngressos();
   
   // Usar setores do Maracanã já definidos no sistema
   const setoresMaracana = getSetorOptions("Rio de Janeiro");
 
   const [localJogo, setLocalJogo] = useState<LocalJogo>('casa');
+  const [logosAdversarios, setLogosAdversarios] = useState<Record<string, string>>({});
   const [valoresCalculados, setValoresCalculados] = useState({
     valorFinal: 0,
     lucro: 0,
@@ -81,6 +84,7 @@ export function IngressoFormModal({
       viagem_id: null,
       jogo_data: format(new Date(), 'yyyy-MM-dd'),
       adversario: '',
+      logo_adversario: '',
       local_jogo: 'casa',
       setor_estadio: '',
       preco_custo: 0,
@@ -96,6 +100,13 @@ export function IngressoFormModal({
     if (open) {
       buscarViagensAtivas();
       
+      // Carregar logos dos adversários
+      const carregarLogos = async () => {
+        const logos = await buscarLogosAdversarios();
+        setLogosAdversarios(logos);
+      };
+      carregarLogos();
+      
       if (ingresso) {
         // Modo edição
         form.reset({
@@ -103,6 +114,7 @@ export function IngressoFormModal({
           viagem_id: ingresso.viagem_id,
           jogo_data: format(new Date(ingresso.jogo_data), 'yyyy-MM-dd'),
           adversario: ingresso.adversario,
+          logo_adversario: ingresso.logo_adversario || '',
           local_jogo: ingresso.local_jogo,
           setor_estadio: ingresso.setor_estadio,
           preco_custo: ingresso.preco_custo,
@@ -119,6 +131,7 @@ export function IngressoFormModal({
           viagem_id: null,
           jogo_data: format(new Date(), 'yyyy-MM-dd'),
           adversario: '',
+          logo_adversario: '',
           local_jogo: 'casa',
           setor_estadio: '',
           preco_custo: 0,
@@ -309,8 +322,67 @@ export function IngressoFormModal({
                           <FormItem>
                             <FormLabel>Adversário *</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ex: Vasco, Botafogo..." {...field} />
+                              <AdversarioSearchInput
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                onLogoChange={(logoUrl) => form.setValue('logo_adversario', logoUrl)}
+                                placeholder="Digite o nome do adversário..."
+                                disabled={estados.salvando}
+                              />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Logo do Adversário */}
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="logo_adversario"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Logo do Adversário (opcional)</FormLabel>
+                            <div className="flex gap-3 items-start">
+                              {/* Preview do logo */}
+                              <div className="w-12 h-12 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                                {field.value ? (
+                                  <img 
+                                    src={field.value} 
+                                    alt="Logo do adversário" 
+                                    className="w-8 h-8 object-contain" 
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.onerror = null;
+                                      target.src = `https://via.placeholder.com/32x32/cccccc/666666?text=${form.watch('adversario')?.substring(0, 2).toUpperCase() || '?'}`;
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-xs text-gray-400 font-medium">
+                                    {form.watch('adversario')?.substring(0, 2).toUpperCase() || '?'}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Campo de input */}
+                              <div className="flex-1">
+                                <FormControl>
+                                  <Input 
+                                    placeholder="https://logodetimes.com/..." 
+                                    {...field} 
+                                    value={field.value || ''}
+                                    disabled={estados.salvando}
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {field.value ? 
+                                    'URL personalizada do logo (editável)' : 
+                                    'Será preenchido automaticamente ao selecionar adversário'
+                                  }
+                                </p>
+                              </div>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}

@@ -317,7 +317,7 @@ export const ReceitaForm: React.FC<ReceitaFormProps> = ({
                   <SelectValue placeholder="Selecione uma viagem" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma viagem</SelectItem>
+                  <SelectItem value="nenhuma">Nenhuma viagem</SelectItem>
                   {viagens.map((viagem) => (
                     <SelectItem key={viagem.id} value={viagem.id}>
                       {viagem.adversario} - {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')}
@@ -334,7 +334,7 @@ export const ReceitaForm: React.FC<ReceitaFormProps> = ({
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum cliente</SelectItem>
+                  <SelectItem value="nenhum">Nenhum cliente</SelectItem>
                   {clientes.map((cliente) => (
                     <SelectItem key={cliente.id} value={cliente.id}>
                       {cliente.nome}
@@ -353,7 +353,7 @@ export const ReceitaForm: React.FC<ReceitaFormProps> = ({
                 <SelectValue placeholder="Selecione o método de pagamento" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Não informado</SelectItem>
+                <SelectItem value="nao_informado">Não informado</SelectItem>
                 {metodosPagemento.map((metodo) => (
                   <SelectItem key={metodo} value={metodo}>
                     {metodo === 'dinheiro' ? 'Dinheiro' :

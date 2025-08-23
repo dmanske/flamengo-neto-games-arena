@@ -1,23 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, ChevronDown, Ticket, DollarSign } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import {
   Select,
   SelectContent,
@@ -26,19 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIngressos } from '@/hooks/useIngressos';
-import { usePagamentosIngressos } from '@/hooks/usePagamentosIngressos';
 import { Ingresso, FiltrosIngressos, SituacaoFinanceiraIngresso } from '@/types/ingressos';
 import { formatCurrency } from '@/utils/formatters';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { FiltrosIngressosModal } from '@/components/ingressos/FiltrosIngressosModal';
 import { IngressoDetailsModal } from '@/components/ingressos/IngressoDetailsModal';
 import { IngressoFormModal } from '@/components/ingressos/IngressoFormModal';
-
-// Componentes que serão criados posteriormente
-// import { IngressoFormModal } from '@/components/ingressos/IngressoFormModal';
-// import { IngressoDetailsModal } from '@/components/ingressos/IngressoDetailsModal';
-// import { FiltrosIngressosModal } from '@/components/ingressos/FiltrosIngressosModal';
+import { CleanJogoCard } from '@/components/ingressos/CleanJogoCard';
+import { IngressosJogoModal } from '@/components/ingressos/IngressosJogoModal';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 export default function Ingressos() {
   const { 
@@ -47,7 +28,8 @@ export default function Ingressos() {
     estados, 
     buscarIngressos,
     buscarResumoFinanceiro,
-    deletarIngresso 
+    deletarIngresso,
+    agruparIngressosPorJogo
   } = useIngressos();
 
   const [filtros, setFiltros] = useState<FiltrosIngressos>({});
@@ -56,96 +38,79 @@ export default function Ingressos() {
   const [modalFormAberto, setModalFormAberto] = useState(false);
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [modalFiltrosAberto, setModalFiltrosAberto] = useState(false);
+  const [modalJogoAberto, setModalJogoAberto] = useState(false);
+  const [jogoSelecionado, setJogoSelecionado] = useState<any>(null);
+  const [logosAdversarios, setLogosAdversarios] = useState<Record<string, string>>({});
 
-  // Filtrar ingressos baseado na busca
-  const ingressosFiltrados = ingressos.filter(ingresso => {
-    if (!busca) return true;
-    
-    const termoBusca = busca.toLowerCase();
-    return (
-      ingresso.adversario.toLowerCase().includes(termoBusca) ||
-      ingresso.cliente?.nome.toLowerCase().includes(termoBusca) ||
-      ingresso.setor_estadio.toLowerCase().includes(termoBusca)
-    );
-  });
-
-  // Função para agrupar ingressos por mês
-  const agruparIngressosPorMes = (ingressos: Ingresso[]) => {
-    const grupos = ingressos.reduce((acc, ingresso) => {
-      const data = new Date(ingresso.jogo_data);
-      const chaveAnoMes = format(data, 'yyyy-MM');
-      const nomeAnoMes = format(data, 'MMMM yyyy', { locale: ptBR });
+  // Filtrar ingressos baseado na busca (memoizado para evitar re-renders)
+  const ingressosFiltrados = useMemo(() => {
+    return ingressos.filter(ingresso => {
+      if (!busca) return true;
       
-      if (!acc[chaveAnoMes]) {
-        acc[chaveAnoMes] = {
-          nome: nomeAnoMes.charAt(0).toUpperCase() + nomeAnoMes.slice(1),
+      const termoBusca = busca.toLowerCase();
+      return (
+        ingresso.adversario.toLowerCase().includes(termoBusca) ||
+        ingresso.cliente?.nome.toLowerCase().includes(termoBusca) ||
+        ingresso.setor_estadio.toLowerCase().includes(termoBusca)
+      );
+    });
+  }, [ingressos, busca]);
+
+  // Os jogos agrupados agora são calculados via useMemo
+
+  // Agrupar ingressos por jogo (versão otimizada)
+  const jogosComIngressos = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // Filtrar apenas jogos futuros
+    const ingressosFuturos = ingressosFiltrados.filter(ingresso => {
+      const dataJogo = new Date(ingresso.jogo_data);
+      return dataJogo >= hoje;
+    });
+
+    // Agrupar por jogo (adversario + data + local)
+    const grupos = ingressosFuturos.reduce((acc, ingresso) => {
+      const chaveJogo = `${ingresso.adversario}-${ingresso.jogo_data}-${ingresso.local_jogo}`;
+      
+      if (!acc[chaveJogo]) {
+        acc[chaveJogo] = {
+          adversario: ingresso.adversario,
+          jogo_data: ingresso.jogo_data,
+          local_jogo: ingresso.local_jogo,
+          logo_adversario: ingresso.logo_adversario || logosAdversarios[ingresso.adversario] || null,
+          logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
           ingressos: [],
-          resumo: {
-            total: 0,
-            valorTotal: 0,
-            lucroTotal: 0,
-            pagos: 0,
-            pendentes: 0,
-            cancelados: 0
-          }
+          total_ingressos: 0,
+          receita_total: 0,
+          lucro_total: 0,
+          ingressos_pendentes: 0,
+          ingressos_pagos: 0,
         };
       }
       
-      acc[chaveAnoMes].ingressos.push(ingresso);
-      acc[chaveAnoMes].resumo.total++;
-      acc[chaveAnoMes].resumo.valorTotal += ingresso.valor_final;
-      acc[chaveAnoMes].resumo.lucroTotal += ingresso.lucro;
+      acc[chaveJogo].ingressos.push(ingresso);
+      acc[chaveJogo].total_ingressos++;
+      acc[chaveJogo].receita_total += ingresso.valor_final;
+      acc[chaveJogo].lucro_total += ingresso.lucro;
       
       switch (ingresso.situacao_financeira) {
         case 'pago':
-          acc[chaveAnoMes].resumo.pagos++;
+          acc[chaveJogo].ingressos_pagos++;
           break;
         case 'pendente':
-          acc[chaveAnoMes].resumo.pendentes++;
-          break;
-        case 'cancelado':
-          acc[chaveAnoMes].resumo.cancelados++;
+          acc[chaveJogo].ingressos_pendentes++;
           break;
       }
       
       return acc;
     }, {} as Record<string, any>);
 
-    // Ordenar por data (mais recente primeiro)
-    return Object.entries(grupos)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([chave, dados]) => ({ chave, ...dados }));
-  };
-
-  const ingressosAgrupados = agruparIngressosPorMes(ingressosFiltrados);
-
-  // Função para obter cor do badge de status
-  const getStatusBadgeVariant = (status: SituacaoFinanceiraIngresso) => {
-    switch (status) {
-      case 'pago':
-        return 'default'; // Verde
-      case 'pendente':
-        return 'secondary'; // Amarelo
-      case 'cancelado':
-        return 'destructive'; // Vermelho
-      default:
-        return 'outline';
-    }
-  };
-
-  // Função para obter texto do status
-  const getStatusText = (status: SituacaoFinanceiraIngresso) => {
-    switch (status) {
-      case 'pago':
-        return '✅ Pago';
-      case 'pendente':
-        return '⏳ Pendente';
-      case 'cancelado':
-        return '❌ Cancelado';
-      default:
-        return status;
-    }
-  };
+    // Converter para array e ordenar por data
+    return Object.values(grupos).sort((a: any, b: any) => {
+      return new Date(a.jogo_data).getTime() - new Date(b.jogo_data).getTime();
+    });
+  }, [ingressosFiltrados, logosAdversarios]);
 
   // Função para deletar ingresso com confirmação
   const handleDeletar = async (ingresso: Ingresso) => {
@@ -166,11 +131,93 @@ export default function Ingressos() {
     setModalFormAberto(true);
   };
 
+  // Função para abrir modal de ingressos do jogo
+  const handleVerIngressosJogo = (jogo: any) => {
+    setJogoSelecionado(jogo);
+    setModalJogoAberto(true);
+  };
+
+  // Função para obter ingressos de um jogo específico
+  const getIngressosDoJogo = (jogo: any) => {
+    return ingressos.filter(ingresso => 
+      ingresso.adversario === jogo.adversario &&
+      ingresso.jogo_data === jogo.jogo_data &&
+      ingresso.local_jogo === jogo.local_jogo
+    );
+  };
+
+  // Função para deletar todos os ingressos de um jogo
+  const handleDeletarJogo = async (jogo: any) => {
+    const ingressosDoJogo = getIngressosDoJogo(jogo);
+    
+    if (ingressosDoJogo.length === 0) {
+      toast.warning('Não há ingressos para deletar neste jogo.');
+      return;
+    }
+
+    const nomeJogo = jogo.local_jogo === 'fora' ? 
+      `${jogo.adversario} × Flamengo` : 
+      `Flamengo × ${jogo.adversario}`;
+
+    const confirmacao = window.confirm(
+      `⚠️ ATENÇÃO: Deletar Jogo Completo\n\n` +
+      `Jogo: ${nomeJogo}\n` +
+      `Total de ingressos: ${ingressosDoJogo.length}\n` +
+      `Receita total: ${formatCurrency(jogo.receita_total)}\n\n` +
+      `Tem certeza que deseja deletar TODOS os ingressos deste jogo?\n\n` +
+      `⚠️ Esta ação não pode ser desfeita!`
+    );
+
+    if (!confirmacao) return;
+
+    try {
+      toast.loading(`Deletando ${ingressosDoJogo.length} ingressos...`);
+      
+      // Deletar todos os ingressos do jogo
+      for (const ingresso of ingressosDoJogo) {
+        await deletarIngresso(ingresso.id);
+      }
+      
+      toast.success(`✅ ${ingressosDoJogo.length} ingressos deletados com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao deletar ingressos do jogo:', error);
+      toast.error('❌ Erro ao deletar ingressos. Tente novamente.');
+    }
+  };
+
   // Aplicar filtros quando mudarem
   useEffect(() => {
     buscarIngressos(filtros);
     buscarResumoFinanceiro(filtros);
   }, [filtros, buscarIngressos, buscarResumoFinanceiro]);
+
+  // Buscar logos dos adversários
+  useEffect(() => {
+    const buscarLogos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('adversarios')
+          .select('nome, logo_url');
+
+        if (error) {
+          console.error('Erro ao buscar logos dos adversários:', error);
+          return;
+        }
+
+        // Criar mapa nome -> logo_url
+        const logosMap = (data || []).reduce((acc, adversario) => {
+          acc[adversario.nome] = adversario.logo_url;
+          return acc;
+        }, {} as Record<string, string>);
+
+        setLogosAdversarios(logosMap);
+      } catch (error) {
+        console.error('Erro inesperado ao buscar logos:', error);
+      }
+    };
+
+    buscarLogos();
+  }, []);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -296,11 +343,11 @@ export default function Ingressos() {
         </div>
       </div>
 
-      {/* Ingressos Organizados por Mês */}
+      {/* Cards de Jogos Futuros */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Ingressos Cadastrados ({ingressosFiltrados.length})
+            Jogos Futuros ({jogosComIngressos.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -308,137 +355,23 @@ export default function Ingressos() {
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : ingressosFiltrados.length === 0 ? (
+          ) : jogosComIngressos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <span className="text-4xl mb-4 block">🎫</span>
-              <p>Nenhum ingresso encontrado</p>
-              <p className="text-sm">Cadastre o primeiro ingresso clicando em "Novo Ingresso"</p>
+              <p>Nenhum jogo futuro com ingressos encontrado</p>
+              <p className="text-sm">Cadastre ingressos para jogos futuros clicando em "Novo Ingresso"</p>
             </div>
           ) : (
-            <Accordion type="multiple" defaultValue={[ingressosAgrupados[0]?.chave]} className="w-full">
-              {ingressosAgrupados.map((grupo) => (
-                <AccordionItem key={grupo.chave} value={grupo.chave}>
-                  <AccordionTrigger className="hover:no-underline [&>svg]:hidden">
-                    <div className="flex items-center justify-between w-full mr-4">
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-blue-600" />
-                        <span className="font-semibold text-lg">{grupo.nome}</span>
-                        <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Ticket className="h-4 w-4 text-gray-500" />
-                          <span>{grupo.resumo.total} ingressos</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">{formatCurrency(grupo.resumo.valorTotal)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-600 font-medium">
-                            +{formatCurrency(grupo.resumo.lucroTotal)}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          {grupo.resumo.pagos > 0 && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                              {grupo.resumo.pagos} pagos
-                            </Badge>
-                          )}
-                          {grupo.resumo.pendentes > 0 && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
-                              {grupo.resumo.pendentes} pendentes
-                            </Badge>
-                          )}
-                          {grupo.resumo.cancelados > 0 && (
-                            <Badge variant="secondary" className="bg-red-100 text-red-800 text-xs">
-                              {grupo.resumo.cancelados} cancelados
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Adversário</TableHead>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Local</TableHead>
-                            <TableHead>Setor</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Lucro</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {grupo.ingressos.map((ingresso) => (
-                            <TableRow key={ingresso.id}>
-                              <TableCell>
-                                {format(new Date(ingresso.jogo_data), 'dd/MM/yyyy', { locale: ptBR })}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {ingresso.adversario}
-                              </TableCell>
-                              <TableCell>
-                                {ingresso.cliente?.nome || 'Cliente não encontrado'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={ingresso.local_jogo === 'casa' ? 'default' : 'secondary'}>
-                                  {ingresso.local_jogo === 'casa' ? '🏠 Casa' : '✈️ Fora'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{ingresso.setor_estadio}</TableCell>
-                              <TableCell>{formatCurrency(ingresso.valor_final)}</TableCell>
-                              <TableCell>
-                                <span className={ingresso.lucro >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                  {formatCurrency(ingresso.lucro)}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={getStatusBadgeVariant(ingresso.situacao_financeira)}>
-                                  {getStatusText(ingresso.situacao_financeira)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleVerDetalhes(ingresso)}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditar(ingresso)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeletar(ingresso)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {jogosComIngressos.map((jogo: any, index: number) => (
+                <CleanJogoCard
+                  key={`${jogo.adversario}-${jogo.jogo_data}-${jogo.local_jogo}`}
+                  jogo={jogo}
+                  onVerIngressos={handleVerIngressosJogo}
+                  onDeletarJogo={handleDeletarJogo}
+                />
               ))}
-            </Accordion>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -465,6 +398,16 @@ export default function Ingressos() {
         onOpenChange={setModalFiltrosAberto}
         filtros={filtros}
         onFiltrosChange={setFiltros}
+      />
+
+      <IngressosJogoModal
+        open={modalJogoAberto}
+        onOpenChange={setModalJogoAberto}
+        jogo={jogoSelecionado}
+        ingressos={jogoSelecionado ? getIngressosDoJogo(jogoSelecionado) : []}
+        onVerDetalhes={handleVerDetalhes}
+        onEditar={handleEditar}
+        onDeletar={handleDeletar}
       />
     </div>
   );

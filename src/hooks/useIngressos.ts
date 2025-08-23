@@ -39,7 +39,7 @@ export function useIngressos() {
         .from('ingressos')
         .select(`
           *,
-          cliente:clientes(id, nome, telefone, email),
+          cliente:clientes(id, nome, telefone, email, cpf, data_nascimento),
           viagem:viagens(id, adversario, data_jogo)
         `);
 
@@ -303,6 +303,244 @@ export function useIngressos() {
     };
   }, []);
 
+  // Função para agrupar ingressos por jogo
+  const agruparIngressosPorJogo = useCallback(async (ingressos: Ingresso[]) => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    // Filtrar apenas jogos futuros
+    const ingressosFuturos = ingressos.filter(ingresso => {
+      const dataJogo = new Date(ingresso.jogo_data);
+      return dataJogo >= hoje;
+    });
+
+    // Agrupar por jogo (adversario + data + local)
+    const grupos = ingressosFuturos.reduce((acc, ingresso) => {
+      const chaveJogo = `${ingresso.adversario}-${ingresso.jogo_data}-${ingresso.local_jogo}`;
+      
+      if (!acc[chaveJogo]) {
+        acc[chaveJogo] = {
+          adversario: ingresso.adversario,
+          jogo_data: ingresso.jogo_data,
+          local_jogo: ingresso.local_jogo,
+          logo_adversario: ingresso.logo_adversario || null,
+          logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
+          ingressos: [],
+          total_ingressos: 0,
+          receita_total: 0,
+          lucro_total: 0,
+          ingressos_pendentes: 0,
+          ingressos_pagos: 0,
+        };
+      }
+      
+      acc[chaveJogo].ingressos.push(ingresso);
+      acc[chaveJogo].total_ingressos++;
+      acc[chaveJogo].receita_total += ingresso.valor_final;
+      acc[chaveJogo].lucro_total += ingresso.lucro;
+      
+      // Se ainda não tem logo, tentar pegar do ingresso atual
+      if (!acc[chaveJogo].logo_adversario && ingresso.logo_adversario) {
+        acc[chaveJogo].logo_adversario = ingresso.logo_adversario;
+      }
+      
+      switch (ingresso.situacao_financeira) {
+        case 'pago':
+          acc[chaveJogo].ingressos_pagos++;
+          break;
+        case 'pendente':
+          acc[chaveJogo].ingressos_pendentes++;
+          break;
+      }
+      
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Para jogos sem logo, buscar da tabela adversarios (uma única consulta)
+    const gruposArray = Object.values(grupos);
+    const adversariosSemLogo = gruposArray
+      .filter(grupo => !grupo.logo_adversario)
+      .map(grupo => grupo.adversario);
+
+    if (adversariosSemLogo.length > 0) {
+      try {
+        const { data: adversarios } = await supabase
+          .from('adversarios')
+          .select('nome, logo_url')
+          .in('nome', adversariosSemLogo);
+        
+        if (adversarios) {
+          // Criar mapa de logos
+          const logosMap = adversarios.reduce((acc, adv) => {
+            acc[adv.nome] = adv.logo_url;
+            return acc;
+          }, {} as Record<string, string>);
+
+          // Aplicar logos aos grupos
+          gruposArray.forEach(grupo => {
+            if (!grupo.logo_adversario && logosMap[grupo.adversario]) {
+              grupo.logo_adversario = logosMap[grupo.adversario];
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar logos dos adversários:', error);
+        // Ignorar erro, manter sem logo
+      }
+    }
+
+    // Converter para array e ordenar por data (mais próximos primeiro)
+    return gruposArray.sort((a: any, b: any) => {
+      return new Date(a.jogo_data).getTime() - new Date(b.jogo_data).getTime();
+    });
+  }, []);
+
+  // Função para buscar logos dos adversários
+  const buscarLogosAdversarios = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('adversarios')
+        .select('nome, logo_url');
+
+      if (error) {
+        console.error('Erro ao buscar logos dos adversários:', error);
+        return {};
+      }
+
+      // Criar mapa nome -> logo_url
+      const logosMap = (data || []).reduce((acc, adversario) => {
+        acc[adversario.nome] = adversario.logo_url;
+        return acc;
+      }, {} as Record<string, string>);
+
+      return logosMap;
+    } catch (error) {
+      console.error('Erro inesperado ao buscar logos:', error);
+      return {};
+    }
+  }, []);
+
+  // Função para buscar adversários por termo de busca
+  const buscarAdversarios = useCallback(async (termo: string) => {
+    if (!termo || termo.trim().length < 2) {
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('adversarios')
+        .select('id, nome, logo_url')
+        .ilike('nome', `%${termo.trim()}%`)
+        .neq('nome', 'Flamengo') // Excluir o Flamengo da lista
+        .order('nome')
+        .limit(10); // Limitar a 10 resultados para performance
+
+      if (error) {
+        console.error('Erro ao buscar adversários:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erro inesperado ao buscar adversários:', error);
+      return [];
+    }
+  }, []);
+
+  // Função para buscar logo de um adversário específico
+  const buscarLogoAdversario = useCallback(async (nomeAdversario: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase
+        .from('adversarios')
+        .select('logo_url')
+        .eq('nome', nomeAdversario)
+        .single();
+
+      if (error || !data) {
+        return '';
+      }
+
+      return data.logo_url || '';
+    } catch (error) {
+      console.error('Erro ao buscar logo do adversário:', error);
+      return '';
+    }
+  }, []);
+
+  // Função para atualizar logo de um adversário na tabela adversarios
+  const atualizarLogoJogo = useCallback(async (
+    adversario: string,
+    dataJogo: string,
+    localJogo: string,
+    novoLogo: string
+  ): Promise<boolean> => {
+    setEstados(prev => ({ ...prev, salvando: true }));
+    setErros({});
+
+    try {
+      // Verificar se o adversário já existe na tabela adversarios
+      const { data: adversarioExistente, error: buscarError } = await supabase
+        .from('adversarios')
+        .select('id, nome')
+        .eq('nome', adversario)
+        .single();
+
+      if (buscarError && buscarError.code !== 'PGRST116') {
+        console.error('Erro ao buscar adversário:', buscarError);
+        setErros({ geral: 'Erro ao buscar adversário' });
+        toast.error('Erro ao buscar adversário');
+        return false;
+      }
+
+      if (adversarioExistente) {
+        // Atualizar logo do adversário existente
+        const { error: updateError } = await supabase
+          .from('adversarios')
+          .update({ logo_url: novoLogo })
+          .eq('id', adversarioExistente.id);
+
+        if (updateError) {
+          console.error('Erro ao atualizar logo do adversário:', updateError);
+          setErros({ geral: 'Erro ao atualizar logo do adversário' });
+          toast.error('Erro ao atualizar logo do adversário');
+          return false;
+        }
+
+        toast.success('Logo do adversário atualizado com sucesso!');
+      } else {
+        // Criar novo adversário com o logo
+        const { error: insertError } = await supabase
+          .from('adversarios')
+          .insert([{
+            nome: adversario,
+            logo_url: novoLogo
+          }]);
+
+        if (insertError) {
+          console.error('Erro ao criar adversário:', insertError);
+          setErros({ geral: 'Erro ao criar adversário' });
+          toast.error('Erro ao criar adversário');
+          return false;
+        }
+
+        toast.success('Adversário criado com logo atualizado!');
+      }
+      
+      // Recarregar lista para refletir as mudanças
+      await buscarIngressos();
+      await buscarResumoFinanceiro();
+      
+      return true;
+    } catch (error) {
+      console.error('Erro inesperado ao atualizar logo do adversário:', error);
+      setErros({ geral: 'Erro inesperado ao atualizar logo do adversário' });
+      toast.error('Erro inesperado ao atualizar logo do adversário');
+      return false;
+    } finally {
+      setEstados(prev => ({ ...prev, salvando: false }));
+    }
+  }, [buscarIngressos, buscarResumoFinanceiro]);
+
   // Carregar ingressos na inicialização
   useEffect(() => {
     buscarIngressos();
@@ -326,6 +564,11 @@ export function useIngressos() {
 
     // Utilitários
     calcularValores,
+    agruparIngressosPorJogo,
+    buscarLogosAdversarios,
+    buscarLogoAdversario,
+    buscarAdversarios,
+    atualizarLogoJogo,
 
     // Funções de limpeza
     limparErros: () => setErros({}),
