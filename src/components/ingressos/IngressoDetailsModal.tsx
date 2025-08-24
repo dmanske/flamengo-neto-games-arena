@@ -35,7 +35,7 @@ import {
 
 import { usePagamentosIngressos } from '@/hooks/usePagamentosIngressos';
 import { Ingresso, SituacaoFinanceiraIngresso } from '@/types/ingressos';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCPF, formatPhone } from '@/utils/formatters';
 
 // Componentes que serão criados
 import { PagamentoIngressoModal } from './PagamentoIngressoModal';
@@ -65,9 +65,10 @@ export function IngressoDetailsModal({
   // Carregar pagamentos quando ingresso mudar
   useEffect(() => {
     if (ingresso && open) {
+      // Carregando pagamentos do ingresso
       buscarPagamentos(ingresso.id);
     }
-  }, [ingresso, open, buscarPagamentos]);
+  }, [ingresso?.id, open, buscarPagamentos]);
 
   if (!ingresso) return null;
 
@@ -204,19 +205,34 @@ export function IngressoDetailsModal({
                 </CardHeader>
                 <CardContent>
                   {ingresso.cliente ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <p className="font-semibold text-lg">{ingresso.cliente.nome}</p>
-                      {ingresso.cliente.telefone && (
-                        <p className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="h-4 w-4" />
-                          {ingresso.cliente.telefone}
-                        </p>
+                      
+                      {ingresso.cliente.cpf && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground min-w-[40px]">CPF:</span>
+                          <span className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                            {formatCPF(ingresso.cliente.cpf)}
+                          </span>
+                        </div>
                       )}
+                      
+                      {ingresso.cliente.telefone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">
+                            {formatPhone(ingresso.cliente.telefone)}
+                          </span>
+                        </div>
+                      )}
+                      
                       {ingresso.cliente.email && (
-                        <p className="flex items-center gap-2 text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                          {ingresso.cliente.email}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">
+                            {ingresso.cliente.email}
+                          </span>
+                        </div>
                       )}
                     </div>
                   ) : (

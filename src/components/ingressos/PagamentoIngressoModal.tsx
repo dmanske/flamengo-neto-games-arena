@@ -63,7 +63,8 @@ export function PagamentoIngressoModal({
     editarPagamento, 
     estados, 
     formasPagamento,
-    calcularResumo 
+    calcularResumo,
+    buscarPagamentos
   } = usePagamentosIngressos();
 
   const form = useForm<PagamentoIngressoFormData>({
@@ -79,7 +80,10 @@ export function PagamentoIngressoModal({
 
   // Carregar dados quando modal abrir
   useEffect(() => {
-    if (open) {
+    if (open && ingresso) {
+      // Carregar pagamentos existentes para calcular resumo correto
+      buscarPagamentos(ingresso.id);
+      
       if (pagamento) {
         // Modo edição
         form.reset({
@@ -90,18 +94,17 @@ export function PagamentoIngressoModal({
           observacoes: pagamento.observacoes || ''
         });
       } else {
-        // Modo criação - sugerir valor restante
-        const resumo = calcularResumo(ingresso.valor_final);
+        // Modo criação - sugerir valor total inicialmente
         form.reset({
           ingresso_id: ingresso.id,
-          valor_pago: resumo.saldoDevedor > 0 ? resumo.saldoDevedor : ingresso.valor_final,
+          valor_pago: ingresso.valor_final,
           data_pagamento: format(new Date(), 'yyyy-MM-dd'),
           forma_pagamento: 'dinheiro',
           observacoes: ''
         });
       }
     }
-  }, [open, pagamento, ingresso, form, calcularResumo]);
+  }, [open, pagamento, ingresso, form, buscarPagamentos]);
 
   // Submeter formulário
   const onSubmit = async (data: PagamentoIngressoFormData) => {
@@ -127,7 +130,8 @@ export function PagamentoIngressoModal({
   // Função para preencher valor total restante
   const preencherValorRestante = () => {
     const resumo = calcularResumo(ingresso.valor_final);
-    form.setValue('valor_pago', resumo.saldoDevedor);
+    const valorRestante = resumo.saldoDevedor > 0 ? resumo.saldoDevedor : ingresso.valor_final;
+    form.setValue('valor_pago', valorRestante);
   };
 
   const resumoAtual = calcularResumo(ingresso.valor_final);

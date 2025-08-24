@@ -112,11 +112,9 @@ export default function Ingressos() {
     });
   }, [ingressosFiltrados, logosAdversarios]);
 
-  // Função para deletar ingresso com confirmação
+  // Função para deletar ingresso (sem confirmação - já tratada no modal)
   const handleDeletar = async (ingresso: Ingresso) => {
-    if (window.confirm(`Tem certeza que deseja deletar o ingresso de ${ingresso.cliente?.nome} para o jogo contra ${ingresso.adversario}?`)) {
-      await deletarIngresso(ingresso.id);
-    }
+    await deletarIngresso(ingresso.id);
   };
 
   // Função para abrir modal de detalhes
@@ -171,17 +169,31 @@ export default function Ingressos() {
     if (!confirmacao) return;
 
     try {
-      toast.loading(`Deletando ${ingressosDoJogo.length} ingressos...`);
-      
-      // Deletar todos os ingressos do jogo
-      for (const ingresso of ingressosDoJogo) {
-        await deletarIngresso(ingresso.id);
-      }
-      
-      toast.success(`✅ ${ingressosDoJogo.length} ingressos deletados com sucesso!`);
+      // Usar toast.promise para melhor UX
+      await toast.promise(
+        (async () => {
+          // Deletar todos os ingressos do jogo em lote
+          const { error } = await supabase
+            .from('ingressos')
+            .delete()
+            .in('id', ingressosDoJogo.map(ing => ing.id));
+
+          if (error) {
+            throw new Error('Erro ao deletar ingressos');
+          }
+
+          // Recarregar dados após deletar
+          await buscarIngressos(filtros);
+          await buscarResumoFinanceiro(filtros);
+        })(),
+        {
+          loading: `Deletando ${ingressosDoJogo.length} ingressos...`,
+          success: `✅ ${ingressosDoJogo.length} ingressos deletados com sucesso!`,
+          error: '❌ Erro ao deletar ingressos. Tente novamente.'
+        }
+      );
     } catch (error) {
       console.error('Erro ao deletar ingressos do jogo:', error);
-      toast.error('❌ Erro ao deletar ingressos. Tente novamente.');
     }
   };
 
@@ -229,10 +241,15 @@ export default function Ingressos() {
             Controle de vendas de ingressos separados das viagens
           </p>
         </div>
-        <Button onClick={() => setModalFormAberto(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Ingresso
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => {
+            setIngressoSelecionado(null); // Limpar seleção para modo criação
+            setModalFormAberto(true);
+          }} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Ingresso
+          </Button>
+        </div>
       </div>
 
       {/* Cards de Resumo */}
@@ -343,6 +360,8 @@ export default function Ingressos() {
         </div>
       </div>
 
+
+
       {/* Cards de Jogos Futuros */}
       <Card>
         <CardHeader>
@@ -360,6 +379,17 @@ export default function Ingressos() {
               <span className="text-4xl mb-4 block">🎫</span>
               <p>Nenhum jogo futuro com ingressos encontrado</p>
               <p className="text-sm">Cadastre ingressos para jogos futuros clicando em "Novo Ingresso"</p>
+              
+              {ingressos.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-blue-700 font-medium">
+                    Há {ingressos.length} ingressos cadastrados, mas nenhum para jogos futuros.
+                  </p>
+                  <p className="text-blue-600 text-sm mt-1">
+                    Verifique se as datas dos jogos estão corretas.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

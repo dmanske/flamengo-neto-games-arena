@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,18 +33,38 @@ export function CleanJogoCard({
   onDeletarJogo
 }: CleanJogoCardProps) {
   const [editarLogoOpen, setEditarLogoOpen] = useState(false);
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd 'de' MMMM", { locale: ptBR });
-    } catch (error) {
-      return 'Data inválida';
-    }
-  };
-
+  
+  // Validação das propriedades obrigatórias
+  if (!jogo) {
+    console.error('Jogo é null ou undefined');
+    return <div>Erro: Jogo não encontrado</div>;
+  }
+  
+  if (!jogo.adversario) {
+    console.error('Adversário não encontrado no jogo:', jogo);
+    return <div>Erro: Adversário não encontrado</div>;
+  }
+  
+  if (!jogo.jogo_data) {
+    console.error('Data do jogo não encontrada:', jogo);
+    return <div>Erro: Data do jogo não encontrada</div>;
+  }
   const formatDateTime = (dateString: string) => {
     try {
-      return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      // Verificar se tem hora (formato completo) ou só data
+      if (dateString.includes('T')) {
+        // Formato completo: 2025-09-18T15:00:00
+        const [datePart, timePart] = dateString.split('T');
+        const [year, month, day] = datePart.split('-');
+        const [hour, minute] = timePart.split(':');
+        return `${day}/${month}/${year} às ${hour}:${minute}`;
+      } else {
+        // Só data: 2025-09-18
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+      }
     } catch (error) {
+      console.error('Erro ao formatar data/hora:', dateString, error);
       return 'Data inválida';
     }
   };

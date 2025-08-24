@@ -82,7 +82,7 @@ export function IngressoFormModal({
     defaultValues: {
       cliente_id: '',
       viagem_id: null,
-      jogo_data: format(new Date(), 'yyyy-MM-dd'),
+      jogo_data: new Date().toISOString().split('T')[0], // YYYY-MM-DD simples
       adversario: '',
       logo_adversario: '',
       local_jogo: 'casa',
@@ -112,7 +112,7 @@ export function IngressoFormModal({
         form.reset({
           cliente_id: ingresso.cliente_id,
           viagem_id: ingresso.viagem_id,
-          jogo_data: format(new Date(ingresso.jogo_data), 'yyyy-MM-dd'),
+          jogo_data: ingresso.jogo_data.split('T')[0], // Pegar apenas YYYY-MM-DD
           adversario: ingresso.adversario,
           logo_adversario: ingresso.logo_adversario || '',
           local_jogo: ingresso.local_jogo,
@@ -129,7 +129,7 @@ export function IngressoFormModal({
         form.reset({
           cliente_id: '',
           viagem_id: null,
-          jogo_data: format(new Date(), 'yyyy-MM-dd'),
+          jogo_data: new Date().toISOString().split('T')[0], // YYYY-MM-DD simples
           adversario: '',
           logo_adversario: '',
           local_jogo: 'casa',
@@ -170,15 +170,24 @@ export function IngressoFormModal({
 
   // Submeter formulário
   const onSubmit = async (data: IngressoFormData) => {
+    
     try {
+      // Não incluir campos calculados (valor_final, lucro, margem_percentual são colunas geradas)
+      const dadosParaSalvar = data;
+      
+
+      
       let sucesso = false;
       
       if (ingresso) {
         // Editar ingresso existente
-        sucesso = await atualizarIngresso(ingresso.id, data);
+        sucesso = await atualizarIngresso(ingresso.id, dadosParaSalvar);
       } else {
-        // Criar novo ingresso
-        sucesso = await criarIngresso(data);
+        // Criar novo ingresso - passar valor calculado como backup
+        sucesso = await criarIngresso({
+          ...dadosParaSalvar,
+          valorFinalCalculado: valoresCalculados.valorFinal
+        });
       }
 
       if (sucesso) {
@@ -242,7 +251,7 @@ export function IngressoFormModal({
                               if (value !== 'nenhuma') {
                                 const viagemSelecionada = viagens.find(v => v.id === value);
                                 if (viagemSelecionada) {
-                                  form.setValue('jogo_data', format(new Date(viagemSelecionada.data_jogo), 'yyyy-MM-dd'));
+                                  form.setValue('jogo_data', viagemSelecionada.data_jogo.split('T')[0]);
                                   form.setValue('adversario', viagemSelecionada.adversario);
                                 }
                               }
@@ -274,41 +283,15 @@ export function IngressoFormModal({
                         control={form.control}
                         name="jogo_data"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                             <FormLabel>Data do Jogo *</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
-                                    ) : (
-                                      <span>Selecione a data</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={(date) => 
-                                    field.onChange(date ? format(date, 'yyyy-MM-dd') : '')
-                                  }
-                                  disabled={(date) =>
-                                    date < new Date(new Date().setDate(new Date().getDate() - 30))
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                className="w-full"
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}

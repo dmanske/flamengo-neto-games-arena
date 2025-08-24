@@ -30,7 +30,7 @@ export interface Ingresso {
   // Dados do jogo
   jogo_data: string; // ISO date string
   adversario: string;
-  logo_adversario?: string | null;
+  // logo_adversario?: string | null; // TODO: Descomentar após executar migration
   local_jogo: LocalJogo;
   setor_estadio: string;
   

@@ -99,6 +99,8 @@ export function useIngressos() {
         return;
       }
 
+      // Debug removido para focar na criação
+
       setIngressos(data || []);
     } catch (error) {
       console.error('Erro inesperado ao buscar ingressos:', error);
@@ -164,18 +166,57 @@ export function useIngressos() {
     setEstados(prev => ({ ...prev, salvando: true }));
     setErros({});
 
+    // Criar ingresso
+
     try {
+      // Remover campos calculados que não podem ser inseridos (colunas geradas)
+      const { valorFinalCalculado, lucro, margem_percentual, ...dadosParaInserir } = dados;
+      
       const { data, error } = await supabase
         .from('ingressos')
-        .insert([dados])
+        .insert([dadosParaInserir])
         .select()
         .single();
+
+      // Ingresso inserido
 
       if (error) {
         console.error('Erro ao criar ingresso:', error);
         setErros({ geral: 'Erro ao salvar ingresso' });
         toast.error('Erro ao salvar ingresso');
         return false;
+      }
+
+      // Se o ingresso foi criado como "pago", criar automaticamente um registro de pagamento
+      if (data && dados.situacao_financeira === 'pago') {
+        // Usar o valor_final calculado pelo banco ou o valor passado como fallback
+        const valorPagamento = data.valor_final || valorFinalCalculado || 0;
+        
+        if (valorPagamento <= 0) {
+          console.warn('Valor inválido para pagamento automático:', valorPagamento);
+          return true; // Não falhar a criação do ingresso
+        }
+        
+        const dadosPagamento = {
+          ingresso_id: data.id,
+          valor_pago: valorPagamento,
+          data_pagamento: new Date().toISOString().split('T')[0], // Só a data, sem hora
+          forma_pagamento: 'dinheiro', // Padrão, pode ser alterado depois
+          observacoes: 'Pagamento registrado automaticamente na criação do ingresso'
+        };
+        
+        const { data: pagamentoData, error: errorPagamento } = await supabase
+          .from('historico_pagamentos_ingressos')
+          .insert([dadosPagamento])
+          .select()
+          .single();
+
+        if (errorPagamento) {
+          console.error('Erro ao criar pagamento automático:', errorPagamento);
+          toast.warning('Ingresso criado, mas houve erro ao registrar o pagamento. Registre manualmente.');
+        } else {
+          console.log('Pagamento automático criado com sucesso:', pagamentoData?.id);
+        }
       }
 
       toast.success('Ingresso cadastrado com sucesso!');
@@ -201,6 +242,20 @@ export function useIngressos() {
     setErros({});
 
     try {
+      // Buscar o ingresso atual para comparar o status
+      const { data: ingressoAtual, error: errorBusca } = await supabase
+        .from('ingressos')
+        .select('situacao_financeira, valor_final')
+        .eq('id', id)
+        .single();
+
+      if (errorBusca) {
+        console.error('Erro ao buscar ingresso atual:', errorBusca);
+        setErros({ geral: 'Erro ao buscar dados do ingresso' });
+        toast.error('Erro ao buscar dados do ingresso');
+        return false;
+      }
+
       const { error } = await supabase
         .from('ingressos')
         .update(dados)
@@ -211,6 +266,30 @@ export function useIngressos() {
         setErros({ geral: 'Erro ao atualizar ingresso' });
         toast.error('Erro ao atualizar ingresso');
         return false;
+      }
+
+      // Se o status mudou de "pendente" para "pago", criar um pagamento automático
+      if (ingressoAtual.situacao_financeira === 'pendente' && dados.situacao_financeira === 'pago') {
+        // Criando pagamento automático
+        
+        const valorPagamento = dados.valor_final || ingressoAtual.valor_final;
+        
+        const { error: errorPagamento } = await supabase
+          .from('historico_pagamentos_ingressos')
+          .insert([{
+            ingresso_id: id,
+            valor_pago: valorPagamento,
+            data_pagamento: new Date().toISOString().split('T')[0], // Só a data, sem hora
+            forma_pagamento: 'dinheiro', // Padrão, pode ser alterado depois
+            observacoes: 'Pagamento registrado automaticamente ao marcar como pago'
+          }]);
+
+        if (errorPagamento) {
+          console.error('Erro ao criar pagamento automático:', errorPagamento);
+          toast.warning('Ingresso atualizado, mas houve erro ao registrar o pagamento. Registre manualmente.');
+        } else {
+          // Pagamento criado com sucesso
+        }
       }
 
       toast.success('Ingresso atualizado com sucesso!');
@@ -323,7 +402,7 @@ export function useIngressos() {
           adversario: ingresso.adversario,
           jogo_data: ingresso.jogo_data,
           local_jogo: ingresso.local_jogo,
-          logo_adversario: ingresso.logo_adversario || null,
+          logo_adversario: null, // TODO: Usar ingresso.logo_adversario após migration
           logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
           ingressos: [],
           total_ingressos: 0,
@@ -543,6 +622,7 @@ export function useIngressos() {
 
   // Carregar ingressos na inicialização
   useEffect(() => {
+    // Hook inicializado
     buscarIngressos();
     buscarResumoFinanceiro();
   }, [buscarIngressos, buscarResumoFinanceiro]);
