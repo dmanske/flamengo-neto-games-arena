@@ -2585,3 +2585,299 @@ Math.max(0, valorTotalViagem - totalArrecadado)
 
 ## 📋 **REGRA IMPORTANTE**
 **SEMPRE usar esta task principal (.kiro/specs/atualizacao-passeios-viagem/tasks.md) para TODAS as tarefas do projeto. Não criar tasks separadas.**
+
+---
+
+## 🎫 **SISTEMA DE INGRESSOS - IMPLEMENTADO COMPLETAMENTE**
+
+### **Task 37. Sistema de Ingressos Completo** ✅
+- **OBJETIVO**: Implementar sistema administrativo para controle de vendas de ingressos separados das viagens
+
+**37.1 Estrutura Base do Sistema** ✅
+- ✅ **TABELA**: `ingressos` criada com campos completos
+- ✅ **TIPOS**: TypeScript interfaces para Ingresso e FiltrosIngressos
+- ✅ **HOOKS**: `useIngressos`, `usePagamentosIngressos`, `useSetoresMaracana`
+- ✅ **VALIDAÇÕES**: Zod schemas para formulários e filtros
+- ✅ **MIGRATIONS**: Tabela `historico_pagamentos_ingressos` para controle financeiro
+- _Requirements: Sistema separado de viagens_
+
+**37.2 Interface Principal** ✅
+- ✅ **PÁGINA**: `/ingressos` com cards de resumo financeiro
+- ✅ **ORGANIZAÇÃO**: Cards de jogos futuros agrupados por adversário e data
+- ✅ **FILTROS**: Modal avançado com busca por cliente, status, local, setor, período
+- ✅ **AÇÕES**: Ver detalhes, editar, deletar ingressos
+- ✅ **BUSCA**: Por adversário, cliente ou setor em tempo real
+- ✅ **MODAL EXPANDIDO**: `max-w-7xl` e `max-h-[95vh]` para melhor visualização
+- _Requirements: Interface administrativa completa_
+
+**37.3 Gestão de Clientes** ✅
+- ✅ **COMPONENTE**: `ClienteSearchSelect` com busca avançada
+- ✅ **BUSCA**: Por nome, telefone e email simultaneamente
+- ✅ **INTEGRAÇÃO**: Aba "Ingressos" na página de detalhes do cliente
+- ✅ **FORMATAÇÃO**: CPF, telefone e data de nascimento formatados corretamente
+- ✅ **BOTÕES DE COPIAR**: Individuais para Nome, CPF, Telefone, Email, Data
+- _Requirements: Integração com sistema de clientes_
+
+**37.4 Modais e Formulários** ✅
+- ✅ **CADASTRO**: `IngressoFormModal` com validação completa
+- ✅ **DETALHES**: `IngressoDetailsModal` com informações completas
+- ✅ **PAGAMENTOS**: `PagamentoIngressoModal` para controle financeiro
+- ✅ **FILTROS**: `FiltrosIngressosModal` sem erros de SelectItem vazio
+- ✅ **SETORES**: Integração com setores do Maracanã pré-definidos
+- ✅ **CONFIRMAÇÃO ELEGANTE**: AlertDialog para exclusão com informações detalhadas
+- _Requirements: Interface completa de gestão_
+
+**37.5 Sistema Financeiro** ✅
+- ✅ **RESUMO**: Cards com total de ingressos, receita, lucro e pendências
+- ✅ **STATUS**: Pago, Pendente, Cancelado com badges coloridos
+- ✅ **CÁLCULOS**: Valor final, lucro, margem automáticos
+- ✅ **PAGAMENTOS AUTOMÁTICOS**: Criação automática na tabela `historico_pagamentos_ingressos`
+- ✅ **HISTÓRICO**: Controle completo de pagamentos por ingresso
+- _Requirements: Controle financeiro separado das viagens_
+
+**37.6 Sistema de Busca Automática de Logos** ✅
+- ✅ **COMPONENTE**: `AdversarioSearchInput` com busca em tempo real
+- ✅ **INTEGRAÇÃO**: Tabela `adversarios` para logos automáticos
+- ✅ **EDIÇÃO**: `EditarLogoModal` clicando no logo do adversário
+- ✅ **FALLBACK**: Placeholders quando logo não disponível
+- ✅ **PERFORMANCE**: Consulta única para múltiplos logos
+- ✅ **CACHE**: Otimização de requisições e memoização
+- _Requirements: Sistema de logos automático_
+
+**37.7 Melhorias de UX e Interface** ✅
+- ✅ **MODAL EXPANDIDO**: Tamanho aumentado para melhor visualização
+- ✅ **CONFIRMAÇÃO ELEGANTE**: AlertDialog profissional para exclusões
+- ✅ **FORMATAÇÃO UNIFICADA**: Datas usando `formatBirthDate()` consistente
+- ✅ **BOTÕES INDIVIDUAIS**: Copiar específico para cada campo
+- ✅ **TOOLTIPS**: Explicativos para todas as ações
+- ✅ **FEEDBACK**: Toasts para todas as operações
+- _Requirements: Interface profissional e intuitiva_
+
+**37.8 Sistema de Pagamentos Automático** ✅
+- ✅ **CRIAÇÃO AUTOMÁTICA**: Ingressos "pagos" geram pagamento automaticamente
+- ✅ **EDIÇÃO INTELIGENTE**: Mudança de status cria histórico
+- ✅ **VALIDAÇÃO ROBUSTA**: Verificação de valores antes da criação
+- ✅ **FALLBACK GRACIOSO**: Não falha criação por erro de pagamento
+- ✅ **HISTÓRICO COMPLETO**: Modal com todos os pagamentos do ingresso
+- ✅ **CÁLCULOS AUTOMÁTICOS**: Status financeiro em tempo real
+- _Requirements: Sistema de pagamentos inteligente_
+
+**37.9 Limpeza e Profissionalização** ✅
+- ✅ **REMOÇÃO DE DEBUG**: Todos os `alert()` e logs de desenvolvimento removidos
+- ✅ **LOGS ORGANIZADOS**: Console.logs limpos para produção
+- ✅ **TOASTS PROFISSIONAIS**: Feedback elegante ao usuário
+- ✅ **CÓDIGO LIMPO**: Sem elementos de debug visíveis
+- ✅ **BUILD LIMPO**: Sistema sem erros ou warnings
+- ✅ **PRONTO PARA PRODUÇÃO**: Interface profissional completa
+- _Requirements: Sistema pronto para ambiente de produção_
+
+### 📋 Arquivos Principais Implementados
+
+#### Hooks Especializados
+- `src/hooks/useIngressos.ts` - Hook principal com CRUD completo
+- `src/hooks/usePagamentosIngressos.ts` - Gestão de pagamentos
+- `src/hooks/useSetoresMaracana.ts` - Setores do estádio
+
+#### Páginas e Componentes Principais
+- `src/pages/Ingressos.tsx` - Página principal otimizada
+- `src/components/ingressos/IngressoFormModal.tsx` - Formulário completo
+- `src/components/ingressos/IngressosJogoModal.tsx` - Modal expandido com confirmação elegante
+- `src/components/ingressos/CleanJogoCard.tsx` - Cards dos jogos otimizados
+
+#### Componentes Especializados
+- `src/components/ingressos/AdversarioSearchInput.tsx` - Busca automática de adversários
+- `src/components/ingressos/EditarLogoModal.tsx` - Edição de logos
+- `src/components/ingressos/FiltrosIngressosModal.tsx` - Filtros avançados
+- `src/components/ingressos/ClienteSearchSelect.tsx` - Seleção de clientes
+- `src/components/ingressos/PagamentoIngressoModal.tsx` - Controle de pagamentos
+- `src/components/ingressos/IngressoDetailsModal.tsx` - Detalhes completos
+
+#### Tipos e Validações
+- `src/types/ingressos.ts` - Tipos TypeScript completos
+- `src/lib/validations/ingressos.ts` - Schemas de validação Zod
+
+#### Migrations e Banco
+- `migrations/create_historico_pagamentos_ingressos_table.sql` - Tabela de pagamentos
+- `migrations/add_logo_adversario_to_ingressos.sql` - Campo de logo
+
+### 🎯 Funcionalidades Avançadas Implementadas
+
+#### Sistema de Logos Automático
+- ✅ **Busca automática**: Integração com tabela `adversarios`
+- ✅ **Edição clicando**: Modal de edição no logo do adversário
+- ✅ **Criação automática**: Novos adversários criados automaticamente
+- ✅ **Fallback inteligente**: Placeholders quando logo não disponível
+- ✅ **Performance otimizada**: Consulta única para múltiplos logos
+
+#### Sistema de Pagamentos Inteligente
+- ✅ **Criação automática**: Ingressos "pagos" geram pagamento automaticamente
+- ✅ **Edição inteligente**: Mudança de status cria histórico
+- ✅ **Validação robusta**: Verificação de valores antes da criação
+- ✅ **Fallback gracioso**: Não falha criação por erro de pagamento
+- ✅ **Histórico completo**: Todos os pagamentos organizados
+
+#### Interface Profissional
+- ✅ **Modal expandido**: `max-w-7xl` para melhor visualização
+- ✅ **Confirmação elegante**: AlertDialog com informações detalhadas
+- ✅ **Formatação unificada**: Datas consistentes em todo sistema
+- ✅ **Botões individuais**: Copiar específico para cada campo
+- ✅ **UX fluida**: Sem confirmações duplas ou elementos de debug
+
+#### Qualidade de Código
+- ✅ **Código limpo**: Sem logs de debug em produção
+- ✅ **Tratamento de erros**: Feedback adequado ao usuário
+- ✅ **Performance**: Otimizações mantidas
+- ✅ **Manutenibilidade**: Código organizado e documentado
+- ✅ **TypeScript**: Tipagem completa e robusta
+
+### 🚀 Status Geral: 100% CONCLUÍDO E PROFISSIONAL
+
+O sistema de ingressos está **completamente funcional, otimizado e pronto para produção**. Todas as funcionalidades foram implementadas, testadas e profissionalizadas.
+
+#### ✅ Principais Conquistas
+1. **Sistema de pagamentos automático** funcionando perfeitamente
+2. **Interface profissional** sem elementos de debug
+3. **Modal expandido** com confirmação elegante de exclusão
+4. **Formatação unificada** de datas em todo o sistema
+5. **Sistema de logos automático** com edição clicável
+6. **Botões de copiar individuais** para cada campo
+7. **Código limpo** e pronto para ambiente de produção
+
+#### 🎊 Sistema Pronto Para:
+- ✅ **Produção**: Sem logs de debug ou elementos de desenvolvimento
+- ✅ **Usuários finais**: Interface profissional e intuitiva
+- ✅ **Escalabilidade**: Performance otimizada
+- ✅ **Manutenção**: Código organizado e documentado
+- ✅ **Integração**: Compatível com sistema de clientes existente
+
+---
+
+## 💳 **SISTEMA DE CRÉDITOS DE VIAGEM - IMPLEMENTADO COMPLETAMENTE**
+
+### **Task 38. Sistema de Créditos de Viagem** ✅
+- **OBJETIVO**: Implementar sistema para pagamentos antecipados sem viagem definida
+
+**38.1 Estrutura de Banco de Dados** ✅
+- ✅ **TABELA PRINCIPAL**: `cliente_creditos` com campos completos
+- ✅ **TABELA PAGAMENTOS**: `credito_pagamentos` para histórico financeiro
+- ✅ **MIGRATIONS**: Scripts SQL organizados e documentados
+- ✅ **TIPOS**: TypeScript interfaces completas
+- ✅ **VALIDAÇÕES**: Zod schemas para formulários
+- _Requirements: Sistema de créditos antecipados_
+
+**38.2 Interface de Gestão** ✅
+- ✅ **PÁGINA**: `/creditos` com lista completa de créditos
+- ✅ **FORMULÁRIO**: `CreditoFormModal` para cadastro/edição
+- ✅ **FILTROS**: Por cliente, status, período e valor
+- ✅ **BUSCA**: Por nome do cliente em tempo real
+- ✅ **AÇÕES**: Ver detalhes, editar, deletar créditos
+- _Requirements: Interface administrativa completa_
+
+**38.3 Sistema Financeiro** ✅
+- ✅ **CÁLCULOS**: Valor total, saldo disponível, valor utilizado
+- ✅ **STATUS**: Disponível, Parcialmente Utilizado, Totalmente Utilizado, Expirado
+- ✅ **PAGAMENTOS**: Histórico completo de pagamentos por crédito
+- ✅ **MODAL**: `PagamentoCreditoModal` para registrar pagamentos
+- ✅ **HISTÓRICO**: `HistoricoPagamentosCreditoModal` com todos os pagamentos
+- _Requirements: Controle financeiro completo_
+
+**38.4 Hooks Especializados** ✅
+- ✅ **useCreditos**: CRUD completo de créditos
+- ✅ **usePagamentosCreditos**: Gestão de pagamentos
+- ✅ **useCreditoCalculos**: Cálculos automáticos de status
+- ✅ **INTEGRAÇÃO**: Com sistema de clientes existente
+- ✅ **PERFORMANCE**: Queries otimizadas e memoização
+- _Requirements: Hooks robustos e performáticos_
+
+**38.5 Componentes Especializados** ✅
+- ✅ **CreditoFormModal**: Formulário completo com validação
+- ✅ **StatusPagamentoCredito**: Badge visual de status
+- ✅ **PagamentoCreditoModal**: Registro de pagamentos
+- ✅ **HistoricoPagamentosCreditoModal**: Histórico completo
+- ✅ **INTEGRAÇÃO**: Com página de detalhes do cliente
+- _Requirements: Componentes reutilizáveis e consistentes_
+
+### 📋 Arquivos do Sistema de Créditos
+
+#### Hooks
+- `src/hooks/useCreditos.ts` - CRUD completo de créditos
+- `src/hooks/usePagamentosCreditos.ts` - Gestão de pagamentos
+- `src/hooks/useCreditoCalculos.ts` - Cálculos automáticos
+
+#### Páginas e Componentes
+- `src/pages/Creditos.tsx` - Página principal
+- `src/components/creditos/CreditoFormModal.tsx` - Formulário
+- `src/components/creditos/PagamentoCreditoModal.tsx` - Pagamentos
+- `src/components/creditos/HistoricoPagamentosCreditoModal.tsx` - Histórico
+- `src/components/creditos/StatusPagamentoCredito.tsx` - Status visual
+
+#### Tipos e Validações
+- `src/types/creditos.ts` - Tipos TypeScript
+- `src/lib/validations/creditos.ts` - Schemas Zod
+- `src/utils/creditoUtils.ts` - Utilitários
+
+#### Migrations
+- `migrations/create_credito_pagamentos_table.sql` - Tabela de pagamentos
+
+### 🎯 Funcionalidades do Sistema de Créditos
+
+#### Gestão Completa
+- ✅ **Cadastro**: Créditos com valor, cliente e observações
+- ✅ **Edição**: Modificação de dados existentes
+- ✅ **Exclusão**: Remoção com confirmação
+- ✅ **Busca**: Por cliente e filtros avançados
+
+#### Sistema Financeiro
+- ✅ **Pagamentos**: Registro de pagamentos parciais ou totais
+- ✅ **Histórico**: Todos os pagamentos organizados
+- ✅ **Status**: Automático baseado em pagamentos
+- ✅ **Cálculos**: Saldo disponível em tempo real
+
+#### Interface Profissional
+- ✅ **Cards**: Resumo visual de cada crédito
+- ✅ **Badges**: Status coloridos e informativos
+- ✅ **Modais**: Interface consistente com resto do sistema
+- ✅ **Feedback**: Toasts para todas as operações
+
+---
+
+### 🎊 RESUMO GERAL - TODOS OS SISTEMAS IMPLEMENTADOS
+
+#### ✅ **SISTEMA DE VIAGENS** (Task Principal 1-36)
+- Sistema híbrido de passeios com valores
+- Pagamentos separados (viagem vs passeios)
+- Interface modernizada e otimizada
+- Sistema de gratuidade implementado
+- Relatórios financeiros completos
+
+#### ✅ **SISTEMA DE INGRESSOS** (Task 37)
+- Sistema administrativo completo
+- Pagamentos automáticos
+- Busca automática de logos
+- Interface profissional
+- Integração com clientes
+
+#### ✅ **SISTEMA DE CRÉDITOS** (Task 38)
+- Pagamentos antecipados
+- Controle financeiro completo
+- Interface administrativa
+- Integração com sistema existente
+
+### 🚀 **STATUS FINAL: PRODUÇÃO COMPLETA**
+
+Todos os sistemas estão **100% funcionais, testados e prontos para produção**. O projeto está completo com:
+
+- **3 sistemas principais** implementados
+- **Interface profissional** em todos os módulos
+- **Código limpo** e documentado
+- **Performance otimizada**
+- **Integração completa** entre sistemas
+
+### Próximos Passos Sugeridos (Futuro)
+- [ ] Relatórios avançados de vendas (ingressos + créditos)
+- [ ] Integração com sistema de pagamentos externos
+- [ ] Notificações automáticas por WhatsApp/Email
+- [ ] Dashboard analítico unificado (viagens + ingressos + créditos)
+- [ ] Exportação para Excel/PDF
+- [ ] Sistema de vinculação de créditos com viagens
+- [ ] Relatórios de utilização de créditos
