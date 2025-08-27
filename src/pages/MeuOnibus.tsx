@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Bus, Phone, Ticket, Users, Instagram } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { formatPhone, formatCPF } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 // Removido useViagemDetails para evitar redirecionamentos
 import { supabase } from '@/lib/supabase';
+import { CreditoBadge, useCreditoBadgeType } from '@/components/detalhes-viagem/CreditoBadge';
 
 // Usando tipos do hook existente - dados sempre consistentes
 
@@ -112,11 +114,13 @@ const MeuOnibus = () => {
             desconto,
             onibus_id,
             cidade_embarque,
+            is_responsavel_onibus,
             clientes!viagem_passageiros_cliente_id_fkey (
               id,
               nome,
               telefone,
-              cpf
+              cpf,
+              foto
             ),
             passageiro_passeios (
               passeio_nome,
@@ -134,11 +138,13 @@ const MeuOnibus = () => {
           nome: item.clientes.nome,
           telefone: item.clientes.telefone,
           cpf: item.clientes.cpf,
+          foto: item.clientes.foto,
           cidade_embarque: item.cidade_embarque,
           setor_maracana: item.setor_maracana,
           valor: item.valor || 0,
           desconto: item.desconto || 0,
           onibus_id: item.onibus_id,
+          is_responsavel_onibus: item.is_responsavel_onibus || false,
           cidade: item.clientes.cidade || item.cidade_embarque,
           passageiro_passeios: item.passageiro_passeios || []
         }));
@@ -255,6 +261,12 @@ const MeuOnibus = () => {
     return busImages[onibusInfo?.tipo_onibus] || '/images/onibus-default.jpg';
   };
 
+  const getResponsaveisOnibus = (onibusId: string) => {
+    return passageirosComOnibus.filter(p => 
+      p.onibus_id === onibusId && p.is_responsavel_onibus === true
+    );
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-black flex items-center justify-center">
@@ -353,7 +365,7 @@ const MeuOnibus = () => {
                     <p className="text-xl font-bold text-yellow-300 mb-4">
                       Se prepara, campeão! O Maracanã te espera pra um jogão histórico! 🏟️🔥
                     </p>
-                    <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100">
+                    <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100 mb-3">
                       {searchResult.cpf && (
                         <span>�  CPF: {formatCPF(searchResult.cpf)}</span>
                       )}
@@ -361,6 +373,21 @@ const MeuOnibus = () => {
                         <span>📞 {formatPhone(searchResult.telefone)}</span>
                       )}
                     </div>
+                    
+                    {/* ✅ NOVO: Badge de crédito se aplicável */}
+                    {(() => {
+                      const creditoBadgeData = useCreditoBadgeType(searchResult);
+                      return creditoBadgeData ? (
+                        <div className="flex justify-center mb-4">
+                          <CreditoBadge 
+                            tipo={creditoBadgeData.tipo}
+                            valorCredito={creditoBadgeData.valorCredito}
+                            valorTotal={creditoBadgeData.valorTotal}
+                            size="md"
+                          />
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Informações do Ônibus */}
@@ -374,16 +401,96 @@ const MeuOnibus = () => {
                           🚌 Você está no ÔNIBUS {onibusIndex}
                         </h3>
 
-                        {/* Foto do Ônibus */}
-                        <div className="mb-4">
-                          <img
-                            src={getBusImage(onibusInfo)}
-                            alt={`Ônibus ${onibusInfo.tipo_onibus}`}
-                            className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-                            onError={(e) => {
-                              e.currentTarget.src = '/images/onibus-default.jpg';
-                            }}
-                          />
+                        {/* Foto do Ônibus e Responsáveis */}
+                        <div className="mb-4 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                          {/* Foto do Ônibus */}
+                          <div className="flex justify-center">
+                            <img
+                              src={getBusImage(onibusInfo)}
+                              alt={`Ônibus ${onibusInfo.tipo_onibus}`}
+                              className="w-full max-w-sm rounded-lg shadow-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/images/onibus-default.jpg';
+                              }}
+                            />
+                          </div>
+
+                          {/* Responsáveis do Ônibus */}
+                          {(() => {
+                            const responsaveis = getResponsaveisOnibus(searchResult.onibus_id);
+                            return responsaveis.length > 0 ? (
+                              <div className="bg-white/10 rounded-lg p-4">
+                                <h4 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                                  👥 Responsáveis do Ônibus
+                                </h4>
+                                <div className="space-y-3">
+                                  {responsaveis.map((responsavel, index) => {
+                                    const iniciais = responsavel.nome.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                                    
+                                    return (
+                                      <div key={index} className="bg-white/10 rounded-lg p-3">
+                                        <div className="flex items-start gap-4 mb-2">
+                                          {/* Foto do Responsável - Quadrada e Maior */}
+                                          <div className="flex-shrink-0">
+                                            {responsavel.foto ? (
+                                              <img
+                                                src={responsavel.foto}
+                                                alt={responsavel.nome}
+                                                className="w-20 h-20 object-cover border-3 border-yellow-300 shadow-lg"
+                                                style={{ borderRadius: '8px' }}
+                                                onError={(e) => {
+                                                  // Se a imagem falhar, mostrar o fallback
+                                                  e.currentTarget.style.display = 'none';
+                                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                                  if (fallback) fallback.style.display = 'flex';
+                                                }}
+                                              />
+                                            ) : null}
+                                            {/* Fallback para quando não tem foto ou falha no carregamento */}
+                                            <div 
+                                              className="w-20 h-20 bg-yellow-300 text-black font-bold text-lg flex items-center justify-center border-3 border-yellow-400 shadow-lg"
+                                              style={{ 
+                                                borderRadius: '8px',
+                                                display: responsavel.foto ? 'none' : 'flex'
+                                              }}
+                                            >
+                                              {iniciais}
+                                            </div>
+                                          </div>
+                                          
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className="text-yellow-300 font-semibold">
+                                                {responsavel.nome}
+                                              </span>
+                                              <Badge className="bg-blue-600 text-white text-xs">
+                                                Responsável
+                                              </Badge>
+                                            </div>
+                                            {responsavel.telefone && (
+                                              <div className="flex items-center gap-2 text-sm text-white/80">
+                                                <Phone className="h-3 w-3" />
+                                                <span>{formatPhone(responsavel.telefone)}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-xs text-white/70 mt-3">
+                                  💡 Em caso de dúvidas sobre o ônibus, entre em contato com os responsáveis
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="bg-white/10 rounded-lg p-4 text-center">
+                                <p className="text-white/80 text-sm">
+                                  ℹ️ Nenhum responsável designado para este ônibus ainda
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Detalhes do Ônibus */}

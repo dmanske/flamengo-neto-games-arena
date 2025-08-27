@@ -7,9 +7,6 @@ export const creditoSchema = z.object({
     .number()
     .min(0.01, 'Valor deve ser maior que zero')
     .max(999999.99, 'Valor muito alto'),
-  tipo_credito: z.enum(['viagem_completa', 'passeios', 'geral'], {
-    required_error: 'Tipo de crédito é obrigatório',
-  }),
   data_pagamento: z.string().min(1, 'Data de pagamento é obrigatória'),
   forma_pagamento: z.string().optional(),
   observacoes: z.string().max(500, 'Observações muito longas').optional(),
@@ -46,7 +43,6 @@ export const reembolsoCreditoSchema = z.object({
 export const filtrosCreditosSchema = z.object({
   cliente_id: z.string().optional(),
   status: z.enum(['disponivel', 'utilizado', 'parcial', 'reembolsado']).optional(),
-  tipo_credito: z.enum(['viagem_completa', 'passeios', 'geral']).optional(),
   data_inicio: z.string().optional(),
   data_fim: z.string().optional(),
   valor_minimo: z.number().min(0).optional(),

@@ -62,7 +62,7 @@ export function IngressoFormModal({
   ingresso, 
   onSuccess 
 }: IngressoFormModalProps) {
-  const { criarIngresso, atualizarIngresso, calcularValores, estados } = useIngressos();
+  const { criarIngresso, atualizarIngresso, calcularValores, estados, ingressos } = useIngressos();
   const { viagens, buscarViagensAtivas } = useViagens();
   const { buscarLogosAdversarios } = useIngressos();
   
@@ -76,6 +76,7 @@ export function IngressoFormModal({
     lucro: 0,
     margemPercentual: 0
   });
+  const [conflitoDuplicacao, setConflitoDuplicacao] = useState<string | null>(null);
 
   const form = useForm<IngressoFormData>({
     resolver: zodResolver(ingressoSchema),
@@ -158,6 +159,33 @@ export function IngressoFormModal({
 
     return () => subscription.unsubscribe();
   }, [form, calcularValores]);
+
+  // Verificar duplicação de cliente/viagem em tempo real
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      const clienteId = values.cliente_id;
+      const viagemId = values.viagem_id;
+      
+      // Limpar conflito anterior
+      setConflitoDuplicacao(null);
+      
+      // Só verificar se ambos estão preenchidos e não estamos editando
+      if (clienteId && viagemId && viagemId !== 'nenhuma' && !ingresso) {
+        const ingressoExistente = ingressos.find(ing => 
+          ing.cliente_id === clienteId && 
+          ing.viagem_id === viagemId
+        );
+        
+        if (ingressoExistente) {
+          const viagem = viagens.find(v => v.id === viagemId);
+          const nomeViagem = viagem ? `${viagem.adversario} - ${format(new Date(viagem.data_jogo), 'dd/MM/yyyy')}` : 'esta viagem';
+          setConflitoDuplicacao(`Este cliente já possui ingresso para ${nomeViagem}`);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, ingressos, viagens, ingresso]);
 
   // Atualizar local do jogo
   const handleLocalJogoChange = (novoLocal: LocalJogo) => {
@@ -276,6 +304,18 @@ export function IngressoFormModal({
                         </FormItem>
                       )}
                     />
+
+                    {/* Aviso de duplicação */}
+                    {conflitoDuplicacao && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-600">⚠️</span>
+                          <span className="text-red-700 text-sm font-medium">
+                            {conflitoDuplicacao}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Data do Jogo */}
@@ -602,7 +642,7 @@ export function IngressoFormModal({
               </Button>
               <Button
                 type="submit"
-                disabled={estados.salvando}
+                disabled={estados.salvando || !!conflitoDuplicacao}
               >
                 {estados.salvando ? 'Salvando...' : (ingresso ? 'Atualizar' : 'Cadastrar')}
               </Button>

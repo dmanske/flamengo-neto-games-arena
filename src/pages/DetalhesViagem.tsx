@@ -24,6 +24,8 @@ import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
 import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
 import { useViagemCompatibility } from "@/hooks/useViagemCompatibility";
 import { useViagemFinanceiro } from "@/hooks/financeiro/useViagemFinanceiro";
+import { VincularCreditoModal } from "@/components/creditos/VincularCreditoModal";
+import { useCreditos } from "@/hooks/useCreditos";
 
 import { toast } from "sonner";
 
@@ -56,6 +58,10 @@ const DetalhesViagem = () => {
   const [detailsPassageiroOpen, setDetailsPassageiroOpen] = useState(false);
   const [selectedPassageiro, setSelectedPassageiro] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("passageiros");
+  
+  // Estados para vinculação de crédito
+  const [modalVincularAberto, setModalVincularAberto] = useState(false);
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
 
   const {
     viagem,
@@ -143,6 +149,27 @@ const DetalhesViagem = () => {
   // Hook para carregar passeios (para filtros de viagens novas)
   const { passeios } = usePasseios();
 
+  // Hook para operações com créditos
+  const { desvincularPassageiroViagem } = useCreditos();
+
+  // Expor função para recarregar passageiros globalmente
+  React.useEffect(() => {
+    if (fetchPassageiros && id) {
+      (window as any).reloadViagemPassageiros = () => {
+        console.log('🔄 [DetalhesViagem] Função global chamada - recarregando passageiros da viagem:', id);
+        console.log('🔄 [DetalhesViagem] fetchPassageiros disponível:', !!fetchPassageiros);
+        fetchPassageiros(id);
+        console.log('✅ [DetalhesViagem] fetchPassageiros executado para viagem:', id);
+      };
+      console.log('✅ [DetalhesViagem] Função global reloadViagemPassageiros registrada para viagem:', id);
+      console.log('✅ [DetalhesViagem] Função registrada no window:', !!(window as any).reloadViagemPassageiros);
+    }
+    return () => {
+      console.log('🧹 [DetalhesViagem] Removendo função global reloadViagemPassageiros');
+      delete (window as any).reloadViagemPassageiros;
+    };
+  }, [fetchPassageiros, id]);
+
   // Estados para o modal de filtros
   const [filtersDialogOpen, setFiltersDialogOpen] = useState(false);
 
@@ -227,6 +254,32 @@ const DetalhesViagem = () => {
   const openDetailsPassageiroDialog = (passageiro: any) => {
     setSelectedPassageiro(passageiro);
     setDetailsPassageiroOpen(true);
+  };
+
+  // Handler para desvincular passageiro da viagem (manter crédito)
+  const handleDesvincularCredito = async (passageiro: any) => {
+    const confirmar = window.confirm(
+      `Tem certeza que deseja desvincular ${passageiro.nome || passageiro.clientes?.nome} desta viagem?\n\n` +
+      `O passageiro será removido da viagem e o valor do crédito (R$ ${(passageiro.valor_credito_utilizado || 0).toFixed(2)}) será restaurado para uso futuro.`
+    );
+
+    if (!confirmar) return;
+
+    const viagemPassageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+    console.log('🔄 [DEBUG] Desvinculando passageiro:', {
+      nome: passageiro.nome || passageiro.clientes?.nome,
+      viagemPassageiroId,
+      creditoId: passageiro.credito_origem_id,
+      valorUtilizado: passageiro.valor_credito_utilizado
+    });
+
+    const sucesso = await desvincularPassageiroViagem(viagemPassageiroId);
+    
+    if (sucesso) {
+      // Recarregar dados da viagem
+      await refreshAllData();
+      console.log('✅ [DEBUG] Passageiro desvinculado e dados recarregados');
+    }
   };
 
   if (isLoading) {
@@ -372,6 +425,7 @@ const DetalhesViagem = () => {
               setAddPassageiroOpen={setAddPassageiroOpen}
               onEditPassageiro={openEditPassageiroDialog}
               onDeletePassageiro={openDeletePassageiroDialog}
+              onDesvincularCredito={handleDesvincularCredito}
               onViewDetails={openDetailsPassageiroDialog}
               filterStatus={filterStatus}
               passeiosPagos={viagem?.passeios_pagos}
@@ -475,6 +529,22 @@ const DetalhesViagem = () => {
           onSuccess={refreshAllData}
         />
       )}
+
+      {/* Modal de Vinculação de Crédito */}
+      <VincularCreditoModal
+        open={modalVincularAberto}
+        onOpenChange={setModalVincularAberto}
+        grupoCliente={clienteSelecionado}
+        onSuccess={() => {
+          setModalVincularAberto(false);
+          setClienteSelecionado(null);
+          toast.success('Crédito vinculado com sucesso!');
+        }}
+        onViagemUpdated={() => {
+          // Recarregar dados da viagem
+          fetchPassageiros(id);
+        }}
+      />
     </>
   );
 
@@ -485,6 +555,7 @@ const DetalhesViagem = () => {
       onPrint={handlePrint}
       onExportPDF={handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
+      onVincularCredito={() => setModalVincularAberto(true)}
       onibusList={onibusList}
       passageiros={originalPassageiros}
     >

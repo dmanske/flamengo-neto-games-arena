@@ -16,7 +16,8 @@ import {
   MessageSquare,
   BarChart3,
   Loader2,
-  Ticket
+  Ticket,
+  Wallet
 } from 'lucide-react';
 import { useClienteDetalhes } from '@/hooks/useClienteDetalhes';
 import { formatPhone, formatCPF, formatarNomeComPreposicoes } from '@/utils/formatters';
@@ -26,11 +27,12 @@ import InformacoesPessoais from '@/components/cliente-detalhes/InformacoesPessoa
 import HistoricoViagens from '@/components/cliente-detalhes/HistoricoViagens';
 import SituacaoFinanceira from '@/components/cliente-detalhes/SituacaoFinanceira';
 import IngressosCliente from '@/components/cliente-detalhes/IngressosCliente';
+import CreditosCliente from '@/components/cliente-detalhes/CreditosCliente';
 import HistoricoComunicacao from '@/components/cliente-detalhes/HistoricoComunicacao';
 import EstatisticasInsights from '@/components/cliente-detalhes/EstatisticasInsights';
 import AcoesRapidas from '@/components/cliente-detalhes/AcoesRapidas';
 
-type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'comunicacao' | 'insights' | 'ingressos';
+type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'comunicacao' | 'insights' | 'ingressos' | 'creditos';
 
 const ClienteDetalhes = () => {
   const { id } = useParams<{ id: string }>();
@@ -73,6 +75,7 @@ const ClienteDetalhes = () => {
     { id: 'viagens', label: 'Viagens', icon: Calendar },
     { id: 'financeiro', label: 'Financeiro', icon: CreditCard },
     { id: 'ingressos', label: 'Ingressos', icon: Ticket },
+    { id: 'creditos', label: 'Créditos', icon: Wallet },
     { id: 'comunicacao', label: 'Comunicação', icon: MessageSquare },
     { id: 'insights', label: 'Insights', icon: BarChart3 },
   ] as const;
@@ -87,6 +90,8 @@ const ClienteDetalhes = () => {
         return <SituacaoFinanceira clienteId={id || ''} />;
       case 'ingressos':
         return <IngressosCliente clienteId={id || ''} />;
+      case 'creditos':
+        return <CreditosCliente clienteId={id || ''} />;
       case 'comunicacao':
         return <HistoricoComunicacao clienteId={id || ''} />;
       case 'insights':

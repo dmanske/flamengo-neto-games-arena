@@ -37,7 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 
 import { creditoSchema, CreditoFormData } from '@/lib/validations/creditos';
-import { Credito, TIPOS_CREDITO_OPTIONS, FORMAS_PAGAMENTO_CREDITO } from '@/types/creditos';
+import { Credito, FORMAS_PAGAMENTO_CREDITO } from '@/types/creditos';
 import { cn } from '@/lib/utils';
 import { ClienteSearchSelect } from '@/components/ingressos/ClienteSearchSelect';
 import { useCreditos } from '@/hooks/useCreditos';
@@ -63,7 +63,6 @@ export function CreditoFormModal({
     defaultValues: {
       cliente_id: credito?.cliente_id || '',
       valor_credito: credito?.valor_credito || 0,
-      tipo_credito: credito?.tipo_credito || 'geral',
       data_pagamento: credito?.data_pagamento || format(new Date(), 'yyyy-MM-dd'),
       forma_pagamento: credito?.forma_pagamento || 'nao_informado',
       observacoes: credito?.observacoes || '',
@@ -76,7 +75,6 @@ export function CreditoFormModal({
       form.reset({
         cliente_id: credito.cliente_id,
         valor_credito: credito.valor_credito,
-        tipo_credito: credito.tipo_credito,
         data_pagamento: credito.data_pagamento,
         forma_pagamento: credito.forma_pagamento || 'nao_informado',
         observacoes: credito.observacoes || '',
@@ -85,7 +83,6 @@ export function CreditoFormModal({
       form.reset({
         cliente_id: '',
         valor_credito: 0,
-        tipo_credito: 'geral',
         data_pagamento: format(new Date(), 'yyyy-MM-dd'),
         forma_pagamento: 'nao_informado',
         observacoes: '',
@@ -167,32 +164,6 @@ export function CreditoFormModal({
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Tipo de Crédito */}
-              <FormField
-                control={form.control}
-                name="tipo_credito"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Crédito *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {TIPOS_CREDITO_OPTIONS.map((tipo) => (
-                          <SelectItem key={tipo.value} value={tipo.value}>
-                            {tipo.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

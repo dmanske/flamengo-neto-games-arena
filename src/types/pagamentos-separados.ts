@@ -3,7 +3,7 @@
 
 export type CategoriaPagamento = 'viagem' | 'passeios' | 'ambos';
 
-export type StatusPagamentoAvancado = 
+export type StatusPagamentoAvancado =
   | 'Pago Completo'    // ✅ Viagem + Passeios pagos
   | 'Viagem Paga'      // 🟡 Só viagem paga
   | 'Passeios Pagos'   // 🟡 Só passeios pagos  
@@ -23,6 +23,18 @@ export interface HistoricoPagamentoCategorizado {
   updated_at: string;
 }
 
+export interface CreditoVinculado {
+  id: string;
+  valor_utilizado: number;
+  data_vinculacao: string;
+  observacoes?: string;
+  credito?: {
+    id: string;
+    cliente_id: string;
+    valor_credito: number;
+  };
+}
+
 export interface ViagemPassageiroComPagamentos {
   id: string;
   cliente_id: string;
@@ -32,10 +44,13 @@ export interface ViagemPassageiroComPagamentos {
   status_pagamento: StatusPagamentoAvancado;
   viagem_paga: boolean;
   passeios_pagos: boolean;
+  gratuito?: boolean;
   // ... outros campos existentes
   historico_pagamentos?: HistoricoPagamentoCategorizado[];
   valor_total_passeios?: number;
   valor_liquido_viagem?: number;
+  // ✅ NOVO: Créditos vinculados
+  creditos_vinculados?: CreditoVinculado[];
 }
 
 export interface BreakdownPagamento {
@@ -125,16 +140,24 @@ export const calcularBreakdownPagamento = (
 
   // Calcular valores pagos por categoria
   const pagamentos = passageiro.historico_pagamentos || [];
-  const pago_viagem = pagamentos
+  const pago_viagem_parcelas = pagamentos
     .filter(p => p.categoria === 'viagem' || p.categoria === 'ambos')
     .reduce((sum, p) => sum + p.valor_pago, 0);
-  
-  const pago_passeios = pagamentos
+
+  const pago_passeios_parcelas = pagamentos
     .filter(p => p.categoria === 'passeios' || p.categoria === 'ambos')
     .reduce((sum, p) => sum + p.valor_pago, 0);
 
+  // ✅ NOVO: Incluir créditos no cálculo
+  const creditos = passageiro.creditos_vinculados || [];
+  const pago_creditos = creditos.reduce((sum, c) => sum + c.valor_utilizado, 0);
+
+  // Total pago = parcelas + créditos
+  const pago_viagem = pago_viagem_parcelas + pago_creditos; // Crédito paga a viagem primeiro
+  const pago_passeios = pago_passeios_parcelas; // Passeios só com parcelas por enquanto
+
   // Calcular total sem duplicar pagamentos "ambos"
-  const pago_total = pagamentos.reduce((sum, p) => sum + p.valor_pago, 0);
+  const pago_total = pagamentos.reduce((sum, p) => sum + p.valor_pago, 0) + pago_creditos;
   const pendente_viagem = Math.max(0, valor_viagem - pago_viagem);
   const pendente_passeios = Math.max(0, valor_passeios - pago_passeios);
   const pendente_total = pendente_viagem + pendente_passeios;
@@ -162,12 +185,12 @@ export const determinarStatusPagamento = (
   if (passageiro?.gratuito === true) {
     return 'Brinde';
   }
-  
+
   const { valor_viagem, valor_passeios, pago_viagem, pago_passeios } = breakdown;
-  
+
   const viagem_paga = pago_viagem >= valor_viagem;
   const passeios_pagos = pago_passeios >= valor_passeios || valor_passeios === 0;
-  
+
   if (viagem_paga && passeios_pagos) {
     return 'Pago Completo';
   } else if (viagem_paga && valor_passeios === 0) {

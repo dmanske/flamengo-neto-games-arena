@@ -25,12 +25,14 @@ interface CleanJogoCardProps {
   jogo: JogoIngresso;
   onVerIngressos: (jogo: JogoIngresso) => void;
   onDeletarJogo: (jogo: JogoIngresso) => void;
+  isSelected?: boolean;
 }
 
 export function CleanJogoCard({
   jogo,
   onVerIngressos,
-  onDeletarJogo
+  onDeletarJogo,
+  isSelected = false
 }: CleanJogoCardProps) {
   const [editarLogoOpen, setEditarLogoOpen] = useState(false);
   
@@ -90,7 +92,11 @@ export function CleanJogoCard({
   
   return (
     <TooltipProvider>
-      <div className="group bg-white rounded-xl overflow-hidden shadow-professional hover:shadow-professional-lg transition-all duration-300 hover:-translate-y-1 max-w-sm mx-auto border border-gray-100">
+      <div className={`group bg-white rounded-xl overflow-hidden shadow-professional hover:shadow-professional-lg transition-all duration-300 hover:-translate-y-1 max-w-sm mx-auto border ${
+        isSelected 
+          ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' 
+          : 'border-gray-100'
+      }`}>
         {/* Header sólido e limpo */}
         <div className="bg-professional-blue p-4 relative overflow-hidden">
           <div className="flex justify-between items-center">

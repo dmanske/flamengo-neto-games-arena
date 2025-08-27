@@ -11,7 +11,25 @@ const MeuOnibusSimple = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResult, setSearchResult] = useState<any>(null);
 
-  const { viagem, passageiros, isLoading } = useViagemDetails(id || '');
+  const { viagem, passageiros, isLoading, fetchPassageiros } = useViagemDetails(id || '');
+
+  // Expor função para recarregar passageiros globalmente
+  React.useEffect(() => {
+    if (fetchPassageiros && id) {
+      (window as any).reloadViagemPassageiros = () => {
+        console.log('🔄 [MeuOnibusSimple] Função global chamada - recarregando passageiros da viagem:', id);
+        console.log('🔄 [MeuOnibusSimple] fetchPassageiros disponível:', !!fetchPassageiros);
+        fetchPassageiros(id);
+        console.log('✅ [MeuOnibusSimple] fetchPassageiros executado para viagem:', id);
+      };
+      console.log('✅ [MeuOnibusSimple] Função global reloadViagemPassageiros registrada para viagem:', id);
+      console.log('✅ [MeuOnibusSimple] Função registrada no window:', !!(window as any).reloadViagemPassageiros);
+    }
+    return () => {
+      console.log('🧹 [MeuOnibusSimple] Removendo função global reloadViagemPassageiros');
+      delete (window as any).reloadViagemPassageiros;
+    };
+  }, [fetchPassageiros, id]);
 
   const handleSearch = () => {
     console.log('🔍 Buscando:', searchTerm);

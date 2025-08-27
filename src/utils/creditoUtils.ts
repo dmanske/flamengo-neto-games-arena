@@ -4,7 +4,6 @@ import {
   Credito, 
   CalculoCredito, 
   StatusCredito, 
-  TipoCreditoViagem,
   StatusCalculoCredito,
   CreditosPorMes 
 } from '@/types/creditos';
@@ -82,51 +81,7 @@ export const getStatusCreditoText = (status: StatusCredito): string => {
   }
 };
 
-/**
- * Obtém o ícone do tipo de crédito
- */
-export const getTipoCreditoIcon = (tipo: TipoCreditoViagem): string => {
-  switch (tipo) {
-    case 'geral':
-      return '💰';
-    case 'viagem_completa':
-      return '🚌';
-    case 'passeios':
-      return '🎯';
-    default:
-      return '💳';
-  }
-};
 
-/**
- * Obtém o texto do tipo de crédito
- */
-export const getTipoCreditoText = (tipo: TipoCreditoViagem): string => {
-  switch (tipo) {
-    case 'geral':
-      return 'Geral';
-    case 'viagem_completa':
-      return 'Viagem Completa';
-    case 'passeios':
-      return 'Passeios';
-    default:
-      return tipo;
-  }
-};
-
-/**
- * Verifica se um tipo de crédito é compatível com um tipo de uso
- */
-export const isTipoCreditoCompativel = (
-  tipoCredito: TipoCreditoViagem,
-  tipoUso: TipoCreditoViagem
-): boolean => {
-  // Crédito geral pode ser usado para qualquer coisa
-  if (tipoCredito === 'geral') return true;
-  
-  // Crédito específico deve ser usado apenas para o tipo correspondente
-  return tipoCredito === tipoUso;
-};
 
 /**
  * Calcula o novo status do crédito baseado no saldo disponível
@@ -229,8 +184,7 @@ export const formatarDataHoraCredito = (data: string): string => {
  */
 export const podeVincularCredito = (
   credito: Credito,
-  valorViagem: number,
-  tipoUso: TipoCreditoViagem
+  valorViagem: number
 ): { pode: boolean; motivo?: string } => {
   // Verificar se crédito está disponível
   if (credito.status === 'reembolsado') {
@@ -239,14 +193,6 @@ export const podeVincularCredito = (
   
   if (credito.saldo_disponivel <= 0) {
     return { pode: false, motivo: 'Crédito não possui saldo disponível' };
-  }
-  
-  // Verificar compatibilidade de tipo
-  if (!isTipoCreditoCompativel(credito.tipo_credito, tipoUso)) {
-    return { 
-      pode: false, 
-      motivo: `Crédito do tipo "${getTipoCreditoText(credito.tipo_credito)}" não pode ser usado para "${getTipoCreditoText(tipoUso)}"` 
-    };
   }
   
   return { pode: true };

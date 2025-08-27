@@ -69,4 +69,4 @@ A tabela `historico_pagamentos_ingressos` é essencial para:
 - Registrar pagamentos
 - Calcular status de pagamento
 - Mostrar histórico de pagamentos
-- Calcular resumos financeiros
+- Calcular resumos financeir

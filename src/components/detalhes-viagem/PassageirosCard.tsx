@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Pencil, Users, Plus, Search, Eye, Bus, Ticket } from "lucide-react";
+import { Trash2, Pencil, Users, Plus, Search, Eye, Bus, Ticket, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
@@ -45,6 +46,7 @@ interface PassageirosCardProps {
   setAddPassageiroOpen: (open: boolean) => void;
   onEditPassageiro: (passageiro: any) => void;
   onDeletePassageiro: (passageiro: any) => void;
+  onDesvincularCredito?: (passageiro: any) => void;
   onViewDetails?: (passageiro: any) => void;
   filterStatus: string;
   passeiosPagos?: string[];
@@ -67,6 +69,7 @@ export function PassageirosCard({
   setAddPassageiroOpen,
   onEditPassageiro,
   onDeletePassageiro,
+  onDesvincularCredito,
   onViewDetails,
   filterStatus,
   passeiosPagos,
@@ -78,6 +81,7 @@ export function PassageirosCard({
   totalPassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [activeTab, setActiveTab] = useState<string>("todos");
   
   // Calcular se há vagas disponíveis no ônibus atual
   const capacidadeOnibusAtual = onibusAtual ? onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0) : 0;
@@ -196,9 +200,9 @@ export function PassageirosCard({
   // Função para lidar com pagamentos
   const handlePagamento = async (
     passageiroId: string,
-    categoria: CategoriaPagamento,
+    categoria: string,
     valor: number,
-    formaPagamento: string,
+    formaPagamento: string = 'pix',
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
@@ -491,6 +495,7 @@ export function PassageirosCard({
                           index={index}
                           onEditPassageiro={onEditPassageiro}
                           onDeletePassageiro={onDeletePassageiro}
+                          onDesvincularCredito={onDesvincularCredito}
                           onViewDetails={onViewDetails}
                           handlePagamento={handlePagamento}
                         />

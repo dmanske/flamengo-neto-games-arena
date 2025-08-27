@@ -27,6 +27,9 @@ interface Passageiro {
   desconto: number;
   onibus_id: string;
   is_responsavel_onibus: boolean;
+  pago_por_credito?: boolean;
+  credito_origem_id?: string | null;
+  valor_credito_utilizado?: number;
   passeios: Array<{
     passeio_nome: string;
     status: string;
@@ -121,6 +124,9 @@ const ListaPresenca = () => {
           cidade_embarque,
           setor_maracana,
           is_responsavel_onibus,
+          pago_por_credito,
+          credito_origem_id,
+          valor_credito_utilizado,
           clientes!viagem_passageiros_cliente_id_fkey (
             id,
             nome,
@@ -160,6 +166,9 @@ const ListaPresenca = () => {
         desconto: item.desconto || 0,
         onibus_id: item.onibus_id,
         is_responsavel_onibus: item.is_responsavel_onibus || false,
+        pago_por_credito: item.pago_por_credito || false,
+        credito_origem_id: item.credito_origem_id,
+        valor_credito_utilizado: item.valor_credito_utilizado || 0,
         passeios: item.passageiro_passeios || [],
         historico_pagamentos: item.historico_pagamentos_categorizado || []
       }));
@@ -313,13 +322,31 @@ const ListaPresenca = () => {
     // Calcular valores pagos por categoria usando historico_pagamentos_categorizado
     const historico = passageiro.historico_pagamentos || [];
     
-    const pagoViagem = historico
+    let pagoViagem = historico
       .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
       .reduce((sum, h) => sum + h.valor_pago, 0);
     
-    const pagoPasseios = historico
+    let pagoPasseios = historico
       .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
       .reduce((sum, h) => sum + h.valor_pago, 0);
+
+    // ✨ CONSIDERAR PAGAMENTO VIA CRÉDITO
+    if (passageiro.pago_por_credito && passageiro.valor_credito_utilizado) {
+      const valorCredito = passageiro.valor_credito_utilizado;
+      
+      // Se o crédito cobriu a viagem completa
+      if (valorCredito >= valorViagem) {
+        pagoViagem = valorViagem;
+        // Se sobrou crédito, aplicar aos passeios
+        const creditoSobrando = valorCredito - valorViagem;
+        if (creditoSobrando > 0) {
+          pagoPasseios += Math.min(creditoSobrando, valorPasseios);
+        }
+      } else {
+        // Crédito parcial, aplicar apenas à viagem
+        pagoViagem += valorCredito;
+      }
+    }
 
     const totalPago = pagoViagem + pagoPasseios;
 
@@ -340,41 +367,53 @@ const ListaPresenca = () => {
     }
 
     // Determinar status baseado nos valores reais pagos
+    const foiPagoViaCredito = passageiro.pago_por_credito && passageiro.valor_credito_utilizado > 0;
+    const sufixoCredito = foiPagoViaCredito ? ' (via Crédito)' : '';
+    
     if (totalPendente <= 0.01) {
       // Pago completo
       return {
         status: 'pago',
-        texto: '✅ Pago Completo',
-        cor: 'text-green-600 bg-green-50 border-green-200'
+        texto: `✅ Pago Completo${sufixoCredito}`,
+        cor: foiPagoViaCredito ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-green-600 bg-green-50 border-green-200'
       };
     } else if (pendenteViagem <= 0.01 && pendentePasseios > 0.01) {
       // Só viagem paga
       return {
         status: 'parcial',
-        texto: `🎫 Viagem Paga - Passeios: R$ ${pendentePasseios.toFixed(2)}`,
+        texto: `🎫 Viagem Paga${sufixoCredito} - Passeios: R$ ${pendentePasseios.toFixed(2)}`,
         cor: 'text-blue-600 bg-blue-50 border-blue-200'
       };
     } else if (pendentePasseios <= 0.01 && pendenteViagem > 0.01) {
       // Só passeios pagos
       return {
         status: 'parcial',
-        texto: `🎢 Passeios Pagos - Viagem: R$ ${pendenteViagem.toFixed(2)}`,
+        texto: `🎢 Passeios Pagos${sufixoCredito} - Viagem: R$ ${pendenteViagem.toFixed(2)}`,
         cor: 'text-blue-600 bg-blue-50 border-blue-200'
       };
     } else if (totalPago > 0.01) {
       // Pagamento parcial
+      const textoCredito = foiPagoViaCredito ? ` (R$ ${passageiro.valor_credito_utilizado.toFixed(2)} via Crédito)` : '';
       return {
         status: 'parcial',
-        texto: `💳 Pago: R$ ${totalPago.toFixed(2)} - Pendente: R$ ${totalPendente.toFixed(2)}`,
+        texto: `💳 Pago: R$ ${totalPago.toFixed(2)}${textoCredito} - Pendente: R$ ${totalPendente.toFixed(2)}`,
         cor: 'text-orange-600 bg-orange-50 border-orange-200'
       };
     } else {
-      // Nada pago
-      return {
-        status: 'pendente',
-        texto: `⚠️ Pendente: R$ ${totalPendente.toFixed(2)}`,
-        cor: 'text-red-600 bg-red-50 border-red-200'
-      };
+      // Nada pago (mas pode ter crédito aplicado)
+      if (foiPagoViaCredito) {
+        return {
+          status: 'parcial',
+          texto: `💳 Crédito: R$ ${passageiro.valor_credito_utilizado.toFixed(2)} - Pendente: R$ ${totalPendente.toFixed(2)}`,
+          cor: 'text-blue-600 bg-blue-50 border-blue-200'
+        };
+      } else {
+        return {
+          status: 'pendente',
+          texto: `⚠️ Pendente: R$ ${totalPendente.toFixed(2)}`,
+          cor: 'text-red-600 bg-red-50 border-red-200'
+        };
+      }
     }
   };
 
@@ -900,6 +939,15 @@ const ListaPresenca = () => {
                                     <p>CPF: {formatCPF(passageiro.cpf)}</p>
                                     <p>Telefone: {formatPhone(passageiro.telefone)}</p>
                                     <p>Setor: {passageiro.setor_maracana}</p>
+                                    {/* Informações de Crédito */}
+                                    {passageiro.pago_por_credito && (
+                                      <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
+                                        <span>💳</span>
+                                        <span className="font-medium">
+                                          Pago via Crédito: R$ {(passageiro.valor_credito_utilizado || 0).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                   
                                   {/* Informações Financeiras */}
@@ -998,6 +1046,15 @@ const ListaPresenca = () => {
                                 <p>CPF: {formatCPF(passageiro.cpf)}</p>
                                 <p>Telefone: {formatPhone(passageiro.telefone)}</p>
                                 <p>Setor: {passageiro.setor_maracana}</p>
+                                {/* Informações de Crédito */}
+                                {passageiro.pago_por_credito && (
+                                  <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1">
+                                    <span>💳</span>
+                                    <span className="font-medium">
+                                      Pago via Crédito: R$ {(passageiro.valor_credito_utilizado || 0).toFixed(2)}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                               {passageiro.passeios && passageiro.passeios.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">

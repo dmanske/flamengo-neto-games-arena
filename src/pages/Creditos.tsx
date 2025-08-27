@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, ChevronDown, CreditCard, DollarSign, Receipt, History } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Filter, Download, Edit, Trash2, Calendar, ChevronDown, CreditCard, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,33 +25,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useCreditos } from '@/hooks/useCreditos';
 import { Credito, FiltrosCreditos, StatusCredito } from '@/types/creditos';
 import { formatCurrency } from '@/utils/formatters';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { 
   getStatusCreditoBadgeColor, 
   getStatusCreditoText, 
-  getTipoCreditoIcon,
-  getTipoCreditoText,
   formatarDataCredito 
 } from '@/utils/creditoUtils';
 
 // Componentes
 import { CreditoFormModal } from '@/components/creditos/CreditoFormModal';
-import { PagamentoCreditoModal } from '@/components/creditos/PagamentoCreditoModal';
-import { HistoricoPagamentosCreditoModal } from '@/components/creditos/HistoricoPagamentosCreditoModal';
-import { StatusPagamentoCredito } from '@/components/creditos/StatusPagamentoCredito';
-import { usePagamentosCreditos } from '@/hooks/usePagamentosCreditos';
-// import { CreditoDetailsModal } from '@/components/creditos/CreditoDetailsModal';
-// import { VincularCreditoModal } from '@/components/creditos/VincularCreditoModal';
-// import { FiltrosCreditosModal } from '@/components/creditos/FiltrosCreditosModal';
+import { CreditoDetailsModal } from '@/components/creditos/CreditoDetailsModal';
+import { VincularCreditoModal } from '@/components/creditos/VincularCreditoModal';
+import { FiltrosCreditosModal } from '@/components/creditos/FiltrosCreditosModal';
 
 export default function Creditos() {
   const { 
     creditos, 
     creditosAgrupados,
+    creditosAgrupadosPorCliente,
     resumo, 
     estados, 
     buscarCreditos,
@@ -59,38 +63,64 @@ export default function Creditos() {
     deletarCredito 
   } = useCreditos();
 
-  const {
-    historicoPagamentos,
-    buscarHistoricoPagamentos,
-    registrarPagamento,
-    editarPagamento,
-    deletarPagamento: deletarPagamentoCredito,
-    calcularResumo
-  } = usePagamentosCreditos();
+
 
   const [filtros, setFiltros] = useState<FiltrosCreditos>({});
   const [busca, setBusca] = useState('');
   const [creditoSelecionado, setCreditoSelecionado] = useState<Credito | null>(null);
   const [modalFormAberto, setModalFormAberto] = useState(false);
-  const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [modalVincularAberto, setModalVincularAberto] = useState(false);
   const [modalFiltrosAberto, setModalFiltrosAberto] = useState(false);
+  const [modalDetalhesClienteAberto, setModalDetalhesClienteAberto] = useState(false);
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
   
-  // Estados para sistema de pagamentos
-  const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
-  const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
-  const [pagamentoParaEditar, setPagamentoParaEditar] = useState<any>(null);
+  // Estado para controlar visualização
+  const [visualizacao, setVisualizacao] = useState<'mes' | 'cliente'>('cliente');
+  
+  // Estado para modal de confirmação de delete
+  const [modalConfirmacaoDelete, setModalConfirmacaoDelete] = useState<{
+    aberto: boolean;
+    credito: Credito | null;
+  }>({
+    aberto: false,
+    credito: null
+  });
 
-  // Filtrar créditos baseado na busca
+  // Filtrar créditos baseado na busca (os filtros avançados já são aplicados no hook)
   const creditosFiltrados = creditos.filter(credito => {
     if (!busca) return true;
     
     const termoBusca = busca.toLowerCase();
     return (
       credito.cliente?.nome.toLowerCase().includes(termoBusca) ||
-      credito.tipo_credito.toLowerCase().includes(termoBusca) ||
       credito.forma_pagamento?.toLowerCase().includes(termoBusca) ||
       credito.observacoes?.toLowerCase().includes(termoBusca)
+    );
+  });
+
+  // Atualizar clienteSelecionado quando os dados mudam
+  useEffect(() => {
+    if (clienteSelecionado?.cliente?.id && creditosAgrupadosPorCliente.length > 0) {
+      const clienteAtualizado = creditosAgrupadosPorCliente.find(
+        grupo => grupo.cliente.id === clienteSelecionado.cliente.id
+      );
+      if (clienteAtualizado && JSON.stringify(clienteAtualizado) !== JSON.stringify(clienteSelecionado)) {
+        setClienteSelecionado(clienteAtualizado);
+      }
+    }
+  }, [creditosAgrupadosPorCliente]);
+
+  // Aplicar filtro de busca também no agrupamento por cliente
+  const creditosAgrupadosPorClienteFiltrados = creditosAgrupadosPorCliente.filter(grupoCliente => {
+    if (!busca) return true;
+    
+    const termoBusca = busca.toLowerCase();
+    return (
+      grupoCliente.cliente?.nome.toLowerCase().includes(termoBusca) ||
+      grupoCliente.creditos.some(credito => 
+        credito.forma_pagamento?.toLowerCase().includes(termoBusca) ||
+        credito.observacoes?.toLowerCase().includes(termoBusca)
+      )
     );
   });
 
@@ -110,17 +140,20 @@ export default function Creditos() {
     }
   };
 
-  // Função para deletar crédito com confirmação
-  const handleDeletar = async (credito: Credito) => {
-    if (window.confirm(`Tem certeza que deseja deletar o crédito de ${credito.cliente?.nome} no valor de ${formatCurrency(credito.valor_credito)}?`)) {
-      await deletarCredito(credito.id);
-    }
+  // Função para abrir modal de confirmação de delete
+  const handleDeletar = (credito: Credito) => {
+    setModalConfirmacaoDelete({
+      aberto: true,
+      credito
+    });
   };
 
-  // Função para abrir modal de detalhes
-  const handleVerDetalhes = (credito: Credito) => {
-    setCreditoSelecionado(credito);
-    setModalDetalhesAberto(true);
+  // Função para confirmar e executar o delete
+  const confirmarDelete = async () => {
+    if (modalConfirmacaoDelete.credito) {
+      await deletarCredito(modalConfirmacaoDelete.credito.id);
+      setModalConfirmacaoDelete({ aberto: false, credito: null });
+    }
   };
 
   // Função para abrir modal de edição
@@ -129,35 +162,10 @@ export default function Creditos() {
     setModalFormAberto(true);
   };
 
-  // Função para abrir modal de vinculação
-  const handleVincular = (credito: Credito) => {
-    setCreditoSelecionado(credito);
-    setModalVincularAberto(true);
-  };
-
-  // Funções para sistema de pagamentos
-  const handleRegistrarPagamento = async (credito: Credito) => {
-    setCreditoSelecionado(credito);
-    await buscarHistoricoPagamentos(credito.id);
-    setModalPagamentoAberto(true);
-  };
-
-  const handleVerHistorico = async (credito: Credito) => {
-    setCreditoSelecionado(credito);
-    await buscarHistoricoPagamentos(credito.id);
-    setModalHistoricoAberto(true);
-  };
-
-  const handleEditarPagamento = (pagamento: any) => {
-    setPagamentoParaEditar(pagamento);
-    setModalHistoricoAberto(false);
-    setModalPagamentoAberto(true);
-  };
-
-  const handleNovoPagamentoDoHistorico = () => {
-    setPagamentoParaEditar(null);
-    setModalHistoricoAberto(false);
-    setModalPagamentoAberto(true);
+  // Função para abrir modal detalhado do cliente
+  const handleVerDetalhesCliente = (grupoCliente: any) => {
+    setClienteSelecionado(grupoCliente);
+    setModalDetalhesClienteAberto(true);
   };
 
   // Aplicar filtros quando mudarem
@@ -176,11 +184,86 @@ export default function Creditos() {
             Controle de pagamentos antecipados e vinculação com viagens
           </p>
         </div>
-        <Button onClick={() => setModalFormAberto(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Crédito
-        </Button>
+        <div className="flex gap-2">
+          {/* ✅ NOVO: Botão de Teste para Vinculação */}
+          <Button 
+            onClick={() => {
+              // Usar o primeiro cliente real com crédito disponível
+              const clienteComCredito = creditosAgrupadosPorCliente.find(
+                grupo => grupo.resumo.valor_disponivel > 0
+              );
+              
+              if (clienteComCredito) {
+                setClienteSelecionado(clienteComCredito);
+                setModalVincularAberto(true);
+              } else {
+                toast.error('Nenhum cliente com crédito disponível encontrado. Cadastre um crédito primeiro.');
+              }
+            }}
+            variant="outline" 
+            className="gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+          >
+            <CreditCard className="h-4 w-4" />
+            🧪 Testar Vinculação
+          </Button>
+          
+          <Button onClick={() => setModalFormAberto(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Crédito
+          </Button>
+        </div>
       </div>
+
+      {/* ✅ NOVO: Card de Teste da Vinculação */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                🧪 Testar Nova Funcionalidade
+              </h3>
+              <p className="text-sm text-blue-700 mb-4">
+                Teste a vinculação de crédito com pagamentos separados e registro automático de pagamento adicional
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    // Usar o primeiro cliente real com crédito disponível
+                    const clienteComCredito = creditosAgrupadosPorCliente.find(
+                      grupo => grupo.resumo.valor_disponivel > 0
+                    );
+                    
+                    if (clienteComCredito) {
+                      setClienteSelecionado(clienteComCredito);
+                      setModalVincularAberto(true);
+                    } else {
+                      toast.error('Nenhum cliente com crédito disponível encontrado. Cadastre um crédito primeiro.');
+                    }
+                  }}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Testar Vinculação
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Abrir documentação em nova aba
+                    window.open('/teste-vinculacao-credito-completa.md', '_blank');
+                  }}
+                  className="gap-2"
+                >
+                  📖 Ver Documentação
+                </Button>
+              </div>
+            </div>
+            <div className="text-6xl opacity-20">
+              🚀
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cards de Resumo */}
       {resumo && (
@@ -245,7 +328,7 @@ export default function Creditos() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Buscar por cliente, tipo ou observações..."
+              placeholder="Buscar por cliente, forma de pagamento ou observações..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="pl-10"
@@ -254,6 +337,19 @@ export default function Creditos() {
         </div>
         
         <div className="flex gap-2">
+          <Select
+            value={visualizacao}
+            onValueChange={(value) => setVisualizacao(value as 'mes' | 'cliente')}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Visualização" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cliente">👤 Por Cliente</SelectItem>
+              <SelectItem value="mes">📅 Por Mês</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select
             value={filtros.status || 'todos'}
             onValueChange={(value) => 
@@ -291,11 +387,14 @@ export default function Creditos() {
         </div>
       </div>
 
-      {/* Créditos Organizados por Mês */}
+      {/* Créditos Organizados */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Créditos Cadastrados ({creditosFiltrados.length})
+            {visualizacao === 'cliente' 
+              ? `Créditos por Cliente (${creditosAgrupadosPorClienteFiltrados.length} clientes, ${creditosFiltrados.length} créditos)` 
+              : `Créditos por Mês (${creditosFiltrados.length})`
+            }
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -309,7 +408,88 @@ export default function Creditos() {
               <p>Nenhum crédito encontrado</p>
               <p className="text-sm">Cadastre o primeiro crédito clicando em "Novo Crédito"</p>
             </div>
+          ) : visualizacao === 'cliente' ? (
+            // Visualização Minimalista por Cliente
+            <div className="space-y-2">
+              {/* ✅ NOVO: Opção de teste rápido no topo da lista */}
+              <div className="flex items-center justify-between p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50 hover:bg-blue-50 cursor-pointer transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center">
+                    <span className="text-blue-700 font-semibold text-sm">🧪</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-lg text-blue-800">Teste Rápido - Cliente Demo</span>
+                    <p className="text-sm text-blue-600">Clique para testar a vinculação com dados simulados</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="text-right">
+                    <div className="font-medium text-blue-600">
+                      R$ 120,00 disponível
+                    </div>
+                    <div className="text-blue-500">
+                      1 pagamento de teste
+                    </div>
+                  </div>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Usar o primeiro cliente real com crédito disponível
+                      const clienteComCredito = creditosAgrupadosPorCliente.find(
+                        grupo => grupo.resumo.valor_disponivel > 0
+                      );
+                      
+                      if (clienteComCredito) {
+                        setClienteSelecionado(clienteComCredito);
+                        setModalVincularAberto(true);
+                      } else {
+                        toast.error('Nenhum cliente com crédito disponível encontrado. Cadastre um crédito primeiro.');
+                      }
+                    }}
+                    size="sm"
+                    className="gap-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CreditCard className="h-3 w-3" />
+                    Testar
+                  </Button>
+                </div>
+              </div>
+              
+              {creditosAgrupadosPorClienteFiltrados.map((grupoCliente: any) => (
+                <div
+                  key={grupoCliente.cliente?.id || 'sem-cliente'}
+                  onClick={() => handleVerDetalhesCliente(grupoCliente)}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold text-sm">
+                        {grupoCliente.cliente?.nome?.charAt(0) || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-lg">{grupoCliente.cliente?.nome || 'Cliente não encontrado'}</span>
+                      {grupoCliente.cliente?.telefone && (
+                        <p className="text-sm text-gray-500">{grupoCliente.cliente.telefone}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="text-right">
+                      <div className="font-medium text-green-600">
+                        {formatCurrency(grupoCliente.resumo.valor_disponivel)} disponível
+                      </div>
+                      <div className="text-gray-500">
+                        {grupoCliente.resumo.total_creditos} pagamentos
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-400 rotate-[-90deg]" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
+            // Visualização por Mês (original)
             <Accordion type="multiple" defaultValue={[creditosAgrupados[0]?.chave]} className="w-full">
               {creditosAgrupados.map((grupo) => (
                 <AccordionItem key={grupo.chave} value={grupo.chave}>
@@ -361,11 +541,9 @@ export default function Creditos() {
                           <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Cliente</TableHead>
-                            <TableHead>Tipo</TableHead>
                             <TableHead>Valor Original</TableHead>
                             <TableHead>Saldo Disponível</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Status Pagamento</TableHead>
                             <TableHead>Forma Pagamento</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
@@ -378,12 +556,6 @@ export default function Creditos() {
                               </TableCell>
                               <TableCell className="font-medium">
                                 {credito.cliente?.nome || 'Cliente não encontrado'}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <span>{getTipoCreditoIcon(credito.tipo_credito)}</span>
-                                  <span>{getTipoCreditoText(credito.tipo_credito)}</span>
-                                </div>
                               </TableCell>
                               <TableCell>{formatCurrency(credito.valor_credito)}</TableCell>
                               <TableCell>
@@ -399,52 +571,9 @@ export default function Creditos() {
                                   {getStatusCreditoText(credito.status)}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <StatusPagamentoCredito
-                                  valorTotal={credito.valor_credito}
-                                  saldoDisponivel={credito.saldo_disponivel}
-                                />
-                              </TableCell>
                               <TableCell>{credito.forma_pagamento || '-'}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleVerDetalhes(credito)}
-                                    title="Ver detalhes"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRegistrarPagamento(credito)}
-                                    className="text-green-600 hover:text-green-700"
-                                    title="Registrar pagamento"
-                                  >
-                                    <Receipt className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleVerHistorico(credito)}
-                                    className="text-purple-600 hover:text-purple-700"
-                                    title="Ver histórico de pagamentos"
-                                  >
-                                    <History className="h-4 w-4" />
-                                  </Button>
-                                  {credito.saldo_disponivel > 0 && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleVincular(credito)}
-                                      className="text-blue-600 hover:text-blue-700"
-                                      title="Vincular a viagem"
-                                    >
-                                      <CreditCard className="h-4 w-4" />
-                                    </Button>
-                                  )}
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -488,69 +617,142 @@ export default function Creditos() {
         }}
       />
 
-      {/* Modal de Pagamento */}
-      {creditoSelecionado && (
-        <PagamentoCreditoModal
-          open={modalPagamentoAberto}
-          onOpenChange={(open) => {
-            setModalPagamentoAberto(open);
-            if (!open) {
-              setPagamentoParaEditar(null);
-            }
-          }}
-          credito={creditoSelecionado}
-          pagamento={pagamentoParaEditar}
-          historicoPagamentos={historicoPagamentos}
-          onSuccess={() => {
-            setModalPagamentoAberto(false);
-            setPagamentoParaEditar(null);
-            // Recarregar créditos para atualizar saldos
-            buscarCreditos(filtros);
-            buscarResumo(filtros);
-          }}
-          onRegistrarPagamento={registrarPagamento}
-          onEditarPagamento={editarPagamento}
-        />
-      )}
 
-      {/* Modal de Histórico de Pagamentos */}
-      {creditoSelecionado && (
-        <HistoricoPagamentosCreditoModal
-          open={modalHistoricoAberto}
-          onOpenChange={setModalHistoricoAberto}
-          credito={creditoSelecionado}
-          historicoPagamentos={historicoPagamentos}
-          onDeletarPagamento={deletarPagamentoCredito}
-          onEditarPagamento={handleEditarPagamento}
-          onNovoPagamento={handleNovoPagamentoDoHistorico}
-        />
-      )}
 
-      {/* Modais que serão implementados depois */}
-      {/* 
+      {/* Modal Detalhado do Cliente */}
       <CreditoDetailsModal
-        open={modalDetalhesAberto}
-        onOpenChange={setModalDetalhesAberto}
-        credito={creditoSelecionado}
-      />
-
-      <VincularCreditoModal
-        open={modalVincularAberto}
-        onOpenChange={setModalVincularAberto}
-        credito={creditoSelecionado}
-        onSuccess={() => {
-          setModalVincularAberto(false);
-          setCreditoSelecionado(null);
+        open={modalDetalhesClienteAberto}
+        onOpenChange={setModalDetalhesClienteAberto}
+        grupoCliente={clienteSelecionado}
+        onNovoCredito={() => {
+          setModalDetalhesClienteAberto(false);
+          setModalFormAberto(true);
+        }}
+        onUsarEmViagem={(grupoCliente) => {
+          setClienteSelecionado(grupoCliente);
+          setModalDetalhesClienteAberto(false);
+          setModalVincularAberto(true);
+        }}
+        onEditar={handleEditar}
+        onDeletar={handleDeletar}
+        onRefresh={() => {
+          buscarCreditos();
+        }}
+        onViagemUpdated={() => {
+          console.log('🔄 [Creditos] onViagemUpdated chamado - forçando reload global');
+          
+          // Se estamos na página de detalhes da viagem, forçar reload da página
+          if (window.location.pathname.includes('/viagem/')) {
+            console.log('🔄 [Creditos] Detectada página de viagem, forçando reload da página em 1 segundo...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+            return;
+          }
+          
+          // Disparar evento global para todas as páginas de viagem
+          const reloadEvent = new CustomEvent('viagemPassageiroRemovido', {
+            detail: { 
+              timestamp: Date.now(),
+              source: 'CreditoDetailsModal'
+            }
+          });
+          window.dispatchEvent(reloadEvent);
+          
+          // Também salvar flag no localStorage para páginas que usam polling
+          localStorage.setItem('viagemNeedsReload', JSON.stringify({
+            timestamp: Date.now(),
+            action: 'creditoRemovido',
+            source: 'CreditoDetailsModal'
+          }));
+          
+          console.log('✅ [Creditos] Eventos de reload disparados');
         }}
       />
 
+      {/* Modal de Vinculação com Viagem */}
+      <VincularCreditoModal
+        open={modalVincularAberto}
+        onOpenChange={setModalVincularAberto}
+        grupoCliente={clienteSelecionado}
+        onSuccess={() => {
+          setModalVincularAberto(false);
+          setClienteSelecionado(null);
+          // Recarregar dados
+          buscarCreditos(filtros);
+          buscarResumo(filtros);
+        }}
+      />
+
+      {/* Modal de Filtros Avançados */}
       <FiltrosCreditosModal
         open={modalFiltrosAberto}
         onOpenChange={setModalFiltrosAberto}
         filtros={filtros}
         onFiltrosChange={setFiltros}
       />
-      */}
+
+      {/* Modal de Confirmação para Deletar Crédito */}
+      <AlertDialog 
+        open={modalConfirmacaoDelete.aberto} 
+        onOpenChange={(aberto) => 
+          setModalConfirmacaoDelete(prev => ({ ...prev, aberto }))
+        }
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Deletar Crédito
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              {modalConfirmacaoDelete.credito && (
+                <>
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                    <p className="font-medium text-red-800 mb-2">
+                      ⚠️ Você está prestes a deletar:
+                    </p>
+                    <div className="text-sm text-red-700 space-y-1">
+                      <div>👤 Cliente: <strong>{modalConfirmacaoDelete.credito.cliente?.nome}</strong></div>
+                      <div>💰 Valor: <strong>{formatCurrency(modalConfirmacaoDelete.credito.valor_credito)}</strong></div>
+                      <div>📅 Data: <strong>{formatarDataCredito(modalConfirmacaoDelete.credito.data_pagamento)}</strong></div>
+                      {modalConfirmacaoDelete.credito.saldo_disponivel > 0 && (
+                        <div className="text-orange-700">
+                          💳 Saldo disponível: <strong>{formatCurrency(modalConfirmacaoDelete.credito.saldo_disponivel)}</strong>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {modalConfirmacaoDelete.credito.saldo_disponivel > 0 && (
+                    <div className="p-2 bg-yellow-50 rounded border border-yellow-200">
+                      <p className="text-sm text-yellow-800">
+                        <strong>⚠️ Atenção:</strong> Este crédito ainda possui saldo disponível!
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="p-2 bg-red-50 rounded border border-red-200">
+                    <p className="text-sm text-red-800">
+                      <strong>❌ Esta ação NÃO pode ser desfeita!</strong>
+                    </p>
+                  </div>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Sim, Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -44,6 +44,9 @@ export interface UsePagamentosSeparadosReturn {
   
   // Refresh
   refetch: () => Promise<void>;
+  
+  // ✅ NOVO: Atualização específica para vinculação de crédito
+  atualizarAposVinculacaoCredito: () => Promise<void>;
 }
 
 export const usePagamentosSeparados = (
@@ -56,6 +59,11 @@ export const usePagamentosSeparados = (
   const [historicoPagamentos, setHistoricoPagamentos] = useState<HistoricoPagamentoCategorizado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Verificação de segurança para IDs inválidos
+  if (!viagemPassageiroId || viagemPassageiroId === 'fallback-id') {
+    console.warn('⚠️ ID inválido fornecido:', viagemPassageiroId);
+  }
 
   // Buscar dados completos do passageiro com pagamentos
   const fetchDadosPassageiro = useCallback(async () => {
@@ -150,12 +158,37 @@ export const usePagamentosSeparados = (
 
       if (historicoError) throw historicoError;
 
+      // ✅ NOVO: 3.5. Buscar créditos vinculados ao passageiro
+      const { data: creditosVinculados, error: creditosError } = await supabase
+        .from('credito_viagem_vinculacoes')
+        .select(`
+          id,
+          valor_utilizado,
+          data_vinculacao,
+          observacoes,
+          credito:cliente_creditos(
+            id,
+            cliente_id,
+            valor_credito
+          )
+        `)
+        .eq('viagem_id', passageiroData.viagem_id)
+        .eq('passageiro_id', passageiroData.cliente_id);
+
+      if (creditosError) {
+        console.warn('⚠️ Erro ao buscar créditos vinculados:', creditosError);
+      }
+
+      console.log('💳 Créditos vinculados encontrados:', creditosVinculados);
+
       // 4. Montar objeto completo do passageiro
       const passageiroCompleto: ViagemPassageiroComPagamentos = {
         ...passageiroData,
         historico_pagamentos: historico || [],
         valor_total_passeios: valorTotalPasseios,
-        valor_liquido_viagem: (passageiroData.valor || 0) - (passageiroData.desconto || 0)
+        valor_liquido_viagem: (passageiroData.valor || 0) - (passageiroData.desconto || 0),
+        // ✅ NOVO: Incluir créditos vinculados
+        creditos_vinculados: creditosVinculados || []
       };
 
       // 5. Calcular breakdown
@@ -504,6 +537,14 @@ export const usePagamentosSeparados = (
     obterStatusAtual,
     
     // Refresh
-    refetch: fetchDadosPassageiro
+    refetch: fetchDadosPassageiro,
+    
+    // ✅ NOVO: Função específica para atualizar após vinculação de crédito
+    atualizarAposVinculacaoCredito: async () => {
+      console.log('🔄 Atualizando dados após vinculação de crédito...');
+      // Aguardar um pouco para garantir que as operações no banco foram concluídas
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await fetchDadosPassageiro();
+    }
   };
 };

@@ -14,6 +14,13 @@ export function PassageiroComStatus({ passageiro, children }: PassageiroComStatu
   }
 
   const passageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+  
+  // Verificação adicional para IDs válidos
+  if (!passageiroId) {
+    console.warn('⚠️ PassageiroComStatus: ID do passageiro não encontrado', passageiro);
+    return <>{children('Pendente')}</>;
+  }
+
   const { obterStatusAtual, loading, error } = usePagamentosSeparados(passageiroId);
 
   // Se carregando ou erro, usar fallback

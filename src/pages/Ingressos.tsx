@@ -423,13 +423,6 @@ export default function Ingressos() {
         ingresso={ingressoSelecionado}
       />
 
-      <FiltrosIngressosModal
-        open={modalFiltrosAberto}
-        onOpenChange={setModalFiltrosAberto}
-        filtros={filtros}
-        onFiltrosChange={setFiltros}
-      />
-
       <IngressosJogoModal
         open={modalJogoAberto}
         onOpenChange={setModalJogoAberto}
@@ -439,6 +432,15 @@ export default function Ingressos() {
         onEditar={handleEditar}
         onDeletar={handleDeletar}
       />
+
+      <FiltrosIngressosModal
+        open={modalFiltrosAberto}
+        onOpenChange={setModalFiltrosAberto}
+        filtros={filtros}
+        onFiltrosChange={setFiltros}
+      />
+
+
     </div>
   );
 }

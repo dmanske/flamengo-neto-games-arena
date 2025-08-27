@@ -166,9 +166,30 @@ export function useIngressos() {
     setEstados(prev => ({ ...prev, salvando: true }));
     setErros({});
 
-    // Criar ingresso
-
     try {
+      // Validação: verificar se o cliente já tem ingresso para a mesma viagem
+      if (dados.viagem_id) {
+        const { data: ingressoExistente, error: errorValidacao } = await supabase
+          .from('ingressos')
+          .select('id')
+          .eq('cliente_id', dados.cliente_id)
+          .eq('viagem_id', dados.viagem_id)
+          .single();
+
+        if (errorValidacao && errorValidacao.code !== 'PGRST116') {
+          console.error('Erro ao validar ingresso duplicado:', errorValidacao);
+          setErros({ geral: 'Erro ao validar dados do ingresso' });
+          toast.error('Erro ao validar dados do ingresso');
+          return false;
+        }
+
+        if (ingressoExistente) {
+          setErros({ geral: 'Este cliente já possui ingresso para esta viagem' });
+          toast.error('Este cliente já possui ingresso para esta viagem');
+          return false;
+        }
+      }
+
       // Remover campos calculados que não podem ser inseridos (colunas geradas)
       const { valorFinalCalculado, lucro, margem_percentual, ...dadosParaInserir } = dados;
       
@@ -242,10 +263,10 @@ export function useIngressos() {
     setErros({});
 
     try {
-      // Buscar o ingresso atual para comparar o status
+      // Buscar o ingresso atual para comparar o status e dados
       const { data: ingressoAtual, error: errorBusca } = await supabase
         .from('ingressos')
-        .select('situacao_financeira, valor_final')
+        .select('situacao_financeira, valor_final, cliente_id, viagem_id')
         .eq('id', id)
         .single();
 
@@ -254,6 +275,35 @@ export function useIngressos() {
         setErros({ geral: 'Erro ao buscar dados do ingresso' });
         toast.error('Erro ao buscar dados do ingresso');
         return false;
+      }
+
+      // Validação: se está mudando cliente ou viagem, verificar duplicação
+      const mudouCliente = dados.cliente_id && dados.cliente_id !== ingressoAtual.cliente_id;
+      const mudouViagem = dados.viagem_id !== undefined && dados.viagem_id !== ingressoAtual.viagem_id;
+      
+      if ((mudouCliente || mudouViagem) && dados.viagem_id) {
+        const clienteParaValidar = dados.cliente_id || ingressoAtual.cliente_id;
+        
+        const { data: ingressoExistente, error: errorValidacao } = await supabase
+          .from('ingressos')
+          .select('id')
+          .eq('cliente_id', clienteParaValidar)
+          .eq('viagem_id', dados.viagem_id)
+          .neq('id', id) // Excluir o próprio ingresso da validação
+          .single();
+
+        if (errorValidacao && errorValidacao.code !== 'PGRST116') {
+          console.error('Erro ao validar ingresso duplicado:', errorValidacao);
+          setErros({ geral: 'Erro ao validar dados do ingresso' });
+          toast.error('Erro ao validar dados do ingresso');
+          return false;
+        }
+
+        if (ingressoExistente) {
+          setErros({ geral: 'Este cliente já possui ingresso para esta viagem' });
+          toast.error('Este cliente já possui ingresso para esta viagem');
+          return false;
+        }
       }
 
       const { error } = await supabase

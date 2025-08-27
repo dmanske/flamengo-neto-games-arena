@@ -2,7 +2,7 @@ import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Bus, DollarSign, Users, Pencil, Trash2, FileText, Printer, Filter } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Bus, DollarSign, Users, Pencil, Trash2, FileText, Printer, Filter, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -60,6 +60,7 @@ interface ModernViagemDetailsLayoutProps {
   onPrint?: () => void;
   onExportPDF?: () => void;
   onOpenFilters?: () => void;
+  onVincularCredito?: () => void;
   onibusList: Array<any>;
   passageiros?: Array<any>;
   children: React.ReactNode;
@@ -71,6 +72,7 @@ export function ModernViagemDetailsLayout({
   onPrint, 
   onExportPDF, 
   onOpenFilters,
+  onVincularCredito,
   onibusList,
   passageiros = [],
   children 
@@ -239,6 +241,17 @@ export function ModernViagemDetailsLayout({
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Exportar PDF
+                </Button>
+              )}
+
+              {onVincularCredito && (
+                <Button 
+                  variant="outline" 
+                  onClick={onVincularCredito}
+                  className="bg-white hover:bg-green-50 border-green-200 text-green-700"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Vincular Crédito
                 </Button>
               )}
 

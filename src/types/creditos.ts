@@ -1,13 +1,23 @@
-export type TipoCreditoViagem = 'viagem_completa' | 'passeios' | 'geral';
 export type StatusCredito = 'disponivel' | 'utilizado' | 'parcial' | 'reembolsado';
 export type TipoMovimentacaoCredito = 'criacao' | 'utilizacao' | 'reembolso' | 'ajuste';
 export type StatusCalculoCredito = 'completo' | 'sobra' | 'falta';
+
+// ✅ NOVO: Interface para ônibus com informações de vagas
+export interface OnibusComVagas {
+  id: string;
+  nome: string;
+  tipo_onibus: string;
+  empresa: string;
+  capacidade_total: number;
+  passageiros_alocados: number;
+  vagas_disponiveis: number;
+  tem_vagas: boolean;
+}
 
 export interface Credito {
   id: string;
   cliente_id: string;
   valor_credito: number;
-  tipo_credito: TipoCreditoViagem;
   data_pagamento: string;
   forma_pagamento?: string;
   observacoes?: string;
@@ -90,17 +100,11 @@ export interface ResumoCreditos {
     parcial: number;
     reembolsado: number;
   };
-  creditos_por_tipo: {
-    viagem_completa: number;
-    passeios: number;
-    geral: number;
-  };
 }
 
 export interface FiltrosCreditos {
   cliente_id?: string;
   status?: StatusCredito;
-  tipo_credito?: TipoCreditoViagem;
   data_inicio?: string;
   data_fim?: string;
   valor_minimo?: number;
@@ -111,7 +115,6 @@ export interface FiltrosCreditos {
 export interface CreditoFormData {
   cliente_id: string;
   valor_credito: number;
-  tipo_credito: TipoCreditoViagem;
   data_pagamento: string;
   forma_pagamento?: string;
   observacoes?: string;
@@ -157,12 +160,6 @@ export interface EstadosCreditos {
 }
 
 // Opções para seleção
-export const TIPOS_CREDITO_OPTIONS = [
-  { value: 'geral', label: '💰 Geral (Qualquer uso)' },
-  { value: 'viagem_completa', label: '🚌 Viagem Completa' },
-  { value: 'passeios', label: '🎯 Apenas Passeios' },
-] as const;
-
 export const STATUS_CREDITO_OPTIONS = [
   { value: 'disponivel', label: '✅ Disponível' },
   { value: 'parcial', label: '🟡 Parcialmente Usado' },

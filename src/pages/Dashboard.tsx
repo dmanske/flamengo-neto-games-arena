@@ -110,17 +110,21 @@ const Dashboard = () => {
           console.error('Erro ao buscar próximas viagens:', upcomingError);
         }
         
-        // Fetch Flamengo logo from system_config
-        const { data: logoData, error: logoError } = await supabase
-          .from('system_config')
-          .select('value')
-          .eq('key', 'flamengo_logo')
-          .single();
-        
-        if (!logoError && logoData && logoData.value) {
-          setFlamengoLogo(logoData.value);
-        } else {
-          console.error('Erro ao buscar logo do Flamengo:', logoError);
+        // Fetch Flamengo logo from system_config (opcional)
+        try {
+          const { data: logoData, error: logoError } = await supabase
+            .from('system_config')
+            .select('value')
+            .eq('key', 'flamengo_logo')
+            .maybeSingle(); // Use maybeSingle() instead of single() to handle no results
+          
+          if (!logoError && logoData && logoData.value) {
+            setFlamengoLogo(logoData.value);
+          }
+          // Silently use default logo if not found in database
+        } catch (error) {
+          // Silently use default logo if there's any error
+          console.debug('Logo do Flamengo não encontrado na configuração, usando padrão');
         }
         
         // Fetch current month's revenue

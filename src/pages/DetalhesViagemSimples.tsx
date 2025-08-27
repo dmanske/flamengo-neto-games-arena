@@ -12,7 +12,25 @@ const DetalhesViagemSimples = () => {
   }
 
   try {
-    const { viagem, isLoading, passageiros } = useViagemDetails(id);
+    const { viagem, isLoading, passageiros, fetchPassageiros } = useViagemDetails(id);
+
+    // Expor função para recarregar passageiros globalmente
+    React.useEffect(() => {
+      if (fetchPassageiros) {
+        (window as any).reloadViagemPassageiros = () => {
+          console.log('🔄 [DetalhesViagemSimples] Função global chamada - recarregando passageiros da viagem:', id);
+          console.log('🔄 [DetalhesViagemSimples] fetchPassageiros disponível:', !!fetchPassageiros);
+          fetchPassageiros(id);
+          console.log('✅ [DetalhesViagemSimples] fetchPassageiros executado para viagem:', id);
+        };
+        console.log('✅ [DetalhesViagemSimples] Função global reloadViagemPassageiros registrada para viagem:', id);
+        console.log('✅ [DetalhesViagemSimples] Função registrada no window:', !!(window as any).reloadViagemPassageiros);
+      }
+      return () => {
+        console.log('🧹 [DetalhesViagemSimples] Removendo função global reloadViagemPassageiros');
+        delete (window as any).reloadViagemPassageiros;
+      };
+    }, [fetchPassageiros, id]);
 
     console.log("🔍 Hook useViagemDetails - Dados:", { viagem, isLoading, passageiros: passageiros?.length });
 
