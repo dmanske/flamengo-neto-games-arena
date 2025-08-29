@@ -149,3 +149,33 @@ export const formatCurrency = (value: number): string => {
     maximumFractionDigits: 2
   }).format(value);
 };
+
+// Função para calcular idade a partir da data de nascimento
+export const calcularIdade = (dataNascimento: string): number => {
+  if (!dataNascimento) {
+    return 0;
+  }
+  
+  try {
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    
+    // Verificar se a data é válida
+    if (isNaN(nascimento.getTime())) {
+      return 0;
+    }
+    
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const mesAtual = hoje.getMonth();
+    const mesNascimento = nascimento.getMonth();
+    
+    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    
+    return idade;
+  } catch (error) {
+    console.error('❌ Erro ao calcular idade:', error, 'Data:', dataNascimento);
+    return 0;
+  }
+};

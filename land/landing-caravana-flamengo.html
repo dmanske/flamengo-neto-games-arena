@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Caravana do Flamengo - Viva a Paixão Rubro-Negra!</title>
+    <meta name="description" content="Viaje com segurança e conforto para os jogos do Flamengo. Ônibus modernos, passeios incríveis no Rio de Janeiro e experiência completa para o torcedor.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'flamengo-red': '#E31E24',
+                        'flamengo-black': '#000000',
+                        'flamengo-gold': '#FFD700'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .hero-bg {
+            background: linear-gradient(135deg, #E31E24 0%, #000000 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(227, 30, 36, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-flamengo-red rounded-full flex items-center justify-center">
+                        <i class="fas fa-fire text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-oswald font-bold text-xl text-flamengo-red">CARAVANA</h1>
+                        <p class="text-sm text-gray-600">DO FLAMENGO</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#viagens" class="text-gray-700 hover:text-flamengo-red transition">Viagens</a>
+                    <a href="#passeios" class="text-gray-700 hover:text-flamengo-red transition">Passeios</a>
+                    <a href="#galeria" class="text-gray-700 hover:text-flamengo-red transition">Galeria</a>
+                    <a href="#contato" class="text-gray-700 hover:text-flamengo-red transition">Contato</a>
+                </nav>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="https://wa.me/5521999999999" target="_blank" 
+                       class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                        <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+                    </a>
+                    <button class="md:hidden text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="font-oswald font-bold text-5xl md:text-7xl mb-6">
+                    🔥 CARAVANA DO FLAMENGO
+                </h1>
+                <p class="text-xl md:text-2xl mb-8 opacity-90">
+                    Viva a paixão rubro-negra com segurança e conforto!
+                </p>
+                <p class="text-lg mb-12 opacity-80 max-w-2xl mx-auto">
+                    Mais de 10 anos levando torcedores para os jogos do Mengão com ônibus modernos, 
+                    passeios incríveis no Rio de Janeiro e experiência completa.
+                </p>
+                
+                <div class="flex flex-col md:flex-row gap-4 justify-center">
+                    <a href="#viagens" 
+                       class="bg-white text-flamengo-red px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition">
+                        <i class="fas fa-calendar-alt mr-2"></i>Ver Próximas Viagens
+                    </a>
+                    <a href="#passeios" 
+                       class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-flamengo-red transition">
+                        <i class="fas fa-map-marked-alt mr-2"></i>Conhecer Passeios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diferenciais -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-flamengo-red rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bus text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Ônibus Modernos</h3>
+                    <p class="text-gray-600">Frota nova com ar-condicionado, Wi-Fi e máximo conforto</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-flamengo-red rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Segurança Total</h3>
+                    <p class="text-gray-600">Motoristas experientes e seguro completo para sua tranquilidade</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-flamengo-red rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-map-marked-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Passeios Incríveis</h3>
+                    <p class="text-gray-600">Conheça o melhor do Rio de Janeiro com guias especializados</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-flamengo-red rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-heart text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Paixão Rubro-Negra</h3>
+                    <p class="text-gray-600">Mais de 10 anos de tradição levando torcedores aos jogos</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Próximas Viagens -->
+    <section id="viagens" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-flamengo-red mb-4">
+                    🎯 PRÓXIMAS VIAGENS
+                </h2>
+                <p class="text-xl text-gray-600">Não perca nenhum jogo do Mengão!</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Card Viagem 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=250&fit=crop" 
+                             alt="Maracanã" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-flamengo-red text-white px-3 py-1 rounded-full text-sm font-semibold">
+                            CLÁSSICO
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">🔥 FLAMENGO vs VASCO</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-flamengo-red"></i>
+                                15/09/2025 - 16:00h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-flamengo-red"></i>
+                                Maracanã - Rio de Janeiro
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-flamengo-red mb-4">
+                                A partir de <span class="text-3xl">R$ 1.380</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-flamengo-red text-white py-2 rounded-lg hover:bg-red-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-flamengo-red text-flamengo-red py-2 rounded-lg hover:bg-flamengo-red hover:text-white transition">
+                                    Comprar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Viagem 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=250&fit=crop" 
+                             alt="Arena" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                            BRASILEIRÃO
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">🔥 FLAMENGO vs PALMEIRAS</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-flamengo-red"></i>
+                                22/09/2025 - 19:00h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-flamengo-red"></i>
+                                Allianz Parque - São Paulo
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-flamengo-red mb-4">
+                                A partir de <span class="text-3xl">R$ 1.580</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-flamengo-red text-white py-2 rounded-lg hover:bg-red-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-flamengo-red text-flamengo-red py-2 rounded-lg hover:bg-flamengo-red hover:text-white transition">
+                                    Comprar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Viagem 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=250&fit=crop" 
+                             alt="Libertadores" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-flamengo-gold text-black px-3 py-1 rounded-full text-sm font-semibold">
+                            LIBERTADORES
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">🔥 FLAMENGO vs BOCA JUNIORS</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-flamengo-red"></i>
+                                29/09/2025 - 21:30h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-flamengo-red"></i>
+                                Maracanã - Rio de Janeiro
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-flamengo-red mb-4">
+                                A partir de <span class="text-3xl">R$ 1.480</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-flamengo-red text-white py-2 rounded-lg hover:bg-red-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-flamengo-red text-flamengo-red py-2 rounded-lg hover:bg-flamengo-red hover:text-white transition">
+                                    Comprar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <a href="#" class="bg-flamengo-red text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition">
+                    Ver Todas as Viagens
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Passeios -->
+    <section id="passeios" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-flamengo-red mb-4">
+                    🏛️ NOSSOS PASSEIOS
+                </h2>
+                <p class="text-xl text-gray-600">Conheça o melhor do Rio de Janeiro</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 mb-12">
+                <!-- Passeios Gratuitos -->
+                <div>
+                    <h3 class="font-oswald font-bold text-2xl text-green-600 mb-6 flex items-center">
+                        <i class="fas fa-gift mr-3"></i>PASSEIOS GRATUITOS
+                    </h3>
+                    <p class="text-gray-600 mb-6">Inclusos no pacote da viagem:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                            <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Lapa e Escadaria Selarón</h4>
+                                <p class="text-sm text-gray-600">Boemia carioca e arte urbana</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                            <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Copacabana, Ipanema e Leblon</h4>
+                                <p class="text-sm text-gray-600">As praias mais famosas do mundo</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg">
+                            <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Cristo Redentor (Externa)</h4>
+                                <p class="text-sm text-gray-600">Vista externa do monumento</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="text-green-600 font-semibold hover:underline">
+                                Ver todos os 15+ passeios gratuitos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Passeios Pagos -->
+                <div>
+                    <h3 class="font-oswald font-bold text-2xl text-flamengo-red mb-6 flex items-center">
+                        <i class="fas fa-star mr-3"></i>PASSEIOS PREMIUM
+                    </h3>
+                    <p class="text-gray-600 mb-6">Experiências exclusivas (valores à parte):</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-mountain text-flamengo-red mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Cristo Redentor (Subida)</h4>
+                                    <p class="text-sm text-gray-600">Trem do Corcovado</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-flamengo-red">R$ 80</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-cable-car text-flamengo-red mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Pão de Açúcar</h4>
+                                    <p class="text-sm text-gray-600">Bondinho e vista panorâmica</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-flamengo-red">R$ 70</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-fire text-flamengo-red mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Museu do Flamengo</h4>
+                                    <p class="text-sm text-gray-600">História do Mengão</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-flamengo-red">R$ 40</span>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="text-flamengo-red font-semibold hover:underline">
+                                Ver todos os 10+ passeios premium
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Depoimentos -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-flamengo-red mb-4">
+                    💬 O QUE DIZEM NOSSOS CLIENTES
+                </h2>
+                <p class="text-xl text-gray-600">Mais de 10.000 torcedores satisfeitos</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-flamengo-red rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">JS</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">João Silva</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Experiência incrível! Ônibus confortável, passeios organizados e o melhor: 
+                        ver o Flamengo ganhar no Maracanã com essa galera apaixonada!"
+                    </p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-flamengo-red rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">MS</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Maria Santos</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Já fui em 5 viagens e sempre superam as expectativas. 
+                        Os passeios no Rio são lindos e a organização é perfeita!"
+                    </p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-flamengo-red rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">CA</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Carlos Almeida</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Segurança, conforto e muita paixão pelo Flamengo. 
+                        Recomendo para todos os torcedores que querem viver essa experiência!"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="hero-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="font-oswald font-bold text-4xl mb-6">
+                🔥 PRONTO PARA VIVER A PAIXÃO?
+            </h2>
+            <p class="text-xl mb-8 opacity-90">
+                Não perca mais nenhum jogo do Mengão! Reserve sua vaga agora.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center mb-8">
+                <a href="https://wa.me/5521999999999" target="_blank"
+                   class="bg-green-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-600 transition">
+                    <i class="fab fa-whatsapp mr-2"></i>Falar no WhatsApp
+                </a>
+                <a href="tel:+5521999999999" 
+                   class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-flamengo-red transition">
+                    <i class="fas fa-phone mr-2"></i>Ligar Agora
+                </a>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">10+</div>
+                    <div class="opacity-80">Anos de Experiência</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">10.000+</div>
+                    <div class="opacity-80">Torcedores Atendidos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">500+</div>
+                    <div class="opacity-80">Viagens Realizadas</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-flamengo-black text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-flamengo-red rounded-full flex items-center justify-center">
+                            <i class="fas fa-fire text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-oswald font-bold text-lg">CARAVANA</h3>
+                            <p class="text-sm opacity-80">DO FLAMENGO</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Levando a paixão rubro-negra para todos os cantos do Brasil há mais de 10 anos.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Serviços</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Viagens para Jogos</a></li>
+                        <li><a href="#" class="hover:text-white transition">Passeios no Rio</a></li>
+                        <li><a href="#" class="hover:text-white transition">Pacotes Personalizados</a></li>
+                        <li><a href="#" class="hover:text-white transition">Grupos Corporativos</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Contato</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            (21) 99999-9999
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            contato@caravanaflamengo.com.br
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Rio de Janeiro - RJ
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Redes Sociais</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-flamengo-red transition">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-flamengo-red transition">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-flamengo-red transition">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Caravana do Flamengo. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Smooth scrolling para links internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animação de entrada dos cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Aplicar animação aos cards
+        document.querySelectorAll('.card-hover').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

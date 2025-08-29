@@ -34,6 +34,7 @@ import { PassageiroComStatus } from "./PassageiroComStatus";
 import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 import type { StatusPagamentoAvancado, CategoriaPagamento } from "@/types/pagamentos-separados";
 import { obterValoresPasseiosPorNomes } from "@/utils/passeiosUtils";
+import { FAIXAS_ETARIAS, contarPorFaixaEtaria, obterFaixaEtaria, calcularIdade, type FaixaEtaria } from "@/utils/faixaEtariaUtils";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -82,6 +83,7 @@ export function PassageirosCard({
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [activeTab, setActiveTab] = useState<string>("todos");
+  const [faixaEtariaFilter, setFaixaEtariaFilter] = useState<string | null>(null);
   
   // Calcular se há vagas disponíveis no ônibus atual
   const capacidadeOnibusAtual = onibusAtual ? onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0) : 0;
@@ -100,8 +102,24 @@ export function PassageirosCard({
     return () => document.removeEventListener("setPassageirosStatusFilter", handler);
   }, []);
 
-  // Filtrar passageiros com busca inteligente
+  // Calcular contadores por faixa etária
+  const contadoresFaixaEtaria = contarPorFaixaEtaria(passageirosAtuais || []);
+
+  // Filtrar passageiros com busca inteligente e faixa etária
   const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
+    // Filtro por faixa etária
+    if (faixaEtariaFilter) {
+      const dataNascimento = passageiro.clientes?.data_nascimento || passageiro.data_nascimento;
+      if (dataNascimento) {
+        const faixa = obterFaixaEtaria(dataNascimento);
+        if (!faixa || faixa.id !== faixaEtariaFilter) {
+          return false;
+        }
+      } else {
+        return false; // Se não tem data de nascimento, não passa no filtro
+      }
+    }
+
     const searchTermTrimmed = searchTerm.trim();
     
     if (!searchTermTrimmed) return true;
@@ -387,6 +405,11 @@ export function PassageirosCard({
             </CardTitle>
             <CardDescription>
               {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
+              {faixaEtariaFilter && (
+                <span className="ml-2 text-blue-600 font-medium">
+                  • Filtro: {FAIXAS_ETARIAS.find(f => f.id === faixaEtariaFilter)?.nome}
+                </span>
+              )}
               {onibusAtual && (
                 <span className={`ml-2 ${
                   onibusLotado 
@@ -422,37 +445,96 @@ export function PassageirosCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="🔍 Busca inteligente: nome, telefone, email, CPF, cidade, setor, status, pagamento, valor, passeios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-16"
-            />
-            {searchTerm && (
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-white px-1">
-                {passageirosFiltrados.length} resultado{passageirosFiltrados.length !== 1 ? 's' : ''}
-              </div>
+        <div className="flex flex-col gap-4 mb-4">
+          {/* Barra de busca e filtro de status */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="🔍 Busca inteligente: nome, telefone, email, CPF, cidade, setor, status, pagamento, valor, passeios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 pr-16"
+              />
+              {searchTerm && (
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-white px-1">
+                  {passageirosFiltrados.length} resultado{passageirosFiltrados.length !== 1 ? 's' : ''}
+                </div>
+              )}
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filtrar por status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200 z-50">
+                <SelectItem value="todos">Todos os status</SelectItem>
+                <SelectItem value="Pago Completo">🟢 Pago Completo</SelectItem>
+                <SelectItem value="Viagem Paga">🟡 Viagem Paga</SelectItem>
+                <SelectItem value="Passeios Pagos">🟡 Passeios Pagos</SelectItem>
+                <SelectItem value="Pendente">🔴 Pendente</SelectItem>
+                <SelectItem value="Brinde">🎁 Brinde</SelectItem>
+                <SelectItem value="Cancelado">❌ Cancelado</SelectItem>
+                <SelectItem value="Pagamentos Pendentes">⏳ Pagamentos Pendentes</SelectItem>
+                <SelectItem value="Pagamentos Confirmados">✅ Pagamentos Confirmados</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtros por faixa etária */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm font-medium text-muted-foreground mr-2">Filtrar por idade:</span>
+            
+            {/* Botão "Todos" */}
+            <Button
+              variant={faixaEtariaFilter === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFaixaEtariaFilter(null)}
+              className={`h-8 px-3 text-xs ${
+                faixaEtariaFilter === null 
+                  ? 'bg-gray-800 text-white hover:bg-gray-700' 
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              👥 Todos ({(passageirosAtuais || []).length})
+            </Button>
+
+            {/* Botões das faixas etárias */}
+            {FAIXAS_ETARIAS.map((faixa) => {
+              const count = contadoresFaixaEtaria[faixa.id] || 0;
+              const isActive = faixaEtariaFilter === faixa.id;
+              
+              return (
+                <Button
+                  key={faixa.id}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFaixaEtariaFilter(isActive ? null : faixa.id)}
+                  className={`h-8 px-3 text-xs transition-all ${
+                    isActive 
+                      ? faixa.cor.replace('hover:', '').replace('bg-', 'bg-').replace('text-', 'text-').replace('border-', 'border-')
+                      : `bg-white text-gray-700 border-gray-300 hover:${faixa.cor.split(' ')[0]} hover:${faixa.cor.split(' ')[1]} hover:${faixa.cor.split(' ')[2]}`
+                  } ${count === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  disabled={count === 0}
+                  title={count === 0 ? `Nenhum passageiro na faixa ${faixa.nome.toLowerCase()}` : `Filtrar por ${faixa.nome.toLowerCase()}`}
+                >
+                  {faixa.emoji} {faixa.nome} ({count})
+                </Button>
+              );
+            })}
+
+            {/* Indicador de filtro ativo */}
+            {faixaEtariaFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFaixaEtariaFilter(null)}
+                className="h-8 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Limpar filtro de idade"
+              >
+                ✕ Limpar
+              </Button>
             )}
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-gray-200 z-50">
-              <SelectItem value="todos">Todos os status</SelectItem>
-              <SelectItem value="Pago Completo">🟢 Pago Completo</SelectItem>
-              <SelectItem value="Viagem Paga">🟡 Viagem Paga</SelectItem>
-              <SelectItem value="Passeios Pagos">🟡 Passeios Pagos</SelectItem>
-              <SelectItem value="Pendente">🔴 Pendente</SelectItem>
-              <SelectItem value="Brinde">🎁 Brinde</SelectItem>
-              <SelectItem value="Cancelado">❌ Cancelado</SelectItem>
-              <SelectItem value="Pagamentos Pendentes">⏳ Pagamentos Pendentes</SelectItem>
-              <SelectItem value="Pagamentos Confirmados">✅ Pagamentos Confirmados</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="overflow-x-auto">

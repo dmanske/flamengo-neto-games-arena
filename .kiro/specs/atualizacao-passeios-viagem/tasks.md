@@ -259,6 +259,88 @@
   - ✅ Valores corretos: passeios gratuitos = R$ 0
   - _Requirements: 4.2, 6.1_
 
+### **PRIORIDADE CRÍTICA - Melhorias de Interface e UX**
+
+- [x] **39. Melhoria do Card de Passeios e Faixas Etárias** ✅ **CONCLUÍDA**
+  - **OBJETIVO**: Melhorar card de passeios na tela de detalhes da viagem com informações mais ricas e faixas etárias completas
+  - **DATA**: 29/08/2025
+  - **STATUS**: ✅ Totalmente funcional e testado
+  
+  **39.1 Substituição do Card Simples** ✅
+  - ✅ **COMPONENTE NOVO**: `PasseiosEtariosCard.tsx` substitui card básico de passeios
+  - ✅ **LAYOUT MELHORADO**: 4 cards de resumo + seção de faixas etárias + detalhes expandíveis
+  - ✅ **INFORMAÇÕES RICAS**: Total passageiros, passeios pagos/gratuitos, tipos disponíveis
+  - ✅ **CÁLCULOS CORRETOS**: Conta passageiros únicos, não participações em passeios
+  - ✅ **PERCENTUAIS PRECISOS**: Base sempre no total de passageiros da viagem
+  - _Requirements: UX, Relatórios_
+  
+  **39.2 Sistema Completo de Faixas Etárias** ✅
+  - ✅ **5 CATEGORIAS**: Bebês (0-5), Crianças (6-12), Estudantes (13-17), Adultos (18-59), Idosos (60+)
+  - ✅ **PROBLEMA RESOLVIDO**: Pedro Gabriel (3 anos) estava em "Não informado" por não ter categoria
+  - ✅ **NOVA CATEGORIA**: "Ingresso Bebê" para idades 0-5 anos com visual diferenciado (rosa)
+  - ✅ **LAYOUT RESPONSIVO**: Grid de 5 colunas (md:grid-cols-5) para acomodar todas as faixas
+  - ✅ **ÍCONES ESPECÍFICOS**: Baby icon rosa para bebês, azul para crianças maiores
+  - _Requirements: Categorização, Ingressos_
+  
+  **39.3 Contagem Inteligente de Passageiros** ✅
+  - ✅ **FILTRO CORRETO**: Só conta passageiros que selecionaram passeios para faixas etárias
+  - ✅ **SEPARAÇÃO CLARA**: Passeios pagos vs gratuitos com percentuais independentes
+  - ✅ **CÁLCULO BASE**: Total de passageiros sempre baseado em todos da viagem
+  - ✅ **EXEMPLO**: 6 passageiros total, 3 com passeios pagos (50%), 2 com gratuitos (33%)
+  - ✅ **VALIDAÇÃO**: Percentuais nunca excedem 100% (problema anterior corrigido)
+  - _Requirements: Cálculos, Precisão_
+  
+  **39.4 Interface Visual Melhorada** ✅
+  - ✅ **CARDS COLORIDOS**: Azul (total), Verde (pagos), Laranja (gratuitos), Roxo (tipos)
+  - ✅ **SEÇÃO EXPANDÍVEL**: Detalhes dos passeios com botão de expandir/recolher
+  - ✅ **ORGANIZAÇÃO CLARA**: Passeios pagos e gratuitos em seções separadas
+  - ✅ **BADGES INFORMATIVOS**: Quantidade de pessoas por passeio
+  - ✅ **ESTADO VAZIO**: Mensagem clara quando não há passeios selecionados
+  - _Requirements: UX, Visual Design_
+  
+  **39.5 Debug e Resolução de Problemas** ✅
+  - ✅ **INVESTIGAÇÃO**: Logs detalhados para identificar Pedro Gabriel como caso problemático
+  - ✅ **DIAGNÓSTICO**: Descoberto que idade 3 anos não tinha categoria (0-5 anos faltando)
+  - ✅ **SOLUÇÃO**: Adicionada categoria "Bebês/Crianças (0-5 anos)" com visual diferenciado
+  - ✅ **VALIDAÇÃO**: Pedro agora aparece corretamente como "Ingresso Bebê: 1 (0-5 anos)"
+  - ✅ **LIMPEZA**: Removidos logs de debug após resolução
+  - _Requirements: Debug, Manutenibilidade_
+  
+  **39.6 Integração com Sistema Existente** ✅
+  - ✅ **COMPATIBILIDADE**: Funciona com estrutura de dados existente
+  - ✅ **FALLBACKS**: Busca dados em `p.clientes?.data_nascimento` ou `p.data_nascimento`
+  - ✅ **TIPOS ATUALIZADOS**: Interface `PassageiroDisplay` expandida com campos necessários
+  - ✅ **HOOK REUTILIZADO**: Usa `calcularIdade` do `formatters.ts` existente
+  - ✅ **SUBSTITUIÇÃO LIMPA**: `ResumoCards.tsx` atualizado para usar novo componente
+  - _Requirements: Integração, Compatibilidade_
+  
+  **ARQUIVOS MODIFICADOS:**
+  - `src/components/detalhes-viagem/PasseiosEtariosCard.tsx` - Novo componente principal
+  - `src/components/detalhes-viagem/ResumoCards.tsx` - Integração do novo card
+  - `src/utils/formatters.ts` - Função `calcularIdade` adicionada
+  
+  **RESULTADO VISUAL:**
+  ```
+  📊 Resumo (4 cards):
+  ├── Total Passageiros: 6 (na viagem)
+  ├── Passeios Pagos: 3 (50% dos passageiros) 
+  ├── Passeios Gratuitos: 2 (33% dos passageiros)
+  └── Tipos Disponíveis: 5 (3 pagos, 2 gratuitos)
+  
+  🎫 Ingressos por Faixa Etária (5 cards):
+  ├── 🍼 Bebê: 1 (0-5 anos) - Pedro Gabriel
+  ├── 👶 Criança: 1 (6-12 anos)
+  ├── 🎓 Estudante: 1 (13-17 anos)  
+  ├── 👤 Adulto: 2 (18-59 anos)
+  └── 👴 Idoso: 1 (60+ anos)
+  
+  🎢 Detalhes dos Passeios (expandível):
+  ├── Passeios Pagos: Cristo Redentor: 2, Pão de Açúcar: 1
+  └── Passeios Gratuitos: Copacabana: 3, Lapa: 1
+  ```
+  
+  **✅ STATUS FINAL**: Totalmente implementado e funcional - Card muito mais informativo e preciso
+
 ### **PRIORIDADE CRÍTICA - Sistema de Créditos Melhorado**
 
 - [x] **38. Melhoria Completa do Sistema de Créditos** ✅ **CONCLUÍDA**

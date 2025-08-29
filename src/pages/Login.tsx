@@ -118,10 +118,7 @@ const Login = () => {
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-center text-gray-600">
-            Não possui uma conta?{" "}
-            <Link to="/cadastro" className="text-blue-600 hover:underline">
-              Cadastre-se
-            </Link>
+            Sistema de Gestão de Caravanas
           </div>
         </CardFooter>
       </Card>

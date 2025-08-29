@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Neto Tours - Caravana Oficial para Todos os Jogos!</title>
+    <meta name="description" content="Viaje com a Neto Tours para os jogos do seu time! Ônibus modernos, passeios incríveis, segurança total e a melhor experiência para torcedores apaixonados.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neto-primary': '#1E40AF',
+                        'neto-secondary': '#10B981',
+                        'neto-accent': '#F59E0B',
+                        'neto-red': '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .hero-bg {
+            background: linear-gradient(135deg, #1E40AF 0%, #10B981 50%, #F59E0B 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(30, 64, 175, 0.2);
+        }
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-r from-neto-primary to-neto-secondary rounded-full flex items-center justify-center">
+                        <i class="fas fa-bus text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-oswald font-bold text-2xl text-neto-primary">NETO TOURS</h1>
+                        <p class="text-sm text-gray-600">Sua Caravana Oficial</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#viagens" class="text-gray-700 hover:text-neto-primary transition">Viagens</a>
+                    <a href="#passeios" class="text-gray-700 hover:text-neto-primary transition">Passeios</a>
+                    <a href="#sobre" class="text-gray-700 hover:text-neto-primary transition">Sobre Nós</a>
+                    <a href="#contato" class="text-gray-700 hover:text-neto-primary transition">Contato</a>
+                </nav>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="https://wa.me/5521999999999" target="_blank" 
+                       class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                        <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+                    </a>
+                    <button class="md:hidden text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black/10"></div>
+        
+        <!-- Floating Elements -->
+        <div class="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full floating-element"></div>
+        <div class="absolute bottom-20 right-10 w-32 h-32 bg-yellow-300/20 rounded-full floating-element" style="animation-delay: -2s;"></div>
+        <div class="absolute top-1/2 left-1/4 w-16 h-16 bg-green-400/20 rounded-full floating-element" style="animation-delay: -4s;"></div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="max-w-5xl mx-auto">
+                <h1 class="font-oswald font-bold text-5xl md:text-7xl mb-6">
+                    🚌 NETO TOURS
+                </h1>
+                <p class="text-2xl md:text-3xl mb-4 font-semibold">
+                    A Caravana Oficial do Seu Coração!
+                </p>
+                <p class="text-lg md:text-xl mb-12 opacity-90 max-w-3xl mx-auto">
+                    Há mais de 15 anos levando torcedores apaixonados para os jogos com segurança, 
+                    conforto e a melhor experiência. Venha viver a emoção do futebol conosco!
+                </p>
+                
+                <div class="grid md:grid-cols-4 gap-4 mb-12 max-w-4xl mx-auto">
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-2xl font-bold mb-1">15+</div>
+                        <div class="text-sm opacity-80">Anos de Experiência</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-2xl font-bold mb-1">50.000+</div>
+                        <div class="text-sm opacity-80">Torcedores Atendidos</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-2xl font-bold mb-1">1.000+</div>
+                        <div class="text-sm opacity-80">Viagens Realizadas</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-2xl font-bold mb-1">100%</div>
+                        <div class="text-sm opacity-80">Segurança</div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4 justify-center">
+                    <a href="#viagens" 
+                       class="bg-white text-neto-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
+                        <i class="fas fa-calendar-alt mr-2"></i>Ver Próximos Jogos
+                    </a>
+                    <a href="https://wa.me/5521999999999" target="_blank"
+                       class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-neto-primary transition">
+                        <i class="fab fa-whatsapp mr-2"></i>Reservar Agora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diferenciais -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-gray-800 mb-4">
+                    ⭐ Por que Escolher a <span class="text-neto-primary">Neto Tours?</span>
+                </h2>
+                <p class="text-xl text-gray-600">15 anos de tradição e excelência no turismo esportivo</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6 bg-blue-50 rounded-xl border border-blue-100 card-hover">
+                    <div class="w-16 h-16 bg-neto-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bus text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Frota Moderna</h3>
+                    <p class="text-gray-600">Ônibus novos com ar-condicionado, Wi-Fi, TV e poltronas reclináveis</p>
+                </div>
+                
+                <div class="text-center p-6 bg-green-50 rounded-xl border border-green-100 card-hover">
+                    <div class="w-16 h-16 bg-neto-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Segurança Total</h3>
+                    <p class="text-gray-600">Motoristas experientes, seguro completo e acompanhamento 24h</p>
+                </div>
+                
+                <div class="text-center p-6 bg-yellow-50 rounded-xl border border-yellow-100 card-hover">
+                    <div class="w-16 h-16 bg-neto-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-map-marked-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Passeios Exclusivos</h3>
+                    <p class="text-gray-600">Roteiros únicos com guias especializados nos melhores pontos turísticos</p>
+                </div>
+                
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-100 card-hover">
+                    <div class="w-16 h-16 bg-neto-red rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-heart text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">Paixão pelo Futebol</h3>
+                    <p class="text-gray-600">Equipe apaixonada que entende a emoção de torcer pelo seu time</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Próximas Viagens -->
+    <section id="viagens" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-4">
+                    🎯 PRÓXIMAS VIAGENS
+                </h2>
+                <p class="text-xl text-gray-600">Não perca nenhum jogo importante!</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Card Viagem 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=250&fit=crop" 
+                             alt="Estádio" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-neto-red text-white px-3 py-1 rounded-full text-sm font-semibold">
+                            CLÁSSICO
+                        </div>
+                        <div class="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
+                            Vagas Limitadas
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">🔥 GRANDE CLÁSSICO</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
+                                15/09/2025 - 16:00h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
+                                Maracanã - Rio de Janeiro
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-users mr-2 text-neto-primary"></i>
+                                35 vagas disponíveis
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-neto-primary mb-4">
+                                A partir de <span class="text-3xl">R$ 1.280</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
+                                    Reservar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Viagem 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=250&fit=crop" 
+                             alt="Arena" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                            BRASILEIRÃO
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">⚽ JOGO DECISIVO</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
+                                22/09/2025 - 19:00h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
+                                Arena - São Paulo
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-users mr-2 text-neto-primary"></i>
+                                42 vagas disponíveis
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-neto-primary mb-4">
+                                A partir de <span class="text-3xl">R$ 1.480</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
+                                    Reservar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Viagem 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=250&fit=crop" 
+                             alt="Copa" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4 bg-neto-accent text-black px-3 py-1 rounded-full text-sm font-semibold">
+                            COPA
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-oswald font-bold text-xl mb-2">🏆 FINAL DA COPA</h3>
+                        <div class="space-y-2 mb-4">
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
+                                29/09/2025 - 21:30h
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
+                                Maracanã - Rio de Janeiro
+                            </p>
+                            <p class="flex items-center text-gray-600">
+                                <i class="fas fa-users mr-2 text-neto-primary"></i>
+                                28 vagas disponíveis
+                            </p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <p class="text-2xl font-bold text-neto-primary mb-4">
+                                A partir de <span class="text-3xl">R$ 1.380</span>
+                            </p>
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                                    Ver Detalhes
+                                </button>
+                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
+                                    Reservar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <a href="#" class="bg-neto-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                    Ver Todas as Viagens
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Passeios -->
+    <section id="passeios" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-4">
+                    🏛️ PASSEIOS EXCLUSIVOS
+                </h2>
+                <p class="text-xl text-gray-600">Conheça os melhores destinos turísticos</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 mb-12">
+                <!-- Passeios Inclusos -->
+                <div>
+                    <h3 class="font-oswald font-bold text-2xl text-neto-secondary mb-6 flex items-center">
+                        <i class="fas fa-gift mr-3"></i>INCLUSOS NO PACOTE
+                    </h3>
+                    <p class="text-gray-600 mb-6">Passeios gratuitos em todas as viagens:</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg border border-green-100">
+                            <i class="fas fa-check-circle text-neto-secondary mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">City Tour Completo</h4>
+                                <p class="text-sm text-gray-600">Principais pontos turísticos da cidade</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg border border-green-100">
+                            <i class="fas fa-check-circle text-neto-secondary mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Praias Famosas</h4>
+                                <p class="text-sm text-gray-600">Copacabana, Ipanema e outras belezas</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg border border-green-100">
+                            <i class="fas fa-check-circle text-neto-secondary mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold">Centro Histórico</h4>
+                                <p class="text-sm text-gray-600">Cultura e história local</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="text-neto-secondary font-semibold hover:underline">
+                                Ver todos os 20+ passeios inclusos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Passeios Opcionais -->
+                <div>
+                    <h3 class="font-oswald font-bold text-2xl text-neto-accent mb-6 flex items-center">
+                        <i class="fas fa-star mr-3"></i>EXPERIÊNCIAS PREMIUM
+                    </h3>
+                    <p class="text-gray-600 mb-6">Passeios especiais (valores à parte):</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-mountain text-neto-accent mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Cristo Redentor</h4>
+                                    <p class="text-sm text-gray-600">Trem do Corcovado</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-neto-accent">R$ 85</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-cable-car text-neto-accent mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Pão de Açúcar</h4>
+                                    <p class="text-sm text-gray-600">Bondinho e vista panorâmica</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-neto-accent">R$ 75</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-water text-neto-accent mr-3"></i>
+                                <div>
+                                    <h4 class="font-semibold">Passeio de Barco</h4>
+                                    <p class="text-sm text-gray-600">Baía de Guanabara</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-neto-accent">R$ 65</span>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button class="text-neto-accent font-semibold hover:underline">
+                                Ver todos os 15+ passeios premium
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sobre Nós -->
+    <section id="sobre" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-6">
+                        👨‍💼 Conheça o Neto
+                    </h2>
+                    <p class="text-lg text-gray-600 mb-6">
+                        Há mais de 15 anos, Neto transformou sua paixão pelo futebol em um negócio 
+                        que leva alegria e emoção para milhares de torcedores pelo Brasil.
+                    </p>
+                    <p class="text-gray-600 mb-6">
+                        Com experiência em turismo esportivo e um olhar atento aos detalhes, 
+                        ele criou a Neto Tours para oferecer não apenas transporte, mas uma 
+                        experiência completa e inesquecível para os amantes do futebol.
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div class="text-center p-4 bg-white rounded-lg shadow">
+                            <div class="text-2xl font-bold text-neto-primary mb-1">15+</div>
+                            <div class="text-sm text-gray-600">Anos de Experiência</div>
+                        </div>
+                        <div class="text-center p-4 bg-white rounded-lg shadow">
+                            <div class="text-2xl font-bold text-neto-primary mb-1">50k+</div>
+                            <div class="text-sm text-gray-600">Clientes Satisfeitos</div>
+                        </div>
+                    </div>
+                    
+                    <a href="https://wa.me/5521999999999" target="_blank"
+                       class="bg-neto-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition inline-flex items-center">
+                        <i class="fab fa-whatsapp mr-2"></i>Falar com o Neto
+                    </a>
+                </div>
+                
+                <div class="relative">
+                    <div class="bg-gradient-to-br from-neto-primary to-neto-secondary rounded-2xl p-8 text-white">
+                        <h3 class="font-oswald font-semibold text-2xl mb-6">Nossa Missão</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-heart text-yellow-300 mr-3 mt-1"></i>
+                                <div>
+                                    <h4 class="font-semibold mb-1">Paixão pelo Futebol</h4>
+                                    <p class="text-sm opacity-90">Compartilhar a emoção do esporte mais amado do Brasil</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-users text-yellow-300 mr-3 mt-1"></i>
+                                <div>
+                                    <h4 class="font-semibold mb-1">Experiência Única</h4>
+                                    <p class="text-sm opacity-90">Criar momentos inesquecíveis para cada torcedor</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-shield-alt text-yellow-300 mr-3 mt-1"></i>
+                                <div>
+                                    <h4 class="font-semibold mb-1">Segurança Total</h4>
+                                    <p class="text-sm opacity-90">Garantir viagens seguras e confortáveis sempre</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-star text-yellow-300 mr-3 mt-1"></i>
+                                <div>
+                                    <h4 class="font-semibold mb-1">Excelência</h4>
+                                    <p class="text-sm opacity-90">Superar expectativas em cada detalhe do serviço</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Depoimentos -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-4">
+                    💬 O QUE DIZEM NOSSOS CLIENTES
+                </h2>
+                <p class="text-xl text-gray-600">Mais de 50.000 torcedores satisfeitos</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-neto-primary rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">RC</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Roberto Carlos</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Já viajei com a Neto Tours mais de 20 vezes! Organização perfeita, 
+                        ônibus confortável e o Neto sempre atencioso com todos. Recomendo!"
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-neto-primary rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">AS</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Ana Silva</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Primeira vez que viajei para um jogo e foi incrível! Os passeios 
+                        foram lindos e conheci pessoas maravilhosas. Já estou na próxima!"
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-neto-primary rounded-full flex items-center justify-center mr-4">
+                            <span class="text-white font-bold">MF</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold">Marcos Ferreira</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic">
+                        "Segurança, pontualidade e muita diversão! A Neto Tours é referência 
+                        em caravanas. Minha família toda já viajou e sempre voltamos felizes!"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="hero-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="font-oswald font-bold text-4xl mb-6">
+                🚌 Pronto para Viver a Emoção?
+            </h2>
+            <p class="text-xl mb-8 opacity-90 max-w-3xl mx-auto">
+                Não perca mais nenhum jogo importante! Reserve sua vaga na próxima viagem 
+                e venha fazer parte da família Neto Tours.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center mb-12">
+                <a href="https://wa.me/5521999999999?text=Olá Neto! Quero reservar minha vaga na próxima viagem!" 
+                   target="_blank"
+                   class="bg-green-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-green-600 transition shadow-lg">
+                    <i class="fab fa-whatsapp mr-2"></i>Reservar pelo WhatsApp
+                </a>
+                <a href="tel:+5521999999999" 
+                   class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-neto-primary transition">
+                    <i class="fas fa-phone mr-2"></i>Ligar Agora
+                </a>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">15+</div>
+                    <div class="opacity-80">Anos de Tradição</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">50k+</div>
+                    <div class="opacity-80">Clientes Felizes</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">1000+</div>
+                    <div class="opacity-80">Viagens Realizadas</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">100%</div>
+                    <div class="opacity-80">Satisfação</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-neto-primary to-neto-secondary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bus text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-oswald font-bold text-lg">NETO TOURS</h3>
+                            <p class="text-sm opacity-80">Sua Caravana Oficial</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Há 15 anos levando torcedores apaixonados para os jogos com segurança, 
+                        conforto e a melhor experiência.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Serviços</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#viagens" class="hover:text-white transition">Viagens para Jogos</a></li>
+                        <li><a href="#passeios" class="hover:text-white transition">Passeios Turísticos</a></li>
+                        <li><a href="#" class="hover:text-white transition">Excursões Personalizadas</a></li>
+                        <li><a href="#" class="hover:text-white transition">Grupos Corporativos</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Contato</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            (21) 99999-9999
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            contato@netotours.com.br
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Rio de Janeiro - RJ
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Redes Sociais</h4>
+                    <div class="flex space-x-4 mb-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500">
+                        Siga-nos para novidades e promoções exclusivas!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Neto Tours. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animação de entrada dos cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Aplicar animação aos cards
+        document.querySelectorAll('.card-hover').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+
+        // Contador animado para números
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = target / 100;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current) + (target >= 1000 ? 'k+' : '+');
+            }, 20);
+        }
+
+        // Ativar contadores quando visíveis
+        const counters = document.querySelectorAll('.hero-bg .text-2xl');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const text = entry.target.textContent;
+                    if (text.includes('15+')) {
+                        animateCounter(entry.target, 15);
+                    } else if (text.includes('50.000+')) {
+                        animateCounter(entry.target, 50);
+                    } else if (text.includes('1.000+')) {
+                        animateCounter(entry.target, 1);
+                    } else if (text.includes('100%')) {
+                        entry.target.textContent = '100%';
+                    }
+                }
+            });
+        });
+
+        counters.forEach(counter => counterObserver.observe(counter));
+    </script>
+</body>
+</html>

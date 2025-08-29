@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Sistema de Gestão para Caravanas - Automatize seu Negócio</title>
+    <meta name="description" content="Sistema completo para gestão de caravanas esportivas. Controle passageiros, viagens, pagamentos, ingressos e relatórios em uma plataforma moderna e intuitiva.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3B82F6',
+                        'primary-dark': '#1E40AF',
+                        'secondary': '#10B981',
+                        'accent': '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-poppins { font-family: 'Poppins', sans-serif; }
+        .hero-bg {
+            background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 50%, #10B981 100%);
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(59, 130, 246, 0.15);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3B82F6, #10B981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fas fa-bus text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-poppins font-bold text-xl gradient-text">CaravanaSystem</h1>
+                        <p class="text-sm text-gray-600">Gestão Inteligente</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#funcionalidades" class="text-gray-700 hover:text-primary transition">Funcionalidades</a>
+                    <a href="#tecnologia" class="text-gray-700 hover:text-primary transition">Tecnologia</a>
+                    <a href="#precos" class="text-gray-700 hover:text-primary transition">Preços</a>
+                    <a href="#demo" class="text-gray-700 hover:text-primary transition">Demo</a>
+                </nav>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="#demo" 
+                       class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition font-medium">
+                        <i class="fas fa-play mr-2"></i>Ver Demo
+                    </a>
+                    <button class="md:hidden text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black/10"></div>
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-3 mb-8">
+                    <span class="tech-badge text-white px-4 py-2 rounded-full text-sm font-medium">
+                        <i class="fab fa-react mr-2"></i>React + TypeScript
+                    </span>
+                    <span class="tech-badge text-white px-4 py-2 rounded-full text-sm font-medium">
+                        <i class="fas fa-database mr-2"></i>Supabase
+                    </span>
+                    <span class="tech-badge text-white px-4 py-2 rounded-full text-sm font-medium">
+                        <i class="fas fa-cloud mr-2"></i>Cloud Native
+                    </span>
+                </div>
+                
+                <h1 class="font-poppins font-bold text-5xl md:text-7xl mb-6">
+                    🚀 Sistema Completo para<br>
+                    <span class="text-yellow-300">Gestão de Caravanas</span>
+                </h1>
+                
+                <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
+                    Automatize sua operação com tecnologia de ponta. Controle passageiros, 
+                    viagens, pagamentos, ingressos e relatórios em uma plataforma moderna.
+                </p>
+                
+                <div class="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                        <div class="text-3xl font-bold mb-2">10x</div>
+                        <div class="text-sm opacity-80">Mais Eficiência</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                        <div class="text-3xl font-bold mb-2">90%</div>
+                        <div class="text-sm opacity-80">Menos Erros</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+                        <div class="text-3xl font-bold mb-2">24/7</div>
+                        <div class="text-sm opacity-80">Disponibilidade</div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4 justify-center">
+                    <a href="#demo" 
+                       class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
+                        <i class="fas fa-play mr-2"></i>Agendar Demonstração
+                    </a>
+                    <a href="#funcionalidades" 
+                       class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-primary transition">
+                        <i class="fas fa-list mr-2"></i>Ver Funcionalidades
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Floating Elements -->
+        <div class="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full animate-pulse"></div>
+        <div class="absolute bottom-20 right-10 w-32 h-32 bg-yellow-300/20 rounded-full animate-bounce"></div>
+    </section>
+
+    <!-- Problemas que Resolvemos -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-poppins font-bold text-4xl text-gray-800 mb-4">
+                    🎯 Problemas que <span class="gradient-text">Resolvemos</span>
+                </h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Chega de planilhas, papéis e controles manuais. Nossa solução elimina os principais desafios das caravanas.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                    <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-file-excel text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2 text-red-700">Planilhas Confusas</h3>
+                    <p class="text-gray-600 text-sm">Controle manual propenso a erros e perda de dados</p>
+                </div>
+                
+                <div class="text-center p-6 bg-orange-50 rounded-xl border border-orange-100">
+                    <div class="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-money-bill-wave text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2 text-orange-700">Controle Financeiro</h3>
+                    <p class="text-gray-600 text-sm">Dificuldade para rastrear pagamentos e pendências</p>
+                </div>
+                
+                <div class="text-center p-6 bg-yellow-50 rounded-xl border border-yellow-100">
+                    <div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2 text-yellow-700">Gestão de Passageiros</h3>
+                    <p class="text-gray-600 text-sm">Cadastros duplicados e informações desorganizadas</p>
+                </div>
+                
+                <div class="text-center p-6 bg-purple-50 rounded-xl border border-purple-100">
+                    <div class="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2 text-purple-700">Relatórios Manuais</h3>
+                    <p class="text-gray-600 text-sm">Horas perdidas criando relatórios e análises</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Funcionalidades Principais -->
+    <section id="funcionalidades" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-poppins font-bold text-4xl text-gray-800 mb-4">
+                    ⚡ Funcionalidades <span class="gradient-text">Completas</span>
+                </h2>
+                <p class="text-xl text-gray-600">Tudo que você precisa para gerenciar sua caravana em um só lugar</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Dashboard Inteligente -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-pie text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Dashboard Inteligente</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Métricas em tempo real</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Gráficos interativos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>KPIs personalizados</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Alertas automáticos</li>
+                    </ul>
+                </div>
+
+                <!-- Gestão de Viagens -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-route text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Gestão de Viagens</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Criação rápida de viagens</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Controle de capacidade</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Status automático</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Histórico completo</li>
+                    </ul>
+                </div>
+
+                <!-- Cadastro de Passageiros -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Cadastro de Passageiros</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Cadastro inteligente</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Detecção de duplicatas</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Histórico de viagens</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Dados organizados</li>
+                    </ul>
+                </div>
+
+                <!-- Sistema Financeiro -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-credit-card text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Sistema Financeiro</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Controle de pagamentos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Sistema de créditos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Relatórios financeiros</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Conciliação automática</li>
+                    </ul>
+                </div>
+
+                <!-- Gestão de Ingressos -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-ticket-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Gestão de Ingressos</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Controle de ingressos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Setores do estádio</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Preços dinâmicos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Logos automáticas</li>
+                    </ul>
+                </div>
+
+                <!-- Passeios e Extras -->
+                <div class="feature-card bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-map-marked-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-poppins font-semibold text-xl mb-4">Passeios e Extras</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Catálogo de passeios</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Preços flexíveis</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Seleção múltipla</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Controle de capacidade</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tecnologia -->
+    <section id="tecnologia" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-poppins font-bold text-4xl text-gray-800 mb-4">
+                    🔧 Tecnologia <span class="gradient-text">de Ponta</span>
+                </h2>
+                <p class="text-xl text-gray-600">Construído com as melhores tecnologias do mercado</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="font-poppins font-semibold text-2xl mb-6">Stack Tecnológica Moderna</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
+                                <i class="fab fa-react text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-blue-700">React + TypeScript</h4>
+                                <p class="text-sm text-gray-600">Interface moderna e tipagem segura</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-green-50 rounded-lg border border-green-100">
+                            <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-database text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-green-700">Supabase (PostgreSQL)</h4>
+                                <p class="text-sm text-gray-600">Banco de dados robusto e escalável</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-purple-50 rounded-lg border border-purple-100">
+                            <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-paint-brush text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-purple-700">Tailwind CSS + shadcn/ui</h4>
+                                <p class="text-sm text-gray-600">Design system profissional</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-orange-50 rounded-lg border border-orange-100">
+                            <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mr-4">
+                                <i class="fas fa-cloud text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-orange-700">Cloud Native</h4>
+                                <p class="text-sm text-gray-600">Hospedagem segura e escalável</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-primary to-secondary rounded-2xl p-8 text-white">
+                    <h3 class="font-poppins font-semibold text-2xl mb-6">Benefícios Técnicos</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt text-yellow-300 mr-3 text-xl"></i>
+                            <div>
+                                <h4 class="font-semibold">Segurança Avançada</h4>
+                                <p class="text-sm opacity-90">RLS, autenticação e criptografia</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-rocket text-yellow-300 mr-3 text-xl"></i>
+                            <div>
+                                <h4 class="font-semibold">Performance Otimizada</h4>
+                                <p class="text-sm opacity-90">Carregamento rápido e responsivo</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-mobile-alt text-yellow-300 mr-3 text-xl"></i>
+                            <div>
+                                <h4 class="font-semibold">Mobile First</h4>
+                                <p class="text-sm opacity-90">Funciona perfeitamente no celular</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-sync-alt text-yellow-300 mr-3 text-xl"></i>
+                            <div>
+                                <h4 class="font-semibold">Atualizações Automáticas</h4>
+                                <p class="text-sm opacity-90">Sempre na versão mais recente</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demonstração -->
+    <section id="demo" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-poppins font-bold text-4xl text-gray-800 mb-4">
+                    🎬 Veja o Sistema <span class="gradient-text">em Ação</span>
+                </h2>
+                <p class="text-xl text-gray-600">Agende uma demonstração personalizada para seu negócio</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-primary to-secondary p-8 text-white text-center">
+                        <h3 class="font-poppins font-semibold text-2xl mb-4">Demonstração Gratuita</h3>
+                        <p class="text-lg opacity-90 mb-6">
+                            Vamos mostrar como o sistema pode transformar sua operação em apenas 30 minutos
+                        </p>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mb-8">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-calendar-check text-2xl"></i>
+                                </div>
+                                <h4 class="font-semibold mb-1">Agende Online</h4>
+                                <p class="text-sm opacity-80">Escolha o melhor horário</p>
+                            </div>
+                            
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-video text-2xl"></i>
+                                </div>
+                                <h4 class="font-semibold mb-1">Demo Personalizada</h4>
+                                <p class="text-sm opacity-80">Focada no seu negócio</p>
+                            </div>
+                            
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-handshake text-2xl"></i>
+                                </div>
+                                <h4 class="font-semibold mb-1">Proposta Comercial</h4>
+                                <p class="text-sm opacity-80">Valores personalizados</p>
+                            </div>
+                        </div>
+                        
+                        <a href="https://wa.me/5521999999999?text=Olá! Gostaria de agendar uma demonstração do sistema de gestão para caravanas." 
+                           target="_blank"
+                           class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition shadow-lg inline-flex items-center">
+                            <i class="fab fa-whatsapp mr-2 text-green-500"></i>Agendar Demonstração
+                        </a>
+                    </div>
+                    
+                    <div class="p-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-4 flex items-center">
+                                    <i class="fas fa-star text-yellow-500 mr-2"></i>
+                                    O que você vai ver:
+                                </h4>
+                                <ul class="space-y-2 text-gray-600">
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Dashboard completo em funcionamento</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Cadastro de viagens e passageiros</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Sistema financeiro e de créditos</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Relatórios automáticos</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Gestão de ingressos e passeios</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-lg mb-4 flex items-center">
+                                    <i class="fas fa-gift text-primary mr-2"></i>
+                                    Bônus da demonstração:
+                                </h4>
+                                <ul class="space-y-2 text-gray-600">
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Análise gratuita do seu processo atual</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Plano de implementação personalizado</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Orçamento sem compromisso</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>30 dias de teste gratuito</li>
+                                    <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Suporte completo na migração</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Preços -->
+    <section id="precos" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-poppins font-bold text-4xl text-gray-800 mb-4">
+                    💰 Planos <span class="gradient-text">Flexíveis</span>
+                </h2>
+                <p class="text-xl text-gray-600">Escolha o plano ideal para o tamanho da sua operação</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Plano Starter -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
+                    <div class="text-center mb-8">
+                        <h3 class="font-poppins font-semibold text-2xl mb-2">Starter</h3>
+                        <p class="text-gray-600 mb-4">Para caravanas pequenas</p>
+                        <div class="text-4xl font-bold text-gray-800 mb-2">R$ 297</div>
+                        <div class="text-gray-600">/mês</div>
+                    </div>
+                    
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Até 100 passageiros/mês</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>5 usuários simultâneos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Todas as funcionalidades</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte por email</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Backup automático</li>
+                    </ul>
+                    
+                    <button class="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-900 transition font-semibold">
+                        Começar Teste Gratuito
+                    </button>
+                </div>
+
+                <!-- Plano Professional -->
+                <div class="bg-white rounded-2xl shadow-xl border-2 border-primary p-8 relative transform scale-105">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-primary text-white px-4 py-1 rounded-full text-sm font-semibold">
+                            Mais Popular
+                        </span>
+                    </div>
+                    
+                    <div class="text-center mb-8">
+                        <h3 class="font-poppins font-semibold text-2xl mb-2">Professional</h3>
+                        <p class="text-gray-600 mb-4">Para caravanas médias</p>
+                        <div class="text-4xl font-bold text-primary mb-2">R$ 497</div>
+                        <div class="text-gray-600">/mês</div>
+                    </div>
+                    
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Até 500 passageiros/mês</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>15 usuários simultâneos</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Todas as funcionalidades</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte prioritário</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Relatórios avançados</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>API personalizada</li>
+                    </ul>
+                    
+                    <button class="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition font-semibold">
+                        Começar Teste Gratuito
+                    </button>
+                </div>
+
+                <!-- Plano Enterprise -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 relative">
+                    <div class="text-center mb-8">
+                        <h3 class="font-poppins font-semibold text-2xl mb-2">Enterprise</h3>
+                        <p class="text-gray-600 mb-4">Para grandes operações</p>
+                        <div class="text-4xl font-bold text-gray-800 mb-2">R$ 897</div>
+                        <div class="text-gray-600">/mês</div>
+                    </div>
+                    
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Passageiros ilimitados</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Usuários ilimitados</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Todas as funcionalidades</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Suporte 24/7</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Customizações</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i>Treinamento incluso</li>
+                    </ul>
+                    
+                    <button class="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-900 transition font-semibold">
+                        Falar com Vendas
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <p class="text-gray-600 mb-4">
+                    <i class="fas fa-shield-alt text-green-500 mr-2"></i>
+                    30 dias de teste gratuito • Sem compromisso • Cancele quando quiser
+                </p>
+                <p class="text-sm text-gray-500">
+                    Todos os planos incluem migração gratuita dos seus dados atuais
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="hero-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="font-poppins font-bold text-4xl mb-6">
+                🚀 Pronto para Revolucionar sua Caravana?
+            </h2>
+            <p class="text-xl mb-8 opacity-90 max-w-3xl mx-auto">
+                Junte-se às caravanas que já automatizaram suas operações e aumentaram sua eficiência em 10x.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center mb-12">
+                <a href="https://wa.me/5521999999999?text=Olá! Quero conhecer o sistema de gestão para caravanas." 
+                   target="_blank"
+                   class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
+                    <i class="fab fa-whatsapp mr-2 text-green-500"></i>Falar com Especialista
+                </a>
+                <a href="#demo" 
+                   class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-primary transition">
+                    <i class="fas fa-play mr-2"></i>Ver Demonstração
+                </a>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">30</div>
+                    <div class="opacity-80">Dias Teste Gratuito</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">24/7</div>
+                    <div class="opacity-80">Suporte Técnico</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">100%</div>
+                    <div class="opacity-80">Migração Gratuita</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-2">0</div>
+                    <div class="opacity-80">Taxa de Setup</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bus text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-poppins font-bold text-lg gradient-text">CaravanaSystem</h3>
+                            <p class="text-sm opacity-80">Gestão Inteligente</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Sistema completo para gestão de caravanas esportivas. 
+                        Tecnologia moderna para automatizar sua operação.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Produto</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#funcionalidades" class="hover:text-white transition">Funcionalidades</a></li>
+                        <li><a href="#tecnologia" class="hover:text-white transition">Tecnologia</a></li>
+                        <li><a href="#precos" class="hover:text-white transition">Preços</a></li>
+                        <li><a href="#demo" class="hover:text-white transition">Demonstração</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Suporte</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Central de Ajuda</a></li>
+                        <li><a href="#" class="hover:text-white transition">Documentação</a></li>
+                        <li><a href="#" class="hover:text-white transition">Treinamentos</a></li>
+                        <li><a href="#" class="hover:text-white transition">Status do Sistema</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Contato</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            (21) 99999-9999
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            contato@caravanasystem.com.br
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Rio de Janeiro - RJ
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 CaravanaSystem. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animação de entrada dos cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Aplicar animação aos cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            observer.observe(card);
+        });
+
+        // Contador animado
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = target / 100;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current);
+            }, 20);
+        }
+
+        // Ativar contadores quando visíveis
+        const counters = document.querySelectorAll('.hero-bg .text-3xl');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const text = entry.target.textContent;
+                    if (text.includes('10x')) {
+                        animateCounter(entry.target, 10);
+                    } else if (text.includes('90%')) {
+                        animateCounter(entry.target, 90);
+                    } else if (text.includes('24/7')) {
+                        entry.target.textContent = '24/7';
+                    }
+                }
+            });
+        });
+
+        counters.forEach(counter => counterObserver.observe(counter));
+    </script>
+</body>
+</html>
