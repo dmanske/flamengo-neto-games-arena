@@ -30,9 +30,10 @@ import { RelatorioFinanceiro } from './RelatorioFinanceiro';
 
 interface FinanceiroViagemProps {
   viagemId: string;
+  onDataUpdate?: () => Promise<void>; // Função para atualizar dados da página principal
 }
 
-export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
+export function FinanceiroViagem({ viagemId, onDataUpdate }: FinanceiroViagemProps) {
   // Verificação de segurança
   if (!viagemId) {
     return (
@@ -63,7 +64,7 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
     excluirDespesa,
     registrarCobranca,
     fetchAllData
-  } = useViagemFinanceiro(viagemId);
+  } = useViagemFinanceiro(viagemId, onDataUpdate);
 
   const [showReceitaForm, setShowReceitaForm] = useState(false);
   const [showDespesaForm, setShowDespesaForm] = useState(false);
@@ -170,7 +171,10 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
               <div>
                 <p className="text-sm font-medium text-gray-600">Despesas</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {formatCurrency(resumoFinanceiro?.total_despesas || 0)}
+                  {formatCurrency(
+                    resumoFinanceiro?.total_despesas || 
+                    (despesas?.reduce((sum, d) => sum + d.valor, 0) || 0)
+                  )}
                 </p>
               </div>
               <TrendingDown className="h-8 w-8 text-red-600" />
@@ -184,9 +188,20 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
               <div>
                 <p className="text-sm font-medium text-gray-600">Lucro Líquido</p>
                 <p className={`text-2xl font-bold ${
-                  (resumoFinanceiro?.lucro_bruto || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  (() => {
+                    const receitas = resumoFinanceiro?.total_receitas || 0;
+                    const totalDespesas = resumoFinanceiro?.total_despesas || 
+                                         (despesas?.reduce((sum, d) => sum + d.valor, 0) || 0);
+                    const lucro = receitas - totalDespesas;
+                    return lucro >= 0 ? 'text-green-600' : 'text-red-600';
+                  })()
                 }`}>
-                  {formatCurrency(resumoFinanceiro?.lucro_bruto || 0)}
+                  {formatCurrency(
+                    resumoFinanceiro?.lucro_bruto || 
+                    ((resumoFinanceiro?.total_receitas || 0) - 
+                     (resumoFinanceiro?.total_despesas || 
+                      (despesas?.reduce((sum, d) => sum + d.valor, 0) || 0)))
+                  )}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
@@ -701,9 +716,43 @@ export function FinanceiroViagem({ viagemId }: FinanceiroViagemProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Mostrar resumo das despesas primeiro (carrega instantaneamente) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h3 className="font-medium text-red-800">Total de Despesas</h3>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(
+                      resumoFinanceiro?.total_despesas || 
+                      (despesas?.reduce((sum, d) => sum + d.valor, 0) || 0)
+                    )}
+                  </p>
+                </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-medium text-blue-800">Quantidade</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {despesas?.length || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">despesas registradas</p>
+                </div>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="font-medium text-green-800">Média por Despesa</h3>
+                  <p className="text-2xl font-bold text-green-600">
+                    {(() => {
+                      const total = resumoFinanceiro?.total_despesas || 
+                                   (despesas?.reduce((sum, d) => sum + d.valor, 0) || 0);
+                      const quantidade = despesas?.length || 0;
+                      return quantidade > 0 ? formatCurrency(total / quantidade) : formatCurrency(0);
+                    })()}
+                  </p>
+                </div>
+              </div>
 
+              {/* Lista detalhada das despesas */}
+              <div className="mb-4">
+                <h4 className="font-medium text-gray-700 mb-3">Detalhamento das Despesas:</h4>
+              </div>
               
-              {isLoading ? (
+              {isLoading && (!despesas || despesas.length === 0) ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                   <span className="ml-2">Carregando despesas...</span>

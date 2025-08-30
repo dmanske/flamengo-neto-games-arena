@@ -1141,8 +1141,10 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
   }, [viagemId]);
 
   useEffect(() => {
-    calcularResumoFinanceiro();
-  }, [receitas, despesas]);
+    if (viagemId) {
+      calcularResumoFinanceiro();
+    }
+  }, [receitas, despesas, viagemId]);
 
   return {
     // Dados

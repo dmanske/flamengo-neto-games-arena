@@ -490,6 +490,7 @@ const DetalhesViagem = () => {
           {/* Sistema Financeiro Completo da Viagem */}
           <FinanceiroViagem
             viagemId={id || ""}
+            onDataUpdate={refreshAllFinancialData}
           />
         </TabsContent>
       </Tabs>
