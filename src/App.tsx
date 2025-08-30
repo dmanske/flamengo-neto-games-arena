@@ -74,6 +74,9 @@ import Ingressos from "@/pages/Ingressos";
 // Import Sistema de Créditos de Viagem
 import Creditos from "@/pages/Creditos";
 
+// Import Sistema de Configuração de Passeios
+import ConfiguracaoPasseios from "@/pages/ConfiguracaoPasseios";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -142,6 +145,9 @@ function App() {
                   
                   {/* Sistema de Créditos de Viagem */}
                   <Route path="creditos" element={<Creditos />} />
+                  
+                  {/* Sistema de Configuração de Passeios */}
+                  <Route path="configuracao-passeios" element={<ConfiguracaoPasseios />} />
                   
                   {/* Rotas Financeiras */}
                   <Route path="financeiro" element={<FinanceiroGeral />} />

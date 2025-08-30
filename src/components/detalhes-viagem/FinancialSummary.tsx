@@ -85,75 +85,7 @@ export function FinancialSummary({
   const valorTotalViagem = valorPotencialTotal;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-medium mb-2">Financeiro</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Valor Arrecadado:</span>
-                <span className="font-medium">{formatCurrency(totalArrecadado)}</span>
-              </div>
-              <div className="ml-2 space-y-1">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>• Receita Viagem:</span>
-                  <span>{formatCurrency(receitaViagem)}</span>
-                </div>
-                {receitaPasseios > 0 && (
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>• Receita Passeios:</span>
-                    <span>{formatCurrency(receitaPasseios)}</span>
-                  </div>
-                )}
-                {totalDescontosPassageiros > 0 && (
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>• Total de Descontos:</span>
-                    <span>{formatCurrency(totalDescontosPassageiros)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Valor Pago:</span>
-                <span className="font-medium text-green-600">{formatCurrency(totalPago)}</span>
-              </div>
-              <div className="ml-2 space-y-1">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>• Pago Viagem:</span>
-                  <span>{formatCurrency(pagoViagem)}</span>
-                </div>
-                {pagoPasseios > 0 && (
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>• Pago Passeios:</span>
-                    <span>{formatCurrency(pagoPasseios)}</span>
-                  </div>
-                )}
-              </div>
-              <Progress value={percentualPagamento} className="h-1" />
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Valor Pendente:</span>
-                <span className="font-medium text-amber-600">{formatCurrency(totalPendente)}</span>
-              </div>
-              <div className="ml-2 space-y-1">
-                <div className="flex justify-between text-xs text-gray-600">
-                  <span>• Pendente Viagem:</span>
-                  <span>{formatCurrency(pendenteViagem)}</span>
-                </div>
-                {pendentePasseios > 0 && (
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>• Pendente Passeios:</span>
-                    <span>{formatCurrency(pendentePasseios)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
       <Card>
         <CardContent className="p-6">

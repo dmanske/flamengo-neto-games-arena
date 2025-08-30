@@ -449,7 +449,226 @@
 
 ---
 
-## 🆕 **NOVA TASK ADICIONADA**
+## 🆕 **NOVAS TASKS ADICIONADAS**
+
+### **PRIORIDADE CRÍTICA - Sistema Financeiro Integrado**
+
+- [ ] **44. Correção dos Cards de Relatórios Financeiros** 🔥 **NOVA PRIORIDADE**
+  - **OBJETIVO**: Corrigir e melhorar os cards de relatórios na aba Financeiro → Relatórios com cálculos precisos e novos indicadores
+  - **DATA**: 30/08/2025
+  - **STATUS**: 📋 Identificado - **AUTORIZADO PARA IMPLEMENTAÇÃO**
+  
+  **44.1 Correção da Análise de Passeios** 📋
+  - 📋 **PROBLEMA**: Faltam campos de despesa total e lucro dos passeios
+  - 📋 **SOLUÇÃO**: Adicionar cards "Despesa Total dos Passeios" e "Lucro dos Passeios"
+  - 📋 **CÁLCULO**: Lucro = Receita Passeios - Custos Operacionais dos Passeios
+  - 📋 **INTERFACE**: Card com breakdown visual (Receita, Despesa, Lucro, Margem)
+  - _Requirements: Relatórios, Precisão Financeira_
+  
+  **44.2 Correção do Comparativo Viagem vs Passeios** 📋
+  - 📋 **PROBLEMA**: Só mostra receitas, faltam lucros
+  - 📋 **SOLUÇÃO**: Adicionar "Lucro da Viagem", "Lucro dos Passeios", "Lucro Total"
+  - 📋 **CÁLCULO**: Lucro Viagem = Receita Viagem - (Despesas Operacionais proporcionais)
+  - 📋 **INTERFACE**: Comparativo visual com barras de progresso para lucros
+  - _Requirements: Relatórios, Comparativo Financeiro_
+  
+  **44.3 Correção da Taxa de Ocupação** 📋
+  - 📋 **PROBLEMA**: Usa `passageiros.length` (só pendentes) em vez de todos os passageiros
+  - 📋 **SOLUÇÃO**: Usar `todosPassageiros.length` para cálculo correto
+  - 📋 **CÁLCULO**: (Total Passageiros / Capacidade Total) × 100
+  - 📋 **INTERFACE**: Mostrar "42/50 lugares (84%)" em vez de "0/50 lugares (0%)"
+  - _Requirements: Relatórios, Cálculo Correto_
+  
+  **44.4 Novo Card: Taxa de Presença Pós-Viagem** 📋
+  - 📋 **FUNCIONALIDADE**: Novo card baseado na Lista de Presença
+  - 📋 **DADOS**: Quantos embarcaram vs quantos faltaram
+  - 📋 **CÁLCULO**: (Passageiros Presentes / Total Passageiros) × 100
+  - 📋 **INTERFACE**: Card "Taxa de Presença" com "38/42 embarcaram (90%)"
+  - 📋 **INTEGRAÇÃO**: Conectar com dados da página Lista de Presença
+  - _Requirements: Relatórios, Lista de Presença_
+
+### **PRIORIDADE CRÍTICA - Sistema Financeiro Integrado**
+
+- [x] **42. Sistema Completo de Gestão de Custos dos Passeios** ✅ **CONCLUÍDA COM SUCESSO**
+  - **OBJETIVO**: Implementar sistema completo de configuração e gestão de custos para todos os passeios, com integração automática ao financeiro e compatibilidade total com todos os sistemas de pagamento
+  - **DATA**: 30/08/2025
+  - **STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E TESTADA**
+  
+  **42.1 Tela de Configuração de Passeios** ✅
+  - ✅ **NOVA PÁGINA**: `src/pages/ConfiguracaoPasseios.tsx` - Tela completa de gestão
+  - ✅ **3 ABAS PRINCIPAIS**:
+    - **Passeios Pagos (12)**: Configurar custos dos passeios existentes
+    - **Passeios Gratuitos (13)**: Visualização informativa
+    - **Adicionar Novo**: Criar passeios personalizados não inclusos na lista
+  - ✅ **INTERFACE COMPLETA**: Tabela com Nome, Preço Venda, Custo, Lucro, Margem, Ações
+  - ✅ **ALERTAS VISUAIS**: Cores diferentes para prejuízo (vermelho), margem baixa (amarelo), margem boa (verde)
+  - ✅ **RESUMO DASHBOARD**: 4 cards com totais, margem média e alertas
+  - ✅ **DADOS REAIS CONFIGURADOS**: 12 passeios pagos, margem média 3.24%, 11 alertas de margem baixa
+  - _Requirements: Sistema Financeiro, UX, Gestão Completa_
+  
+  **42.2 Estrutura de Dados Expandida** ✅
+  - ✅ **MIGRAÇÃO DB**: `ALTER TABLE passeios ADD COLUMN custo_operacional DECIMAL(10,2) DEFAULT 0`
+  - ✅ **CUSTOS REAIS**: Configurados via SQL - 11 passeios com custo = venda, Museu do Flamengo com custo R$ 55
+  - ✅ **NOVOS PASSEIOS**: Permitir adicionar passeios além dos 25 existentes (12 pagos + 13 gratuitos)
+  - ✅ **TIPOS TYPESCRIPT**: Estender interface `Passeio` com `custo_operacional: number`
+  - ✅ **HOOK ESPECIALIZADO**: `usePasseiosCustos.ts` com funções completas de CRUD para custos
+  - ✅ **VALIDAÇÕES**: Impedir custos negativos, alertar quando custo > receita
+  - _Requirements: Sistema Financeiro, Estrutura de Dados_
+  
+  **42.3 Integração Automática com Financeiro** ✅
+  - ✅ **CÁLCULO AUTOMÁTICO**: Sistema analisa passageiros da viagem e seus passeios
+  - ✅ **RECEITAS AUTOMÁTICAS**: Soma valor_cobrado de todos os passeios vendidos
+  - ✅ **DESPESAS AUTOMÁTICAS**: Soma custo_operacional × quantidade vendida por passeio
+  - ✅ **LUCRO REAL**: Receita Passeios - Custo Passeios (automático)
+  - ✅ **BREAKDOWN DETALHADO**: Mostrar por passeio: quantidade vendida, receita, custo, lucro
+  - ✅ **ZERO TRABALHO MANUAL**: Tudo calculado automaticamente baseado nos passageiros
+  - ✅ **COMPATIBILIDADE TOTAL**: Funciona com todos os sistemas de pagamento existentes:
+    - ✅ Pagamento Livre: Custos calculados automaticamente
+    - ✅ Parcelado Flexível: Custos incluídos no cálculo das parcelas
+    - ✅ Parcelado Obrigatório: Custos considerados no valor total
+    - ✅ Sistema de Créditos: Custos deduzidos quando crédito usado
+    - ✅ Pagamentos Separados: Custos dos passeios separados da viagem
+  - _Requirements: Sistema Financeiro, Automação, Compatibilidade_
+  
+  **42.4 Interface Financeira Atualizada** ✅
+  - ✅ **CARDS EXPANDIDOS**: Incluir "Custos Passeios" e "Lucro Passeios" no resumo
+  - ✅ **BREAKDOWN VISUAL**: Card "Despesas Totais" mostra Operacionais + Custos Passeios
+  - ✅ **NOVO CARD**: "Lucro Passeios" com margem percentual quando há passeios
+  - ✅ **ALERTAS INTELIGENTES**: Avisos para passeios com margem baixa ou prejuízo
+  - ✅ **COMPARATIVO**: Margem de lucro viagem vs passeios vs geral
+  - _Requirements: Sistema Financeiro, UX_
+  
+  **42.5 Funcionalidades Avançadas** ✅
+  - ✅ **GESTÃO COMPLETA**: Configurar todos os 25 passeios existentes + adicionar novos
+  - ✅ **PASSEIOS PERSONALIZADOS**: Criar passeios específicos não inclusos na lista padrão
+  - ✅ **EXCLUSÃO CONTROLADA**: Deletar apenas passeios personalizados (não os padrão)
+  - ✅ **ACESSO RÁPIDO**: Link no Dashboard para configuração
+  - ✅ **ROTA CONFIGURADA**: `/dashboard/configuracao-passeios` funcionando
+  - _Requirements: Sistema Financeiro, Gestão Avançada_
+
+### **ESTRUTURA DA TELA DE CONFIGURAÇÃO IMPLEMENTADA**
+
+```
+🎢 Configuração de Passeios ✅ FUNCIONANDO
+├── 📊 Dashboard (4 cards) ✅
+│   ├── Passeios Pagos: 12
+│   ├── Passeios Gratuitos: 13  
+│   ├── Margem Média: 3.24% (dados reais)
+│   └── Alertas: 11 (margem baixa)
+├── 📋 Aba "Passeios Pagos" ✅
+│   ├── Cristo Redentor: R$ 128 venda | R$ 128 custo | R$ 0 lucro (0%) 🟡
+│   ├── Pão de Açúcar: R$ 155 venda | R$ 155 custo | R$ 0 lucro (0%) 🟡
+│   ├── Museu do Flamengo: R$ 90 venda | R$ 55 custo | R$ 35 lucro (38.89%) 🟢
+│   ├── Aquário: R$ 140 venda | R$ 140 custo | R$ 0 lucro (0%) 🟡
+│   ├── Roda-Gigante: R$ 79 venda | R$ 79 custo | R$ 0 lucro (0%) 🟡
+│   ├── Museu do Amanhã: R$ 30 venda | R$ 30 custo | R$ 0 lucro (0%) 🟡
+│   ├── Tour do Maracanã: R$ 89 venda | R$ 89 custo | R$ 0 lucro (0%) 🟡
+│   ├── Rocinha: R$ 90 venda | R$ 90 custo | R$ 0 lucro (0%) 🟡
+│   ├── Vidigal: R$ 90 venda | R$ 90 custo | R$ 0 lucro (0%) 🟡
+│   ├── Rocinha + Vidigal: R$ 130 venda | R$ 130 custo | R$ 0 lucro (0%) 🟡
+│   ├── Tour da Gávea: R$ 90 venda | R$ 90 custo | R$ 0 lucro (0%) 🟡
+│   └── Museu do Mar: R$ 25 venda | R$ 25 custo | R$ 0 lucro (0%) 🟡
+├── 🎁 Aba "Passeios Gratuitos" ✅ (13 passeios - apenas visualização)
+└── ➕ Aba "Adicionar Novo" ✅
+    ├── Nome do Passeio: [Input] ✅
+    ├── Categoria: [Pago/Gratuito] ✅
+    ├── Preço de Venda: [Input] ✅
+    ├── Custo Operacional: [Input] ✅
+    └── Preview com cálculo automático ✅
+```
+
+### **📊 DADOS REAIS CONFIGURADOS:**
+- **Total**: 12 passeios pagos, 13 gratuitos
+- **Margem Média**: 3.24% (apenas Museu do Flamengo com lucro)
+- **Alertas**: 11 passeios com margem baixa (0%)
+- **Status**: 1 passeio margem boa (38.89%), 11 margem baixa (0%)
+
+### **🎯 ACESSO:**
+- **Dashboard** → Card "Configuração de Passeios" → "Configurar Custos"
+- **URL Direta**: `/dashboard/configuracao-passeios`
+
+- [ ] **43. Integração Financeira Completa - Sistema de Ingressos** 🔥 **NOVA PRIORIDADE**
+  - **OBJETIVO**: Integrar completamente o sistema de ingressos ao financeiro geral, unificando receitas e despesas
+  - **DATA**: 30/08/2025
+  - **STATUS**: 📋 Planejamento concluído - Aguardando autorização
+  
+  **43.1 Conexão com Financeiro da Viagem** 📋
+  - 📋 **RECEITAS AUTOMÁTICAS**: Ingressos vendidos aparecem como categoria "Receitas de Ingressos"
+  - 📋 **DESPESAS AUTOMÁTICAS**: Custos dos ingressos aparecem como categoria "Custos de Ingressos"
+  - 📋 **VINCULAÇÃO POR VIAGEM**: Ingressos conectados à viagem correspondente
+  - 📋 **CÁLCULO UNIFICADO**: Lucro total = Viagem + Passeios + Ingressos - Todas Despesas
+  - 📋 **DASHBOARD CONSOLIDADO**: Métricas financeiras incluindo todas as fontes
+  - _Requirements: Sistema Financeiro, Integração_
+  
+  **43.2 Relatórios Mensais Unificados** 📋
+  - 📋 **VISÃO CONSOLIDADA**: Relatório mensal com todas as receitas e despesas
+  - 📋 **BREAKDOWN POR CATEGORIA**: Viagens, Passeios, Ingressos separadamente
+  - 📋 **ANÁLISE DE PERFORMANCE**: Qual categoria é mais rentável
+  - 📋 **TENDÊNCIAS**: Crescimento/declínio por categoria ao longo dos meses
+  - 📋 **EXPORTAÇÃO COMPLETA**: PDF/Excel com análise financeira total
+  - _Requirements: Sistema Financeiro, Relatórios_
+  
+  **43.3 Interface Unificada** 📋
+  - 📋 **ABA FINANCEIRO EXPANDIDA**: Incluir seção "Ingressos da Viagem"
+  - 📋 **CARDS ATUALIZADOS**: Resumo financeiro com ingressos incluídos
+  - 📋 **FILTROS AVANÇADOS**: Separar por categoria (viagem/passeios/ingressos)
+  - 📋 **DRILL-DOWN**: Clicar em categoria para ver detalhes específicos
+  - 📋 **ALERTAS INTELIGENTES**: Notificar sobre inconsistências ou oportunidades
+  - _Requirements: Sistema Financeiro, UX_
+
+### **ESTRUTURA PROPOSTA DO FINANCEIRO INTEGRADO**
+
+```typescript
+// Nova estrutura do resumo financeiro completo
+interface ResumoFinanceiroCompleto {
+  // RECEITAS
+  receitas_viagem: number;        // Passageiros (viagem)
+  receitas_passeios: number;      // Passageiros (passeios)
+  receitas_ingressos: number;     // Ingressos avulsos ✨ NOVO
+  receitas_outras: number;        // Patrocínios, etc.
+  total_receitas: number;         // Soma de todas
+  
+  // DESPESAS
+  despesas_operacionais: number;  // Transporte, hospedagem, etc.
+  custos_passeios: number;        // Custos operacionais dos passeios ✨ NOVO
+  custos_ingressos: number;       // Custos dos ingressos ✨ NOVO
+  despesas_outras: number;        // Administrativas, etc.
+  total_despesas: number;         // Soma de todas
+  
+  // LUCROS POR CATEGORIA
+  lucro_viagem: number;           // receitas_viagem - (despesas_operacionais proporcionais)
+  lucro_passeios: number;         // receitas_passeios - custos_passeios ✨ NOVO
+  lucro_ingressos: number;        // receitas_ingressos - custos_ingressos ✨ NOVO
+  lucro_total: number;            // total_receitas - total_despesas
+  
+  // MÉTRICAS
+  margem_viagem: number;          // % de margem da viagem
+  margem_passeios: number;        // % de margem dos passeios ✨ NOVO
+  margem_ingressos: number;       // % de margem dos ingressos ✨ NOVO
+  margem_total: number;           // % de margem geral
+}
+```
+
+### **INTERFACE VISUAL PROPOSTA**
+
+```
+📊 RESUMO FINANCEIRO COMPLETO
+├── 💰 RECEITAS: R$ 75.000
+│   ├── 🚌 Viagem: R$ 45.000 (60%)
+│   ├── 🎢 Passeios: R$ 20.000 (27%)
+│   ├── 🎫 Ingressos: R$ 8.000 (11%) ✨ NOVO
+│   └── 💼 Outras: R$ 2.000 (2%)
+├── 💸 DESPESAS: R$ 50.000
+│   ├── 🚌 Operacionais: R$ 35.000 (70%)
+│   ├── 🎢 Custos Passeios: R$ 12.000 (24%) ✨ NOVO
+│   ├── 🎫 Custos Ingressos: R$ 2.000 (4%) ✨ NOVO
+│   └── 💼 Outras: R$ 1.000 (2%)
+└── 🎯 LUCRO TOTAL: R$ 25.000 (33%)
+    ├── 🚌 Viagem: R$ 10.000 (22% margem)
+    ├── 🎢 Passeios: R$ 8.000 (40% margem) ✨ NOVO
+    ├── 🎫 Ingressos: R$ 6.000 (75% margem) ✨ NOVO
+    └── 💼 Outras: R$ 1.000 (50% margem)
+```
 
 - [x] **40. Sistema de Impressão PDF para Lista de Clientes (Ingressos)** ✅ **CONCLUÍDA E PERFEITA**
   - **OBJETIVO**: Implementar sistema de exportação PDF específico para o módulo de ingressos, para enviar lista de clientes ao fornecedor comprar ingressos

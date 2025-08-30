@@ -93,6 +93,14 @@ export interface ResumoFinanceiro {
   passageiros_pago_completo: number;
   // Novo campo para descontos
   total_descontos: number;
+  // ✨ NOVOS CAMPOS PARA CUSTOS DOS PASSEIOS
+  custos_passeios: number;
+  despesas_operacionais: number;
+  lucro_passeios: number;
+  margem_passeios: number;
+  // ✨ NOVOS CAMPOS PARA VIAGEM
+  lucro_viagem: number;
+  margem_viagem: number;
 }
 
 export function useViagemFinanceiro(viagemId: string | undefined, customFetchAllData?: () => Promise<void>) {
@@ -102,6 +110,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
   const [passageirosPendentes, setPassageirosPendentes] = useState<PassageiroPendente[]>([]);
   const [todosPassageiros, setTodosPassageiros] = useState<any[]>([]);
   const [historicoCobranca, setHistoricoCobranca] = useState<CobrancaHistorico[]>([]);
+  const [capacidadeTotal, setCapacidadeTotal] = useState<number>(0);
   const [resumoFinanceiro, setResumoFinanceiro] = useState<ResumoFinanceiro>({
     total_receitas: 0,
     total_despesas: 0,
@@ -157,6 +166,42 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
     }
   };
 
+  // Buscar ônibus da viagem (mesma forma que useViagemDetails)
+  const fetchOnibus = async () => {
+    if (!viagemId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("viagem_onibus")
+        .select("*")
+        .eq("viagem_id", viagemId);
+
+      if (error) throw error;
+
+      console.log('🚌 DEBUG - Ônibus encontrados:', data?.length || 0, data);
+      
+      if (data && data.length > 0) {
+        const capacidadeTotalCalculada = data.reduce(
+          (total: number, onibus: any) => {
+            const capacidade = (onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0);
+            console.log('🚌 Ônibus:', onibus.numero_identificacao, 'Capacidade:', capacidade);
+            return total + capacidade;
+          },
+          0
+        );
+        
+        console.log('🚌 Capacidade total calculada:', capacidadeTotalCalculada);
+        setCapacidadeTotal(capacidadeTotalCalculada);
+      } else {
+        console.log('🚌 Nenhum ônibus encontrado para a viagem');
+        setCapacidadeTotal(0);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar ônibus:', error);
+      setCapacidadeTotal(0);
+    }
+  };
+
   // Buscar receitas da viagem
   const fetchReceitas = async () => {
     if (!viagemId) return;
@@ -176,19 +221,94 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
     }
   };
 
-  // Buscar despesas da viagem
+  // Buscar despesas da viagem (incluindo despesas virtuais dos passeios)
   const fetchDespesas = async () => {
     if (!viagemId) return;
 
     try {
-      const { data, error } = await supabase
+      // Buscar despesas manuais
+      const { data: despesasManuais, error } = await supabase
         .from('viagem_despesas')
         .select('*')
         .eq('viagem_id', viagemId)
         .order('data_despesa', { ascending: false });
 
       if (error) throw error;
-      setDespesas(data || []);
+
+      // ✨ NOVO: Buscar despesas virtuais dos passeios
+      try {
+        // Buscar vendas de passeios diretamente
+        const { data: vendasData, error: vendasError } = await supabase
+          .from('passageiro_passeios')
+          .select(`
+            passeio_nome,
+            valor_cobrado,
+            passeios!inner (
+              id,
+              nome,
+              custo_operacional
+            ),
+            viagem_passageiros!inner (
+              viagem_id
+            )
+          `)
+          .eq('viagem_passageiros.viagem_id', viagemId);
+
+        if (vendasError) throw vendasError;
+
+        // Agrupar por passeio e calcular totais
+        const vendasAgrupadas = (vendasData || []).reduce((acc: Record<string, any>, item: any) => {
+          const passeioId = item.passeios.id;
+          const nome = item.passeios.nome;
+          const custoUnitario = item.passeios.custo_operacional || 0;
+
+          if (!acc[passeioId]) {
+            acc[passeioId] = {
+              passeio_id: passeioId,
+              nome: nome,
+              quantidade_vendida: 0,
+              custo_total: 0
+            };
+          }
+
+          acc[passeioId].quantidade_vendida += 1;
+          acc[passeioId].custo_total += custoUnitario;
+
+          return acc;
+        }, {});
+
+        const vendasPasseios = Object.values(vendasAgrupadas);
+        
+        // Gerar despesas virtuais dos passeios
+        const despesasVirtuaisPasseios = vendasPasseios
+          .filter(venda => venda.custo_total > 0)
+          .map(venda => ({
+            id: `virtual-passeio-${venda.passeio_id}`,
+            viagem_id: viagemId,
+            fornecedor: `Custo: ${venda.nome}`,
+            categoria: 'passeios',
+            subcategoria: `${venda.quantidade_vendida} vendidos`,
+            valor: venda.custo_total,
+            forma_pagamento: 'Custo Operacional',
+            status: 'calculado',
+            data_despesa: new Date().toISOString(),
+            observacoes: `Custo automático: ${venda.quantidade_vendida}x R$ ${(venda.custo_total / venda.quantidade_vendida).toFixed(2)}`,
+            created_at: new Date().toISOString(),
+            isVirtual: true
+          }));
+
+        // Combinar despesas manuais + virtuais
+        const todasDespesas = [
+          ...(despesasManuais || []),
+          ...despesasVirtuaisPasseios
+        ].sort((a, b) => new Date(b.data_despesa).getTime() - new Date(a.data_despesa).getTime());
+
+        setDespesas(todasDespesas);
+      } catch (passeiosError) {
+        console.warn('Erro ao buscar custos dos passeios:', passeiosError);
+        // Se falhar, usar apenas despesas manuais
+        setDespesas(despesasManuais || []);
+      }
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
       toast.error('Erro ao carregar despesas da viagem');
@@ -206,6 +326,10 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
           id,
           cliente_id,
           setor_maracana,
+          cidade_embarque,
+          onibus_id,
+          is_responsavel_onibus,
+          status_presenca,
           valor,
           desconto,
           status_pagamento,
@@ -226,6 +350,10 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
             categoria,
             valor_pago,
             data_pagamento
+          ),
+          viagem_onibus!viagem_passageiros_onibus_id_fkey (
+            numero_identificacao,
+            empresa
           )
         `)
         .eq('viagem_id', viagemId);
@@ -276,6 +404,12 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
           nome: item.clientes.nome,
           telefone: item.clientes.telefone,
           setor_maracana: item.setor_maracana || item.clientes.setor_maracana || '-',
+          cidade_embarque: item.cidade_embarque || 'Não especificada',
+          onibus_id: item.onibus_id,
+          onibus_numero: item.viagem_onibus?.numero_identificacao || 'S/N',
+          onibus_empresa: item.viagem_onibus?.empresa || 'N/A',
+          is_responsavel_onibus: item.is_responsavel_onibus || false,
+          status_presenca: item.status_presenca || 'pendente',
           valor: item.valor || 0,
           valor_total: valorViagem + valorPasseios,
           desconto: item.desconto || 0,
@@ -495,7 +629,11 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
           status_pagamento,
 
           passageiro_passeios (
-            valor_cobrado
+            valor_cobrado,
+            passeios!inner (
+              nome,
+              custo_operacional
+            )
           ),
           historico_pagamentos_categorizado (
             categoria,
@@ -515,6 +653,9 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
       let passageirosPasseiosPagos = 0;
       let passageirosPagoCompleto = 0;
       let totalDescontos = 0;
+      
+      // ✨ NOVO: Variáveis para custos dos passeios
+      let custosPasseios = 0;
 
       console.log('🔍 DEBUG - Calculando resumo financeiro para viagem:', viagemId);
       console.log('📊 Passageiros encontrados:', passageiros?.length || 0);
@@ -575,6 +716,11 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
         // Acumular receitas
         receitasViagem += valorViagem;
         receitasPasseios += valorPasseios;
+        
+        // ✨ NOVO: Calcular custos dos passeios
+        const custosPasseiosPassageiro = (p.passageiro_passeios || [])
+          .reduce((sum: number, pp: any) => sum + (pp.passeios?.custo_operacional || 0), 0);
+        custosPasseios += custosPasseiosPassageiro;
 
         // Calcular pendências
         const pendenteViagem = Math.max(0, valorViagem - pagoViagem);
@@ -620,13 +766,23 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
       const totalReceitas = receitasViagem + receitasPasseios + totalOutrasReceitas;
       const totalPendencias = pendenciasViagem + pendenciasPasseios;
 
-      // Somar despesas
-      const totalDespesas = despesas.reduce((sum, d) => sum + d.valor, 0);
+      // Somar despesas (incluindo custos dos passeios)
+      const despesasOperacionais = despesas.reduce((sum, d) => sum + d.valor, 0);
+      const totalDespesas = despesasOperacionais + custosPasseios;
 
       // Calcular métricas
       const lucroBruto = totalReceitas - totalDespesas;
       const margemLucro = totalReceitas > 0 ? (lucroBruto / totalReceitas) * 100 : 0;
       const taxaInadimplencia = passageiros?.length > 0 ? (countPendencias / passageiros.length) * 100 : 0;
+      
+      // ✨ NOVO: Métricas específicas dos passeios
+      const lucroPasseios = receitasPasseios - custosPasseios;
+      const margemPasseios = receitasPasseios > 0 ? (lucroPasseios / receitasPasseios) * 100 : 0;
+      
+      // ✨ NOVO: Métricas específicas da viagem
+      const despesasOperacionaisProporcionais = despesasOperacionais * 0.8; // 80% das despesas para viagem
+      const lucroViagem = receitasViagem - despesasOperacionaisProporcionais;
+      const margemViagem = receitasViagem > 0 ? (lucroViagem / receitasViagem) * 100 : 0;
 
       setResumoFinanceiro({
         total_receitas: totalReceitas,
@@ -643,7 +799,15 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
         passageiros_viagem_paga: passageirosViagemPaga,
         passageiros_passeios_pagos: passageirosPasseiosPagos,
         passageiros_pago_completo: passageirosPagoCompleto,
-        total_descontos: totalDescontos
+        total_descontos: totalDescontos,
+        // ✨ NOVOS CAMPOS PARA CUSTOS DOS PASSEIOS
+        custos_passeios: custosPasseios,
+        despesas_operacionais: despesasOperacionais,
+        lucro_passeios: lucroPasseios,
+        margem_passeios: margemPasseios,
+        // ✨ NOVOS CAMPOS PARA VIAGEM
+        lucro_viagem: lucroViagem,
+        margem_viagem: margemViagem
       });
     } catch (error) {
       console.error('Erro ao calcular resumo:', error);
@@ -1121,7 +1285,8 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
     setIsLoading(true);
     try {
       await Promise.all([
-        fetchViagem(), // Adicionar busca da viagem
+        fetchViagem(), // Buscar dados da viagem
+        fetchOnibus(), // ✅ NOVO: Buscar ônibus separadamente (mesma forma que DetalhesViagem)
         fetchReceitas(),
         fetchDespesas(),
         fetchPassageirosPendentes(),
@@ -1155,6 +1320,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
     todosPassageiros,
     historicoCobranca,
     resumoFinanceiro,
+    capacidadeTotal,
     isLoading,
 
     // Compatibilidade de Passeios

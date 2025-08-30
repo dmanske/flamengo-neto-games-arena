@@ -14,10 +14,13 @@ import {
   Users,
   Receipt,
   Calendar,
-  DollarSign
+  DollarSign,
+  MapPin,
+  Bus
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { ViagemDespesa, ViagemPassageiro, ResumoFinanceiro } from '@/hooks/financeiro/useViagemFinanceiro';
+import { useListaPresenca } from '@/hooks/useListaPresenca';
 
 interface RelatorioFinanceiroProps {
   viagemId: string;
@@ -51,6 +54,9 @@ export function RelatorioFinanceiro({
 }: RelatorioFinanceiroProps) {
   
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  
+  // ✨ NOVO: Hook para dados de presença
+  const { dadosPresenca, loading: loadingPresenca } = useListaPresenca(viagemId);
   
   const gerarRelatorioPDF = () => {
     // Implementar geração de PDF
@@ -225,7 +231,7 @@ export function RelatorioFinanceiro({
                   {formatCurrency(resumo.total_receitas || 0)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {passageiros.length} passageiros
+                  {loadingPresenca ? '...' : dadosPresenca.total_passageiros} passageiros
                 </p>
                 {sistema === 'novo' && temPasseios && (
                   <div className="mt-2 space-y-1">
@@ -303,60 +309,470 @@ export function RelatorioFinanceiro({
           </CardContent>
         </Card>
 
+        {/* Taxa de Ocupação */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Taxa de Ocupação</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {((passageiros.length / 50) * 100).toFixed(0)}%
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {passageiros.length}/50 lugares
-                </p>
+                {loadingPresenca ? (
+                  <p className="text-2xl font-bold text-gray-400">...</p>
+                ) : (
+                  (() => {
+                    // Usar capacidade calculada dos ônibus, ou fallback para capacidade da viagem (50 padrão)
+                    const capacidadeReal = capacidadeTotal > 0 ? capacidadeTotal : 50;
+                    const taxaOcupacao = ((dadosPresenca.total_passageiros / capacidadeReal) * 100).toFixed(0);
+                    const vagasLivres = capacidadeReal - dadosPresenca.total_passageiros;
+                    
+                    return (
+                      <>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {taxaOcupacao}%
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {dadosPresenca.total_passageiros}/{capacidadeReal} lugares
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {vagasLivres} vagas livres
+                        </p>
+                        {capacidadeTotal === 0 && (
+                          <p className="text-xs text-orange-500 mt-1">
+                            * Capacidade estimada
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()
+                )}
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Card específico para Passeios */}
+        {/* ✨ NOVO: Card de Taxa de Presença */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Taxa de Presença</p>
+                {loadingPresenca ? (
+                  <p className="text-2xl font-bold text-gray-400">...</p>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-green-600">
+                      {dadosPresenca.taxa_presenca.toFixed(0)}%
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {dadosPresenca.presentes}/{dadosPresenca.total_passageiros} embarcaram
+                    </p>
+                    {dadosPresenca.ausentes > 0 && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {dadosPresenca.ausentes} faltaram
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      Status: {
+                        dadosPresenca.status_viagem === 'realizada' ? 'Viagem Realizada' :
+                        dadosPresenca.status_viagem === 'em_andamento' ? 'Em Andamento' :
+                        'Planejada'
+                      }
+                    </p>
+                  </>
+                )}
+              </div>
+              <Calendar className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ✨ NOVOS CARDS: Status de Pagamentos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Pagamentos Viagem */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Pagamentos Viagem</p>
+                <div className="mt-2 space-y-2">
+                  {(() => {
+                    const passageirosComViagem = todosPassageiros.filter(p => {
+                      const valorViagem = (p.valor_viagem || p.valor || 0) - (p.desconto || 0);
+                      return valorViagem > 0; // Só contar quem tem valor de viagem
+                    });
+
+                    const viagemPaga = passageirosComViagem.filter(p => {
+                      const valorViagem = (p.valor_viagem || p.valor || 0) - (p.desconto || 0);
+                      const historico = p.historico_pagamentos_categorizado || [];
+                      const pagoViagem = historico
+                        .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
+                        .reduce((sum, h) => sum + h.valor_pago, 0);
+                      
+                      return pagoViagem >= valorViagem - 0.01; // Margem para centavos
+                    }).length;
+
+                    const viagemDevendo = passageirosComViagem.length - viagemPaga;
+                    
+                    const valorDevendo = passageirosComViagem.reduce((total, p) => {
+                      const valorViagem = (p.valor_viagem || p.valor || 0) - (p.desconto || 0);
+                      const historico = p.historico_pagamentos_categorizado || [];
+                      const pagoViagem = historico
+                        .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')
+                        .reduce((sum, h) => sum + h.valor_pago, 0);
+                      
+                      const pendente = Math.max(0, valorViagem - pagoViagem);
+                      return total + pendente;
+                    }, 0);
+
+                    return (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-600">✅</span>
+                          <span className="text-sm">Pagos: <strong>{viagemPaga}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-orange-600">⚠️</span>
+                          <span className="text-sm">
+                            Devendo: <strong>{viagemDevendo}</strong> ({formatCurrency(valorDevendo)})
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  Status dos pagamentos de viagem
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pagamentos Passeios */}
         {sistema === 'novo' && temPasseios && (
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Performance Passeios</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {resumo.receitas_passeios > 0 
-                      ? Math.round((resumo.receitas_passeios / (resumo.receitas_viagem + resumo.receitas_passeios)) * 100)
-                      : 0
-                    }%
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Taxa de conversão
-                  </p>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>• Receita:</span>
-                      <span>{formatCurrency(resumo.receitas_passeios || 0)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>• Média/passageiro:</span>
-                      <span>
-                        {passageiros.length > 0 
-                          ? formatCurrency((resumo.receitas_passeios || 0) / passageiros.length)
-                          : formatCurrency(0)
-                        }
-                      </span>
-                    </div>
+                  <p className="text-sm font-medium text-gray-600">Pagamentos Passeios</p>
+                  <div className="mt-2 space-y-2">
+                    {(() => {
+                      const passageirosComPasseios = todosPassageiros.filter(p => {
+                        const valorPasseios = (p.passeios || []).reduce((sum, passeio) => sum + (passeio.valor_cobrado || 0), 0);
+                        return valorPasseios > 0; // Só contar quem tem passeios
+                      });
+
+                      const passeiosPagos = passageirosComPasseios.filter(p => {
+                        const valorPasseios = (p.passeios || []).reduce((sum, passeio) => sum + (passeio.valor_cobrado || 0), 0);
+                        const historico = p.historico_pagamentos_categorizado || [];
+                        const pagoPasseios = historico
+                          .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
+                          .reduce((sum, h) => sum + h.valor_pago, 0);
+                        
+                        return pagoPasseios >= valorPasseios - 0.01; // Margem para centavos
+                      }).length;
+
+                      const passeiosDevendo = passageirosComPasseios.length - passeiosPagos;
+                      
+                      const valorDevendo = passageirosComPasseios.reduce((total, p) => {
+                        const valorPasseios = (p.passeios || []).reduce((sum, passeio) => sum + (passeio.valor_cobrado || 0), 0);
+                        const historico = p.historico_pagamentos_categorizado || [];
+                        const pagoPasseios = historico
+                          .filter(h => h.categoria === 'passeios' || h.categoria === 'ambos')
+                          .reduce((sum, h) => sum + h.valor_pago, 0);
+                        
+                        const pendente = Math.max(0, valorPasseios - pagoPasseios);
+                        return total + pendente;
+                      }, 0);
+
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-green-600">✅</span>
+                            <span className="text-sm">Pagos: <strong>{passeiosPagos}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-orange-600">⚠️</span>
+                            <span className="text-sm">
+                              Devendo: <strong>{passeiosDevendo}</strong> ({formatCurrency(valorDevendo)})
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Status dos pagamentos de passeios
+                  </p>
                 </div>
                 <Receipt className="h-8 w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* ✨ NOVOS CARDS: Resumos Adicionais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Resumo por Cidade */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Resumo por Cidade</p>
+                <div className="mt-2 space-y-2">
+                  {loadingPresenca ? (
+                    <p className="text-xs text-gray-400">Carregando...</p>
+                  ) : (
+                    (() => {
+                      const passageirosDetalhados = dadosPresenca.passageiros_detalhados || [];
+                      const cidadeStats = passageirosDetalhados.reduce((acc, p) => {
+                        const cidade = p.cidade_embarque || 'Não especificada';
+                        if (!acc[cidade]) {
+                          acc[cidade] = { total: 0, presentes: 0 };
+                        }
+                        acc[cidade].total += 1;
+                        if (p.presente === true) {
+                          acc[cidade].presentes += 1;
+                        }
+                        return acc;
+                      }, {} as Record<string, { total: number; presentes: number }>);
+
+                      const cidadesOrdenadas = Object.entries(cidadeStats)
+                        .sort(([,a], [,b]) => b.total - a.total)
+                        .slice(0, 3);
+
+                      return cidadesOrdenadas.map(([cidade, stats]) => (
+                        <div key={cidade} className="flex justify-between text-xs">
+                          <span className="truncate max-w-[100px]" title={cidade}>
+                            {cidade}
+                          </span>
+                          <span className="font-medium">
+                            {stats.total} ({stats.presentes} ✓)
+                          </span>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {loadingPresenca ? '-' : [...new Set((dadosPresenca.passageiros_detalhados || []).map(p => p.cidade_embarque))].length} cidades
+                </p>
+              </div>
+              <MapPin className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Resumo por Setor */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Resumo por Setor</p>
+                <div className="mt-2 space-y-2">
+                  {loadingPresenca ? (
+                    <p className="text-xs text-gray-400">Carregando...</p>
+                  ) : (
+                    (() => {
+                      const passageirosDetalhados = dadosPresenca.passageiros_detalhados || [];
+                      const setorStats = passageirosDetalhados.reduce((acc, p) => {
+                        const setor = p.setor_maracana || 'Não especificado';
+                        if (!acc[setor]) {
+                          acc[setor] = { total: 0, presentes: 0 };
+                        }
+                        acc[setor].total += 1;
+                        if (p.presente === true) {
+                          acc[setor].presentes += 1;
+                        }
+                        return acc;
+                      }, {} as Record<string, { total: number; presentes: number }>);
+
+                      const setoresOrdenados = Object.entries(setorStats)
+                        .sort(([,a], [,b]) => b.total - a.total)
+                        .slice(0, 3);
+
+                      return setoresOrdenados.map(([setor, stats]) => (
+                        <div key={setor} className="flex justify-between text-xs">
+                          <span className="truncate max-w-[100px]" title={setor}>
+                            {setor}
+                          </span>
+                          <span className="font-medium">
+                            {stats.total} ({stats.presentes} ✓)
+                          </span>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {loadingPresenca ? '-' : [...new Set((dadosPresenca.passageiros_detalhados || []).map(p => p.setor_maracana))].length} setores
+                </p>
+              </div>
+              <Receipt className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ônibus da Viagem */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Ônibus da Viagem</p>
+                <div className="mt-2 space-y-2">
+                  {loadingPresenca ? (
+                    <p className="text-xs text-gray-400">Carregando...</p>
+                  ) : (
+                    (() => {
+                      const passageirosDetalhados = dadosPresenca.passageiros_detalhados || [];
+                      const onibusStats = passageirosDetalhados.reduce((acc, p) => {
+                        const onibusId = p.onibus_id || 'sem_onibus';
+                        if (!acc[onibusId]) {
+                          acc[onibusId] = { 
+                            total: 0, 
+                            presentes: 0,
+                            numero: p.onibus_numero || 'S/N',
+                            empresa: p.onibus_empresa || 'N/A'
+                          };
+                        }
+                        acc[onibusId].total += 1;
+                        if (p.presente === true) {
+                          acc[onibusId].presentes += 1;
+                        }
+                        return acc;
+                      }, {} as Record<string, { total: number; presentes: number; numero: string; empresa: string }>);
+
+                      const onibusOrdenados = Object.entries(onibusStats)
+                        .sort(([,a], [,b]) => b.total - a.total)
+                        .slice(0, 3);
+
+                      return onibusOrdenados.map(([onibusId, stats]) => (
+                        <div key={onibusId} className="flex justify-between text-xs">
+                          <span className="truncate max-w-[100px]" title={`${stats.empresa} - ${stats.numero}`}>
+                            Ônibus {stats.numero}
+                          </span>
+                          <span className="font-medium">
+                            {stats.total} ({stats.presentes} ✓)
+                          </span>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {loadingPresenca ? '-' : [...new Set((dadosPresenca.passageiros_detalhados || []).map(p => p.onibus_id).filter(Boolean))].length} ônibus
+                </p>
+              </div>
+              <Bus className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Responsáveis por Ônibus */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Responsáveis</p>
+                <div className="mt-2 space-y-2">
+                  {loadingPresenca ? (
+                    <p className="text-xs text-gray-400">Carregando...</p>
+                  ) : (
+                    (() => {
+                      const passageirosDetalhados = dadosPresenca.passageiros_detalhados || [];
+                      const responsaveis = passageirosDetalhados.filter(p => p.is_responsavel_onibus);
+                      
+                      if (responsaveis.length === 0) {
+                        return (
+                          <p className="text-xs text-gray-400">
+                            Nenhum responsável definido
+                          </p>
+                        );
+                      }
+
+                      return responsaveis.slice(0, 3).map((responsavel) => (
+                        <div key={responsavel.id} className="flex justify-between text-xs">
+                          <span className="truncate max-w-[100px]" title={responsavel.nome}>
+                            {responsavel.nome.split(' ')[0]}
+                          </span>
+                          <span className={`font-medium ${
+                            responsavel.presente === true ? 'text-green-600' : 'text-orange-600'
+                          }`}>
+                            {responsavel.presente === true ? '✓ Presente' : '⏳ Pendente'}
+                          </span>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {loadingPresenca ? '-' : (dadosPresenca.passageiros_detalhados || []).filter(p => p.is_responsavel_onibus).length} responsáveis
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ✅ NOVO: Passeios da Viagem */}
+        {sistema === 'novo' && temPasseios && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">Passeios da Viagem</p>
+                  <div className="mt-2 space-y-2">
+                    {(() => {
+                      // Obter lista de passeios únicos dos passageiros
+                      const passeiosUnicos = [...new Set(
+                        todosPassageiros
+                          .flatMap(p => p.passeios || [])
+                          .map(passeio => passeio.passeio_nome)
+                      )];
+
+                      if (passeiosUnicos.length === 0) {
+                        return (
+                          <p className="text-sm text-gray-400">
+                            Nenhum passeio cadastrado
+                          </p>
+                        );
+                      }
+
+                      return passeiosUnicos.slice(0, 3).map((passeioNome) => {
+                        const vendas = todosPassageiros
+                          .flatMap(p => p.passeios || [])
+                          .filter(passeio => passeio.passeio_nome === passeioNome);
+                        
+                        const totalVendas = vendas.length;
+                        const receitaTotal = vendas.reduce((sum, p) => sum + (p.valor_cobrado || 0), 0);
+
+                        return (
+                          <div key={passeioNome} className="flex justify-between text-xs">
+                            <span className="truncate max-w-[120px]" title={passeioNome}>
+                              {passeioNome}
+                            </span>
+                            <span className="font-medium">
+                              {totalVendas} vendas - {formatCurrency(receitaTotal)}
+                            </span>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {[...new Set(todosPassageiros.flatMap(p => p.passeios || []).map(p => p.passeio_nome))].length} passeios
+                  </p>
+                </div>
+                <Receipt className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -387,108 +803,127 @@ export function RelatorioFinanceiro({
           </CardContent>
         </Card>
 
-        {/* Status dos Pagamentos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Status dos Pagamentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Object.entries(passageirosPorStatus).map(([status, dados]) => (
-                <div key={status} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      className={
-                        status === 'Pago' 
-                          ? 'bg-green-100 text-green-800' 
-                          : status === 'Pendente'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }
-                    >
-                      {status}
-                    </Badge>
-                    <span className="text-sm">{dados.quantidade} passageiros</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">
-                      {formatCurrency(dados.valor)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {resumo?.total_receitas > 0 ? ((dados.valor / resumo.total_receitas) * 100).toFixed(1) : '0'}%
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Análise de Passeios */}
+
+        {/* ✨ MELHORADO: Análise Completa de Passeios */}
         {sistema === 'novo' && temPasseios && (
           <Card>
             <CardHeader>
-              <CardTitle>Análise de Passeios</CardTitle>
+              <CardTitle>Análise Completa de Passeios</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <h4 className="font-medium text-purple-800">Receita Total</h4>
-                    <p className="text-2xl font-bold text-purple-600">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-medium text-green-800">Receita Total</h4>
+                    <p className="text-2xl font-bold text-green-600">
                       {formatCurrency(resumo.receitas_passeios || 0)}
                     </p>
                   </div>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-medium text-blue-800">Taxa de Conversão</h4>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {resumo.receitas_passeios > 0 
-                        ? Math.round((resumo.receitas_passeios / (resumo.receitas_viagem + resumo.receitas_passeios)) * 100)
-                        : 0
-                      }%
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h4 className="font-medium text-red-800">Despesa Total</h4>
+                    <p className="text-2xl font-bold text-red-600">
+                      {formatCurrency(resumo.custos_passeios || 0)}
                     </p>
                   </div>
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-medium text-green-800">Receita Média</h4>
-                    <p className="text-2xl font-bold text-green-600">
-                      {passageiros.length > 0 
-                        ? formatCurrency((resumo.receitas_passeios || 0) / passageiros.length)
-                        : formatCurrency(0)
-                      }
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-medium text-blue-800">Lucro Total</h4>
+                    <p className={`text-2xl font-bold ${
+                      (resumo.lucro_passeios || 0) >= 0 ? 'text-blue-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(resumo.lucro_passeios || 0)}
                     </p>
-                    <p className="text-xs text-green-700">por passageiro</p>
+                  </div>
+                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <h4 className="font-medium text-purple-800">Margem</h4>
+                    <p className={`text-2xl font-bold ${
+                      (resumo.margem_passeios || 0) >= 20 ? 'text-purple-600' : 'text-orange-600'
+                    }`}>
+                      {(resumo.margem_passeios || 0).toFixed(1)}%
+                    </p>
                   </div>
                 </div>
                 
                 <div className="mt-6">
                   <h4 className="font-medium text-gray-700 mb-3">Comparativo Viagem vs Passeios:</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Receita Viagem</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ 
-                              width: `${Math.min(100, ((resumo.receitas_viagem || 0) / Math.max(resumo.receitas_viagem || 1, resumo.receitas_passeios || 1)) * 100)}%` 
-                            }}
-                          ></div>
+                  <div className="space-y-3">
+                    {/* Receitas */}
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-600 mb-2">Receitas:</h5>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Receita Viagem</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min(100, ((resumo.receitas_viagem || 0) / Math.max(resumo.receitas_viagem || 1, resumo.receitas_passeios || 1)) * 100)}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium">{formatCurrency(resumo.receitas_viagem || 0)}</span>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium">{formatCurrency(resumo.receitas_viagem || 0)}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Receita Passeios</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-green-600 h-2 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min(100, ((resumo.receitas_passeios || 0) / Math.max(resumo.receitas_viagem || 1, resumo.receitas_passeios || 1)) * 100)}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium">{formatCurrency(resumo.receitas_passeios || 0)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Receita Passeios</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
-                            style={{ 
-                              width: `${Math.min(100, ((resumo.receitas_passeios || 0) / Math.max(resumo.receitas_viagem || 1, resumo.receitas_passeios || 1)) * 100)}%` 
-                            }}
-                          ></div>
+
+                    {/* Lucros */}
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-600 mb-2">Lucros:</h5>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Lucro Viagem</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min(100, Math.max(0, ((resumo.lucro_viagem || 0) / Math.max(Math.abs(resumo.lucro_viagem || 1), Math.abs(resumo.lucro_passeios || 1))) * 100))}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <span className={`text-sm font-medium ${(resumo.lucro_viagem || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {formatCurrency(resumo.lucro_viagem || 0)}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm font-medium">{formatCurrency(resumo.receitas_passeios || 0)}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Lucro Passeios</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-green-600 h-2 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min(100, Math.max(0, ((resumo.lucro_passeios || 0) / Math.max(Math.abs(resumo.lucro_viagem || 1), Math.abs(resumo.lucro_passeios || 1))) * 100))}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <span className={`text-sm font-medium ${(resumo.lucro_passeios || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(resumo.lucro_passeios || 0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between border-t pt-2">
+                          <span className="text-sm font-medium">Lucro Total</span>
+                          <span className={`text-sm font-bold ${((resumo.lucro_viagem || 0) + (resumo.lucro_passeios || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency((resumo.lucro_viagem || 0) + (resumo.lucro_passeios || 0))}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -499,132 +934,7 @@ export function RelatorioFinanceiro({
         )}
       </div>
 
-      {/* Seção de Análise de Performance e Comparativos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Análise de Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Análise de Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-800">ROI da Viagem</h4>
-                  <p className="text-xl font-bold text-blue-600">
-                    {resumo.total_receitas > 0 
-                      ? (((resumo.lucro_bruto || 0) / resumo.total_receitas) * 100).toFixed(1)
-                      : 0
-                    }%
-                  </p>
-                </div>
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-green-800">Eficiência</h4>
-                  <p className="text-xl font-bold text-green-600">
-                    {resumo.total_despesas > 0 
-                      ? (resumo.total_receitas / resumo.total_despesas).toFixed(1)
-                      : 0
-                    }x
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-medium text-gray-700">Métricas por Passageiro:</h4>
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Receita média:</span>
-                    <span className="font-medium">
-                      {passageiros.length > 0 
-                        ? formatCurrency(resumo.total_receitas / passageiros.length)
-                        : formatCurrency(0)
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Custo médio:</span>
-                    <span className="font-medium">
-                      {passageiros.length > 0 
-                        ? formatCurrency(resumo.total_despesas / passageiros.length)
-                        : formatCurrency(0)
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Lucro médio:</span>
-                    <span className="font-medium text-green-600">
-                      {passageiros.length > 0 
-                        ? formatCurrency((resumo.lucro_bruto || 0) / passageiros.length)
-                        : formatCurrency(0)
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Projeções e Metas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Projeções e Metas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="font-medium text-yellow-800 mb-2">Potencial de Crescimento</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Capacidade máxima:</span>
-                    <span className="font-medium">{capacidadeTotal} passageiros</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Ocupação atual:</span>
-                    <span className="font-medium">{todosPassageiros.length} ({capacidadeTotal > 0 ? ((todosPassageiros.length / capacidadeTotal) * 100).toFixed(0) : 0}%)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Receita potencial:</span>
-                    <span className="font-medium text-green-600">
-                      {todosPassageiros.length > 0 && capacidadeTotal > 0
-                        ? formatCurrency((resumo.total_receitas / todosPassageiros.length) * capacidadeTotal)
-                        : formatCurrency(0)
-                      }
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {sistema === 'novo' && temPasseios && (
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h4 className="font-medium text-purple-800 mb-2">Oportunidades de Passeios</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Taxa atual:</span>
-                      <span className="font-medium">
-                        {resumo.receitas_passeios > 0 
-                          ? Math.round((resumo.receitas_passeios / (resumo.receitas_viagem + resumo.receitas_passeios)) * 100)
-                          : 0
-                        }%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Meta sugerida:</span>
-                      <span className="font-medium">60%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Receita adicional:</span>
-                      <span className="font-medium text-purple-600">
-                        {formatCurrency(Math.max(0, (resumo.receitas_viagem * 0.6) - (resumo.receitas_passeios || 0)))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Detalhamento de Despesas */}
       <Card>

@@ -10,7 +10,7 @@ import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog"
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
 import PassageiroDeleteDialog from "@/components/detalhes-viagem/PassageiroDeleteDialog";
 import { PassageiroDetailsDialog } from "@/components/detalhes-viagem/PassageiroDetailsDialog";
-import { FinancialSummary } from "@/components/detalhes-viagem/FinancialSummary";
+
 import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/FinanceiroViagem";
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
@@ -359,35 +359,7 @@ const DetalhesViagem = () => {
         </TabsList>
 
         <TabsContent value="passageiros" className="space-y-6">
-          {originalPassageiros.length > 0 && (
-            <div className="mb-6">
-              <FinancialSummary
-                totalArrecadado={valoresFinanceiros.totalArrecadado}
-                totalPago={valoresFinanceiros.totalPago}
-                totalPendente={valoresFinanceiros.totalPendente}
-                percentualPagamento={valoresFinanceiros.percentualPagamento}
-                totalPassageiros={originalPassageiros.length}
-                valorPotencialTotal={valorPotencialTotal}
-                capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
-                totalReceitas={totalReceitas}
-                totalDespesas={totalDespesas}
-                totalDescontos={totalDescontos}
-                valorBrutoTotal={valorBrutoTotal}
-                valorPasseios={valoresFinanceiros.receitaPasseios || valorPasseiosReal}
-                sistemaPasseios={sistema}
-                valorPadraoViagem={viagem?.valor_padrao || 0}
-                quantidadeBrindes={quantidadeBrindes}
-                receitaViagem={valoresFinanceiros.receitaViagem}
-                receitaPasseios={valoresFinanceiros.receitaPasseios}
-                pagoViagem={valoresFinanceiros.pagoViagem}
-                pagoPasseios={valoresFinanceiros.pagoPasseios}
-                pendenteViagem={valoresFinanceiros.pendenteViagem}
-                pendentePasseios={valoresFinanceiros.pendentePasseios}
-                totalDescontosPassageiros={resumoFinanceiro?.total_descontos || 0}
-                quantidadeComDesconto={quantidadeComDesconto}
-              />
-            </div>
-          )}
+          {/* Cards de resumo financeiro removidos - usando apenas os cards do FinanceiroViagem */}
 
 
 
@@ -456,36 +428,7 @@ const DetalhesViagem = () => {
         </TabsContent>
 
         <TabsContent value="financeiro">
-          {/* Resumo Financeiro dos Passageiros - USANDO DADOS CORRETOS DO useViagemFinanceiro */}
-          {originalPassageiros.length > 0 && (
-            <div className="mb-6">
-              <FinancialSummary
-                totalArrecadado={valoresFinanceiros.totalArrecadado}
-                totalPago={valoresFinanceiros.totalPago}
-                totalPendente={valoresFinanceiros.totalPendente}
-                percentualPagamento={valoresFinanceiros.percentualPagamento}
-                totalPassageiros={originalPassageiros.length}
-                valorPotencialTotal={valorPotencialTotal}
-                capacidadeTotalOnibus={viagem?.capacidade_onibus || 0}
-                totalReceitas={totalReceitas}
-                totalDespesas={totalDespesas}
-                totalDescontos={totalDescontos}
-                valorBrutoTotal={valorBrutoTotal}
-                valorPasseios={valoresFinanceiros.receitaPasseios}
-                sistemaPasseios={sistema}
-                valorPadraoViagem={viagem?.valor_padrao || 0}
-                quantidadeBrindes={quantidadeBrindes}
-                receitaViagem={valoresFinanceiros.receitaViagem}
-                receitaPasseios={valoresFinanceiros.receitaPasseios}
-                pagoViagem={valoresFinanceiros.pagoViagem}
-                pagoPasseios={valoresFinanceiros.pagoPasseios}
-                pendenteViagem={valoresFinanceiros.pendenteViagem}
-                pendentePasseios={valoresFinanceiros.pendentePasseios}
-                totalDescontosPassageiros={resumoFinanceiro?.total_descontos || 0}
-                quantidadeComDesconto={quantidadeComDesconto}
-              />
-            </div>
-          )}
+          {/* Cards de resumo financeiro removidos - usando apenas os cards do FinanceiroViagem */}
 
           {/* Sistema Financeiro Completo da Viagem */}
           <FinanceiroViagem

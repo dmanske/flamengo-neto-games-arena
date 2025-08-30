@@ -15,10 +15,12 @@ import { DashboardPerformanceSummary } from "@/components/dashboard/DashboardPer
 import { RecentActivitiesCard } from "@/components/dashboard/RecentActivitiesCard";
 import { ReceitasBreakdownCard } from "@/components/dashboard/ReceitasBreakdownCard";
 import { SetoresEstadioMaisEscolhidosChart } from "@/components/dashboard/graficos/SetoresEstadioMaisEscolhidosChart";
-import { Users, Calendar, DollarSign, Bus, TrendingUp, Activity, BarChart3, Clock, Zap } from "lucide-react";
+import { Users, Calendar, DollarSign, Bus, TrendingUp, Activity, BarChart3, Clock, Zap, Calculator } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 import { useFinanceiroGeral } from '@/hooks/useFinanceiroGeral';
 import { OcupacaoViagensChart } from "@/components/dashboard/graficos/OcupacaoViagensChart";
 import { ClientesPorCidadePieChart } from "@/components/dashboard/graficos/ClientesPorCidadePieChart";
@@ -426,6 +428,38 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     {renderCardContent(isLoading, <RankingAdversariosCard />)}
+                  </CardContent>
+                </Card>
+                
+                {/* ✨ NOVO: Card de Configuração de Passeios */}
+                <Card className="shadow-md border-0 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-purple-800 flex items-center">
+                      <Calculator className="w-5 h-5 mr-2" />
+                      Configuração de Passeios
+                    </CardTitle>
+                    <CardDescription className="text-purple-600">
+                      Configure custos e margens dos passeios
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-700">Passeios Pagos:</span>
+                      <span className="font-medium">12</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-700">Margem Média:</span>
+                      <span className="font-medium text-green-600">~65%</span>
+                    </div>
+                    <Link 
+                      to="/dashboard/configuracao-passeios"
+                      className="block w-full"
+                    >
+                      <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                        <Calculator className="w-4 h-4 mr-2" />
+                        Configurar Custos
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </div>
