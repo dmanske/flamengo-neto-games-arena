@@ -20,6 +20,7 @@ import { CleanJogoCard } from '@/components/ingressos/CleanJogoCard';
 import { IngressosJogoModal } from '@/components/ingressos/IngressosJogoModal';
 import { IngressosReport } from '@/components/ingressos/IngressosReport';
 import { useIngressosReport } from '@/hooks/useIngressosReport';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -43,15 +44,11 @@ export default function Ingressos() {
   const [modalJogoAberto, setModalJogoAberto] = useState(false);
   const [jogoSelecionado, setJogoSelecionado] = useState<any>(null);
   const [logosAdversarios, setLogosAdversarios] = useState<Record<string, string>>({});
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [jogoParaDeletar, setJogoParaDeletar] = useState<any>(null);
   
-  // Hook para relatório PDF - passa informações do jogo selecionado
-  const { reportRef, handleExportPDF } = useIngressosReport(
-    jogoSelecionado ? {
-      adversario: jogoSelecionado.adversario,
-      jogo_data: jogoSelecionado.jogo_data,
-      local_jogo: jogoSelecionado.local_jogo
-    } : undefined
-  );
+  // Hook para relatório PDF
+  const { reportRef, handleExportPDF } = useIngressosReport();
 
   // Filtrar ingressos baseado na busca (memoizado para evitar re-renders)
   const ingressosFiltrados = useMemo(() => {
@@ -184,8 +181,8 @@ export default function Ingressos() {
     }, 100);
   };
 
-  // Função para deletar todos os ingressos de um jogo
-  const handleDeletarJogo = async (jogo: any) => {
+  // Função para abrir modal de confirmação de exclusão
+  const handleDeletarJogo = (jogo: any) => {
     const ingressosDoJogo = getIngressosDoJogo(jogo);
     
     if (ingressosDoJogo.length === 0) {
@@ -193,20 +190,16 @@ export default function Ingressos() {
       return;
     }
 
-    const nomeJogo = jogo.local_jogo === 'fora' ? 
-      `${jogo.adversario} × Flamengo` : 
-      `Flamengo × ${jogo.adversario}`;
+    setJogoParaDeletar(jogo);
+    setConfirmDeleteOpen(true);
+  };
 
-    const confirmacao = window.confirm(
-      `⚠️ ATENÇÃO: Deletar Jogo Completo\n\n` +
-      `Jogo: ${nomeJogo}\n` +
-      `Total de ingressos: ${ingressosDoJogo.length}\n` +
-      `Receita total: ${formatCurrency(jogo.receita_total)}\n\n` +
-      `Tem certeza que deseja deletar TODOS os ingressos deste jogo?\n\n` +
-      `⚠️ Esta ação não pode ser desfeita!`
-    );
+  // Função para confirmar exclusão do jogo
+  const confirmarDeletarJogo = async () => {
+    if (!jogoParaDeletar) return;
 
-    if (!confirmacao) return;
+    const ingressosDoJogo = getIngressosDoJogo(jogoParaDeletar);
+    setConfirmDeleteOpen(false);
 
     try {
       // Usar toast.promise para melhor UX
@@ -479,6 +472,28 @@ export default function Ingressos() {
         onOpenChange={setModalFiltrosAberto}
         filtros={filtros}
         onFiltrosChange={setFiltros}
+      />
+
+      {/* Modal de confirmação de exclusão */}
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="🗑️ Deletar Jogo Completo"
+        description={jogoParaDeletar ? 
+          `Você está prestes a deletar TODOS os ingressos do jogo:\n\n` +
+          `🏆 Jogo: ${jogoParaDeletar.local_jogo === 'fora' ? 
+            `${jogoParaDeletar.adversario} × Flamengo` : 
+            `Flamengo × ${jogoParaDeletar.adversario}`}\n` +
+          `🎫 Total de ingressos: ${getIngressosDoJogo(jogoParaDeletar).length}\n` +
+          `💰 Receita total: ${formatCurrency(jogoParaDeletar.receita_total)}\n\n` +
+          `⚠️ Esta ação não pode ser desfeita!\n\n` +
+          `Tem certeza que deseja continuar?`
+          : ''
+        }
+        confirmText="🗑️ Sim, Deletar Tudo"
+        cancelText="❌ Cancelar"
+        onConfirm={confirmarDeletarJogo}
+        variant="destructive"
       />
 
       {/* Componente de relatório oculto para impressão */}

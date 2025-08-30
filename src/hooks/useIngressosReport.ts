@@ -2,41 +2,12 @@ import { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { toast } from 'sonner';
 
-interface JogoInfo {
-  adversario: string;
-  jogo_data: string;
-  local_jogo: 'casa' | 'fora';
-}
-
-export function useIngressosReport(jogoInfo?: JogoInfo) {
+export function useIngressosReport() {
   const reportRef = useRef<HTMLDivElement>(null);
-
-  // Gerar nome do arquivo baseado no jogo
-  const generateFileName = () => {
-    if (!jogoInfo) {
-      return `Lista_Clientes_Ingressos_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`;
-    }
-
-    // Formatar data do jogo para o nome do arquivo
-    const dataJogo = new Date(jogoInfo.jogo_data);
-    const dataFormatada = dataJogo.toLocaleDateString('pt-BR').replace(/\//g, '-');
-    
-    // Criar nome do jogo
-    const nomeJogo = jogoInfo.local_jogo === 'fora' 
-      ? `${jogoInfo.adversario}_x_Flamengo`
-      : `Flamengo_x_${jogoInfo.adversario}`;
-    
-    // Limpar caracteres especiais do nome do adversário
-    const nomeJogoLimpo = nomeJogo
-      .replace(/[^a-zA-Z0-9_\-]/g, '_')
-      .replace(/_+/g, '_');
-    
-    return `Lista_Clientes_${nomeJogoLimpo}_${dataFormatada}`;
-  };
 
   const handlePrint = useReactToPrint({
     contentRef: reportRef,
-    documentTitle: generateFileName(),
+    documentTitle: `Lista_Clientes_Ingressos_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}`,
     onAfterPrint: () => {
       toast.success('Lista de clientes enviada para impressão!');
     },
@@ -131,7 +102,6 @@ export function useIngressosReport(jogoInfo?: JogoInfo) {
 
   return {
     reportRef,
-    handlePrint,
     handleExportPDF
   };
 }

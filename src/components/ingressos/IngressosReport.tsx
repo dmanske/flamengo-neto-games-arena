@@ -82,47 +82,94 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
           {/* Informações do Jogo */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <h2 className="text-2xl font-bold text-red-700 text-center mb-4">
-              FLAMENGO × {jogoInfo.adversario.toUpperCase()}
+              {jogoInfo.local_jogo === 'fora' ? 
+                `${jogoInfo.adversario.toUpperCase()} × FLAMENGO` : 
+                `FLAMENGO × ${jogoInfo.adversario.toUpperCase()}`
+              }
             </h2>
             
-            {/* Logos dos Times */}
+            {/* Logos dos Times - Seguindo o mesmo padrão do card */}
             <div className="flex items-center justify-center gap-8 mt-4">
-              {/* Logo do Flamengo */}
-              <div className="flex flex-col items-center">
-                <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                  <img 
-                    src={jogoInfo.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png"} 
-                    alt="Flamengo" 
-                    className="h-12 w-12 object-contain" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = "https://logodetimes.com/times/flamengo/logo-flamengo-256.png";
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-red-600 font-medium mt-1">FLAMENGO</span>
-              </div>
-              
-              {/* VS */}
-              <div className="text-3xl font-bold text-red-600">×</div>
-              
-              {/* Logo do Adversário */}
-              <div className="flex flex-col items-center">
-                <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                  <img 
-                    src={jogoInfo.logo_adversario || `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`} 
-                    alt={jogoInfo.adversario} 
-                    className="h-12 w-12 object-contain" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`;
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-red-600 font-medium mt-1">{jogoInfo.adversario.toUpperCase()}</span>
-              </div>
+              {/* Mostrar adversário primeiro quando jogo for fora */}
+              {jogoInfo.local_jogo === 'fora' ? (
+                <>
+                  {/* Logo do Adversário */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                      <img 
+                        src={jogoInfo.logo_adversario || `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`} 
+                        alt={jogoInfo.adversario} 
+                        className="h-12 w-12 object-contain" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`;
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-red-600 font-medium mt-1">{jogoInfo.adversario.toUpperCase()}</span>
+                  </div>
+                  
+                  {/* VS */}
+                  <div className="text-3xl font-bold text-red-600">×</div>
+                  
+                  {/* Logo do Flamengo */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                      <img 
+                        src={jogoInfo.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png"} 
+                        alt="Flamengo" 
+                        className="h-12 w-12 object-contain" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "https://logodetimes.com/times/flamengo/logo-flamengo-256.png";
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-red-600 font-medium mt-1">FLAMENGO</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Logo do Flamengo */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                      <img 
+                        src={jogoInfo.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png"} 
+                        alt="Flamengo" 
+                        className="h-12 w-12 object-contain" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "https://logodetimes.com/times/flamengo/logo-flamengo-256.png";
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-red-600 font-medium mt-1">FLAMENGO</span>
+                  </div>
+                  
+                  {/* VS */}
+                  <div className="text-3xl font-bold text-red-600">×</div>
+                  
+                  {/* Logo do Adversário */}
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 rounded-full border-2 border-red-300 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                      <img 
+                        src={jogoInfo.logo_adversario || `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`} 
+                        alt={jogoInfo.adversario} 
+                        className="h-12 w-12 object-contain" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = `https://via.placeholder.com/64x64/cccccc/666666?text=${jogoInfo.adversario.substring(0, 3).toUpperCase()}`;
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-red-600 font-medium mt-1">{jogoInfo.adversario.toUpperCase()}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
