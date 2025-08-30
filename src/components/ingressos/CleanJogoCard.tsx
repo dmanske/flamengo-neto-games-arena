@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3 } from "lucide-react";
+import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -25,6 +27,7 @@ interface CleanJogoCardProps {
   jogo: JogoIngresso;
   onVerIngressos: (jogo: JogoIngresso) => void;
   onDeletarJogo: (jogo: JogoIngresso) => void;
+  onExportarPDF?: (jogo: JogoIngresso) => void;
   isSelected?: boolean;
 }
 
@@ -32,6 +35,7 @@ export function CleanJogoCard({
   jogo,
   onVerIngressos,
   onDeletarJogo,
+  onExportarPDF,
   isSelected = false
 }: CleanJogoCardProps) {
   const [editarLogoOpen, setEditarLogoOpen] = useState(false);
@@ -53,18 +57,9 @@ export function CleanJogoCard({
   }
   const formatDateTime = (dateString: string) => {
     try {
-      // Verificar se tem hora (formato completo) ou só data
-      if (dateString.includes('T')) {
-        // Formato completo: 2025-09-18T15:00:00
-        const [datePart, timePart] = dateString.split('T');
-        const [year, month, day] = datePart.split('-');
-        const [hour, minute] = timePart.split(':');
-        return `${day}/${month}/${year} às ${hour}:${minute}`;
-      } else {
-        // Só data: 2025-09-18
-        const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
-      }
+      // Sempre tentar formatar com data e hora, igual ao card de viagens
+      const date = new Date(dateString);
+      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     } catch (error) {
       console.error('Erro ao formatar data/hora:', dateString, error);
       return 'Data inválida';
@@ -299,7 +294,7 @@ export function CleanJogoCard({
         </div>
         
         {/* Actions footer */}
-        <div className="grid grid-cols-2 border-t border-gray-100">
+        <div className="grid grid-cols-3 border-t border-gray-100">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -316,6 +311,24 @@ export function CleanJogoCard({
             </TooltipTrigger>
             <TooltipContent>Ver lista de ingressos vendidos para este jogo</TooltipContent>
           </Tooltip>
+          
+          {onExportarPDF && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="rounded-none border-r border-gray-100 h-12 hover:bg-green-50 hover:text-green-600 transition-colors"
+                  onClick={() => onExportarPDF(jogo)}
+                  disabled={jogo.total_ingressos === 0}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  <span className="text-xs">PDF</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Exportar lista de clientes em PDF</TooltipContent>
+            </Tooltip>
+          )}
           
           <Tooltip>
             <TooltipTrigger asChild>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,8 @@ import { IngressoDetailsModal } from '@/components/ingressos/IngressoDetailsModa
 import { IngressoFormModal } from '@/components/ingressos/IngressoFormModal';
 import { CleanJogoCard } from '@/components/ingressos/CleanJogoCard';
 import { IngressosJogoModal } from '@/components/ingressos/IngressosJogoModal';
+import { IngressosReport } from '@/components/ingressos/IngressosReport';
+import { useIngressosReport } from '@/hooks/useIngressosReport';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -41,6 +43,15 @@ export default function Ingressos() {
   const [modalJogoAberto, setModalJogoAberto] = useState(false);
   const [jogoSelecionado, setJogoSelecionado] = useState<any>(null);
   const [logosAdversarios, setLogosAdversarios] = useState<Record<string, string>>({});
+  
+  // Hook para relatório PDF - passa informações do jogo selecionado
+  const { reportRef, handleExportPDF } = useIngressosReport(
+    jogoSelecionado ? {
+      adversario: jogoSelecionado.adversario,
+      jogo_data: jogoSelecionado.jogo_data,
+      local_jogo: jogoSelecionado.local_jogo
+    } : undefined
+  );
 
   // Filtrar ingressos baseado na busca (memoizado para evitar re-renders)
   const ingressosFiltrados = useMemo(() => {
@@ -65,18 +76,22 @@ export default function Ingressos() {
 
     // Filtrar apenas jogos futuros
     const ingressosFuturos = ingressosFiltrados.filter(ingresso => {
-      const dataJogo = new Date(ingresso.jogo_data);
+      // Usar data da viagem se disponível, senão usar data do ingresso
+      const dataJogoString = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      const dataJogo = new Date(dataJogoString);
       return dataJogo >= hoje;
     });
 
     // Agrupar por jogo (adversario + data + local)
     const grupos = ingressosFuturos.reduce((acc, ingresso) => {
-      const chaveJogo = `${ingresso.adversario}-${ingresso.jogo_data}-${ingresso.local_jogo}`;
+      // Usar data da viagem se disponível, senão usar data do ingresso
+      const dataJogo = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      const chaveJogo = `${ingresso.adversario}-${dataJogo}-${ingresso.local_jogo}`;
       
       if (!acc[chaveJogo]) {
         acc[chaveJogo] = {
           adversario: ingresso.adversario,
-          jogo_data: ingresso.jogo_data,
+          jogo_data: dataJogo, // Usar a data correta (da viagem se disponível)
           local_jogo: ingresso.local_jogo,
           logo_adversario: ingresso.logo_adversario || logosAdversarios[ingresso.adversario] || null,
           logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
@@ -137,11 +152,36 @@ export default function Ingressos() {
 
   // Função para obter ingressos de um jogo específico
   const getIngressosDoJogo = (jogo: any) => {
-    return ingressos.filter(ingresso => 
-      ingresso.adversario === jogo.adversario &&
-      ingresso.jogo_data === jogo.jogo_data &&
-      ingresso.local_jogo === jogo.local_jogo
-    );
+    return ingressos.filter(ingresso => {
+      // Usar data da viagem se disponível, senão usar data do ingresso
+      const dataJogoIngresso = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      return (
+        ingresso.adversario === jogo.adversario &&
+        dataJogoIngresso === jogo.jogo_data &&
+        ingresso.local_jogo === jogo.local_jogo
+      );
+    });
+  };
+
+  // Função para exportar PDF de um jogo específico
+  const handleExportarPDFJogo = (jogo: any) => {
+    const ingressosDoJogo = getIngressosDoJogo(jogo);
+    
+    if (ingressosDoJogo.length === 0) {
+      toast.warning('Não há ingressos para exportar neste jogo.');
+      return;
+    }
+
+    // Definir o jogo selecionado para o relatório
+    setJogoSelecionado({
+      ...jogo,
+      ingressos: ingressosDoJogo
+    });
+
+    // Aguardar um momento para o estado ser atualizado e então exportar
+    setTimeout(() => {
+      handleExportPDF();
+    }, 100);
   };
 
   // Função para deletar todos os ingressos de um jogo
@@ -399,6 +439,7 @@ export default function Ingressos() {
                   jogo={jogo}
                   onVerIngressos={handleVerIngressosJogo}
                   onDeletarJogo={handleDeletarJogo}
+                  onExportarPDF={handleExportarPDFJogo}
                 />
               ))}
             </div>
@@ -440,6 +481,23 @@ export default function Ingressos() {
         onFiltrosChange={setFiltros}
       />
 
+      {/* Componente de relatório oculto para impressão */}
+      {jogoSelecionado && jogoSelecionado.ingressos && (
+        <div style={{ display: 'none' }}>
+          <IngressosReport
+            ref={reportRef}
+            ingressos={jogoSelecionado.ingressos}
+            jogoInfo={{
+              adversario: jogoSelecionado.adversario,
+              jogo_data: jogoSelecionado.jogo_data,
+              local_jogo: jogoSelecionado.local_jogo,
+              total_ingressos: jogoSelecionado.total_ingressos,
+              logo_adversario: jogoSelecionado.logo_adversario,
+              logo_flamengo: jogoSelecionado.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png"
+            }}
+          />
+        </div>
+      )}
 
     </div>
   );

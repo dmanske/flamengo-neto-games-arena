@@ -68,11 +68,19 @@ export function IngressosJogoModal({
   
   const ITENS_POR_PAGINA = 10;
   
-  // Paginação
+  // Ordenação alfabética e paginação
   const ingressosPaginados = useMemo(() => {
+    // Primeiro ordenar alfabeticamente por nome do cliente
+    const ingressosOrdenados = [...ingressos].sort((a, b) => {
+      const nomeA = a.cliente?.nome || '';
+      const nomeB = b.cliente?.nome || '';
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+    
+    // Depois aplicar paginação
     const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
     const fim = inicio + ITENS_POR_PAGINA;
-    return ingressos.slice(inicio, fim);
+    return ingressosOrdenados.slice(inicio, fim);
   }, [ingressos, paginaAtual]);
   
   const totalPaginas = Math.ceil(ingressos.length / ITENS_POR_PAGINA);
