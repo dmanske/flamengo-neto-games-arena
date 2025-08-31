@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,19 +9,29 @@ import {
   CheckCircle,
   Clock,
   Calendar,
-  DollarSign
+  DollarSign,
+  MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useClienteFinanceiro, type FinanceiroCliente } from '@/hooks/useClienteFinanceiro';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import LembreteWhatsAppModal from './LembreteWhatsAppModal';
 
 interface SituacaoFinanceiraProps {
   clienteId: string;
+  cliente?: {
+    nome: string;
+    telefone: string;
+  };
 }
 
-const SituacaoFinanceira: React.FC<SituacaoFinanceiraProps> = ({ clienteId }) => {
+const SituacaoFinanceira: React.FC<SituacaoFinanceiraProps> = ({ clienteId, cliente }) => {
   const { financeiro, loading, error, refetch } = useClienteFinanceiro(clienteId);
+  const [lembreteModal, setLembreteModal] = useState<{
+    isOpen: boolean;
+    parcela: any;
+  }>({ isOpen: false, parcela: null });
 
   if (loading) {
     return (
@@ -227,12 +237,15 @@ const SituacaoFinanceira: React.FC<SituacaoFinanceiraProps> = ({ clienteId }) =>
                     </p>
                     <Button 
                       size="sm" 
-                      className={`mt-2 ${
+                      className={`mt-2 gap-1 ${
                         parcela.dias_atraso > 0 
                           ? 'bg-red-600 hover:bg-red-700' 
                           : 'bg-yellow-600 hover:bg-yellow-700'
                       }`}
+                      onClick={() => setLembreteModal({ isOpen: true, parcela })}
+                      disabled={!cliente?.telefone}
                     >
+                      <MessageSquare className="h-3 w-3" />
                       {parcela.dias_atraso > 0 ? 'Cobrar Urgente' : 'Lembrar'}
                     </Button>
                   </div>
@@ -294,6 +307,16 @@ const SituacaoFinanceira: React.FC<SituacaoFinanceiraProps> = ({ clienteId }) =>
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Lembrete WhatsApp */}
+      {lembreteModal.isOpen && lembreteModal.parcela && cliente && (
+        <LembreteWhatsAppModal
+          isOpen={lembreteModal.isOpen}
+          onClose={() => setLembreteModal({ isOpen: false, parcela: null })}
+          cliente={cliente}
+          parcela={lembreteModal.parcela}
+        />
+      )}
     </div>
   );
 };

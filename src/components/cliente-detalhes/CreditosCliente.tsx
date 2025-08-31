@@ -27,9 +27,15 @@ import { VincularCreditoModal } from '@/components/creditos/VincularCreditoModal
 
 interface CreditosClienteProps {
   clienteId: string;
+  cliente?: {
+    id: number;
+    nome: string;
+    telefone: string;
+    email: string;
+  };
 }
 
-export default function CreditosCliente({ clienteId }: CreditosClienteProps) {
+export default function CreditosCliente({ clienteId, cliente }: CreditosClienteProps) {
   const { creditos, resumo, historicoUso, loading, deletarCredito, refresh } = useCreditosCliente(clienteId);
 
   // Estados dos modais
@@ -363,7 +369,7 @@ export default function CreditosCliente({ clienteId }: CreditosClienteProps) {
         open={modalFormAberto}
         onOpenChange={setModalFormAberto}
         credito={creditoSelecionado}
-        clientePreSelecionado={creditos[0]?.cliente}
+        clientePreSelecionado={cliente || creditos[0]?.cliente}
         onSuccess={() => {
           refresh();
           setModalFormAberto(false);

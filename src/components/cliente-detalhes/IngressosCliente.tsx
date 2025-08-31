@@ -35,14 +35,20 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Ingresso } from '@/types/ingressos';
+import NovoIngressoModal from './NovoIngressoModal';
 
 interface IngressosClienteProps {
   clienteId: string;
+  cliente?: {
+    id: number;
+    nome: string;
+  };
 }
 
-export default function IngressosCliente({ clienteId }: IngressosClienteProps) {
+export default function IngressosCliente({ clienteId, cliente }: IngressosClienteProps) {
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
   const [loading, setLoading] = useState(true);
+  const [novoIngressoModalOpen, setNovoIngressoModalOpen] = useState(false);
   const [resumo, setResumo] = useState({
     total: 0,
     pagos: 0,
@@ -275,7 +281,11 @@ export default function IngressosCliente({ clienteId }: IngressosClienteProps) {
               <Ticket className="h-5 w-5" />
               Histórico de Ingressos
             </CardTitle>
-            <Button size="sm" className="gap-2">
+            <Button 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setNovoIngressoModalOpen(true)}
+            >
               <Plus className="h-4 w-4" />
               Novo Ingresso
             </Button>
@@ -287,7 +297,10 @@ export default function IngressosCliente({ clienteId }: IngressosClienteProps) {
               <Ticket className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum ingresso encontrado</h3>
               <p className="text-gray-500 mb-4">Este cliente ainda não possui ingressos cadastrados.</p>
-              <Button className="gap-2">
+              <Button 
+                className="gap-2"
+                onClick={() => setNovoIngressoModalOpen(true)}
+              >
                 <Plus className="h-4 w-4" />
                 Cadastrar Primeiro Ingresso
               </Button>
@@ -433,6 +446,16 @@ export default function IngressosCliente({ clienteId }: IngressosClienteProps) {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Modal Novo Ingresso */}
+      {cliente && (
+        <NovoIngressoModal
+          isOpen={novoIngressoModalOpen}
+          onClose={() => setNovoIngressoModalOpen(false)}
+          cliente={cliente}
+          onSuccess={buscarIngressos}
+        />
       )}
     </div>
   );
