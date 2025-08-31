@@ -363,21 +363,7 @@ const DetalhesViagem = () => {
 
 
 
-          {/* Seção de Passeios da Viagem */}
-          {temPasseios && (
-            <div className="mb-6">
-              <div className="bg-white rounded-lg border p-6">
-                <h3 className="text-lg font-medium mb-4">
-                  Passeios da Viagem {shouldUseNewSystem && '(com Valores)'}
-                </h3>
-                <PasseiosExibicaoHibrida
-                  viagem={viagem}
-                  formato="detalhado"
-                  className="max-w-2xl"
-                />
-              </div>
-            </div>
-          )}
+
 
           {originalPassageiros.length > 0 && (
             <ResumoCards passageiros={originalPassageiros} />

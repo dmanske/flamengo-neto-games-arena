@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { ResponsaveisCard } from "./ResponsaveisCard";
+
 import { formatCurrency } from "@/lib/utils";
 import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
 import { toast } from "sonner";
@@ -277,8 +277,7 @@ export function ModernViagemDetailsLayout({
 
       {/* Quick Info Cards */}
       <div className="container py-6">
-        {/* Responsáveis Card - Sempre exibido com todos os responsáveis */}
-        <ResponsaveisCard passageiros={passageiros} onibusList={onibusList} />
+
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow">

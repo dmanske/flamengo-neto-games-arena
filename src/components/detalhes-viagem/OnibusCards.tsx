@@ -82,13 +82,6 @@ export function OnibusCards({
     fetchBusImages();
   }, []);
 
-  // Responsáveis de todos os ônibus (para exibição mesmo quando nenhum ônibus está selecionado)
-  const todosResponsaveis = passageiros.filter(p => p.is_responsavel_onibus === true);
-  
-  // Responsáveis do ônibus selecionado
-  const responsaveisOnibus = selectedOnibusId
-    ? passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === selectedOnibusId)
-    : [];
   const passageirosOnibus = selectedOnibusId
     ? passageiros.filter(p => p.onibus_id === selectedOnibusId)
     : [];
@@ -119,10 +112,9 @@ export function OnibusCards({
           // Recarregar dados quando houver mudanças
           // A função fetchPassageiros será chamada pelo componente pai
           
-          // Mostrar notificação discreta sobre a atualização
-          if (payload.eventType === 'UPDATE' && payload.new?.is_responsavel_onibus !== payload.old?.is_responsavel_onibus) {
-            const isAdding = payload.new?.is_responsavel_onibus;
-            toast.info(isAdding ? '✅ Responsável adicionado em tempo real' : '❌ Responsável removido em tempo real');
+          // Notificação de atualização em tempo real
+          if (payload.eventType === 'UPDATE') {
+            toast.info('✅ Passageiro atualizado em tempo real');
           }
         }
       )
@@ -138,8 +130,7 @@ export function OnibusCards({
     };
   }, [viagemId, setPassageiros, setIsLoading, toast]);
 
-  // Debug para verificar os responsáveis
-  console.log('Responsáveis do ônibus:', responsaveisOnibus);
+  // Debug para verificar os passageiros
   console.log('Passageiros do ônibus:', passageirosOnibus);
 
 
@@ -226,26 +217,7 @@ export function OnibusCards({
                           />
                         </div>
                         
-                        {/* Responsáveis do ônibus */}
-                        {passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id).length > 0 && (
-                          <div className="mt-2">
-                            <div className="flex flex-wrap items-center gap-1">
-                              <span className="text-xs text-gray-500">Responsáveis:</span>
-                              {passageiros
-                                .filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id)
-                                .map(responsavel => (
-                                  <Badge 
-                                    key={responsavel.viagem_passageiro_id || responsavel.id} 
-                                    className="bg-blue-100 text-blue-800 text-xs"
-                                  >
-                                    {responsavel.nome ? responsavel.nome.split(' ')[0] : 
-                                     responsavel.clientes?.nome ? responsavel.clientes.nome.split(' ')[0] : 'Responsável'}
-                                  </Badge>
-                                ))
-                              }
-                            </div>
-                          </div>
-                        )}
+
                       </div>
                     </CardContent>
                   </div>

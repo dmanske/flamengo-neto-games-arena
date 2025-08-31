@@ -53,64 +53,115 @@ export function ViagemHeader({ viagem, onDelete, statusColors, onPrint, onExport
           <Badge className={statusColors[viagem.status_viagem] || "bg-gray-100"}>
             {viagem.status_viagem}
           </Badge>
-          <CardTitle className="text-2xl mt-2">
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-4">
-                {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
-                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
-                  <>
-                    <Avatar className="h-12 w-12 border-2 border-white">
+          <div className="flex items-center gap-6 mt-2">
+            {/* Seção dos Logos */}
+            <div className="flex items-center gap-3">
+              {/* Mostrar adversário primeiro quando jogo for fora do Rio */}
+              {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? (
+                <>
+                  {/* Time Adversário (Casa) */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-md hover:scale-105 transition-transform duration-200">
                       <AvatarImage 
                         src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
                         alt={viagem.adversario}
+                        className="object-contain p-1"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.onerror = null;
                           target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
                         }}
                       />
-                      <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="bg-gray-100 text-gray-800 font-bold text-xs">
+                        {viagem.adversario.substring(0, 3).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                    <Avatar className="h-12 w-12 border-2 border-white">
+                    <span className="text-xs font-medium text-gray-600 text-center max-w-[60px] truncate">
+                      {viagem.adversario}
+                    </span>
+                  </div>
+                  
+                  {/* Indicador VS */}
+                  <div className="flex flex-col items-center px-2">
+                    <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                      VS
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">FORA</span>
+                  </div>
+                  
+                  {/* Flamengo (Visitante) */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Avatar className="h-12 w-12 border-2 border-red-500 shadow-md hover:scale-105 transition-transform duration-200 ring-1 ring-red-200">
                       <AvatarImage 
                         src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
-                        alt="Flamengo" 
+                        alt="Flamengo"
+                        className="object-contain p-1"
                       />
-                      <AvatarFallback>FLA</AvatarFallback>
+                      <AvatarFallback className="bg-red-600 text-white font-bold text-xs">FLA</AvatarFallback>
                     </Avatar>
-                  </>
-                ) : (
-                  <>
-                    <Avatar className="h-12 w-12 border-2 border-white">
+                    <span className="text-xs font-medium text-red-600 text-center">
+                      Flamengo
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Flamengo (Casa) */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Avatar className="h-12 w-12 border-2 border-red-500 shadow-md hover:scale-105 transition-transform duration-200 ring-1 ring-red-200">
                       <AvatarImage 
                         src={viagem.logo_flamengo || "https://logodetimes.com/wp-content/uploads/flamengo.png"} 
-                        alt="Flamengo" 
+                        alt="Flamengo"
+                        className="object-contain p-1"
                       />
-                      <AvatarFallback>FLA</AvatarFallback>
+                      <AvatarFallback className="bg-red-600 text-white font-bold text-xs">FLA</AvatarFallback>
                     </Avatar>
-                    <Avatar className="h-12 w-12 border-2 border-white">
+                    <span className="text-xs font-medium text-red-600 text-center">
+                      Flamengo
+                    </span>
+                  </div>
+                  
+                  {/* Indicador VS */}
+                  <div className="flex flex-col items-center px-2">
+                    <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                      VS
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">CASA</span>
+                  </div>
+                  
+                  {/* Time Adversário (Visitante) */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-md hover:scale-105 transition-transform duration-200">
                       <AvatarImage 
                         src={viagem.logo_adversario || `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3)}`}
                         alt={viagem.adversario}
+                        className="object-contain p-1"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.onerror = null;
                           target.src = `https://via.placeholder.com/150?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
                         }}
                       />
-                      <AvatarFallback>{viagem.adversario.substring(0, 3).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="bg-gray-100 text-gray-800 font-bold text-xs">
+                        {viagem.adversario.substring(0, 3).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
-                  </>
-                )}
-              </div>
-              <span>
-                {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
-                  `${viagem.adversario} x Flamengo` : 
-                  `Flamengo x ${viagem.adversario}`
-                }
-              </span>
+                    <span className="text-xs font-medium text-gray-600 text-center max-w-[60px] truncate">
+                      {viagem.adversario}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
-          </CardTitle>
+            
+            {/* Título do Jogo */}
+            <CardTitle className="text-2xl">
+              {viagem.local_jogo && viagem.local_jogo !== "Rio de Janeiro" ? 
+                `${viagem.adversario} x Flamengo` : 
+                `Flamengo x ${viagem.adversario}`
+              }
+            </CardTitle>
+          </div>
         </div>
         <div className="flex gap-2">
           {/* Botão de Lista de Presença - só aparece quando a viagem está em andamento */}
