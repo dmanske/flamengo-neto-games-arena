@@ -16,18 +16,27 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Ticket, 
   Calendar, 
   MapPin, 
   DollarSign, 
   TrendingUp, 
-  Eye,
-  Plus,
   AlertCircle,
   CheckCircle,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/utils/formatters';
@@ -35,20 +44,16 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Ingresso } from '@/types/ingressos';
-import NovoIngressoModal from './NovoIngressoModal';
 
 interface IngressosClienteProps {
   clienteId: string;
-  cliente?: {
-    id: number;
-    nome: string;
-  };
 }
 
-export default function IngressosCliente({ clienteId, cliente }: IngressosClienteProps) {
+export default function IngressosCliente({ clienteId }: IngressosClienteProps) {
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
   const [loading, setLoading] = useState(true);
-  const [novoIngressoModalOpen, setNovoIngressoModalOpen] = useState(false);
+  const [ingressoParaDeletar, setIngressoParaDeletar] = useState<Ingresso | null>(null);
+  const [modalDeletarAberto, setModalDeletarAberto] = useState(false);
   const [resumo, setResumo] = useState({
     total: 0,
     pagos: 0,
@@ -120,6 +125,32 @@ export default function IngressosCliente({ clienteId, cliente }: IngressosClient
       toast.error('Erro ao carregar ingressos do cliente');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const abrirModalDeletar = (ingresso: Ingresso) => {
+    setIngressoParaDeletar(ingresso);
+    setModalDeletarAberto(true);
+  };
+
+  const confirmarDelecao = async () => {
+    if (!ingressoParaDeletar) return;
+
+    try {
+      const { error } = await supabase
+        .from('ingressos')
+        .delete()
+        .eq('id', ingressoParaDeletar.id);
+
+      if (error) throw error;
+
+      toast.success('Ingresso removido com sucesso!');
+      buscarIngressos(); // Recarregar a lista
+      setModalDeletarAberto(false);
+      setIngressoParaDeletar(null);
+    } catch (error) {
+      console.error('Erro ao deletar ingresso:', error);
+      toast.error('Erro ao remover ingresso');
     }
   };
 
@@ -276,20 +307,10 @@ export default function IngressosCliente({ clienteId, cliente }: IngressosClient
       {/* Histórico de Ingressos Organizados por Mês */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Ticket className="h-5 w-5" />
-              Histórico de Ingressos
-            </CardTitle>
-            <Button 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setNovoIngressoModalOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Novo Ingresso
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Ticket className="h-5 w-5" />
+            Histórico de Ingressos
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {ingressos.length === 0 ? (
@@ -297,13 +318,6 @@ export default function IngressosCliente({ clienteId, cliente }: IngressosClient
               <Ticket className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum ingresso encontrado</h3>
               <p className="text-gray-500 mb-4">Este cliente ainda não possui ingressos cadastrados.</p>
-              <Button 
-                className="gap-2"
-                onClick={() => setNovoIngressoModalOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Cadastrar Primeiro Ingresso
-              </Button>
             </div>
           ) : (
             <Accordion type="multiple" defaultValue={[ingressosAgrupados[0]?.chave]} className="w-full">
@@ -398,9 +412,14 @@ export default function IngressosCliente({ clienteId, cliente }: IngressosClient
                                 {getSituacaoBadge(ingresso.situacao_financeira)}
                               </TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="sm" className="gap-1">
-                                  <Eye className="h-4 w-4" />
-                                  Ver
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => abrirModalDeletar(ingresso)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  title="Remover ingresso"
+                                >
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -448,15 +467,80 @@ export default function IngressosCliente({ clienteId, cliente }: IngressosClient
         </div>
       )}
 
-      {/* Modal Novo Ingresso */}
-      {cliente && (
-        <NovoIngressoModal
-          isOpen={novoIngressoModalOpen}
-          onClose={() => setNovoIngressoModalOpen(false)}
-          cliente={cliente}
-          onSuccess={buscarIngressos}
-        />
-      )}
+      {/* Modal de Confirmação para Deletar Ingresso */}
+      <AlertDialog open={modalDeletarAberto} onOpenChange={setModalDeletarAberto}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-lg font-semibold text-gray-900">
+                  Remover Ingresso
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-gray-600 mt-1">
+                  Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          
+          {ingressoParaDeletar && (
+            <div className="py-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Jogo:</span>
+                  <span className="text-sm text-gray-900 font-medium">{ingressoParaDeletar.adversario}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Data:</span>
+                  <span className="text-sm text-gray-900">
+                    {format(new Date(ingressoParaDeletar.jogo_data), 'dd/MM/yyyy', { locale: ptBR })}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Setor:</span>
+                  <span className="text-sm text-gray-900">{ingressoParaDeletar.setor_estadio}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Valor:</span>
+                  <span className="text-sm font-semibold text-green-600">
+                    {formatCurrency(ingressoParaDeletar.valor_final)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Status:</span>
+                  {getSituacaoBadge(ingressoParaDeletar.situacao_financeira)}
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-600 mt-4">
+                Tem certeza que deseja remover este ingresso? Todos os dados e histórico de pagamentos serão perdidos permanentemente.
+              </p>
+            </div>
+          )}
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel 
+              onClick={() => {
+                setIngressoParaDeletar(null);
+                setModalDeletarAberto(false);
+              }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarDelecao}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Remover Ingresso
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

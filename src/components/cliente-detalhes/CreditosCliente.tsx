@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Plus, CreditCard, History, Eye, Edit, Trash2, Calendar, DollarSign } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +23,6 @@ import { Credito } from '@/types/creditos';
 import { useCreditosCliente } from '@/hooks/useCreditosCliente';
 
 // Modais
-import { CreditoFormModal } from '@/components/creditos/CreditoFormModal';
 import { CreditoDetailsModal } from '@/components/creditos/CreditoDetailsModal';
 import { VincularCreditoModal } from '@/components/creditos/VincularCreditoModal';
 
@@ -38,6 +39,27 @@ interface CreditosClienteProps {
 export default function CreditosCliente({ clienteId, cliente }: CreditosClienteProps) {
   const { creditos, resumo, historicoUso, loading, deletarCredito, refresh } = useCreditosCliente(clienteId);
 
+  const deletarHistoricoUso = async (historicoId: string) => {
+    if (!confirm('Tem certeza que deseja deletar este histórico de uso de crédito?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('credito_vinculacoes')
+        .delete()
+        .eq('id', historicoId);
+
+      if (error) throw error;
+
+      toast.success('Histórico de uso deletado com sucesso!');
+      refresh();
+    } catch (error) {
+      console.error('Erro ao deletar histórico:', error);
+      toast.error('Erro ao deletar histórico de uso');
+    }
+  };
+
   // Estados dos modais
   const [modalFormAberto, setModalFormAberto] = useState(false);
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
@@ -47,10 +69,7 @@ export default function CreditosCliente({ clienteId, cliente }: CreditosClienteP
 
 
 
-  const handleNovoCredito = () => {
-    setCreditoSelecionado(null);
-    setModalFormAberto(true);
-  };
+  // Função removida - não permitir criar novos créditos na página de cliente
 
   const handleEditarCredito = (credito: Credito) => {
     setCreditoSelecionado(credito);
@@ -156,29 +175,22 @@ export default function CreditosCliente({ clienteId, cliente }: CreditosClienteP
         </Card>
       </div>
 
-      {/* Ações Rápidas */}
-      <div className="flex gap-2">
-        <Button onClick={handleNovoCredito} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Crédito
-        </Button>
-        
-        {resumo.total_creditos > 0 && (
-          <>
-            <Button onClick={handleVerDetalhes} variant="outline" className="gap-2">
-              <Eye className="h-4 w-4" />
-              Ver Detalhes
+      {/* Ações de Consulta */}
+      {resumo.total_creditos > 0 && (
+        <div className="flex gap-2">
+          <Button onClick={handleVerDetalhes} variant="outline" className="gap-2">
+            <Eye className="h-4 w-4" />
+            Ver Detalhes
+          </Button>
+          
+          {resumo.valor_disponivel > 0 && (
+            <Button onClick={handleUsarEmViagem} variant="outline" className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50">
+              <CreditCard className="h-4 w-4" />
+              Usar em Viagem
             </Button>
-            
-            {resumo.valor_disponivel > 0 && (
-              <Button onClick={handleUsarEmViagem} variant="outline" className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50">
-                <CreditCard className="h-4 w-4" />
-                Usar em Viagem
-              </Button>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Lista de Créditos */}
       <Card>
@@ -194,10 +206,6 @@ export default function CreditosCliente({ clienteId, cliente }: CreditosClienteP
               <CreditCard className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium">Nenhum crédito encontrado</p>
               <p className="text-sm">Este cliente ainda não possui créditos de viagem.</p>
-              <Button onClick={handleNovoCredito} className="mt-4 gap-2">
-                <Plus className="h-4 w-4" />
-                Criar Primeiro Crédito
-              </Button>
             </div>
           ) : (
             <Table>
@@ -328,6 +336,15 @@ export default function CreditosCliente({ clienteId, cliente }: CreditosClienteP
                       <div className="text-xs text-gray-500">
                         de {formatCurrency(uso.credito?.valor_credito || 0)}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deletarHistoricoUso(uso.id)}
+                        className="text-red-600 hover:text-red-700 mt-2"
+                        title="Deletar histórico de uso"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -365,24 +382,13 @@ export default function CreditosCliente({ clienteId, cliente }: CreditosClienteP
       )}
 
       {/* Modais */}
-      <CreditoFormModal
-        open={modalFormAberto}
-        onOpenChange={setModalFormAberto}
-        credito={creditoSelecionado}
-        clientePreSelecionado={cliente || creditos[0]?.cliente}
-        onSuccess={() => {
-          refresh();
-          setModalFormAberto(false);
-        }}
-      />
-
       <CreditoDetailsModal
         open={modalDetalhesAberto}
         onOpenChange={setModalDetalhesAberto}
         grupoCliente={grupoCliente}
         onNovoCredito={() => {
-          setModalDetalhesAberto(false);
-          setModalFormAberto(true);
+          // Função desabilitada - não permitir criar novos créditos
+          toast.info('Criação de novos créditos não disponível nesta tela');
         }}
         onUsarEmViagem={(grupo) => {
           setGrupoCliente(grupo);

@@ -2,8 +2,7 @@ import React from 'react';
 import { Ingresso } from '@/types/ingressos';
 import { formatCPF, formatBirthDate } from '@/utils/formatters';
 import { useEmpresa } from '@/hooks/useEmpresa';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateTimeSafe } from '@/lib/date-utils';
 
 interface JogoInfo {
   adversario: string;
@@ -25,18 +24,7 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
     const { empresa } = useEmpresa();
     
     // Função para formatar data/hora igual aos cards de viagens e ingressos
-    const formatDateTime = (dateString: string) => {
-      try {
-        // Sempre formatar com data e hora, igual aos cards
-        const date = new Date(dateString);
-        return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      } catch (error) {
-        console.error('Erro ao formatar data/hora:', dateString, error);
-        return 'Data inválida';
-      }
-    };
-
-    const dataFormatada = formatDateTime(jogoInfo.jogo_data);
+    const dataFormatada = formatDateTimeSafe(jogoInfo.jogo_data);
 
     const agora = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit',

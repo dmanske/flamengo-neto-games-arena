@@ -167,13 +167,62 @@ export function useIngressos() {
     setErros({});
 
     try {
+      let viagemId = dados.viagem_id;
+
+      // Se não há viagem vinculada, criar uma automaticamente
+      if (!viagemId && dados.adversario && dados.jogo_data) {
+        console.log('Criando viagem automática para:', dados.adversario, dados.jogo_data);
+        
+        // Verificar se já existe uma viagem para o mesmo adversário e data
+        const { data: viagemExistente, error: errorBusca } = await supabase
+          .from('viagens')
+          .select('id')
+          .eq('adversario', dados.adversario)
+          .eq('data_jogo', dados.jogo_data)
+          .single();
+
+        if (errorBusca && errorBusca.code !== 'PGRST116') {
+          console.error('Erro ao buscar viagem existente:', errorBusca);
+        }
+
+        if (viagemExistente) {
+          // Usar viagem existente
+          viagemId = viagemExistente.id;
+          console.log('Usando viagem existente:', viagemId);
+        } else {
+          // Criar nova viagem
+          const { data: novaViagem, error: errorViagem } = await supabase
+            .from('viagens')
+            .insert([{
+              adversario: dados.adversario,
+              data_jogo: dados.jogo_data,
+              valor_padrao: dados.valor_final || 100, // Usar valor do ingresso como padrão
+              capacidade_onibus: 50, // Valor padrão
+              status_viagem: 'Aberta' // Status padrão para permitir novos ingressos
+            }])
+            .select('id')
+            .single();
+
+          if (errorViagem) {
+            console.error('Erro ao criar viagem automática:', errorViagem);
+            setErros({ geral: 'Erro ao criar viagem para o ingresso' });
+            toast.error('Erro ao criar viagem para o ingresso');
+            return false;
+          }
+
+          viagemId = novaViagem.id;
+          console.log('Nova viagem criada:', viagemId);
+          toast.success(`Viagem criada automaticamente: ${dados.adversario}`);
+        }
+      }
+
       // Validação: verificar se o cliente já tem ingresso para a mesma viagem
-      if (dados.viagem_id) {
+      if (viagemId) {
         const { data: ingressoExistente, error: errorValidacao } = await supabase
           .from('ingressos')
           .select('id')
           .eq('cliente_id', dados.cliente_id)
-          .eq('viagem_id', dados.viagem_id)
+          .eq('viagem_id', viagemId)
           .single();
 
         if (errorValidacao && errorValidacao.code !== 'PGRST116') {
@@ -192,6 +241,9 @@ export function useIngressos() {
 
       // Remover campos calculados que não podem ser inseridos (colunas geradas)
       const { valorFinalCalculado, lucro, margem_percentual, ...dadosParaInserir } = dados;
+      
+      // Usar a viagem criada/encontrada
+      dadosParaInserir.viagem_id = viagemId;
       
       const { data, error } = await supabase
         .from('ingressos')

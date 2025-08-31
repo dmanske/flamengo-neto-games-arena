@@ -449,6 +449,364 @@
 
 ---
 
+## 📋 **DOCUMENTAÇÃO ADICIONAL INCLUÍDA**
+
+### **Arquivos MD Importantes Adicionados às Tasks:**
+
+- [x] **DOCUMENTACAO_PAGAMENTOS_SEPARADOS.md** - Sistema completo de pagamentos separados ✅
+- [x] **DOCUMENTACAO_SISTEMA_PASSEIOS.md** - Documentação completa do sistema de passeios ✅
+- [x] **GUIA_SISTEMA_FINANCEIRO_COMPLETO.md** - Guia completo do módulo financeiro ✅
+- [x] **IMPLEMENTACAO_PASSEIOS_PASSAGEIRO.md** - Implementação de passeios por passageiro ✅
+- [x] **IMPLEMENTACAO_SISTEMA_PAGAMENTO_AVANCADO.md** - Sistema avançado de pagamentos ✅
+- [x] **MELHORIAS_FINANCEIRO_VIAGEM.md** - Melhorias no financeiro da viagem ✅
+- [x] **FLUXO_CAIXA_MELHORADO.md** - Sistema de fluxo de caixa melhorado ✅
+- [x] **SISTEMA_FINANCEIRO_COMPLETO.md** - Sistema financeiro completo ✅
+- [x] **INTEGRAÇÃO_FINANCEIRO_GERAL.md** - Integração com financeiro geral ✅
+- [x] **MELHORIA_VISUALIZACAO_PENDENCIAS.md** - Melhorias na visualização de pendências ✅
+- [x] **ARQUIVOS-MD-DOCUMENTACAO-COMPLETA.md** - Catalogação completa de todos os arquivos MD ✅
+
+### **Arquivos de Debug e Configuração:**
+
+- [x] **debug-fluxo-creditos-cliente.md** - Debug do fluxo de créditos ✅
+- [x] **debug-sistema-creditos-atual.md** - Debug do sistema atual ✅
+- [x] **debug-problema-modal.md** - Debug de problemas em modais ✅
+- [x] **debug-ingressos.md** - Debug do sistema de ingressos ✅
+- [x] **CHAT_SETUP.md** - Configuração do sistema de chat ✅
+- [x] **EVOLUTION_API_SETUP.md** - Configuração da API Evolution ✅
+- [x] **ESPECIFICACAO_WEBSITE_CARAVANA_FLAMENGO.md** - Especificação do website ✅
+
+### **Resumos e Correções Históricas:**
+
+- [x] **RESUMO_CORRECOES_FINANCEIRO.md** - Resumo das correções financeiras ✅
+- [x] **CORREÇÕES_APLICADAS.md** - Histórico de correções aplicadas ✅
+- [x] **TAREFA_11_CONCLUIDA.md** - Conclusão da tarefa 11 ✅
+- [x] **ERRO_CORRIGIDO_FINAL.md** - Correção final de erros ✅
+- [x] **TESTE_CORREÇÕES.md** - Testes das correções ✅
+
+**📊 TOTAL**: 22 arquivos MD adicionais catalogados e incluídos na documentação das tasks
+
+---
+
+## 🎫 **INTEGRAÇÃO DOS INGRESSOS NO FINANCEIRO GERAL**
+
+- [x] **45. Integração Completa dos Ingressos no Financeiro Geral** ✅ **CONCLUÍDA**
+  - **OBJETIVO**: Integrar completamente o sistema de ingressos ao Financeiro Geral com receitas e custos
+  - **DATA**: 30/08/2025
+  - **STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E FUNCIONAL**
+  
+  **45.1 Dados Identificados** ✅
+  - ✅ **14 ingressos** vendidos no sistema
+  - ✅ **R$ 6.160,00** de receita total dos ingressos
+  - ✅ **R$ 440,00** de preço médio por ingresso
+  - ✅ **3 setores**: Leste Inferior (8), Oeste (4), Norte (2)
+  - ✅ **Impacto significativo** que justifica integração completa
+  - _Requirements: Sistema Financeiro, Integração Completa_
+  
+  **45.2 Hook useFinanceiroGeral.ts Atualizado** ✅
+  - ✅ **Busca de receitas**: Query `ingressos` com filtro por período e `situacao_financeira = 'pago'`
+  - ✅ **Busca de custos**: Query `preco_custo` dos ingressos pagos no período
+  - ✅ **Cálculo integrado**: `totalReceitas` inclui `receitasIngressos`
+  - ✅ **Cálculo integrado**: `totalDespesas` inclui `custosIngressos`
+  - ✅ **Interfaces atualizadas**: `ResumoGeral` e `ViagemFinanceiro` com campos de ingressos
+  - ✅ **Percentuais calculados**: `percentual_ingressos` baseado no total de receitas
+  - ✅ **Logs de debug**: Acompanhar receitas e custos dos ingressos
+  - _Requirements: Sistema Financeiro, Hook Principal_
+  
+  **45.3 Função fetchContasPagar Expandida** ✅
+  - ✅ **Despesas virtuais**: Custos dos ingressos aparecem na aba "Contas a Pagar"
+  - ✅ **Categoria específica**: `categoria: 'ingressos'` para diferenciação
+  - ✅ **Formato padronizado**: `virtual-ingresso-{id}` para identificação
+  - ✅ **Dados completos**: Fornecedor, descrição, valor, data, status calculado
+  - ✅ **Ordenação correta**: Por data de vencimento (data do jogo)
+  - ✅ **Tratamento de erros**: Continua funcionando se tabela ingressos não existir
+  - _Requirements: Sistema Financeiro, Contas a Pagar_
+  
+  **45.4 Interface FinanceiroGeral.tsx Melhorada** ✅
+  - ✅ **Card de receitas**: Breakdown detalhado incluindo "• Ingressos: R$ X"
+  - ✅ **Card de despesas**: Breakdown incluindo "• Custos Ingressos: R$ X"
+  - ✅ **Separação visual**: Ingressos diferenciados de passeios nos breakdowns
+  - ✅ **Cálculos dinâmicos**: Valores atualizados em tempo real
+  - ✅ **Compatibilidade**: Funciona com todos os filtros de período
+  - ✅ **Responsividade**: Layout adaptado para incluir nova categoria
+  - _Requirements: Interface, UX, Visual Design_
+  
+  **45.5 Funcionalidades Implementadas** ✅
+  - ✅ **Receitas integradas**: Ingressos pagos somam no total de receitas
+  - ✅ **Custos integrados**: Custos dos ingressos somam no total de despesas
+  - ✅ **Lucro correto**: Cálculo considera receitas e custos dos ingressos
+  - ✅ **Margem precisa**: Percentual de lucro inclui impacto dos ingressos
+  - ✅ **Filtros funcionais**: Período mensal/trimestral/anual filtra ingressos
+  - ✅ **Visão completa**: Dashboard mostra situação financeira real
+  - _Requirements: Sistema Financeiro, Precisão_
+
+### **📊 RESULTADO VISUAL IMPLEMENTADO:**
+
+```
+💰 Card Receita Total:
+├── R$ [total_com_ingressos] (valor principal)
+├── • Viagens: R$ [valor_viagens]
+├── • Passeios: R$ [valor_passeios]  
+├── • Ingressos: R$ 6.160,00 ✨ NOVO
+└── • Extras: R$ [valor_extras]
+
+💸 Card Despesas Totais:
+├── R$ [total_com_custos_ingressos] (valor principal)
+├── • Operacionais: R$ [despesas_manuais]
+├── • Custos Passeios: R$ [custos_passeios]
+└── • Custos Ingressos: R$ [custos_ingressos] ✨ NOVO
+
+📋 Aba Contas a Pagar:
+├── [despesas_manuais_existentes]
+├── [custos_passeios_existentes]
+└── Custo: Ingresso Adversário X ✨ NOVO
+    ├── Categoria: ingressos
+    ├── Status: calculado
+    └── Valor: R$ [preco_custo]
+```
+
+### **🎯 IMPACTO FINANCEIRO:**
+
+- **Antes**: Ingressos não apareciam no Financeiro Geral
+- **Depois**: R$ 6.160,00 de receitas + custos integrados
+- **Resultado**: Visão financeira completa e precisa
+
+### **📁 ARQUIVOS MODIFICADOS:**
+- `src/hooks/useFinanceiroGeral.ts` - Integração completa de ingressos
+- `src/pages/FinanceiroGeral.tsx` - Interface com breakdown de ingressos
+- `INTEGRACAO-INGRESSOS-FINANCEIRO-GERAL.md` - Documentação completa
+
+**✅ STATUS FINAL**: Sistema de ingressos totalmente integrado ao Financeiro Geral - Receitas e custos aparecem corretamente nos cálculos e relatórios
+
+- [x] **47. Lista Detalhada de Viagens no Financeiro Geral** ✅ **CONCLUÍDA**
+  - **OBJETIVO**: Melhorar a seção "Performance por Viagem" com lista detalhada similar à dos ingressos
+  - **DATA**: 30/08/2025
+  - **STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E FUNCIONAL**
+  
+  **47.1 Layout Detalhado da Seção Performance por Viagem** ✅
+  - ✅ **Card individual**: Cada viagem tem seu próprio card detalhado
+  - ✅ **Cabeçalho completo**: Adversário, data, passageiros, pendências
+  - ✅ **Badge de margem**: Verde (≥15%), Amarelo (≥10%), Vermelho (<10%)
+  - ✅ **Hover effects**: Transições suaves para melhor UX
+  - ✅ **Ícones intuitivos**: ✈️ 📅 👥 ⚠️ para identificação visual
+  - _Requirements: Interface, UX, Visual Design_
+  
+  **47.2 Métricas Financeiras Detalhadas** ✅
+  - ✅ **Grid 4 colunas**: Receita, Despesas, Lucro, Margem
+  - ✅ **Receita detalhada**: Breakdown por viagens, passeios, extras
+  - ✅ **Despesas categorizadas**: Operacionais, combustível, outras
+  - ✅ **Lucro com indicador**: 📈 Positivo ou 📉 Negativo
+  - ✅ **Margem classificada**: 🟢 Excelente, 🟡 Boa, 🔴 Baixa
+  - ✅ **Cores diferenciadas**: Verde, vermelho, azul, roxo
+  - _Requirements: Métricas, Análise Financeira_
+  
+  **47.3 Resumo Consolidado das Viagens** ✅
+  - ✅ **Total de viagens**: Contador automático no período
+  - ✅ **Receita total**: Soma de todas as receitas das viagens
+  - ✅ **Despesas total**: Soma de todas as despesas das viagens
+  - ✅ **Lucro total**: Cálculo automático (receita - despesas)
+  - ✅ **Layout responsivo**: 2 colunas mobile, 4 colunas desktop
+  - ✅ **Card cinza**: Destaque visual para o resumo
+  - _Requirements: Resumo, Responsividade_
+  
+  **47.4 Melhorias de Interface e UX** ✅
+  - ✅ **Consistência com ingressos**: Layout similar à seção de ingressos
+  - ✅ **Responsividade**: Adaptação para mobile e desktop
+  - ✅ **Transições suaves**: Hover effects e animações
+  - ✅ **Tipografia clara**: Hierarquia visual bem definida
+  - ✅ **Espaçamento adequado**: Layout limpo e organizado
+  - ✅ **Exibição condicional**: Só mostra se há viagens no período
+  - _Requirements: UX, Responsividade, Consistência_
+  
+  **47.5 Imports e Dependências Adicionados** ✅
+  - ✅ **Ícones Lucide**: Users, BarChart3, Ticket adicionados
+  - ✅ **Date-fns**: format e ptBR para formatação de datas
+  - ✅ **Compatibilidade**: Todos os imports necessários incluídos
+  - ✅ **TypeScript**: Tipagem correta mantida
+  - _Requirements: Imports, Dependências_
+
+### **📊 RESULTADO VISUAL IMPLEMENTADO:**
+
+```
+✈️ Performance por Viagem
+├── "Análise detalhada de receitas, despesas e margem por viagem realizada"
+│
+├── 📋 Card Viagem 1:
+│   ├── ✈️ Flamengo x Botafogo
+│   ├── 📅 15/09/2025  👥 45 passageiros  ⚠️ 2 pendências
+│   ├── ✈️ Margem: 18.5% (badge verde - Excelente)
+│   └── Grid 4 colunas:
+│       ├── [💚 Receita Total: R$ 15.000]
+│       │   ├── • Viagens: R$ 13.500
+│       │   ├── • Passeios: R$ 1.200
+│       │   └── • Extras: R$ 300
+│       ├── [❤️ Despesas: R$ 12.000]
+│       ├── [💙 Lucro: R$ 3.000] (📈 Positivo)
+│       └── [💜 Margem: 18.5%] (🟢 Excelente)
+│
+└── 📊 Resumo das Viagens:
+    ├── Total Viagens: 8
+    ├── Receita Total: R$ 98.400,00
+    ├── Despesas Total: R$ 82.100,00
+    └── Lucro Total: R$ 16.300,00
+```
+
+### **📁 ARQUIVOS MODIFICADOS:**
+- `src/pages/FinanceiroGeral.tsx` - Seção Performance por Viagem melhorada
+- `LISTA-DETALHADA-VIAGENS-FINANCEIRO.md` - Documentação completa
+
+**✅ STATUS FINAL**: Lista detalhada de viagens implementada com layout similar aos ingressos - Cada viagem mostra receitas detalhadas, despesas, lucros e margem com análise visual
+
+- [x] **48. Confirmação da Integração dos Ingressos no Financeiro Geral** ✅ **JÁ FUNCIONANDO**
+  - **OBJETIVO**: Confirmar que receitas e custos dos ingressos estão integrados nos cálculos totais do Financeiro Geral
+  - **DATA**: 30/08/2025
+  - **STATUS**: ✅ **INTEGRAÇÃO JÁ IMPLEMENTADA E FUNCIONANDO**
+  
+  **48.1 Busca e Cálculo dos Ingressos** ✅ **JÁ FUNCIONANDO**
+  - ✅ **Busca por período**: Query com filtro `jogo_data` entre início e fim
+  - ✅ **Receitas calculadas**: Só ingressos com `situacao_financeira = 'pago'`
+  - ✅ **Custos calculados**: Todos os ingressos (custo operacional)
+  - ✅ **Logs de debug**: Mostra quantos ingressos foram encontrados
+  - _Status: Implementado em `fetchResumoGeral()`_
+  
+  **48.2 Integração nos Totais Gerais** ✅ **JÁ FUNCIONANDO**
+  - ✅ **Total Receitas**: `totalReceitasPassageiros + receitasExtras + receitasIngressos`
+  - ✅ **Total Despesas**: `despesasManuais + custosPasseios + custosIngressos`
+  - ✅ **Lucro Líquido**: Calculado automaticamente (receitas - despesas)
+  - ✅ **Margem**: Calculada com base no total incluindo ingressos
+  - _Status: Implementado no cálculo do `resumoGeral`_
+  
+  **48.3 Exibição na Interface** ✅ **JÁ FUNCIONANDO**
+  - ✅ **Card Receitas**: Breakdown mostra "• Ingressos: R$ X"
+  - ✅ **Card Despesas**: Breakdown mostra "• Custos Ingressos: R$ X"
+  - ✅ **Exibição condicional**: Só aparece se `receitas_ingressos > 0`
+  - ✅ **Formatação**: Valores formatados em moeda brasileira
+  - _Status: Implementado na interface do `FinanceiroGeral.tsx`_
+  
+  **48.4 Lista Detalhada de Ingressos** ✅ **JÁ FUNCIONANDO**
+  - ✅ **Seção específica**: "Performance por Ingressos" com lista completa
+  - ✅ **Cards individuais**: Cada ingresso com receita, custo, lucro, margem
+  - ✅ **Resumo consolidado**: Totais de todos os ingressos do período
+  - ✅ **Busca automática**: Atualiza quando período muda
+  - _Status: Implementado na seção de ingressos_
+
+### **📊 CONFIRMAÇÃO VISUAL:**
+
+```
+💰 Financeiro Geral - Cards Principais:
+├── 💚 Receitas Totais: R$ X
+│   ├── • Viagens: R$ X
+│   ├── • Passeios: R$ X
+│   ├── • Extras: R$ X
+│   └── • Ingressos: R$ X ← ✅ JÁ INTEGRADO
+│
+├── ❤️ Despesas Totais: R$ X
+│   ├── • Operacionais: R$ X
+│   ├── • Custos Passeios: R$ X
+│   └── • Custos Ingressos: R$ X ← ✅ JÁ INTEGRADO
+│
+└── 💙 Lucro Líquido: R$ X ← ✅ INCLUI INGRESSOS
+```
+
+### **🔍 LOGS DE CONFIRMAÇÃO:**
+```
+💳 Ingressos encontrados: X
+💰 Receitas ingressos (pagos): R$ X
+💸 Custos ingressos: R$ X
+📊 RESUMO FINANCEIRO GERAL:
+├── receitasIngressos: X
+├── custosIngressos: X
+├── totalReceitas: X (inclui ingressos)
+└── totalDespesas: X (inclui custos ingressos)
+```
+
+### **📁 ARQUIVOS CONFIRMADOS:**
+- `src/hooks/useFinanceiroGeral.ts` - Busca e cálculo dos ingressos ✅
+- `src/pages/FinanceiroGeral.tsx` - Exibição nos cards e breakdown ✅
+- Interface `ResumoGeral` - Campos `receitas_ingressos` e `percentual_ingressos` ✅
+
+**✅ STATUS FINAL**: Integração dos ingressos no Financeiro Geral JÁ ESTÁ FUNCIONANDO - Receitas e custos são somados automaticamente nos totais gerais
+
+- [x] **49. Card "Apenas Ingressos" e Correção da Busca** ✅ **CONCLUÍDA**
+  - **OBJETIVO**: Criar card exclusivo para ingressos e corrigir problema na busca por data
+  - **DATA**: 30/08/2025
+  - **STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E FUNCIONAL**
+  
+  **49.1 Correção da Busca de Ingressos** ✅
+  - ✅ **Query corrigida**: Removido JOIN com tabela clientes que causava erro
+  - ✅ **Campos diretos**: Usando `cliente_id` e `cliente_nome` da tabela ingressos
+  - ✅ **Busca por data**: Filtro `jogo_data` entre início e fim do período
+  - ✅ **Consistência**: Mesma query nas duas funções (resumo e lista detalhada)
+  - _Problema: "cadastrei outro jogo e não puxou" → RESOLVIDO_
+  
+  **49.2 Card "Apenas Ingressos" Implementado** ✅
+  - ✅ **Posicionamento**: Logo após a seção "Performance por Viagem"
+  - ✅ **Layout detalhado**: Cards individuais para cada ingresso
+  - ✅ **Métricas completas**: Receita, custo, lucro, margem por ingresso
+  - ✅ **Status visual**: Badges coloridos (pago, pendente, cancelado)
+  - ✅ **Informações completas**: Adversário, data, setor, cliente
+  - _Requirement: Card exclusivo para relatório de ingressos_
+  
+  **49.3 Resumo Consolidado Exclusivo** ✅
+  - ✅ **Fundo diferenciado**: Card com fundo vermelho (tema ingressos)
+  - ✅ **Totais básicos**: Total ingressos, receita, custo, lucro
+  - ✅ **Estatísticas extras**: Margem média, ingressos pagos, pendentes
+  - ✅ **Layout responsivo**: 2-4 colunas + seção de estatísticas
+  - ✅ **Ícones temáticos**: Ticket em todo o card
+  - _Requirement: Resumo exclusivo dos ingressos_
+  
+  **49.4 Interface Melhorada** ✅
+  - ✅ **Hook atualizado**: `ingressosFinanceiro` adicionado ao retorno da interface
+  - ✅ **Exibição condicional**: Só aparece se há ingressos no período
+  - ✅ **Hover effects**: Transições suaves nos cards
+  - ✅ **Cores temáticas**: Vermelho para ingressos vs azul para viagens
+  - ✅ **Formatação consistente**: Mesma formatação de moeda e datas
+  - _Requirement: Interface consistente e intuitiva_
+
+### **📊 RESULTADO VISUAL IMPLEMENTADO:**
+
+```
+✈️ Performance por Viagem
+├── [Cards das viagens...]
+└── [Resumo das viagens]
+
+🎫 Apenas Ingressos ← ✨ NOVO CARD
+├── "Relatório exclusivo dos ingressos vendidos no período"
+│
+├── 📋 Card Ingresso 1:
+│   ├── 🎫 Flamengo x Adversário
+│   ├── 📅 Data  🏟️ Setor  👤 Cliente
+│   ├── ✅ Status (Pago/Pendente/Cancelado)
+│   └── [💚 Receita] [❤️ Custo] [💙 Lucro] [💜 Margem]
+│
+├── 📋 Card Ingresso 2: [...]
+│
+└── 📊 Resumo Apenas Ingressos (fundo vermelho):
+    ├── Total Ingressos: X
+    ├── Receita Total: R$ X
+    ├── Custo Total: R$ X
+    ├── Lucro Total: R$ X
+    └── Estatísticas:
+        ├── Margem Média: X%
+        ├── Ingressos Pagos: X
+        └── Pendentes: X
+```
+
+### **🔧 PROBLEMAS RESOLVIDOS:**
+
+1. **❌ "cadastrei outro jogo e não puxou"**
+   **✅ RESOLVIDO**: Query corrigida, removido JOIN problemático
+
+2. **❌ "queria abaixo da Performance por Viagem um outro card, escrito Apenas Ingressos"**
+   **✅ IMPLEMENTADO**: Card exclusivo com relatório completo dos ingressos
+
+### **📁 ARQUIVOS MODIFICADOS:**
+- `src/hooks/useFinanceiroGeral.ts` - Query corrigida na função fetchIngressosFinanceiro
+- `src/pages/FinanceiroGeral.tsx` - Card "Apenas Ingressos" adicionado + hook atualizado
+
+**✅ STATUS FINAL**: Card "Apenas Ingressos" implementado com busca corrigida - Relatório exclusivo dos ingressos funcionando perfeitamente
+
+---
+
 ## 🆕 **NOVAS TASKS ADICIONADAS**
 
 ### **PRIORIDADE CRÍTICA - Sistema Financeiro Integrado**

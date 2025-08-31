@@ -48,6 +48,7 @@ export function ContasPagarTab({ contasPagar }: ContasPagarTabProps) {
       case 'pago': return 'bg-green-100 text-green-800 border-green-200';
       case 'pendente': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelado': return 'bg-red-100 text-red-800 border-red-200';
+      case 'calculado': return 'bg-blue-100 text-blue-800 border-blue-200'; // ✨ NOVO: status para custos calculados
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -57,6 +58,7 @@ export function ContasPagarTab({ contasPagar }: ContasPagarTabProps) {
       case 'pago': return <CheckCircle className="h-4 w-4" />;
       case 'pendente': return <Clock className="h-4 w-4" />;
       case 'cancelado': return <AlertTriangle className="h-4 w-4" />;
+      case 'calculado': return <CheckCircle className="h-4 w-4" />; // ✨ NOVO: ícone para custos calculados
       default: return <CreditCard className="h-4 w-4" />;
     }
   };
@@ -69,6 +71,7 @@ export function ContasPagarTab({ contasPagar }: ContasPagarTabProps) {
       case 'ingressos': return 'bg-green-100 text-green-800';
       case 'pessoal': return 'bg-cyan-100 text-cyan-800';
       case 'administrativo': return 'bg-gray-100 text-gray-800';
+      case 'passeios': return 'bg-pink-100 text-pink-800'; // ✨ NOVO: categoria para custos dos passeios
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -245,6 +248,12 @@ export function ContasPagarTab({ contasPagar }: ContasPagarTabProps) {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">
                         {conta.fornecedor}
+                        {/* ✨ NOVO: Indicador visual para custos calculados */}
+                        {conta.status === 'calculado' && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            Automático
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500">
                         {conta.descricao}
@@ -280,13 +289,22 @@ export function ContasPagarTab({ contasPagar }: ContasPagarTabProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
-                          Editar
-                        </Button>
-                        {conta.status === 'pendente' && (
-                          <Button size="sm">
-                            Pagar
-                          </Button>
+                        {/* ✨ NOVO: Não mostrar ações para custos calculados */}
+                        {conta.status !== 'calculado' ? (
+                          <>
+                            <Button size="sm" variant="outline">
+                              Editar
+                            </Button>
+                            {conta.status === 'pendente' && (
+                              <Button size="sm">
+                                Pagar
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-500 italic">
+                            Custo automático
+                          </span>
                         )}
                       </div>
                     </td>

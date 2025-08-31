@@ -147,6 +147,18 @@ export default function Ingressos() {
     setModalJogoAberto(true);
   };
 
+  // Função para abrir modal de novo ingresso com jogo pré-selecionado
+  const handleNovoIngressoJogo = (jogo: any) => {
+    setIngressoSelecionado(null); // Limpar seleção para modo criação
+    setModalFormAberto(true);
+    
+    // Aguardar um momento para o modal abrir e então preencher os dados
+    setTimeout(() => {
+      // Aqui podemos implementar lógica para pré-preencher o formulário
+      // Por enquanto, apenas abrimos o modal
+    }, 100);
+  };
+
   // Função para obter ingressos de um jogo específico
   const getIngressosDoJogo = (jogo: any) => {
     return ingressos.filter(ingresso => {

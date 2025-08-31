@@ -766,9 +766,18 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
       const totalReceitas = receitasViagem + receitasPasseios + totalOutrasReceitas;
       const totalPendencias = pendenciasViagem + pendenciasPasseios;
 
-      // Somar despesas (incluindo custos dos passeios)
-      const despesasOperacionais = despesas.reduce((sum, d) => sum + d.valor, 0);
+      // Somar despesas (SEM duplicar custos dos passeios)
+      // As despesas já incluem as despesas virtuais dos passeios, então não somar custosPasseios novamente
+      const despesasOperacionais = despesas.filter(d => !d.isVirtual).reduce((sum, d) => sum + d.valor, 0);
       const totalDespesas = despesasOperacionais + custosPasseios;
+
+      console.log('🔍 DEBUG - Correção duplicação custos:', {
+        despesasOperacionais: despesasOperacionais.toFixed(2),
+        custosPasseios: custosPasseios.toFixed(2),
+        totalDespesas: totalDespesas.toFixed(2),
+        despesasVirtuais: despesas.filter(d => d.isVirtual).length,
+        despesasManuais: despesas.filter(d => !d.isVirtual).length
+      });
 
       // Calcular métricas
       const lucroBruto = totalReceitas - totalDespesas;

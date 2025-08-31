@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { X, AlertTriangle, Trash2, ChevronLeft, ChevronRight, Copy, Eye, Edit } from 'lucide-react';
+import { formatDateTimeSafe } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -134,25 +135,7 @@ export function IngressosJogoModal({
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    try {
-      // Verificar se tem hora (formato completo) ou só data
-      if (dateString.includes('T')) {
-        // Formato completo: 2025-09-18T15:00:00
-        const [datePart, timePart] = dateString.split('T');
-        const [year, month, day] = datePart.split('-');
-        const [hour, minute] = timePart.split(':');
-        return `${day}/${month}/${year} às ${hour}:${minute}`;
-      } else {
-        // Só data: 2025-09-18
-        const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
-      }
-    } catch (error) {
-      console.error('Erro ao formatar data:', dateString, error);
-      return 'Data inválida';
-    }
-  };
+  const formatDateTime = formatDateTimeSafe;
 
   // Função para confirmar exclusão
   const handleConfirmarExclusao = (ingresso: Ingresso) => {

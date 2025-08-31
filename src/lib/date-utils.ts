@@ -102,3 +102,32 @@ export function formatDateFriendly(dateString: string): string {
     return "Data inválida";
   }
 }
+
+/**
+ * Formata uma data e hora evitando problemas de fuso horário
+ * Usa parseISO para parsing correto de strings ISO
+ */
+export function formatDateTimeSafe(dateString: string): string {
+  if (!dateString) return "Data inválida";
+  
+  try {
+    // Se a string tem formato ISO, usar parseISO para evitar problemas de fuso horário
+    let date: Date;
+    
+    if (dateString.includes('T') || dateString.includes('Z')) {
+      // Formato ISO completo
+      date = parseISO(dateString);
+    } else if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Formato YYYY-MM-DD - adicionar horário para evitar problemas de fuso
+      date = parseISO(dateString + 'T12:00:00');
+    } else {
+      // Fallback para new Date
+      date = new Date(dateString);
+    }
+    
+    return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  } catch (error) {
+    console.error("Erro ao formatar data/hora segura:", dateString, error);
+    return "Data inválida";
+  }
+}

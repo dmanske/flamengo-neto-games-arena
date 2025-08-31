@@ -12,10 +12,15 @@ import {
   AlertTriangle,
   Download,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Users,
+  BarChart3,
+  Ticket
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useFinanceiroGeral } from '@/hooks/useFinanceiroGeral';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { FluxoCaixaTab } from '@/components/financeiro-geral/FluxoCaixaTab';
 import { ContasReceberTab } from '@/components/financeiro-geral/ContasReceberTab';
 import { ContasPagarTab } from '@/components/financeiro-geral/ContasPagarTab';
@@ -61,7 +66,14 @@ export default function FinanceiroGeral() {
 
   // Atualizar filtro quando período mudar
   React.useEffect(() => {
-    setFiltroData(calcularFiltroData());
+    const novoFiltro = calcularFiltroData();
+    console.log('🔄 Atualizando filtro:', {
+      periodoView,
+      mesAtual,
+      anoAtual,
+      novoFiltro
+    });
+    setFiltroData(novoFiltro);
   }, [periodoView, mesAtual, anoAtual]);
 
   const {
@@ -70,7 +82,10 @@ export default function FinanceiroGeral() {
     contasReceber,
     contasPagar,
     viagensFinanceiro,
+    ingressosFinanceiro, // ✨ ADICIONADO
     isLoading,
+    loadingResumo,
+    loadingContas,
     atualizarDados
   } = useFinanceiroGeral(filtroData);
 
@@ -151,12 +166,25 @@ export default function FinanceiroGeral() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
+                      let novoMes, novoAno;
                       if (mesAtual === 0) {
-                        setMesAtual(11);
-                        setAnoAtual(anoAtual - 1);
+                        novoMes = 11;
+                        novoAno = anoAtual - 1;
                       } else {
-                        setMesAtual(mesAtual - 1);
+                        novoMes = mesAtual - 1;
+                        novoAno = anoAtual;
                       }
+                      
+                      console.log('⬅️ Navegando para mês anterior:', novoMes, novoAno);
+                      setMesAtual(novoMes);
+                      setAnoAtual(novoAno);
+                      
+                      // ✨ CORREÇÃO: Forçar atualização imediata do filtro
+                      const novoFiltro = {
+                        inicio: new Date(novoAno, novoMes, 1).toISOString().split('T')[0],
+                        fim: new Date(novoAno, novoMes + 1, 0).toISOString().split('T')[0]
+                      };
+                      setFiltroData(novoFiltro);
                     }}
                   >
                     ← Anterior
@@ -167,8 +195,16 @@ export default function FinanceiroGeral() {
                     selectedMonth={mesAtual}
                     selectedYear={anoAtual}
                     onMonthChange={(month, year) => {
+                      console.log('📅 Calendário mudou para:', month, year);
                       setMesAtual(month);
                       setAnoAtual(year);
+                      
+                      // ✨ CORREÇÃO: Forçar atualização imediata do filtro
+                      const novoFiltro = {
+                        inicio: new Date(year, month, 1).toISOString().split('T')[0],
+                        fim: new Date(year, month + 1, 0).toISOString().split('T')[0]
+                      };
+                      setFiltroData(novoFiltro);
                     }}
                   />
                   
@@ -176,12 +212,25 @@ export default function FinanceiroGeral() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
+                      let novoMes, novoAno;
                       if (mesAtual === 11) {
-                        setMesAtual(0);
-                        setAnoAtual(anoAtual + 1);
+                        novoMes = 0;
+                        novoAno = anoAtual + 1;
                       } else {
-                        setMesAtual(mesAtual + 1);
+                        novoMes = mesAtual + 1;
+                        novoAno = anoAtual;
                       }
+                      
+                      console.log('➡️ Navegando para próximo mês:', novoMes, novoAno);
+                      setMesAtual(novoMes);
+                      setAnoAtual(novoAno);
+                      
+                      // ✨ CORREÇÃO: Forçar atualização imediata do filtro
+                      const novoFiltro = {
+                        inicio: new Date(novoAno, novoMes, 1).toISOString().split('T')[0],
+                        fim: new Date(novoAno, novoMes + 1, 0).toISOString().split('T')[0]
+                      };
+                      setFiltroData(novoFiltro);
                     }}
                   >
                     Próximo →
@@ -240,11 +289,40 @@ export default function FinanceiroGeral() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600">Receita Total</p>
                     <p className="text-2xl font-bold text-green-600">
                       {formatCurrency(resumoGeral?.total_receitas || 0)}
                     </p>
+                    {/* ✨ NOVO: Breakdown das receitas incluindo ingressos */}
+                    {resumoGeral && (resumoGeral.receitas_viagem > 0 || resumoGeral.receitas_passeios > 0 || resumoGeral.receitas_extras > 0 || resumoGeral.receitas_ingressos > 0) && (
+                      <div className="mt-2 space-y-1">
+                        {resumoGeral.receitas_viagem > 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>• Viagens:</span>
+                            <span>{formatCurrency(resumoGeral.receitas_viagem)}</span>
+                          </div>
+                        )}
+                        {resumoGeral.receitas_passeios > 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>• Passeios:</span>
+                            <span>{formatCurrency(resumoGeral.receitas_passeios)}</span>
+                          </div>
+                        )}
+                        {resumoGeral.receitas_ingressos > 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>• Ingressos:</span>
+                            <span>{formatCurrency(resumoGeral.receitas_ingressos)}</span>
+                          </div>
+                        )}
+                        {resumoGeral.receitas_extras > 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>• Extras:</span>
+                            <span>{formatCurrency(resumoGeral.receitas_extras)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <TrendingUp className="h-8 w-8 text-green-600" />
                 </div>
@@ -267,11 +345,62 @@ export default function FinanceiroGeral() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Despesas Total</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-600">Despesas Totais</p>
                     <p className="text-2xl font-bold text-red-600">
-                      {formatCurrency(resumoGeral?.total_despesas || 0)}
+                      {loadingContas && loadingResumo ? (
+                        <span className="animate-pulse">Carregando...</span>
+                      ) : (() => {
+                        // ✨ CORREÇÃO: Cálculo rápido igual ao card de receitas
+                        const totalDespesasResumo = resumoGeral?.total_despesas || 0;
+                        const totalDespesasArray = contasPagar?.reduce((sum, d) => sum + d.valor, 0) || 0;
+                        
+                        console.log('🔍 DEBUG Despesas Card:', {
+                          totalDespesasResumo,
+                          totalDespesasArray,
+                          contasPagarCount: contasPagar?.length || 0,
+                          resumoGeral: resumoGeral ? 'existe' : 'null',
+                          loadingContas,
+                          loadingResumo
+                        });
+                        
+                        // Usar o valor do resumo se disponível, senão calcular das contas
+                        return formatCurrency(totalDespesasResumo || totalDespesasArray);
+                      })()}
                     </p>
+                    {/* ✨ NOVO: Breakdown das despesas igual ao card de receitas */}
+                    {contasPagar && contasPagar.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {(() => {
+                          const despesasManuais = contasPagar.filter(d => d.status !== 'calculado').reduce((sum, d) => sum + d.valor, 0);
+                          const custosPasseios = contasPagar.filter(d => d.status === 'calculado' && d.categoria === 'passeios').reduce((sum, d) => sum + d.valor, 0);
+                          const custosIngressos = contasPagar.filter(d => d.status === 'calculado' && d.categoria === 'ingressos').reduce((sum, d) => sum + d.valor, 0);
+                          
+                          return (
+                            <>
+                              {despesasManuais > 0 && (
+                                <div className="flex justify-between text-xs text-gray-600">
+                                  <span>• Operacionais:</span>
+                                  <span>{formatCurrency(despesasManuais)}</span>
+                                </div>
+                              )}
+                              {custosPasseios > 0 && (
+                                <div className="flex justify-between text-xs text-gray-600">
+                                  <span>• Custos Passeios:</span>
+                                  <span>{formatCurrency(custosPasseios)}</span>
+                                </div>
+                              )}
+                              {custosIngressos > 0 && (
+                                <div className="flex justify-between text-xs text-gray-600">
+                                  <span>• Custos Ingressos:</span>
+                                  <span>{formatCurrency(custosIngressos)}</span>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                   <TrendingDown className="h-8 w-8 text-red-600" />
                 </div>
@@ -297,16 +426,41 @@ export default function FinanceiroGeral() {
                   <div>
                     <p className="text-sm font-medium text-gray-600">Lucro Líquido</p>
                     <p className={`text-2xl font-bold ${
-                      (resumoGeral?.lucro_liquido || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                      (() => {
+                        // ✨ CORREÇÃO: Cálculo rápido do lucro
+                        const receitas = resumoGeral?.total_receitas || 0;
+                        const totalDespesasResumo = resumoGeral?.total_despesas || 0;
+                        const totalDespesasArray = contasPagar?.reduce((sum, d) => sum + d.valor, 0) || 0;
+                        const despesas = totalDespesasResumo || totalDespesasArray;
+                        const lucro = receitas - despesas;
+                        return lucro >= 0 ? 'text-green-600' : 'text-red-600';
+                      })()
                     }`}>
-                      {formatCurrency(resumoGeral?.lucro_liquido || 0)}
+                      {(() => {
+                        // ✨ CORREÇÃO: Cálculo rápido do lucro
+                        const receitas = resumoGeral?.total_receitas || 0;
+                        const totalDespesasResumo = resumoGeral?.total_despesas || 0;
+                        const totalDespesasArray = contasPagar?.reduce((sum, d) => sum + d.valor, 0) || 0;
+                        const despesas = totalDespesasResumo || totalDespesasArray;
+                        const lucro = receitas - despesas;
+                        return formatCurrency(lucro);
+                      })()}
                     </p>
                   </div>
                   <DollarSign className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="mt-2">
                   <Badge className="bg-blue-100 text-blue-800">
-                    Margem: {resumoGeral?.margem_lucro || 0}%
+                    Margem: {(() => {
+                      // ✨ CORREÇÃO: Cálculo rápido da margem
+                      const receitas = resumoGeral?.total_receitas || 0;
+                      const totalDespesasResumo = resumoGeral?.total_despesas || 0;
+                      const totalDespesasArray = contasPagar?.reduce((sum, d) => sum + d.valor, 0) || 0;
+                      const despesas = totalDespesasResumo || totalDespesasArray;
+                      const lucro = receitas - despesas;
+                      const margem = receitas > 0 ? (lucro / receitas) * 100 : 0;
+                      return margem.toFixed(1);
+                    })()}%
                   </Badge>
                 </div>
               </CardContent>
@@ -349,7 +503,17 @@ export default function FinanceiroGeral() {
                         key={i}
                         variant={isAtual ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setMesAtual(i)}
+                        onClick={() => {
+                          console.log('🗓️ Clicando no mês:', i, 'Nome:', mesNome);
+                          setMesAtual(i);
+                          // ✨ CORREÇÃO: Forçar atualização imediata do filtro
+                          const novoFiltro = {
+                            inicio: new Date(anoAtual, i, 1).toISOString().split('T')[0],
+                            fim: new Date(anoAtual, i + 1, 0).toISOString().split('T')[0]
+                          };
+                          console.log('📅 Novo filtro:', novoFiltro);
+                          setFiltroData(novoFiltro);
+                        }}
                         className={`${isAtual ? 'bg-blue-600 text-white' : ''}`}
                       >
                         {mesNome}
@@ -361,72 +525,289 @@ export default function FinanceiroGeral() {
             </Card>
           )}
 
-          {/* Performance por Viagem */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Performance por Viagem - {
-                  periodoView === 'mensal' 
-                    ? new Date(anoAtual, mesAtual).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                    : periodoView === 'anual' 
-                    ? `Ano ${anoAtual}`
-                    : 'Período selecionado'
-                }
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {viagensFinanceiro?.map((viagem) => (
-                  <div key={viagem.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <h4 className="font-semibold">{viagem.adversario}</h4>
-                        <p className="text-sm text-gray-600">
-                          {new Date(viagem.data_jogo).toLocaleDateString()}
-                        </p>
+          {/* ✨ MELHORADO: Performance por Viagem - Lista Detalhada */}
+          {viagensFinanceiro && viagensFinanceiro.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Performance por Viagem
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Análise detalhada de receitas, despesas e margem por viagem realizada
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {viagensFinanceiro.map((viagem) => (
+                    <div key={viagem.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Users className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Flamengo x {viagem.adversario}
+                            </h4>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>📅 {format(new Date(viagem.data_jogo), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                              <span>👥 {viagem.total_passageiros} passageiros</span>
+                              {viagem.pendencias > 0 && (
+                                <span className="text-yellow-600">⚠️ {viagem.pendencias} pendências</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            viagem.margem >= 15 ? 'bg-green-100 text-green-800' :
+                            viagem.margem >= 10 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            ✈️ Margem: {viagem.margem.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Métricas Financeiras da Viagem */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Receita Total</p>
+                          <p className="text-lg font-bold text-green-600">
+                            {formatCurrency(viagem.total_receitas)}
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>• Viagens: {formatCurrency(viagem.receitas_viagem)}</div>
+                            {viagem.receitas_passeios > 0 && (
+                              <div>• Passeios: {formatCurrency(viagem.receitas_passeios)}</div>
+                            )}
+                            {viagem.receitas_extras > 0 && (
+                              <div>• Extras: {formatCurrency(viagem.receitas_extras)}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Despesas</p>
+                          <p className="text-lg font-bold text-red-600">
+                            {formatCurrency(viagem.total_despesas)}
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>• Operacionais</div>
+                            <div>• Combustível</div>
+                            <div>• Outras</div>
+                          </div>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Lucro</p>
+                          <p className={`text-lg font-bold ${
+                            viagem.lucro >= 0 ? 'text-blue-600' : 'text-red-600'
+                          }`}>
+                            {formatCurrency(viagem.lucro)}
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>{viagem.lucro >= 0 ? '📈 Positivo' : '📉 Negativo'}</div>
+                          </div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Margem</p>
+                          <p className={`text-lg font-bold ${
+                            viagem.margem >= 15 ? 'text-green-600' :
+                            viagem.margem >= 10 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {viagem.margem.toFixed(1)}%
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>
+                              {viagem.margem >= 15 ? '🟢 Excelente' :
+                               viagem.margem >= 10 ? '🟡 Boa' :
+                               '🔴 Baixa'}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Receitas</p>
-                        <p className="font-semibold text-green-600">
-                          {formatCurrency(viagem.total_receitas)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          V: {formatCurrency(viagem.receitas_viagem)} | P: {formatCurrency(viagem.receitas_passeios)}
-                          {viagem.receitas_extras > 0 && ` | E: ${formatCurrency(viagem.receitas_extras)}`}
+                  ))}
+                </div>
+                
+                {/* Resumo das Viagens */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h5 className="font-semibold text-gray-900 mb-3">📊 Resumo das Viagens</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Total Viagens</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {viagensFinanceiro.length}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Receita Total</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {formatCurrency(viagensFinanceiro.reduce((sum, v) => sum + v.total_receitas, 0))}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Despesas Total</p>
+                      <p className="text-lg font-bold text-red-600">
+                        {formatCurrency(viagensFinanceiro.reduce((sum, v) => sum + v.total_despesas, 0))}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Lucro Total</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        {formatCurrency(viagensFinanceiro.reduce((sum, v) => sum + v.lucro, 0))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ✨ NOVO: Card Apenas Ingressos */}
+          {ingressosFinanceiro && ingressosFinanceiro.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Ticket className="h-5 w-5" />
+                  Apenas Ingressos
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Relatório exclusivo dos ingressos vendidos no período
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {ingressosFinanceiro.map((ingresso) => (
+                    <div key={ingresso.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <Ticket className="h-5 w-5 text-red-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">
+                              Flamengo x {ingresso.adversario}
+                            </h4>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span>📅 {format(new Date(ingresso.jogo_data), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                              <span>🏟️ {ingresso.setor_estadio}</span>
+                              <span>👤 {ingresso.cliente_nome}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            ingresso.situacao_financeira === 'pago' 
+                              ? 'bg-green-100 text-green-800'
+                              : ingresso.situacao_financeira === 'pendente'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {ingresso.situacao_financeira === 'pago' ? '✅ Pago' : 
+                             ingresso.situacao_financeira === 'pendente' ? '⏳ Pendente' : '❌ Cancelado'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Métricas Financeiras do Ingresso */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Receita</p>
+                          <p className="text-lg font-bold text-green-600">
+                            {formatCurrency(ingresso.receita)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Custo</p>
+                          <p className="text-lg font-bold text-red-600">
+                            {formatCurrency(ingresso.custo)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Lucro</p>
+                          <p className={`text-lg font-bold ${
+                            ingresso.lucro >= 0 ? 'text-blue-600' : 'text-red-600'
+                          }`}>
+                            {formatCurrency(ingresso.lucro)}
+                          </p>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Margem</p>
+                          <p className={`text-lg font-bold ${
+                            ingresso.margem >= 0 ? 'text-purple-600' : 'text-red-600'
+                          }`}>
+                            {ingresso.margem.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Resumo Consolidado dos Ingressos */}
+                <div className="mt-6 p-4 bg-red-50 rounded-lg">
+                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Ticket className="h-4 w-4" />
+                    📊 Resumo Apenas Ingressos
+                  </h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Total Ingressos</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {ingressosFinanceiro.length}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Receita Total</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {formatCurrency(ingressosFinanceiro.reduce((sum, i) => sum + i.receita, 0))}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Custo Total</p>
+                      <p className="text-lg font-bold text-red-600">
+                        {formatCurrency(ingressosFinanceiro.reduce((sum, i) => sum + i.custo, 0))}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-600">Lucro Total</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        {formatCurrency(ingressosFinanceiro.reduce((sum, i) => sum + i.lucro, 0))}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Estatísticas Adicionais */}
+                  <div className="mt-4 pt-4 border-t border-red-200">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-xs text-gray-600">Margem Média</p>
+                        <p className="text-sm font-semibold text-purple-600">
+                          {ingressosFinanceiro.length > 0 
+                            ? (ingressosFinanceiro.reduce((sum, i) => sum + i.margem, 0) / ingressosFinanceiro.length).toFixed(1)
+                            : 0}%
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Despesas</p>
-                        <p className="font-semibold text-red-600">
-                          {formatCurrency(viagem.total_despesas)}
+                      <div>
+                        <p className="text-xs text-gray-600">Ingressos Pagos</p>
+                        <p className="text-sm font-semibold text-green-600">
+                          {ingressosFinanceiro.filter(i => i.situacao_financeira === 'pago').length}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Lucro</p>
-                        <p className={`font-semibold ${
-                          viagem.lucro >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatCurrency(viagem.lucro)}
+                      <div>
+                        <p className="text-xs text-gray-600">Pendentes</p>
+                        <p className="text-sm font-semibold text-yellow-600">
+                          {ingressosFinanceiro.filter(i => i.situacao_financeira === 'pendente').length}
                         </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Margem</p>
-                        <Badge className={
-                          viagem.margem >= 15 ? 'bg-green-100 text-green-800' :
-                          viagem.margem >= 10 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }>
-                          {viagem.margem.toFixed(1)}%
-                        </Badge>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="fluxo-caixa">

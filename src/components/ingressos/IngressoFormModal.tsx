@@ -83,7 +83,7 @@ export function IngressoFormModal({
     defaultValues: {
       cliente_id: '',
       viagem_id: null,
-      jogo_data: new Date().toISOString().split('T')[0], // YYYY-MM-DD simples
+      jogo_data: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM para datetime-local
       adversario: '',
       logo_adversario: '',
       local_jogo: 'casa',
@@ -113,7 +113,7 @@ export function IngressoFormModal({
         form.reset({
           cliente_id: ingresso.cliente_id,
           viagem_id: ingresso.viagem_id,
-          jogo_data: ingresso.jogo_data.split('T')[0], // Pegar apenas YYYY-MM-DD
+          jogo_data: ingresso.jogo_data.slice(0, 16), // YYYY-MM-DDTHH:MM para datetime-local
           adversario: ingresso.adversario,
           logo_adversario: ingresso.logo_adversario || '',
           local_jogo: ingresso.local_jogo,
@@ -130,7 +130,7 @@ export function IngressoFormModal({
         form.reset({
           cliente_id: '',
           viagem_id: null,
-          jogo_data: new Date().toISOString().split('T')[0], // YYYY-MM-DD simples
+          jogo_data: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM para datetime-local
           adversario: '',
           logo_adversario: '',
           local_jogo: 'casa',
@@ -279,7 +279,7 @@ export function IngressoFormModal({
                               if (value !== 'nenhuma') {
                                 const viagemSelecionada = viagens.find(v => v.id === value);
                                 if (viagemSelecionada) {
-                                  form.setValue('jogo_data', viagemSelecionada.data_jogo.split('T')[0]);
+                                  form.setValue('jogo_data', viagemSelecionada.data_jogo.slice(0, 16));
                                   form.setValue('adversario', viagemSelecionada.adversario);
                                 }
                               }
@@ -324,10 +324,10 @@ export function IngressoFormModal({
                         name="jogo_data"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Data do Jogo *</FormLabel>
+                            <FormLabel>Data e Hora do Jogo *</FormLabel>
                             <FormControl>
                               <Input
-                                type="date"
+                                type="datetime-local"
                                 {...field}
                                 className="w-full"
                               />

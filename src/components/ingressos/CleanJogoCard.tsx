@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatDateTimeSafe } from '@/lib/date-utils';
 
 import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,16 +54,7 @@ export function CleanJogoCard({
     console.error('Data do jogo não encontrada:', jogo);
     return <div>Erro: Data do jogo não encontrada</div>;
   }
-  const formatDateTime = (dateString: string) => {
-    try {
-      // Sempre tentar formatar com data e hora, igual ao card de viagens
-      const date = new Date(dateString);
-      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-    } catch (error) {
-      console.error('Erro ao formatar data/hora:', dateString, error);
-      return 'Data inválida';
-    }
-  };
+  const formatDateTime = formatDateTimeSafe;
 
   const getLocalBadge = (local: 'casa' | 'fora') => {
     if (local === 'casa') {
