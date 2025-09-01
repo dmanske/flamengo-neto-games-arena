@@ -47,26 +47,37 @@ export function IngressoDetailsModal({
   } = usePagamentosIngressos();
   
   // Adicionar hook para buscar ingressos atualizados
-  const { buscarIngressos } = useIngressos();
+  const { buscarIngressos, ingressos } = useIngressos();
 
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
   const [pagamentoEditando, setPagamentoEditando] = useState<any>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [pagamentoParaDeletar, setPagamentoParaDeletar] = useState<any>(null);
 
+  // Buscar o ingresso atualizado da lista de ingressos
+  const ingressoAtualizado = ingresso ? ingressos.find(i => i.id === ingresso.id) || ingresso : null;
+
+  // Carregar dados atualizados quando modal abrir
+  useEffect(() => {
+    if (open) {
+      // Primeiro buscar ingressos atualizados
+      buscarIngressos();
+    }
+  }, [open, buscarIngressos]);
+
   // Carregar pagamentos quando ingresso mudar
   useEffect(() => {
-    if (open && ingresso) {
-      buscarPagamentos(ingresso.id);
+    if (open && ingressoAtualizado) {
+      buscarPagamentos(ingressoAtualizado.id);
     }
-  }, [open, ingresso, buscarPagamentos]);
+  }, [open, ingressoAtualizado, buscarPagamentos]);
   
   // Renderizar apenas quando tiver ingresso
-  if (!ingresso) {
+  if (!ingressoAtualizado) {
     return null;
   }
   
-  const resumoPagamentos = calcularResumo(ingresso.valor_final);
+  const resumoPagamentos = calcularResumo(ingressoAtualizado.valor_final);
 
   // Função para deletar pagamento com confirmação
   const handleDeletarPagamento = async (pagamentoId: string) => {
@@ -81,9 +92,14 @@ export function IngressoDetailsModal({
   
   // Função para confirmar a exclusão
   const confirmarExclusao = async () => {
-    if (pagamentoParaDeletar && ingresso) {
-      await deletarPagamento(pagamentoParaDeletar.id, ingresso.id);
+    if (pagamentoParaDeletar && ingressoAtualizado) {
+      const sucesso = await deletarPagamento(pagamentoParaDeletar.id, ingressoAtualizado.id);
+      if (sucesso) {
+        // Atualizar lista de ingressos para refletir mudanças no status
+        await buscarIngressos();
+      }
       setPagamentoParaDeletar(null);
+      setAlertOpen(false);
     }
   };
 
@@ -118,7 +134,7 @@ export function IngressoDetailsModal({
           </DialogHeader>
 
           <IngressoCard
-            ingresso={ingresso}
+            ingresso={ingressoAtualizado}
             pagamentos={pagamentos}
             resumoPagamentos={resumoPagamentos}
             onEditarPagamento={handleEditarPagamento}
@@ -133,13 +149,13 @@ export function IngressoDetailsModal({
       <PagamentoIngressoModal
         open={modalPagamentoAberto}
         onOpenChange={setModalPagamentoAberto}
-        ingresso={ingresso}
+        ingresso={ingressoAtualizado}
         pagamento={pagamentoEditando}
         onSuccess={() => {
           setModalPagamentoAberto(false);
           setPagamentoEditando(null);
           // Atualizar pagamentos e lista de ingressos para refletir mudanças
-          buscarPagamentos(ingresso.id);
+          buscarPagamentos(ingressoAtualizado.id);
           buscarIngressos(); // Atualiza a lista de ingressos para refletir o novo status
         }}
       />
