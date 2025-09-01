@@ -915,6 +915,62 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
         console.warn('Erro ao buscar custos dos passeios para fluxo de caixa:', passeiosError);
       }
 
+      // ✨ NOVO: Buscar ingressos individuais para o fluxo de caixa
+      try {
+        const { data: ingressosFluxoData, error: ingressosFluxoError } = await supabase
+          .from('ingressos')
+          .select(`
+            id,
+            adversario,
+            jogo_data,
+            setor_estadio,
+            valor_final,
+            preco_custo,
+            situacao_financeira,
+            cliente_nome,
+            created_at
+          `)
+          .gte('jogo_data', filtroData.inicio)
+          .lte('jogo_data', filtroData.fim)
+          .order('jogo_data', { ascending: false });
+
+        if (ingressosFluxoError) throw ingressosFluxoError;
+
+        if (ingressosFluxoData && ingressosFluxoData.length > 0) {
+          ingressosFluxoData.forEach((ingresso: any) => {
+            // Adicionar receita do ingresso (só se foi pago)
+            if (ingresso.situacao_financeira === 'pago') {
+              fluxoItems.push({
+                data: ingresso.jogo_data,
+                descricao: `Ingresso: ${ingresso.cliente_nome || 'Cliente'} - ${ingresso.adversario} (${ingresso.setor_estadio})`,
+                tipo: 'entrada',
+                categoria: 'ingressos',
+                valor: ingresso.valor_final || 0,
+                viagem_id: null,
+                viagem_nome: `Flamengo x ${ingresso.adversario}`
+              });
+            }
+
+            // Adicionar custo do ingresso (sempre, pois é custo operacional)
+            if (ingresso.preco_custo > 0) {
+              fluxoItems.push({
+                data: ingresso.jogo_data,
+                descricao: `Custo Ingresso: ${ingresso.adversario} (${ingresso.setor_estadio})`,
+                tipo: 'saida',
+                categoria: 'ingressos',
+                valor: ingresso.preco_custo,
+                viagem_id: null,
+                viagem_nome: `Flamengo x ${ingresso.adversario}`
+              });
+            }
+          });
+
+          console.log('🎫 Ingressos adicionados ao fluxo de caixa:', ingressosFluxoData.length);
+        }
+      } catch (ingressosFluxoError) {
+        console.warn('Erro ao buscar ingressos para fluxo de caixa:', ingressosFluxoError);
+      }
+
       // Ordenar por data
       fluxoItems.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
       

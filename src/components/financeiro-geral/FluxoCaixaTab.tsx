@@ -42,6 +42,7 @@ export function FluxoCaixaTab({ fluxoCaixa }: FluxoCaixaTabProps) {
     if (tipo === 'entrada') {
       switch (categoria) {
         case 'passageiro': return 'bg-green-100 text-green-800';
+        case 'ingressos': return 'bg-red-100 text-red-800'; // ✨ NOVO: Receitas de ingressos
         case 'patrocinio': return 'bg-blue-100 text-blue-800';
         case 'vendas': return 'bg-purple-100 text-purple-800';
         case 'extras': return 'bg-orange-100 text-orange-800';
@@ -52,7 +53,8 @@ export function FluxoCaixaTab({ fluxoCaixa }: FluxoCaixaTabProps) {
         case 'transporte': return 'bg-red-100 text-red-800';
         case 'hospedagem': return 'bg-pink-100 text-pink-800';
         case 'alimentacao': return 'bg-yellow-100 text-yellow-800';
-        case 'ingressos': return 'bg-indigo-100 text-indigo-800';
+        case 'ingressos': return 'bg-red-200 text-red-900'; // ✨ MELHORADO: Custos de ingressos mais escuros
+        case 'passeios': return 'bg-purple-100 text-purple-800'; // ✨ NOVO: Custos de passeios
         case 'pessoal': return 'bg-cyan-100 text-cyan-800';
         case 'administrativo': return 'bg-gray-100 text-gray-800';
         default: return 'bg-gray-100 text-gray-800';
