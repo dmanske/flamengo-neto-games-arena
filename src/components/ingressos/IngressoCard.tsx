@@ -334,6 +334,8 @@ export function IngressoCard({
               onClick={onNovoPagamento}
               className="w-full gap-2"
               size="sm"
+              disabled={resumoPagamentos.quitado}
+              title={resumoPagamentos.quitado ? "Ingresso já está totalmente pago" : "Registrar novo pagamento"}
             >
               <Plus className="h-4 w-4" />
               Novo Pagamento

@@ -165,9 +165,18 @@ export function PagamentoIngressoModal({
                             type="number"
                             step="0.01"
                             min="0.01"
+                            max={pagamento ? undefined : resumoAtual.saldoDevedor}
                             placeholder="0,00"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) => {
+                              const valor = Number(e.target.value);
+                              // Se não for edição, limitar ao saldo devedor
+                              if (!pagamento && valor > resumoAtual.saldoDevedor) {
+                                field.onChange(resumoAtual.saldoDevedor);
+                              } else {
+                                field.onChange(valor);
+                              }
+                            }}
                           />
                         </FormControl>
                         {!pagamento && resumoAtual.saldoDevedor > 0 && (
@@ -182,6 +191,11 @@ export function PagamentoIngressoModal({
                           </Button>
                         )}
                       </div>
+                      {!pagamento && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Valor máximo: {formatCurrency(resumoAtual.saldoDevedor)}
+                        </p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
