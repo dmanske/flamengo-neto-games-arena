@@ -118,11 +118,19 @@ export function formatDateTimeSafe(dateString: string): string {
       // Formato ISO completo
       date = parseISO(dateString);
     } else if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      // Formato YYYY-MM-DD - adicionar horário para evitar problemas de fuso
-      date = parseISO(dateString + 'T12:00:00');
+      // Formato YYYY-MM-DD - usar apenas a data sem forçar horário específico
+      date = parseISO(dateString + 'T00:00:00');
     } else {
       // Fallback para new Date
       date = new Date(dateString);
+    }
+    
+    // Se a hora for 00:00 (meia-noite), mostrar apenas a data
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    
+    if (hours === 0 && minutes === 0) {
+      return format(date, "dd/MM/yyyy", { locale: ptBR });
     }
     
     return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });

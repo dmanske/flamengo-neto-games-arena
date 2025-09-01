@@ -51,18 +51,28 @@ export const isAdversarioDoRio = (adversario: string): boolean => {
 
 /**
  * Função para verificar se deve mostrar o campo nome do estádio
- * Só mostra se não for jogo no Rio de Janeiro
+ * Só mostra se não for jogo em casa (Maracanã)
  */
 export const shouldShowNomeEstadio = (localJogo: string): boolean => {
-  return localJogo !== "Rio de Janeiro";
+  return localJogo !== "casa";
 };
 
 /**
  * Função para obter as opções de setor baseado no local do jogo
  */
 export const getSetorOptions = (localJogo: string) => {
-  if (localJogo === "Rio de Janeiro") {
-    return ["Norte", "Sul", "Leste Inferior", "Leste Superior", "Oeste", "Maracanã Mais", "Sem ingresso"];
+  // Aceitar tanto "casa" quanto "Rio de Janeiro" para jogos no Maracanã
+  if (localJogo === "casa" || localJogo === "Rio de Janeiro") {
+    // Usar EXATAMENTE os mesmos setores que já estão cadastrados no sistema
+    return [
+      "Norte",
+      "Sul", 
+      "Leste Inferior", 
+      "Leste Superior", 
+      "Oeste",
+      "Maracanã Mais",
+      "Sem ingresso"
+    ];
   }
   
   return ["Setor Casa", "Setor Visitante", "Sem ingresso"];
@@ -72,7 +82,7 @@ export const getSetorOptions = (localJogo: string) => {
  * Função para obter o label do campo setor baseado na viagem
  */
 export const getSetorLabel = (localJogo: string, nomeEstadio?: string): string => {
-  if (localJogo === "Rio de Janeiro") {
+  if (localJogo === "casa") {
     return "Setor do Maracanã";
   }
   

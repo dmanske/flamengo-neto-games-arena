@@ -39,7 +39,7 @@ export function useIngressos() {
         .from('ingressos')
         .select(`
           *,
-          cliente:clientes(id, nome, telefone, email, cpf, data_nascimento),
+          cliente:clientes(id, nome, telefone, email, cpf, data_nascimento, foto),
           viagem:viagens(id, adversario, data_jogo)
         `);
 
@@ -168,62 +168,85 @@ export function useIngressos() {
 
     try {
       let viagemId = dados.viagem_id;
+      let viagemIngressosId = dados.viagem_ingressos_id;
 
-      // Se não há viagem vinculada, criar uma automaticamente
-      if (!viagemId && dados.adversario && dados.jogo_data) {
-        console.log('Criando viagem automática para:', dados.adversario, dados.jogo_data);
+      // Se não há viagem vinculada, buscar em ambas as tabelas
+      if (!viagemId && !viagemIngressosId && dados.adversario && dados.jogo_data) {
+        console.log('Buscando viagem para:', dados.adversario, dados.jogo_data);
         
-        // Verificar se já existe uma viagem para o mesmo adversário e data
+        // Converter data do formulário para ISO para comparação
+        const dataJogoISO = new Date(dados.jogo_data).toISOString();
+        console.log('Data convertida para ISO:', dataJogoISO);
+        
+        // Primeiro, buscar na tabela viagens
         const { data: viagemExistente, error: errorBusca } = await supabase
           .from('viagens')
-          .select('id')
-          .eq('adversario', dados.adversario)
-          .eq('data_jogo', dados.jogo_data)
-          .single();
+          .select('id, adversario, data_jogo')
+          .ilike('adversario', dados.adversario);
 
-        if (errorBusca && errorBusca.code !== 'PGRST116') {
-          console.error('Erro ao buscar viagem existente:', errorBusca);
-        }
+        console.log('Viagens encontradas na tabela viagens:', viagemExistente);
 
-        if (viagemExistente) {
-          // Usar viagem existente
-          viagemId = viagemExistente.id;
-          console.log('Usando viagem existente:', viagemId);
+        // Buscar viagem com data compatível (mesmo dia)
+        const viagemCompativel = viagemExistente?.find(v => {
+          const dataViagem = new Date(v.data_jogo);
+          const dataIngresso = new Date(dados.jogo_data);
+          // Usar toISOString().split('T')[0] para comparação mais precisa
+          return dataViagem.toISOString().split('T')[0] === dataIngresso.toISOString().split('T')[0];
+        });
+
+        if (viagemCompativel) {
+          // Usar viagem existente da tabela viagens
+          viagemId = viagemCompativel.id;
+          console.log('✅ Usando viagem existente da tabela viagens:', viagemId);
         } else {
-          // Criar nova viagem
-          const { data: novaViagem, error: errorViagem } = await supabase
-            .from('viagens')
-            .insert([{
-              adversario: dados.adversario,
-              data_jogo: dados.jogo_data,
-              valor_padrao: dados.valor_final || 100, // Usar valor do ingresso como padrão
-              capacidade_onibus: 50, // Valor padrão
-              status_viagem: 'Aberta' // Status padrão para permitir novos ingressos
-            }])
-            .select('id')
-            .single();
+          // Se não encontrou na tabela viagens, buscar na tabela viagens_ingressos
+          const { data: viagensIngressosExistentes, error: errorBuscaIngressos } = await supabase
+            .from('viagens_ingressos')
+            .select('id, adversario, data_jogo')
+            .ilike('adversario', dados.adversario);
 
-          if (errorViagem) {
-            console.error('Erro ao criar viagem automática:', errorViagem);
-            setErros({ geral: 'Erro ao criar viagem para o ingresso' });
-            toast.error('Erro ao criar viagem para o ingresso');
-            return false;
+          console.log('Viagens encontradas na tabela viagens_ingressos:', viagensIngressosExistentes);
+
+          if (errorBuscaIngressos && errorBuscaIngressos.code !== 'PGRST116') {
+            console.error('Erro ao buscar viagem de ingressos existente:', errorBuscaIngressos);
           }
 
-          viagemId = novaViagem.id;
-          console.log('Nova viagem criada:', viagemId);
-          toast.success(`Viagem criada automaticamente: ${dados.adversario}`);
+          // Buscar viagem de ingressos com data compatível (mesmo dia)
+          const viagemIngressosCompativel = viagensIngressosExistentes?.find(v => {
+            const dataViagem = new Date(v.data_jogo);
+            const dataIngresso = new Date(dados.jogo_data);
+            // Usar toISOString().split('T')[0] para comparação mais precisa
+            return dataViagem.toISOString().split('T')[0] === dataIngresso.toISOString().split('T')[0];
+          });
+
+          if (viagemIngressosCompativel) {
+            // Usar viagem existente da tabela viagens_ingressos
+            viagemIngressosId = viagemIngressosCompativel.id;
+            console.log('✅ Usando viagem existente da tabela viagens_ingressos:', viagemIngressosId);
+          } else {
+            // Não criar viagem automática - deixar o usuário criar manualmente
+            console.log('❌ Nenhuma viagem encontrada para:', dados.adversario, dados.jogo_data);
+            setErros({ geral: 'Não foi encontrada uma viagem para este jogo. Crie uma viagem primeiro ou selecione uma viagem existente.' });
+            toast.error('Crie uma viagem para este jogo primeiro');
+            return false;
+          }
         }
       }
 
       // Validação: verificar se o cliente já tem ingresso para a mesma viagem
-      if (viagemId) {
-        const { data: ingressoExistente, error: errorValidacao } = await supabase
+      if (viagemId || viagemIngressosId) {
+        let query = supabase
           .from('ingressos')
           .select('id')
-          .eq('cliente_id', dados.cliente_id)
-          .eq('viagem_id', viagemId)
-          .single();
+          .eq('cliente_id', dados.cliente_id);
+
+        if (viagemId) {
+          query = query.eq('viagem_id', viagemId);
+        } else if (viagemIngressosId) {
+          query = query.eq('viagem_ingressos_id', viagemIngressosId);
+        }
+
+        const { data: ingressoExistente, error: errorValidacao } = await query.single();
 
         if (errorValidacao && errorValidacao.code !== 'PGRST116') {
           console.error('Erro ao validar ingresso duplicado:', errorValidacao);
@@ -243,7 +266,20 @@ export function useIngressos() {
       const { valorFinalCalculado, lucro, margem_percentual, ...dadosParaInserir } = dados;
       
       // Usar a viagem criada/encontrada
-      dadosParaInserir.viagem_id = viagemId;
+      if (viagemId) {
+        dadosParaInserir.viagem_id = viagemId;
+        dadosParaInserir.viagem_ingressos_id = null;
+      } else if (viagemIngressosId) {
+        dadosParaInserir.viagem_id = null; // ✅ CORREÇÃO: Não colocar ID errado
+        dadosParaInserir.viagem_ingressos_id = viagemIngressosId;
+      }
+      
+      console.log('🎯 Dados do ingresso sendo salvos:', {
+        jogo_data: dadosParaInserir.jogo_data,
+        adversario: dadosParaInserir.adversario,
+        viagem_id: dadosParaInserir.viagem_id,
+        viagem_ingressos_id: dadosParaInserir.viagem_ingressos_id
+      });
       
       const { data, error } = await supabase
         .from('ingressos')
@@ -453,7 +489,7 @@ export function useIngressos() {
         .from('ingressos')
         .select(`
           *,
-          cliente:clientes(id, nome, telefone, email),
+          cliente:clientes(id, nome, telefone, email, foto),
           viagem:viagens(id, destino, data_ida)
         `)
         .eq('id', id)

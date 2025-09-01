@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarIcon, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatDateTimeSafe } from '@/lib/date-utils';
 
 import {
   Dialog,
@@ -72,7 +73,7 @@ export function PagamentoIngressoModal({
     defaultValues: {
       ingresso_id: ingresso.id,
       valor_pago: 0,
-      data_pagamento: format(new Date(), 'yyyy-MM-dd'),
+      data_pagamento: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
       forma_pagamento: 'dinheiro',
       observacoes: ''
     }
@@ -89,7 +90,7 @@ export function PagamentoIngressoModal({
         form.reset({
           ingresso_id: pagamento.ingresso_id,
           valor_pago: pagamento.valor_pago,
-          data_pagamento: format(new Date(pagamento.data_pagamento), 'yyyy-MM-dd'),
+          data_pagamento: new Date(pagamento.data_pagamento).toISOString().slice(0, 10),
           forma_pagamento: pagamento.forma_pagamento,
           observacoes: pagamento.observacoes || ''
         });
@@ -98,7 +99,7 @@ export function PagamentoIngressoModal({
         form.reset({
           ingresso_id: ingresso.id,
           valor_pago: ingresso.valor_final,
-          data_pagamento: format(new Date(), 'yyyy-MM-dd'),
+          data_pagamento: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
           forma_pagamento: 'dinheiro',
           observacoes: ''
         });
@@ -204,7 +205,7 @@ export function PagamentoIngressoModal({
                               )}
                             >
                               {field.value ? (
-                                format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
+                                formatDateTimeSafe(field.value, "dd/MM/yyyy")
                               ) : (
                                 <span>Selecione a data</span>
                               )}

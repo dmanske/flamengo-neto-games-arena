@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { formatDateTimeSafe } from '@/lib/date-utils';
 
-import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, FileText } from "lucide-react";
+import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,6 +27,7 @@ interface CleanJogoCardProps {
   onVerIngressos: (jogo: JogoIngresso) => void;
   onDeletarJogo: (jogo: JogoIngresso) => void;
   onExportarPDF?: (jogo: JogoIngresso) => void;
+  onNovoIngresso?: (jogo: JogoIngresso) => void;
   isSelected?: boolean;
 }
 
@@ -35,6 +36,7 @@ export function CleanJogoCard({
   onVerIngressos,
   onDeletarJogo,
   onExportarPDF,
+  onNovoIngresso,
   isSelected = false
 }: CleanJogoCardProps) {
   const [editarLogoOpen, setEditarLogoOpen] = useState(false);
@@ -55,6 +57,14 @@ export function CleanJogoCard({
     return <div>Erro: Data do jogo não encontrada</div>;
   }
   const formatDateTime = formatDateTimeSafe;
+
+  // Debug da data do jogo
+  console.log('🎯 CleanJogoCard - Data do jogo:', {
+    adversario: jogo.adversario,
+    jogo_data: jogo.jogo_data,
+    formatado: formatDateTime(jogo.jogo_data),
+    total_ingressos: jogo.total_ingressos
+  });
 
   const getLocalBadge = (local: 'casa' | 'fora') => {
     if (local === 'casa') {
@@ -284,7 +294,7 @@ export function CleanJogoCard({
         </div>
         
         {/* Actions footer */}
-        <div className="grid grid-cols-3 border-t border-gray-100">
+        <div className="grid grid-cols-4 border-t border-gray-100">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -301,6 +311,23 @@ export function CleanJogoCard({
             </TooltipTrigger>
             <TooltipContent>Ver lista de ingressos vendidos para este jogo</TooltipContent>
           </Tooltip>
+          
+          {onNovoIngresso && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="rounded-none border-r border-gray-100 h-12 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  onClick={() => onNovoIngresso(jogo)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Novo</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Criar novo ingresso para este jogo</TooltipContent>
+            </Tooltip>
+          )}
           
           {onExportarPDF && (
             <Tooltip>

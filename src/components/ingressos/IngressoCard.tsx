@@ -29,6 +29,7 @@ import { Separator } from '@/components/ui/separator';
 
 import { Ingresso, SituacaoFinanceiraIngresso } from '@/types/ingressos';
 import { formatCurrency, formatCPF, formatPhone } from '@/utils/formatters';
+import { formatDateTimeSafe } from '@/lib/date-utils';
 
 interface IngressoCardProps {
   ingresso: Ingresso;
@@ -165,8 +166,23 @@ export function IngressoCard({
             {ingresso.cliente && (
               <div className="border-t pt-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                    {ingresso.cliente.nome.charAt(0).toUpperCase()}
+                  {/* Foto do Cliente */}
+                  <div className="relative">
+                    {ingresso.cliente?.foto ? (
+                      <img 
+                        src={ingresso.cliente.foto} 
+                        alt={ingresso.cliente.nome}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold ${ingresso.cliente?.foto ? 'hidden' : ''}`}>
+                      {ingresso.cliente.nome.charAt(0).toUpperCase()}
+                    </div>
                   </div>
                   <div>
                     <p className="font-semibold">{ingresso.cliente.nome}</p>
@@ -394,7 +410,7 @@ export function IngressoCard({
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {format(new Date(pagamento.data_pagamento), 'dd/MM/yyyy')}
+                            {formatDateTimeSafe(pagamento.data_pagamento)}
                           </div>
                           {pagamento.observacoes && (
                             <span className="truncate max-w-[200px]">

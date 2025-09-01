@@ -26,6 +26,7 @@ export interface Ingresso {
   id: string;
   cliente_id: string;
   viagem_id?: string | null;
+  viagem_ingressos_id?: string | null;
   
   // Dados do jogo
   jogo_data: string; // ISO date string
@@ -104,6 +105,7 @@ export interface SetorMaracana {
 export interface IngressoFormData {
   cliente_id: string;
   viagem_id?: string | null;
+  viagem_ingressos_id?: string | null;
   jogo_data: string;
   adversario: string;
   logo_adversario?: string | null;

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, FileText } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Filter, Download, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIngressos } from '@/hooks/useIngressos';
-import { Ingresso, FiltrosIngressos, SituacaoFinanceiraIngresso } from '@/types/ingressos';
+import { Ingresso, FiltrosIngressos } from '@/types/ingressos';
 import { formatCurrency } from '@/utils/formatters';
 import { FiltrosIngressosModal } from '@/components/ingressos/FiltrosIngressosModal';
 import { IngressoDetailsModal } from '@/components/ingressos/IngressoDetailsModal';
@@ -25,14 +26,14 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
 export default function Ingressos() {
+  const navigate = useNavigate();
   const { 
     ingressos, 
     resumoFinanceiro, 
     estados, 
     buscarIngressos,
     buscarResumoFinanceiro,
-    deletarIngresso,
-    agruparIngressosPorJogo
+    deletarIngresso
   } = useIngressos();
 
   const [filtros, setFiltros] = useState<FiltrosIngressos>({});
@@ -46,6 +47,10 @@ export default function Ingressos() {
   const [logosAdversarios, setLogosAdversarios] = useState<Record<string, string>>({});
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [jogoParaDeletar, setJogoParaDeletar] = useState<any>(null);
+  const [viagensIngressos, setViagensIngressos] = useState<any[]>([]);
+  const [viagemToDelete, setViagemToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [jogoSelecionadoParaIngresso, setJogoSelecionadoParaIngresso] = useState<any>(null);
   
   // Hook para relatório PDF
   const { reportRef, handleExportPDF } = useIngressosReport();
@@ -66,29 +71,114 @@ export default function Ingressos() {
 
   // Os jogos agrupados agora são calculados via useMemo
 
-  // Agrupar ingressos por jogo (versão otimizada)
+  // Buscar viagens de ingressos
+  const buscarViagensIngressos = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('viagens_ingressos')
+        .select('*')
+        .eq('status', 'Ativa')
+        .order('data_jogo', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar viagens de ingressos:', error);
+        return;
+      }
+
+      setViagensIngressos(data || []);
+    } catch (error) {
+      console.error('Erro inesperado ao buscar viagens de ingressos:', error);
+    }
+  }, []);
+
+  // Carregar viagens de ingressos quando o componente montar
+  useEffect(() => {
+    buscarViagensIngressos();
+  }, [buscarViagensIngressos]);
+
+  // Função para deletar viagem de ingressos
+  const handleDeleteViagemIngressos = async (viagemId: string, viagemNome: string) => {
+    try {
+      setIsDeleting(true);
+
+      console.log(`Iniciando exclusão da viagem de ingressos: ${viagemId} - ${viagemNome}`);
+
+      const { error } = await supabase
+        .from('viagens_ingressos')
+        .delete()
+        .eq('id', viagemId);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(`Viagem de ingressos excluída com sucesso: ${viagemId}`);
+
+      toast.success(`Viagem de ingressos "${viagemNome}" removida com sucesso`);
+      setViagemToDelete(null);
+      
+      // Recarregar a lista
+      await buscarViagensIngressos();
+    } catch (err: any) {
+      console.error('Erro ao excluir viagem de ingressos:', err);
+      toast.error(`Erro ao excluir viagem de ingressos: ${err.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+
+
+
+
+
+  // UNIFICAR TUDO EM JOGOS FUTUROS - incluir viagens com e sem ingressos
   const jogosComIngressos = useMemo(() => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    // Filtrar apenas jogos futuros
+    const gruposUnificados: Record<string, any> = {};
+
+    // 1. Processar ingressos existentes
     const ingressosFuturos = ingressosFiltrados.filter(ingresso => {
-      // Usar data da viagem se disponível, senão usar data do ingresso
       const dataJogoString = ingresso.viagem?.data_jogo || ingresso.jogo_data;
       const dataJogo = new Date(dataJogoString);
       return dataJogo >= hoje;
     });
 
-    // Agrupar por jogo (adversario + data + local)
-    const grupos = ingressosFuturos.reduce((acc, ingresso) => {
-      // Usar data da viagem se disponível, senão usar data do ingresso
+    ingressosFuturos.forEach(ingresso => {
       const dataJogo = ingresso.viagem?.data_jogo || ingresso.jogo_data;
-      const chaveJogo = `${ingresso.adversario}-${dataJogo}-${ingresso.local_jogo}`;
+      // Usar toISOString().split('T')[0] para chave mais consistente
+      const dataJogoNormalizada = new Date(dataJogo).toISOString().split('T')[0];
+      const chaveJogo = `${ingresso.adversario.toLowerCase()}-${dataJogoNormalizada}-${ingresso.local_jogo}`;
       
-      if (!acc[chaveJogo]) {
-        acc[chaveJogo] = {
+      if (!gruposUnificados[chaveJogo]) {
+        // BUSCAR data da viagem de ingressos se não tem viagem do sistema
+        let dataJogoCorreta = ingresso.viagem?.data_jogo;
+        
+        // Se não tem viagem do sistema, buscar na viagem de ingressos
+        if (!dataJogoCorreta && ingresso.viagem_ingressos_id) {
+          const viagemIngressos = viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id);
+          dataJogoCorreta = viagemIngressos?.data_jogo;
+        }
+        
+        // Fallback para data do ingresso
+        if (!dataJogoCorreta) {
+          dataJogoCorreta = ingresso.jogo_data;
+        }
+        
+        console.log('🎯 Agrupamento - Criando grupo:', {
           adversario: ingresso.adversario,
-          jogo_data: dataJogo, // Usar a data correta (da viagem se disponível)
+          dataViagem: ingresso.viagem?.data_jogo,
+          dataViagemIngressos: viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id)?.data_jogo,
+          dataIngresso: ingresso.jogo_data,
+          dataEscolhida: dataJogoCorreta,
+          chaveJogo
+        });
+        
+        gruposUnificados[chaveJogo] = {
+          adversario: ingresso.adversario,
+          jogo_data: dataJogoCorreta, // ✅ Usar data correta
           local_jogo: ingresso.local_jogo,
           logo_adversario: ingresso.logo_adversario || logosAdversarios[ingresso.adversario] || null,
           logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
@@ -101,28 +191,56 @@ export default function Ingressos() {
         };
       }
       
-      acc[chaveJogo].ingressos.push(ingresso);
-      acc[chaveJogo].total_ingressos++;
-      acc[chaveJogo].receita_total += ingresso.valor_final;
-      acc[chaveJogo].lucro_total += ingresso.lucro;
+      gruposUnificados[chaveJogo].ingressos.push(ingresso);
+      gruposUnificados[chaveJogo].total_ingressos++;
+      gruposUnificados[chaveJogo].receita_total += ingresso.valor_final || 0;
+      gruposUnificados[chaveJogo].lucro_total += ingresso.lucro || 0;
       
-      switch (ingresso.situacao_financeira) {
-        case 'pago':
-          acc[chaveJogo].ingressos_pagos++;
-          break;
-        case 'pendente':
-          acc[chaveJogo].ingressos_pendentes++;
-          break;
+      if (ingresso.situacao_financeira === 'pago') {
+        gruposUnificados[chaveJogo].ingressos_pagos++;
+      } else if (ingresso.situacao_financeira === 'pendente') {
+        gruposUnificados[chaveJogo].ingressos_pendentes++;
       }
-      
-      return acc;
-    }, {} as Record<string, any>);
+    });
 
-    // Converter para array e ordenar por data
-    return Object.values(grupos).sort((a: any, b: any) => {
+    // 2. Processar viagens de ingressos sem ingressos ainda
+    const viagensFuturas = viagensIngressos.filter(viagem => {
+      const dataJogo = new Date(viagem.data_jogo);
+      return dataJogo >= hoje;
+    });
+
+    viagensFuturas.forEach(viagem => {
+      // Usar toISOString().split('T')[0] para chave mais consistente
+      const dataJogoNormalizada = new Date(viagem.data_jogo).toISOString().split('T')[0];
+      const chaveJogo = `${viagem.adversario.toLowerCase()}-${dataJogoNormalizada}-${viagem.local_jogo}`;
+      
+      // Só adicionar se não existe (não tem ingressos)
+      if (!gruposUnificados[chaveJogo]) {
+        gruposUnificados[chaveJogo] = {
+          adversario: viagem.adversario,
+          jogo_data: viagem.data_jogo,
+          local_jogo: viagem.local_jogo,
+          logo_adversario: viagem.logo_adversario || logosAdversarios[viagem.adversario] || null,
+          logo_flamengo: viagem.logo_flamengo || "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
+          ingressos: [],
+          total_ingressos: 0,
+          receita_total: 0,
+          lucro_total: 0,
+          ingressos_pendentes: 0,
+          ingressos_pagos: 0,
+          viagem_ingressos_id: viagem.id,
+        };
+      } else {
+        // Se já existe (tem ingressos), apenas adicionar o ID da viagem para referência
+        gruposUnificados[chaveJogo].viagem_ingressos_id = viagem.id;
+      }
+    });
+
+    // 3. Converter para array e ordenar por data
+    return Object.values(gruposUnificados).sort((a: any, b: any) => {
       return new Date(a.jogo_data).getTime() - new Date(b.jogo_data).getTime();
     });
-  }, [ingressosFiltrados, logosAdversarios]);
+  }, [ingressosFiltrados, logosAdversarios, viagensIngressos]);
 
   // Função para deletar ingresso (sem confirmação - já tratada no modal)
   const handleDeletar = async (ingresso: Ingresso) => {
@@ -150,13 +268,8 @@ export default function Ingressos() {
   // Função para abrir modal de novo ingresso com jogo pré-selecionado
   const handleNovoIngressoJogo = (jogo: any) => {
     setIngressoSelecionado(null); // Limpar seleção para modo criação
+    setJogoSelecionadoParaIngresso(jogo); // Armazenar jogo selecionado
     setModalFormAberto(true);
-    
-    // Aguardar um momento para o modal abrir e então preencher os dados
-    setTimeout(() => {
-      // Aqui podemos implementar lógica para pré-preencher o formulário
-      // Por enquanto, apenas abrimos o modal
-    }, 100);
   };
 
   // Função para obter ingressos de um jogo específico
@@ -164,9 +277,13 @@ export default function Ingressos() {
     return ingressos.filter(ingresso => {
       // Usar data da viagem se disponível, senão usar data do ingresso
       const dataJogoIngresso = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      // Usar toISOString().split('T')[0] para comparação consistente (mesmo método usado no agrupamento)
+      const dataIngressoNormalizada = new Date(dataJogoIngresso).toISOString().split('T')[0];
+      const dataJogoNormalizada = new Date(jogo.jogo_data).toISOString().split('T')[0];
+      
       return (
-        ingresso.adversario === jogo.adversario &&
-        dataJogoIngresso === jogo.jogo_data &&
+        ingresso.adversario.toLowerCase() === jogo.adversario.toLowerCase() &&
+        dataIngressoNormalizada === dataJogoNormalizada &&
         ingresso.local_jogo === jogo.local_jogo
       );
     });
@@ -195,13 +312,6 @@ export default function Ingressos() {
 
   // Função para abrir modal de confirmação de exclusão
   const handleDeletarJogo = (jogo: any) => {
-    const ingressosDoJogo = getIngressosDoJogo(jogo);
-    
-    if (ingressosDoJogo.length === 0) {
-      toast.warning('Não há ingressos para deletar neste jogo.');
-      return;
-    }
-
     setJogoParaDeletar(jogo);
     setConfirmDeleteOpen(true);
   };
@@ -214,31 +324,73 @@ export default function Ingressos() {
     setConfirmDeleteOpen(false);
 
     try {
-      // Usar toast.promise para melhor UX
-      await toast.promise(
-        (async () => {
-          // Deletar todos os ingressos do jogo em lote
-          const { error } = await supabase
-            .from('ingressos')
-            .delete()
-            .in('id', ingressosDoJogo.map(ing => ing.id));
+      if (ingressosDoJogo.length > 0) {
+        // Se há ingressos, deletar os ingressos E a viagem se for viagem de ingressos
+        await toast.promise(
+          (async () => {
+            // 1. Deletar ingressos
+            const { error: errorIngressos } = await supabase
+              .from('ingressos')
+              .delete()
+              .in('id', ingressosDoJogo.map(ing => ing.id));
 
-          if (error) {
-            throw new Error('Erro ao deletar ingressos');
+            if (errorIngressos) {
+              throw new Error('Erro ao deletar ingressos');
+            }
+
+            // 2. Se é viagem de ingressos, deletar a viagem também
+            if (jogoParaDeletar.viagem_ingressos_id) {
+              const { error: errorViagem } = await supabase
+                .from('viagens_ingressos')
+                .delete()
+                .eq('id', jogoParaDeletar.viagem_ingressos_id);
+
+              if (errorViagem) {
+                console.warn('Erro ao deletar viagem de ingressos:', errorViagem);
+                // Não falhar por causa disso
+              }
+            }
+
+            // Recarregar dados após deletar
+            await buscarIngressos(filtros);
+            await buscarResumoFinanceiro(filtros);
+            await buscarViagensIngressos();
+          })(),
+          {
+            loading: `Deletando jogo completo...`,
+            success: `✅ Jogo deletado completamente!`,
+            error: '❌ Erro ao deletar jogo. Tente novamente.'
           }
+        );
+      } else if (jogoParaDeletar.viagem_ingressos_id) {
+        // Se não há ingressos mas é uma viagem de ingressos, deletar a viagem
+        await toast.promise(
+          (async () => {
+            const { error } = await supabase
+              .from('viagens_ingressos')
+              .delete()
+              .eq('id', jogoParaDeletar.viagem_ingressos_id);
 
-          // Recarregar dados após deletar
-          await buscarIngressos(filtros);
-          await buscarResumoFinanceiro(filtros);
-        })(),
-        {
-          loading: `Deletando ${ingressosDoJogo.length} ingressos...`,
-          success: `✅ ${ingressosDoJogo.length} ingressos deletados com sucesso!`,
-          error: '❌ Erro ao deletar ingressos. Tente novamente.'
-        }
-      );
+            if (error) {
+              throw new Error('Erro ao deletar viagem');
+            }
+
+            // Recarregar dados após deletar
+            await buscarViagensIngressos();
+            await buscarIngressos(filtros);
+            await buscarResumoFinanceiro(filtros);
+          })(),
+          {
+            loading: 'Deletando viagem...',
+            success: '✅ Viagem deletada com sucesso!',
+            error: '❌ Erro ao deletar viagem. Tente novamente.'
+          }
+        );
+      } else {
+        toast.warning('Não há nada para deletar neste jogo.');
+      }
     } catch (error) {
-      console.error('Erro ao deletar ingressos do jogo:', error);
+      console.error('Erro ao deletar:', error);
     }
   };
 
@@ -294,8 +446,18 @@ export default function Ingressos() {
             <Plus className="h-4 w-4" />
             Novo Ingresso
           </Button>
+          <Button 
+            onClick={() => navigate('/dashboard/cadastrar-viagem-ingressos')} 
+            variant="outline" 
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nova Viagem para Ingressos
+          </Button>
         </div>
       </div>
+
+
 
       {/* Cards de Resumo */}
       {resumoFinanceiro && (
@@ -407,7 +569,7 @@ export default function Ingressos() {
 
 
 
-      {/* Cards de Jogos Futuros */}
+      {/* Cards de Jogos Futuros - TODOS os jogos */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -422,8 +584,25 @@ export default function Ingressos() {
           ) : jogosComIngressos.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <span className="text-4xl mb-4 block">🎫</span>
-              <p>Nenhum jogo futuro com ingressos encontrado</p>
-              <p className="text-sm">Cadastre ingressos para jogos futuros clicando em "Novo Ingresso"</p>
+              <p>Nenhum jogo futuro encontrado</p>
+              <p className="text-sm">Crie viagens para ingressos ou cadastre ingressos para jogos futuros</p>
+              
+              <div className="flex gap-2 justify-center mt-4">
+                <Button 
+                  onClick={() => navigate('/dashboard/cadastrar-viagem-ingressos')}
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Viagem
+                </Button>
+                <Button onClick={() => {
+                  setIngressoSelecionado(null);
+                  setModalFormAberto(true);
+                }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Ingresso
+                </Button>
+              </div>
               
               {ingressos.length > 0 && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg">
@@ -437,14 +616,15 @@ export default function Ingressos() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jogosComIngressos.map((jogo: any, index: number) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {jogosComIngressos.map((jogo: any) => (
                 <CleanJogoCard
                   key={`${jogo.adversario}-${jogo.jogo_data}-${jogo.local_jogo}`}
                   jogo={jogo}
                   onVerIngressos={handleVerIngressosJogo}
                   onDeletarJogo={handleDeletarJogo}
                   onExportarPDF={handleExportarPDFJogo}
+                  onNovoIngresso={handleNovoIngressoJogo}
                 />
               ))}
             </div>
@@ -452,14 +632,27 @@ export default function Ingressos() {
         </CardContent>
       </Card>
 
+
+
       {/* Modais */}
       <IngressoFormModal
         open={modalFormAberto}
-        onOpenChange={setModalFormAberto}
+        onOpenChange={(open) => {
+          setModalFormAberto(open);
+          if (!open) {
+            setJogoSelecionadoParaIngresso(null);
+          }
+        }}
         ingresso={ingressoSelecionado}
+        jogoPreSelecionado={jogoSelecionadoParaIngresso}
         onSuccess={() => {
           setModalFormAberto(false);
           setIngressoSelecionado(null);
+          setJogoSelecionadoParaIngresso(null);
+          // Recarregar dados para atualizar cards em tempo real
+          buscarIngressos(filtros);
+          buscarResumoFinanceiro(filtros);
+          buscarViagensIngressos();
         }}
       />
 
@@ -492,12 +685,16 @@ export default function Ingressos() {
         onOpenChange={setConfirmDeleteOpen}
         title="🗑️ Deletar Jogo Completo"
         description={jogoParaDeletar ? 
-          `Você está prestes a deletar TODOS os ingressos do jogo:\n\n` +
+          `Você está prestes a deletar COMPLETAMENTE este jogo:\n\n` +
           `🏆 Jogo: ${jogoParaDeletar.local_jogo === 'fora' ? 
             `${jogoParaDeletar.adversario} × Flamengo` : 
             `Flamengo × ${jogoParaDeletar.adversario}`}\n` +
           `🎫 Total de ingressos: ${getIngressosDoJogo(jogoParaDeletar).length}\n` +
           `💰 Receita total: ${formatCurrency(jogoParaDeletar.receita_total)}\n\n` +
+          `${jogoParaDeletar.viagem_ingressos_id ? 
+            '🗑️ Isso irá deletar TODOS os ingressos E a viagem para ingressos!\n' : 
+            '🗑️ Isso irá deletar TODOS os ingressos deste jogo!\n'
+          }\n` +
           `⚠️ Esta ação não pode ser desfeita!\n\n` +
           `Tem certeza que deseja continuar?`
           : ''
@@ -507,6 +704,55 @@ export default function Ingressos() {
         onConfirm={confirmarDeletarJogo}
         variant="destructive"
       />
+
+      {/* Modal de confirmação de exclusão de viagem de ingressos */}
+      {viagemToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Confirmar Exclusão</h3>
+                <p className="text-sm text-gray-600">Esta ação não pode ser desfeita</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Tem certeza que deseja excluir a viagem de ingressos <strong>"{viagemToDelete.adversario}"</strong>?
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setViagemToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteViagemIngressos(viagemToDelete.id, viagemToDelete.adversario)}
+                disabled={isDeleting}
+                className="gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Componente de relatório oculto para impressão */}
       {jogoSelecionado && jogoSelecionado.ingressos && (

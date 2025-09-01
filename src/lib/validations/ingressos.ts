@@ -21,6 +21,7 @@ export const ingressoSchema = z.object({
     .uuid("ID do cliente inválido"),
   
   viagem_id: z.string().uuid("ID da viagem inválido").optional().nullable(),
+  viagem_ingressos_id: z.string().uuid("ID da viagem de ingressos inválido").optional().nullable(),
   
   jogo_data: dataSchema.refine((date) => {
     const hoje = new Date();
@@ -60,9 +61,7 @@ export const ingressoSchema = z.object({
   
   desconto: valorMonetarioSchema,
   
-  situacao_financeira: z.enum(['pendente', 'pago', 'cancelado'] as const, {
-    errorMap: () => ({ message: "Situação financeira inválida" })
-  }),
+
   
   observacoes: z.string()
     .max(1000, "Observações muito longas")
@@ -74,16 +73,6 @@ export const ingressoSchema = z.object({
 }, {
   message: "Desconto não pode ser maior que o preço de venda",
   path: ["desconto"]
-}).refine((data) => {
-  // Validação: se situação é 'pago', deve ter valor final > 0
-  const valorFinal = data.preco_venda - data.desconto;
-  if (data.situacao_financeira === 'pago' && valorFinal <= 0) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Ingresso pago deve ter valor final maior que zero",
-  path: ["situacao_financeira"]
 });
 
 // Schema para edição de ingresso (permite campos opcionais)
@@ -91,6 +80,7 @@ export const editarIngressoSchema = z.object({
   id: z.string().uuid("ID do ingresso inválido"),
   cliente_id: z.string().uuid("ID do cliente inválido").optional(),
   viagem_id: z.string().uuid("ID da viagem inválido").optional().nullable(),
+  viagem_ingressos_id: z.string().uuid("ID da viagem de ingressos inválido").optional().nullable(),
   jogo_data: dataSchema.optional(),
   adversario: z.string().min(2).max(100).trim().optional(),
   logo_adversario: z.string().url("URL do logo inválida").optional().nullable().or(z.literal('')),
@@ -99,7 +89,7 @@ export const editarIngressoSchema = z.object({
   preco_custo: valorMonetarioSchema.optional(),
   preco_venda: valorMonetarioSchema.optional(),
   desconto: valorMonetarioSchema.optional(),
-  situacao_financeira: z.enum(['pendente', 'pago', 'cancelado'] as const).optional(),
+
   observacoes: z.string().max(1000).optional().nullable()
 });
 

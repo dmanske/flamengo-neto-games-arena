@@ -68,6 +68,28 @@ export function useViagens() {
       setCarregando(false);
     }
   }, []);
+  
+  // Função para buscar viagens específicas para ingressos
+  const buscarViagensIngressos = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('viagens_ingressos')
+        .select('*')
+        .eq('status', 'Ativa')
+        .order('data_jogo', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar viagens de ingressos:', error);
+        return [];
+      }
+
+      console.log('Viagens de ingressos encontradas:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('Erro inesperado ao buscar viagens de ingressos:', error);
+      return [];
+    }
+  }, []);
 
   // Função para buscar viagem por ID
   const buscarViagemPorId = useCallback(async (id: string): Promise<Viagem | null> => {
@@ -95,6 +117,7 @@ export function useViagens() {
     carregando,
     buscarViagens,
     buscarViagensAtivas,
-    buscarViagemPorId
+    buscarViagemPorId,
+    buscarViagensIngressos
   };
 }
