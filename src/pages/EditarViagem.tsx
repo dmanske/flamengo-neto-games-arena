@@ -183,19 +183,12 @@ export default function EditarViagem() {
     
     // Atualizar opções de setor baseado no local do jogo
     const setorAtual = form.watch("setor_padrao");
-    const setoresRio = ["Norte", "Sul", "Leste", "Oeste", "Maracanã Mais"];
-    const setoresVisitante = ["Setor Casa", "Setor Visitante"];
+    const setoresDisponiveis = getSetorOptions(localJogo);
     
-    if (localJogo === "Rio de Janeiro") {
-      // Jogo no Rio - usar setores do Maracanã
-      if (!setoresRio.includes(setorAtual) && setorAtual !== "Sem ingresso") {
-        form.setValue("setor_padrao", "Norte");
-      }
-    } else {
-      // Jogo fora do Rio - usar setores visitante
-      if (!setoresVisitante.includes(setorAtual) && setorAtual !== "Sem ingresso") {
-        form.setValue("setor_padrao", "Setor Visitante");
-      }
+    // Se o setor atual não está mais disponível para o novo local, resetar para o primeiro disponível
+    if (setorAtual && !setoresDisponiveis.includes(setorAtual)) {
+      const novoSetor = localJogo === "Rio de Janeiro" ? "Norte" : "Setor Visitante";
+      form.setValue("setor_padrao", novoSetor);
     }
   }, [form.watch("adversario"), form.watch("local_jogo"), form]);
 
