@@ -27,6 +27,7 @@ export interface ReportFilters {
   modoResponsavel: boolean; // Remove informações financeiras
   modoPassageiro: boolean; // Lista simplificada para passageiros
   modoEmpresaOnibus: boolean; // Lista para empresa de ônibus (CPF, data nascimento, embarque)
+  modoComprarIngressos: boolean; // Lista para compra de ingressos (similar ao sistema de ingressos)
   mostrarStatusPagamento: boolean; // Para modo responsável
   mostrarValorPadrao: boolean; // Mostrar valor padrão nas informações da viagem
   mostrarValoresPassageiros: boolean; // Mostrar valores na lista de passageiros
@@ -58,6 +59,7 @@ export const defaultReportFilters: ReportFilters = {
   modoResponsavel: false,
   modoPassageiro: false,
   modoEmpresaOnibus: false,
+  modoComprarIngressos: false,
   mostrarStatusPagamento: true,
   mostrarValorPadrao: true,
   mostrarValoresPassageiros: true,
@@ -95,6 +97,7 @@ export const empresaOnibusModeFilters: Partial<ReportFilters> = {
   modoEmpresaOnibus: true,
   modoResponsavel: false,
   modoPassageiro: false,
+  modoComprarIngressos: false,
   incluirResumoFinanceiro: false,
   incluirDistribuicaoSetor: false, // Remove distribuição por setor
   mostrarValorPadrao: false,
@@ -105,4 +108,25 @@ export const empresaOnibusModeFilters: Partial<ReportFilters> = {
   mostrarFotoOnibus: false,
   mostrarNumeroPassageiro: true,
   agruparPorOnibus: true,
+};
+
+// Preset para modo comprar ingressos
+export const comprarIngressosModeFilters: Partial<ReportFilters> = {
+  modoComprarIngressos: true,
+  modoResponsavel: false,
+  modoPassageiro: false,
+  modoEmpresaOnibus: false,
+  incluirResumoFinanceiro: false,
+  incluirDistribuicaoSetor: false,
+  incluirListaOnibus: false,
+  incluirPassageirosNaoAlocados: false,
+  mostrarValorPadrao: false,
+  mostrarValoresPassageiros: false,
+  mostrarStatusPagamento: false,
+  mostrarTelefone: false,
+  mostrarNomesPasseios: false,
+  mostrarFotoOnibus: false,
+  mostrarNumeroPassageiro: true,
+  agruparPorOnibus: false,
+  setorMaracana: [], // Incluir todos os setores do Maracanã
 };

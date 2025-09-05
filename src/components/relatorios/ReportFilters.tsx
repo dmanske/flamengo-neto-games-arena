@@ -146,6 +146,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       modoResponsavel: false,
       modoPassageiro: false,
       modoEmpresaOnibus: true,
+      modoComprarIngressos: false,
       incluirResumoFinanceiro: false,
       incluirDistribuicaoSetor: false, // Remove distribuição por setor
       mostrarValorPadrao: false,
@@ -160,12 +161,37 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     onFiltersChange(empresaOnibusFilters);
   };
 
+  const applyComprarIngressosMode = () => {
+    const comprarIngressosFilters = {
+      ...filters,
+      modoResponsavel: false,
+      modoPassageiro: false,
+      modoEmpresaOnibus: false,
+      modoComprarIngressos: true,
+      incluirResumoFinanceiro: false,
+      incluirDistribuicaoSetor: false,
+      incluirListaOnibus: false,
+      incluirPassageirosNaoAlocados: false,
+      mostrarValorPadrao: false,
+      mostrarValoresPassageiros: false,
+      mostrarStatusPagamento: false,
+      mostrarTelefone: false,
+      mostrarNomesPasseios: false,
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: true,
+      agruparPorOnibus: false,
+      setorMaracana: [], // Incluir todos os setores do Maracanã
+    };
+    onFiltersChange(comprarIngressosFilters);
+  };
+
   const resetToNormalMode = () => {
     const normalFilters = {
       ...filters,
       modoResponsavel: false,
       modoPassageiro: false,
       modoEmpresaOnibus: false,
+      modoComprarIngressos: false,
       incluirResumoFinanceiro: true,
       incluirDistribuicaoSetor: true,
       mostrarValorPadrao: true,
@@ -184,14 +210,15 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       <Card className={
         filters.modoResponsavel ? 'border-orange-200 bg-orange-50' : 
         filters.modoPassageiro ? 'border-blue-200 bg-blue-50' : 
-        filters.modoEmpresaOnibus ? 'border-green-200 bg-green-50' : ''
+        filters.modoEmpresaOnibus ? 'border-green-200 bg-green-50' :
+        filters.modoComprarIngressos ? 'border-purple-200 bg-purple-50' : ''
       }>
         <CardHeader>
           <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus ? (
+            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus && !filters.modoComprarIngressos ? (
               <>
                 <Button
                   onClick={applyResponsavelMode}
@@ -214,6 +241,13 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 >
                   🚌 Enviar para Empresa de Ônibus
                 </Button>
+                <Button
+                  onClick={applyComprarIngressosMode}
+                  variant="outline"
+                  className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+                >
+                  🎫 Comprar Ingressos
+                </Button>
               </>
             ) : (
               <div className="flex items-center gap-3">
@@ -232,6 +266,11 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                     🚌 Modo: Empresa de Ônibus
                   </Badge>
                 )}
+                {filters.modoComprarIngressos && (
+                  <Badge className="bg-purple-100 text-purple-700 px-3 py-1">
+                    🎫 Modo: Comprar Ingressos
+                  </Badge>
+                )}
                 <Button
                   onClick={resetToNormalMode}
                   variant="outline"
@@ -239,7 +278,8 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                   className={
                     filters.modoResponsavel ? "text-orange-700 border-orange-300" : 
                     filters.modoPassageiro ? "text-blue-700 border-blue-300" :
-                    filters.modoEmpresaOnibus ? "text-green-700 border-green-300" : ""
+                    filters.modoEmpresaOnibus ? "text-green-700 border-green-300" :
+                    filters.modoComprarIngressos ? "text-purple-700 border-purple-300" : ""
                   }
                 >
                   Voltar ao Normal
@@ -304,6 +344,19 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
               <div className="text-sm text-green-700">
                 <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Local de Embarque</p>
                 <p><strong>Removido:</strong> Informações financeiras, telefone, setor do Maracanã, passeios</p>
+              </div>
+            </div>
+          )}
+
+          {filters.modoComprarIngressos && (
+            <div className="mt-4 p-3 bg-purple-100 rounded-lg">
+              <p className="text-sm text-purple-800 mb-2">
+                <strong>Modo Comprar Ingressos Ativo:</strong> Relatório similar ao sistema de ingressos
+              </p>
+              <div className="text-sm text-purple-700">
+                <p><strong>Inclui:</strong> Logo dos times, total de ingressos, setores do Maracanã</p>
+                <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Setor</p>
+                <p><strong>Removido:</strong> Informações da viagem, data da viagem, status da viagem</p>
               </div>
             </div>
           )}

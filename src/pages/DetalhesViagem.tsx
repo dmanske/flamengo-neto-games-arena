@@ -15,10 +15,12 @@ import { FinanceiroViagem } from "@/components/detalhes-viagem/financeiro/Financ
 import { OnibusCards } from "@/components/detalhes-viagem/OnibusCards";
 import { PassageirosCard } from "@/components/detalhes-viagem/PassageirosCard";
 import { ViagemReport } from "@/components/relatorios/ViagemReport";
+import { IngressosViagemReport } from "@/components/relatorios/IngressosViagemReport";
 import { ReportFiltersDialog } from "@/components/relatorios/ReportFiltersDialog";
 import { ModernViagemDetailsLayout } from "@/components/detalhes-viagem/ModernViagemDetailsLayout";
 import { useViagemDetails, PassageiroDisplay } from "@/hooks/useViagemDetails";
 import { useViagemReport } from "@/hooks/useViagemReport";
+import { useIngressosViagemReport } from "@/hooks/useIngressosViagemReport";
 import { usePasseios } from "@/hooks/usePasseios";
 import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
 import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
@@ -145,6 +147,13 @@ const DetalhesViagem = () => {
     filterPassageiros,
     calculatePreviewData
   } = useViagemReport();
+
+  // Hook para relatório de ingressos
+  const {
+    reportRef: ingressosReportRef,
+    handlePrint: handleIngressosPrint,
+    handleExportPDF: handleIngressosExportPDF
+  } = useIngressosViagemReport();
 
   // Hook para carregar passeios (para filtros de viagens novas)
   const { passeios } = usePasseios();
@@ -316,18 +325,33 @@ const DetalhesViagem = () => {
   const mainContent = (
     <>
       <div style={{ display: 'none' }}>
-        <ViagemReport
-          ref={reportRef}
-          viagem={viagem}
-          passageiros={originalPassageiros}
-          onibusList={onibusList}
-          totalArrecadado={totalArrecadado}
-          totalPago={totalPago}
-          totalPendente={totalPendente}
-          passageiroPorOnibus={passageiroPorOnibus}
-          filters={filters}
-          passageirosFiltrados={passageirosFiltrados}
-        />
+        {filters.modoComprarIngressos ? (
+           <IngressosViagemReport
+             ref={ingressosReportRef}
+             passageiros={passageirosFiltrados}
+             jogoInfo={{
+               adversario: viagem?.adversario || 'Adversário',
+               jogo_data: viagem?.data_jogo || new Date().toISOString(),
+               local_jogo: 'casa',
+               total_ingressos: passageirosFiltrados.length,
+               logo_flamengo: viagem?.logo_flamengo || '/logos/flamengo.png',
+               logo_adversario: viagem?.logo_adversario || '/logos/adversario.png'
+             }}
+           />
+        ) : (
+          <ViagemReport
+            ref={reportRef}
+            viagem={viagem}
+            passageiros={originalPassageiros}
+            onibusList={onibusList}
+            totalArrecadado={totalArrecadado}
+            totalPago={totalPago}
+            totalPendente={totalPendente}
+            passageiroPorOnibus={passageiroPorOnibus}
+            filters={filters}
+            passageirosFiltrados={passageirosFiltrados}
+          />
+        )}
       </div>
 
       {/* Modal de Filtros do Relatório */}
@@ -389,6 +413,8 @@ const DetalhesViagem = () => {
               passeiosPagos={viagem?.passeios_pagos}
               outroPasseio={viagem?.outro_passeio}
               viagemId={id || ""}
+              setPassageiros={() => fetchPassageiros(id || '')}
+              setIsLoading={() => {}}
               capacidadeTotal={viagem?.capacidade_onibus}
               totalPassageiros={originalPassageiros.length}
             />
@@ -405,6 +431,8 @@ const DetalhesViagem = () => {
                 passageirosNaoAlocados={totalPassageirosNaoAlocados}
                 passageiros={originalPassageiros}
                 viagemId={id || ""}
+                setPassageiros={() => fetchPassageiros(id || '')}
+                 setIsLoading={() => {}}
                 toast={toast}
                 onUpdatePassageiros={refreshAllData}
               />
@@ -482,8 +510,8 @@ const DetalhesViagem = () => {
     <ModernViagemDetailsLayout
       viagem={viagem}
       onDelete={() => handleDelete()}
-      onPrint={handlePrint}
-      onExportPDF={handleExportPDF}
+      onPrint={filters.modoComprarIngressos ? handleIngressosPrint : handlePrint}
+      onExportPDF={filters.modoComprarIngressos ? handleIngressosExportPDF : handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
       onVincularCredito={() => setModalVincularAberto(true)}
       onibusList={onibusList}
