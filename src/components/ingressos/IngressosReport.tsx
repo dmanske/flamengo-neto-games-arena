@@ -36,8 +36,59 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
 
     const localJogoTexto = jogoInfo.local_jogo === 'casa' ? 'Maracanã' : 'Fora de Casa';
 
+    // Calcular distribuição por setor
+    const distribuicaoPorSetor = ingressos.reduce((acc, ingresso) => {
+      const setor = ingresso.setor_estadio || 'Sem setor';
+      acc[setor] = (acc[setor] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
     return (
-      <div ref={ref} className="print-report" style={{ backgroundColor: 'white', padding: '32px', maxWidth: '1024px', margin: '0 auto' }}>
+      <>
+        <style>
+          {`
+            @media print {
+              .print-report {
+                background-color: white !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                margin: 0 !important;
+                padding: 20px !important;
+                box-shadow: none !important;
+                border: none !important;
+                min-height: auto !important;
+              }
+              
+              body {
+                background-color: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              
+              @page {
+                margin: 20mm;
+                background-color: white;
+                size: A4;
+              }
+              
+              .page-break {
+                page-break-after: always;
+              }
+              
+              .no-break {
+                page-break-inside: avoid;
+              }
+            }
+            
+            @media screen {
+              .print-report {
+                background-color: white;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+              }
+            }
+          `}
+        </style>
+        <div ref={ref} className="print-report" style={{ backgroundColor: 'white', padding: '32px', maxWidth: '1024px', margin: '0 auto' }}>
         {/* Cabeçalho */}
         <div className="text-center mb-8 border-b-2 border-red-600 pb-6">
           {/* Logo da Empresa no topo */}
@@ -179,9 +230,36 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
           </div>
         </div>
 
+        {/* Distribuição por Setores */}
+        <div className="mb-8 no-break">
+          <h3 className="font-semibold text-gray-800 mb-6 text-lg text-center">Distribuição por Setores do Maracanã</h3>
+          
+          <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+            {Object.entries(distribuicaoPorSetor)
+              .sort(([a], [b]) => {
+                if (a === 'Sem setor') return 1;
+                if (b === 'Sem setor') return -1;
+                return a.localeCompare(b, 'pt-BR');
+              })
+              .map(([setor, quantidade]) => (
+                <div key={setor} className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600 mb-1">{quantidade}</div>
+                  <div className="text-sm text-gray-600 mb-1">ingressos</div>
+                  <div className="text-sm font-semibold text-gray-800">
+                    {setor === 'Sem setor' ? 'Sem ingresso' : setor}
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+
+        {/* Quebra de página antes da lista de clientes */}
+        <div className="page-break"></div>
+
         {/* Lista de Clientes */}
         <div className="mb-8">
-          <h3 className="font-semibold text-gray-800 mb-4 text-lg">Lista de Clientes</h3>
+          <h3 className="font-semibold text-gray-800 mb-4 text-lg text-center">Lista de Clientes</h3>
           
           {ingressos.length > 0 ? (
             <div className="border rounded-lg overflow-hidden">
@@ -252,7 +330,8 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
           <p>Relatório gerado em: {agora}</p>
           <p style={{ marginTop: '4px', marginBottom: 0 }}>Sistema de Gestão de Ingressos - Flamengo</p>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 );
