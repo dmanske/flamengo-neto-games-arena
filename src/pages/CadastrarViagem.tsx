@@ -6,7 +6,6 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PasseiosSection } from "@/components/viagem/PasseiosSection";
-import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
 import { TipoPagamentoSection } from "@/components/viagem/TipoPagamentoSection";
 import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
@@ -41,8 +40,7 @@ const viagemSchema = z.object({
   logo_adversario: z.string().optional(),
   logo_flamengo: z.string().default(LOGO_FLAMENGO_PADRAO),
   passeios_selecionados: z.array(z.string()).default([]),
-  outro_passeio: z.string().optional(),
-  // Novos campos para sistema avançado de pagamento
+
   tipo_pagamento: z.enum(['livre', 'parcelado_flexivel', 'parcelado_obrigatorio']).default('livre'),
   exige_pagamento_completo: z.boolean().default(false),
   dias_antecedencia: z.number().min(1).max(30).default(5),
@@ -114,7 +112,7 @@ const CadastrarViagem = () => {
       logo_adversario: "",
       logo_flamengo: LOGO_FLAMENGO_PADRAO,
       passeios_selecionados: [],
-      outro_passeio: "",
+  
       // Novos campos para sistema avançado de pagamento
       tipo_pagamento: 'livre',
       exige_pagamento_completo: false,
@@ -301,7 +299,7 @@ const CadastrarViagem = () => {
           logo_adversario: data.logo_adversario,
           logo_flamengo: data.logo_flamengo || LOGO_FLAMENGO_PADRAO,
           passeios_pagos: [], // Manter compatibilidade, mas usar nova estrutura
-          outro_passeio: data.outro_passeio,
+
           tipo_onibus: onibusItems[0]?.tipo_onibus || "",
           empresa: onibusItems[0]?.empresa || "",
           // Novos campos para sistema avançado de pagamento
@@ -865,7 +863,7 @@ const CadastrarViagem = () => {
 
                 <PasseiosSection form={form} />
 
-                <OutroPasseioSection form={form} />
+
 
                 {/* Seção de Tipo de Pagamento */}
                 <TipoPagamentoSection

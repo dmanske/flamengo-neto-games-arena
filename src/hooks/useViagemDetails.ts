@@ -21,7 +21,7 @@ export interface Viagem {
   local_jogo?: string;
   nome_estadio?: string | null;
   passeios_pagos?: string[];
-  outro_passeio?: string | null;
+
   // Novos campos do sistema avançado de pagamento
   tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
   exige_pagamento_completo?: boolean;
@@ -475,7 +475,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         todosPasseios: data?.map(p => ({
           nome: p.clientes?.nome,
           passeios: p.passageiro_passeios?.length || 0
-        }))
+        })) || []
       });
 
       // Formatar os dados para exibição com pré-processamento para busca

@@ -103,12 +103,14 @@ export interface ViagemFormData {
   capacidade_onibus: string;
   status_viagem: string;
   setor_padrao?: string;
+  nome_estadio?: string;
   cidade_embarque: string;
   logo_adversario?: string;
   logo_flamengo: string;
+  tipo_onibus?: string;
+  empresa?: string;
   passeios_pagos: string[]; // Manter compatibilidade
   passeios_selecionados: string[]; // Nova estrutura
-  outro_passeio?: string;
   
   // Novos campos para sistema avançado de pagamento
   tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';

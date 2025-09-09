@@ -37,7 +37,8 @@ interface Viagem {
   logo_flamengo: string | null;
   logo_adversario: string | null;
   passeios_pagos?: string[];
-  outro_passeio?: string;
+  created_at: string;
+
   // Novos campos do sistema avançado de pagamento
   tipo_pagamento?: 'livre' | 'parcelado_flexivel' | 'parcelado_obrigatorio';
   exige_pagamento_completo?: boolean;

@@ -411,7 +411,7 @@ const DetalhesViagem = () => {
               onViewDetails={openDetailsPassageiroDialog}
               filterStatus={filterStatus}
               passeiosPagos={viagem?.passeios_pagos}
-              outroPasseio={viagem?.outro_passeio}
+
               viagemId={id || ""}
               setPassageiros={() => fetchPassageiros(id || '')}
               setIsLoading={() => {}}

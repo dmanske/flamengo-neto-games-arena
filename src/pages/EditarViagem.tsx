@@ -6,7 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PasseiosSection } from "@/components/viagem/PasseiosSection";
-import { OutroPasseioSection } from "@/components/viagem/OutroPasseioSection";
+
 import { TipoPagamentoSection } from "@/components/viagem/TipoPagamentoSection";
 import type { ViagemFormData } from "@/types/entities";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ const viagemSchema = z.object({
   tipo_onibus: z.string().optional(),
   empresa: z.string().optional(),
   passeios_selecionados: z.array(z.string()).default([]),
-  outro_passeio: z.string().optional(),
+
   // Novos campos para sistema avançado de pagamento
   tipo_pagamento: z.enum(['livre', 'parcelado_flexivel', 'parcelado_obrigatorio']).default('livre'),
   exige_pagamento_completo: z.boolean().default(false),
@@ -85,7 +85,7 @@ export default function EditarViagem() {
       tipo_onibus: "",
       empresa: "",
       passeios_selecionados: [],
-      outro_passeio: "",
+
       // Novos campos para sistema avançado de pagamento
       tipo_pagamento: 'livre',
       exige_pagamento_completo: false,
@@ -148,7 +148,7 @@ export default function EditarViagem() {
             tipo_onibus: data.tipo_onibus || "",
             empresa: data.empresa || "",
             passeios_selecionados: passeiosSelecionados,
-            outro_passeio: data.outro_passeio || "",
+    
             // Novos campos para sistema avançado de pagamento (com fallback para viagens antigas)
             tipo_pagamento: data.tipo_pagamento || 'livre',
             exige_pagamento_completo: data.exige_pagamento_completo || false,
@@ -224,7 +224,7 @@ export default function EditarViagem() {
         tipo_onibus: onibusArray[0]?.tipo_onibus || data.tipo_onibus,
         empresa: onibusArray[0]?.empresa || data.empresa,
         passeios_pagos: [], // Manter compatibilidade
-        outro_passeio: data.outro_passeio,
+
         // Novos campos para sistema avançado de pagamento
         tipo_pagamento: data.tipo_pagamento,
         exige_pagamento_completo: data.exige_pagamento_completo,
@@ -707,7 +707,7 @@ export default function EditarViagem() {
             {/* Passeios */}
             <PasseiosSection form={form} />
 
-            <OutroPasseioSection form={form} />
+
 
             {/* Seção de Tipo de Pagamento */}
             <TipoPagamentoSection
