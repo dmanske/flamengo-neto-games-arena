@@ -114,7 +114,7 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-red-600 mb-4">LISTA DE CLIENTES - INGRESSOS</h1>
+          <h1 className="text-3xl font-bold text-red-600 mb-4">{filters?.modoComprarPasseios ? 'LISTA DE CLIENTES - PASSEIOS' : 'LISTA DE CLIENTES - INGRESSOS'}</h1>
           
           {/* Informações do Jogo */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
