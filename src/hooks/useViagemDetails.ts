@@ -441,7 +441,12 @@ export function useViagemDetails(viagemId: string | undefined) {
           passageiro_passeios (
             passeio_nome,
             status,
-            valor_cobrado
+            valor_cobrado,
+            passeio:passeios!passeio_id (
+              nome,
+              valor,
+              categoria
+            )
           ),
           credito_origem:cliente_creditos!credito_origem_id (
             id,
@@ -472,7 +477,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         primeiroPassageiro: data?.[0],
         passageirosComPasseios: data?.filter(p => p.passageiro_passeios?.length > 0).length || 0,
         exemploPasseios: data?.[0]?.passageiro_passeios,
-        todosPasseios: data?.map(p => ({
+        todosPasseios: data?.map((p: any) => ({
           nome: p.clientes?.nome,
           passeios: p.passageiro_passeios?.length || 0
         })) || []

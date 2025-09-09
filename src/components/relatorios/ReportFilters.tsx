@@ -168,6 +168,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       modoPassageiro: false,
       modoEmpresaOnibus: false,
       modoComprarIngressos: true,
+      modoComprarPasseios: false,
       incluirResumoFinanceiro: false,
       incluirDistribuicaoSetor: false,
       incluirListaOnibus: false,
@@ -185,6 +186,30 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     onFiltersChange(comprarIngressosFilters);
   };
 
+  const applyComprarPasseiosMode = () => {
+    const comprarPasseiosFilters = {
+      ...filters,
+      modoResponsavel: false,
+      modoPassageiro: false,
+      modoEmpresaOnibus: false,
+      modoComprarIngressos: false,
+      modoComprarPasseios: true,
+      incluirResumoFinanceiro: false,
+      incluirDistribuicaoSetor: false, // Remove distribuição por setor
+      incluirListaOnibus: false,
+      incluirPassageirosNaoAlocados: false,
+      mostrarValorPadrao: false,
+      mostrarValoresPassageiros: false,
+      mostrarStatusPagamento: false,
+      mostrarTelefone: false,
+      mostrarNomesPasseios: true, // Mostrar passeios na lista
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: true,
+      agruparPorOnibus: false,
+    };
+    onFiltersChange(comprarPasseiosFilters);
+  };
+
   const resetToNormalMode = () => {
     const normalFilters = {
       ...filters,
@@ -192,6 +217,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       modoPassageiro: false,
       modoEmpresaOnibus: false,
       modoComprarIngressos: false,
+      modoComprarPasseios: false,
       incluirResumoFinanceiro: true,
       incluirDistribuicaoSetor: true,
       mostrarValorPadrao: true,
@@ -211,14 +237,15 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
         filters.modoResponsavel ? 'border-orange-200 bg-orange-50' : 
         filters.modoPassageiro ? 'border-blue-200 bg-blue-50' : 
         filters.modoEmpresaOnibus ? 'border-green-200 bg-green-50' :
-        filters.modoComprarIngressos ? 'border-purple-200 bg-purple-50' : ''
+        filters.modoComprarIngressos ? 'border-purple-200 bg-purple-50' :
+        filters.modoComprarPasseios ? 'border-pink-200 bg-pink-50' : ''
       }>
         <CardHeader>
           <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus && !filters.modoComprarIngressos ? (
+            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus && !filters.modoComprarIngressos && !filters.modoComprarPasseios ? (
               <>
                 <Button
                   onClick={applyResponsavelMode}
@@ -248,6 +275,13 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 >
                   🎫 Comprar Ingressos
                 </Button>
+                <Button
+                  onClick={applyComprarPasseiosMode}
+                  variant="outline"
+                  className="bg-pink-50 hover:bg-pink-100 border-pink-200 text-pink-700"
+                >
+                  🎠 Comprar Passeios
+                </Button>
               </>
             ) : (
               <div className="flex items-center gap-3">
@@ -271,6 +305,11 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                     🎫 Modo: Comprar Ingressos
                   </Badge>
                 )}
+                {filters.modoComprarPasseios && (
+                  <Badge className="bg-pink-100 text-pink-700 px-3 py-1">
+                    🎠 Modo: Comprar Passeios
+                  </Badge>
+                )}
                 <Button
                   onClick={resetToNormalMode}
                   variant="outline"
@@ -279,7 +318,8 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                     filters.modoResponsavel ? "text-orange-700 border-orange-300" : 
                     filters.modoPassageiro ? "text-blue-700 border-blue-300" :
                     filters.modoEmpresaOnibus ? "text-green-700 border-green-300" :
-                    filters.modoComprarIngressos ? "text-purple-700 border-purple-300" : ""
+                    filters.modoComprarIngressos ? "text-purple-700 border-purple-300" :
+                    filters.modoComprarPasseios ? "text-pink-700 border-pink-300" : ""
                   }
                 >
                   Voltar ao Normal
@@ -357,6 +397,19 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 <p><strong>Inclui:</strong> Logo dos times, total de ingressos, setores do Maracanã</p>
                 <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Setor</p>
                 <p><strong>Removido:</strong> Informações da viagem, data da viagem, status da viagem</p>
+              </div>
+            </div>
+          )}
+
+          {filters.modoComprarPasseios && (
+            <div className="mt-4 p-3 bg-pink-100 rounded-lg">
+              <p className="text-sm text-pink-800 mb-2">
+                <strong>Modo Comprar Passeios Ativo:</strong> Relatório focado em passeios e faixas etárias
+              </p>
+              <div className="text-sm text-pink-700">
+                <p><strong>Inclui:</strong> Passeios & Faixas Etárias, Ingressos por Faixa Etária (Passageiros com Passeios)</p>
+                <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Passeio</p>
+                <p><strong>Removido:</strong> Total de ingressos, distribuição de setor, informações financeiras</p>
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@ import { PassageiroDisplay } from '@/hooks/useViagemDetails';
 import { formatCPF, formatBirthDate } from '@/utils/formatters';
 import { useEmpresa } from '@/hooks/useEmpresa';
 import { formatDateTimeSafe } from '@/lib/date-utils';
+import { ReportFilters } from '@/types/report-filters';
 
 interface JogoInfo {
   adversario: string;
@@ -16,10 +17,11 @@ interface JogoInfo {
 interface IngressosViagemReportProps {
   passageiros: PassageiroDisplay[];
   jogoInfo: JogoInfo;
+  filters?: ReportFilters;
 }
 
 export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosViagemReportProps>(
-  ({ passageiros, jogoInfo }, ref) => {
+  ({ passageiros, jogoInfo, filters }, ref) => {
     // Hook para dados da empresa
     const { empresa } = useEmpresa();
     
@@ -219,89 +221,184 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
             </div>
           </div>
 
-          <div className="mt-4 text-center">
-            <span className="bg-red-600 text-white px-6 py-2 text-sm font-medium rounded">
-              Total de Ingressos: {passageirosComSetor.length}
-            </span>
-          </div>
+          {/* Total de Ingressos - Oculto no modo comprar passeios */}
+          {!filters?.modoComprarPasseios && (
+            <div className="mt-4 text-center">
+              <span className="bg-red-600 text-white px-6 py-2 text-sm font-medium rounded">
+                Total de Ingressos: {passageirosComSetor.length}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Distribuição por Setor */}
-        <div className="mb-8 page-break">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Distribuição por Setor</h3>
-          
-          {(() => {
-            const setorCount = passageirosComSetor.reduce((acc, passageiro) => {
-              const setor = passageiro.setor_maracana || 'Sem setor';
-              acc[setor] = (acc[setor] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
+        {/* Distribuição por Setor - Oculto no modo comprar passeios */}
+        {!filters?.modoComprarPasseios && (
+          <div className="mb-8 page-break">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Distribuição por Setor</h3>
             
-            const setoresOrdenados = Object.entries(setorCount)
-              .sort(([a], [b]) => a.localeCompare(b, 'pt-BR'));
-            
-            return (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-                {setoresOrdenados.map(([setor, quantidade]) => (
-                  <div key={setor} className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{quantidade}</div>
-                      <div className="text-sm text-gray-600 mt-1">{setor}</div>
+            {(() => {
+              const setorCount = passageirosComSetor.reduce((acc, passageiro) => {
+                const setor = passageiro.setor_maracana || 'Sem setor';
+                acc[setor] = (acc[setor] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>);
+              
+              const setoresOrdenados = Object.entries(setorCount)
+                .sort(([a], [b]) => a.localeCompare(b, 'pt-BR'));
+              
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                  {setoresOrdenados.map(([setor, quantidade]) => (
+                    <div key={setor} className="bg-gray-50 p-4 rounded-lg border">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{quantidade}</div>
+                        <div className="text-sm text-gray-600 mt-1">{setor}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              );
+            })()} 
+          </div>
+        )}
+
+        {/* Seções específicas do modo comprar passeios */}
+        {filters?.modoComprarPasseios && (
+          <>
+            {/* Totais de Passeios */}
+            <div className="mb-8 page-break">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Totais de Passeios</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {(() => {
+                  const passeiosTotais = passageiros.reduce((acc, p) => {
+                    const passeios = p.passeios || [];
+                    
+                    passeios.forEach(pp => {
+                      const passeioNome = pp.passeio?.nome || pp.passeio_nome || 'Passeio não identificado';
+                      acc[passeioNome] = (acc[passeioNome] || 0) + 1;
+                    });
+                    
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(passeiosTotais).map(([passeioNome, quantidade]) => (
+                    <div key={passeioNome} className="bg-green-50 p-4 rounded-lg border">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{quantidade}</div>
+                        <div className="text-sm text-gray-600 mt-1">{passeioNome}</div>
+                      </div>
+                    </div>
+                  ));
+                })()} 
               </div>
-            );
-          })()} 
-        </div>
+            </div>
+
+            {/* Ingressos por Faixa Etária (Passageiros com Passeios) */}
+            <div className="mb-8 page-break">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Ingressos por Faixa Etária (Passageiros com Passeios)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {(() => {
+                  const passageirosComPasseios = passageiros.filter(p => p.passeios && p.passeios.length > 0);
+                  const faixasEtarias = passageirosComPasseios.reduce((acc, p) => {
+                    const idade = p.data_nascimento ? 
+                      new Date().getFullYear() - new Date(p.data_nascimento).getFullYear() : null;
+                    
+                    let faixaEtaria = 'Não informado';
+                    if (idade !== null) {
+                      if (idade < 18) faixaEtaria = 'Menor de 18';
+                      else if (idade <= 30) faixaEtaria = '18-30 anos';
+                      else if (idade <= 50) faixaEtaria = '31-50 anos';
+                      else faixaEtaria = 'Acima de 50';
+                    }
+                    
+                    acc[faixaEtaria] = (acc[faixaEtaria] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(faixasEtarias).map(([faixa, quantidade]) => (
+                    <div key={faixa} className="bg-blue-50 p-4 rounded-lg border">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{quantidade}</div>
+                        <div className="text-sm text-gray-600 mt-1">{faixa}</div>
+                      </div>
+                    </div>
+                  ));
+                })()} 
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Lista de Clientes */}
         <div className="mb-8 no-break">
           <h3 className="font-semibold text-gray-800 mb-4 text-lg">Lista de Clientes</h3>
           
-          {passageirosComSetor.length > 0 ? (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm border-collapse">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="border p-3 text-center w-16">#</th>
-                    <th className="border p-3 text-left">Cliente</th>
-                    <th className="border p-3 text-center">CPF</th>
-                    <th className="border p-3 text-center">Data de Nascimento</th>
-                    <th className="border p-3 text-left">Setor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {passageirosComSetor
-                    .sort((a, b) => {
-                      const nomeA = a.nome || '';
-                      const nomeB = b.nome || '';
-                      return nomeA.localeCompare(nomeB, 'pt-BR');
-                    })
-                    .map((passageiro, index) => (
-                    <tr key={passageiro.id} className="hover:bg-gray-50">
-                      <td className="border p-3 text-center font-medium">{index + 1}</td>
-                      <td className="border p-3">{passageiro.nome || '-'}</td>
-                      <td className="border p-3 text-center">
-                        {passageiro.cpf ? formatCPF(passageiro.cpf) : '-'}
-                      </td>
-                      <td className="border p-3 text-center">
-                        {passageiro.data_nascimento 
-                          ? formatBirthDate(passageiro.data_nascimento)
-                          : '-'
-                        }
-                      </td>
-                      <td className="border p-3">{passageiro.setor_maracana || '-'}</td>
+          {(() => {
+            // No modo comprar passeios, usar todos os passageiros, senão usar apenas os com setor
+            const passageirosParaExibir = filters?.modoComprarPasseios ? passageiros : passageirosComSetor;
+            
+            return passageirosParaExibir.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border p-3 text-center w-16">#</th>
+                      <th className="border p-3 text-left">Cliente</th>
+                      <th className="border p-3 text-center">CPF</th>
+                      <th className="border p-3 text-center">Data de Nascimento</th>
+                      {filters?.modoComprarPasseios ? (
+                        <th className="border p-3 text-left">Passeio</th>
+                      ) : (
+                        <th className="border p-3 text-left">Setor</th>
+                      )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p>Nenhum passageiro com setor do Maracanã encontrado para esta viagem.</p>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {passageirosParaExibir
+                      .sort((a, b) => {
+                        const nomeA = a.nome || '';
+                        const nomeB = b.nome || '';
+                        return nomeA.localeCompare(nomeB, 'pt-BR');
+                      })
+                      .map((passageiro, index) => (
+                      <tr key={passageiro.id} className="hover:bg-gray-50">
+                        <td className="border p-3 text-center font-medium">{index + 1}</td>
+                        <td className="border p-3">{passageiro.nome || '-'}</td>
+                        <td className="border p-3 text-center">
+                          {passageiro.cpf ? formatCPF(passageiro.cpf) : '-'}
+                        </td>
+                        <td className="border p-3 text-center">
+                          {passageiro.data_nascimento 
+                            ? formatBirthDate(passageiro.data_nascimento)
+                            : '-'
+                          }
+                        </td>
+                        {filters?.modoComprarPasseios ? (
+                          <td className="border p-3">
+                            {passageiro.passeios && passageiro.passeios.length > 0 
+                              ? passageiro.passeios.map(pp => pp.passeio?.nome || pp.passeio_nome).filter(Boolean).join(', ') || '-'
+                              : '-'
+                            }
+                          </td>
+                        ) : (
+                          <td className="border p-3">{passageiro.setor_maracana || '-'}</td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>
+                  {filters?.modoComprarPasseios 
+                    ? 'Nenhum passageiro encontrado para esta viagem.'
+                    : 'Nenhum passageiro com setor do Maracanã encontrado para esta viagem.'
+                  }
+                </p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Rodapé */}

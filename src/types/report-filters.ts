@@ -28,6 +28,7 @@ export interface ReportFilters {
   modoPassageiro: boolean; // Lista simplificada para passageiros
   modoEmpresaOnibus: boolean; // Lista para empresa de ônibus (CPF, data nascimento, embarque)
   modoComprarIngressos: boolean; // Lista para compra de ingressos (similar ao sistema de ingressos)
+  modoComprarPasseios: boolean; // Lista para compra de passeios (foco em passeios e faixas etárias)
   mostrarStatusPagamento: boolean; // Para modo responsável
   mostrarValorPadrao: boolean; // Mostrar valor padrão nas informações da viagem
   mostrarValoresPassageiros: boolean; // Mostrar valores na lista de passageiros
@@ -60,6 +61,7 @@ export const defaultReportFilters: ReportFilters = {
   modoPassageiro: false,
   modoEmpresaOnibus: false,
   modoComprarIngressos: false,
+  modoComprarPasseios: false,
   mostrarStatusPagamento: true,
   mostrarValorPadrao: true,
   mostrarValoresPassageiros: true,
@@ -98,6 +100,7 @@ export const empresaOnibusModeFilters: Partial<ReportFilters> = {
   modoResponsavel: false,
   modoPassageiro: false,
   modoComprarIngressos: false,
+  modoComprarPasseios: false,
   incluirResumoFinanceiro: false,
   incluirDistribuicaoSetor: false, // Remove distribuição por setor
   mostrarValorPadrao: false,
@@ -116,6 +119,7 @@ export const comprarIngressosModeFilters: Partial<ReportFilters> = {
   modoResponsavel: false,
   modoPassageiro: false,
   modoEmpresaOnibus: false,
+  modoComprarPasseios: false,
   incluirResumoFinanceiro: false,
   incluirDistribuicaoSetor: false,
   incluirListaOnibus: false,
@@ -129,4 +133,25 @@ export const comprarIngressosModeFilters: Partial<ReportFilters> = {
   mostrarNumeroPassageiro: true,
   agruparPorOnibus: false,
   setorMaracana: [], // Incluir todos os setores do Maracanã
+};
+
+// Preset para modo comprar passeios
+export const comprarPasseiosModeFilters: Partial<ReportFilters> = {
+  modoComprarPasseios: true,
+  modoResponsavel: false,
+  modoPassageiro: false,
+  modoEmpresaOnibus: false,
+  modoComprarIngressos: false,
+  incluirResumoFinanceiro: false,
+  incluirDistribuicaoSetor: false, // Remove distribuição por setor
+  incluirListaOnibus: false,
+  incluirPassageirosNaoAlocados: false,
+  mostrarValorPadrao: false,
+  mostrarValoresPassageiros: false,
+  mostrarStatusPagamento: false,
+  mostrarTelefone: false,
+  mostrarNomesPasseios: true, // Mostrar passeios na lista
+  mostrarFotoOnibus: false,
+  mostrarNumeroPassageiro: true,
+  agruparPorOnibus: false,
 };

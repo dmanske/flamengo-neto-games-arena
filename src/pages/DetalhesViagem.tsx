@@ -31,6 +31,8 @@ import { useCreditos } from "@/hooks/useCreditos";
 
 import { toast } from "sonner";
 
+import { PasseiosTotaisCard } from "@/components/detalhes-viagem/PasseiosTotaisCard";
+
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -325,7 +327,7 @@ const DetalhesViagem = () => {
   const mainContent = (
     <>
       <div style={{ display: 'none' }}>
-        {filters.modoComprarIngressos ? (
+        {(filters.modoComprarIngressos || filters.modoComprarPasseios) ? (
            <IngressosViagemReport
              ref={ingressosReportRef}
              passageiros={passageirosFiltrados}
@@ -337,6 +339,7 @@ const DetalhesViagem = () => {
                logo_flamengo: viagem?.logo_flamengo || '/logos/flamengo.png',
                logo_adversario: viagem?.logo_adversario || '/logos/adversario.png'
              }}
+             filters={filters}
            />
         ) : (
           <ViagemReport
@@ -391,6 +394,11 @@ const DetalhesViagem = () => {
 
           {originalPassageiros.length > 0 && (
             <ResumoCards passageiros={originalPassageiros} />
+          )}
+
+          {/* Novo componente de totais de passeios */}
+          {originalPassageiros.length > 0 && (
+            <PasseiosTotaisCard passageiros={originalPassageiros} className="mb-6" />
           )}
 
           {/* Cards de pagamentos removidos para simplificar interface */}
@@ -510,8 +518,8 @@ const DetalhesViagem = () => {
     <ModernViagemDetailsLayout
       viagem={viagem}
       onDelete={() => handleDelete()}
-      onPrint={filters.modoComprarIngressos ? handleIngressosPrint : handlePrint}
-      onExportPDF={filters.modoComprarIngressos ? handleIngressosExportPDF : handleExportPDF}
+      onPrint={(filters.modoComprarIngressos || filters.modoComprarPasseios) ? handleIngressosPrint : handlePrint}
+      onExportPDF={(filters.modoComprarIngressos || filters.modoComprarPasseios) ? handleIngressosExportPDF : handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
       onVincularCredito={() => setModalVincularAberto(true)}
       onibusList={onibusList}
