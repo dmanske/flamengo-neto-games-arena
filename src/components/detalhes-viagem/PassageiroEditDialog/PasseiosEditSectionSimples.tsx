@@ -4,7 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, DollarSign, AlertTriangle, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -25,7 +26,24 @@ interface PasseioDaViagem {
     nome: string;
     valor: number;
     categoria: string;
-  };
+  } | null;
+}
+
+interface SupabasePasseioData {
+  passeio_id: string;
+  passeios: {
+    id: string;
+    nome: string;
+    valor: number;
+    categoria: string;
+  }[];
+}
+
+interface PasseioOrfao {
+  id: string;
+  passeio_nome: string;
+  valor_cobrado: number;
+  status: string;
 }
 
 export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({ 
@@ -35,8 +53,10 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
   onPasseiosChange 
 }) => {
   const [passeiosDaViagem, setPasseiosDaViagem] = useState<PasseioDaViagem[]>([]);
+  const [passeiosOrfaos, setPasseiosOrfaos] = useState<PasseioOrfao[]>([]);
   const [loading, setLoading] = useState(true);
   const [salvandoAutomaticamente, setSalvandoAutomaticamente] = useState(false);
+  const [removendoOrfao, setRemovendoOrfao] = useState<string | null>(null);
   
   const passeiosSelecionados = form.watch('passeios_selecionados') || [];
 
@@ -45,13 +65,15 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
     console.log('🔍 Props recebidos:', { viagemId, passageiroId, passeiosSelecionados });
   }, [viagemId, passageiroId, passeiosSelecionados]);
 
-  // Carregar passeios da viagem
+  // Carregar passeios da viagem e detectar órfãos
   useEffect(() => {
     const fetchPasseiosDaViagem = async () => {
       if (!viagemId) return;
 
       try {
         setLoading(true);
+        
+        // Carregar passeios da viagem
         const { data, error } = await supabase
           .from('viagem_passeios')
           .select(`
@@ -66,7 +88,19 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
           .eq('viagem_id', viagemId);
 
         if (error) throw error;
-        setPasseiosDaViagem(data || []);
+        
+        // Processar dados do Supabase corretamente
+        const processedData = (data as SupabasePasseioData[] || []).map(item => ({
+          passeio_id: item.passeio_id,
+          passeios: Array.isArray(item.passeios) ? item.passeios[0] : item.passeios
+        })) as PasseioDaViagem[];
+        
+        setPasseiosDaViagem(processedData);
+        
+        // Detectar passeios órfãos se temos passageiroId
+        if (passageiroId) {
+          await detectarPasseiosOrfaos();
+        }
       } catch (err: any) {
         console.error('Erro ao carregar passeios:', err);
       } finally {
@@ -75,8 +109,142 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
     };
 
     fetchPasseiosDaViagem();
-  }, [viagemId]);
+  }, [viagemId, passageiroId]);
+  
+  // Redetectar órfãos quando passeios da viagem mudarem
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (passeiosDaViagem.length > 0 && passageiroId) {
+        detectarPasseiosOrfaos();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [passeiosDaViagem]);
+  
+  // Função para detectar passeios órfãos
+  const detectarPasseiosOrfaos = async () => {
+    if (!passageiroId || !viagemId) return;
+    
+    try {
+      console.log('🔍 [DEBUG] Iniciando detecção de órfãos para passageiro:', passageiroId);
+      
+      // Buscar passeios do passageiro
+      const { data: passeiosPassageiro, error: errorPassageiro } = await supabase
+        .from('passageiro_passeios')
+        .select('*')
+        .eq('viagem_passageiro_id', passageiroId);
+        
+      if (errorPassageiro) throw errorPassageiro;
+      
+      console.log('🔍 [DEBUG] Passeios do passageiro encontrados:', passeiosPassageiro);
+      
+      // Buscar passeios ativos da viagem
+      const { data: passeiosViagem, error: errorViagem } = await supabase
+        .from('viagem_passeios')
+        .select('passeio_id, passeios!inner(nome)')
+        .eq('viagem_id', viagemId);
+        
+      if (errorViagem) throw errorViagem;
+      
+      console.log('🔍 [DEBUG] Passeios da viagem encontrados:', passeiosViagem);
+      
+      // Identificar órfãos
+      const nomesPasseiosViagem = new Set(
+          (passeiosViagem || []).map((vp: any) => {
+            const passeios = vp.passeios;
+            return Array.isArray(passeios) ? passeios[0]?.nome : passeios?.nome;
+          }).filter(Boolean)
+        );
+      
+      console.log('🔍 [DEBUG] Nomes dos passeios da viagem:', Array.from(nomesPasseiosViagem));
+      
+      const orfaos = passeiosPassageiro?.filter(
+        pp => !nomesPasseiosViagem.has(pp.passeio_nome)
+      ) || [];
+      
+      console.log('🔍 [DEBUG] Órfãos identificados:', orfaos);
+      
+      setPasseiosOrfaos(orfaos);
+      
+      if (orfaos.length > 0) {
+        console.log('🚨 Passeios órfãos detectados:', orfaos);
+      }
+    } catch (error) {
+      console.error('Erro ao detectar passeios órfãos:', error);
+    }
+  };
+  
+  // Função para remover passeio órfão
+  const removerPasseioOrfao = async (orfaoId: string) => {
+    let remocaoSucesso = false;
+    
+    try {
+      console.log('🗑️ [DEBUG] Iniciando remoção do órfão:', orfaoId);
+      setRemovendoOrfao(orfaoId);
+      
+      // Verificar se o registro existe antes de tentar remover
+      const { data: registroExistente, error: erroVerificacao } = await supabase
+        .from('passageiro_passeios')
+        .select('*')
+        .eq('id', orfaoId)
+        .single();
+      
+      if (erroVerificacao) {
+        console.error('❌ [DEBUG] Erro ao verificar existência do registro:', erroVerificacao);
+        throw new Error(`Registro não encontrado: ${erroVerificacao.message}`);
+      }
+      
+      console.log('🗑️ [DEBUG] Registro antes da remoção:', registroExistente);
+      
+      const { error } = await supabase
+        .from('passageiro_passeios')
+        .delete()
+        .eq('id', orfaoId);
+      
+      if (error) {
+        console.error('❌ [DEBUG] Erro na remoção:', error);
+        throw new Error(`Falha na remoção: ${error.message}`);
+      }
+      
+      console.log('🗑️ [DEBUG] Remoção executada com sucesso');
+      remocaoSucesso = true;
+      
+    } catch (error: any) {
+      console.error('❌ [DEBUG] Erro durante remoção:', error);
+      toast.error('Erro ao remover passeio órfão');
+    } finally {
+      // SEMPRE executar redetecção, independente do resultado da remoção
+      try {
+        console.log('🗑️ [DEBUG] Iniciando redetecção após remoção (finally block)');
+        
+        // Aguardar um pouco antes de redetectar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        await detectarPasseiosOrfaos();
+        
+        if (remocaoSucesso) {
+          toast.success('Passeio órfão removido com sucesso!');
+          onPasseiosChange?.();
+        }
+        
+        console.log('🗑️ [DEBUG] Redetecção concluída com sucesso');
+      } catch (redetecaoError) {
+        console.error('❌ [DEBUG] Erro na redetecção:', redetecaoError);
+        // Não mostrar toast de erro para redetecção, apenas logar
+      }
+      
+      setRemovendoOrfao(null);
+    }
+  };
 
+  // ✅ CORREÇÃO: Adicionar useEffect para redetectar órfãos quando os passeios da viagem mudam
+  useEffect(() => {
+    if (passageiroId && passeiosDaViagem.length > 0) {
+      detectarPasseiosOrfaos();
+    }
+  }, [passeiosDaViagem, passageiroId]);
+  
   // Função para salvar automaticamente
   const salvarAutomaticamente = async (novosPasseios: string[]) => {
     if (!passageiroId) {
@@ -192,8 +360,9 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {passeiosDaViagem.map((passeioViagem) => {
+              {(passeiosDaViagem || []).map((passeioViagem) => {
                 const passeio = passeioViagem.passeios;
+                if (!passeio) return null;
                 const isSelected = field.value?.includes(passeioViagem.passeio_id) || false;
                 
                 return (
@@ -225,7 +394,55 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
                     </div>
                   </div>
                 );
-              })}
+              }).filter(Boolean)}
+              
+              {/* Seção de Passeios Órfãos */}
+              {passeiosOrfaos.length > 0 && (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <span className="font-medium text-amber-700">
+                      Passeios Órfãos Detectados
+                    </span>
+                    <Badge variant="destructive" className="text-xs">
+                      {passeiosOrfaos.length}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-amber-600 mb-3">
+                    Estes passeios não estão mais disponíveis na viagem, mas ainda estão vinculados ao passageiro:
+                  </p>
+                  <div className="space-y-2">
+                    {passeiosOrfaos.map((orfao) => (
+                      <div
+                        key={orfao.id}
+                        className="p-3 rounded-lg border border-amber-200 bg-amber-50 flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-amber-800">
+                            {orfao.passeio_nome}
+                          </div>
+                          <div className="text-sm text-amber-600">
+                            Valor cobrado: {formatCurrency(orfao.valor_cobrado)} • Status: {orfao.status}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => removerPasseioOrfao(orfao.id)}
+                          disabled={removendoOrfao === orfao.id}
+                          className="ml-3"
+                        >
+                          {removendoOrfao === orfao.id ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Resumo */}
               {field.value && field.value.length > 0 && (() => {

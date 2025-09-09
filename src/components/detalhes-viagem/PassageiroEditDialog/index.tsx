@@ -48,6 +48,8 @@ export function PassageiroEditDialog({
   viagem,
   onSuccess,
 }: PassageiroEditDialogProps) {
+  console.log('🔍 PassageiroEditDialog - Props recebidas:', { open, passageiro, viagem });
+  
   const [isLoading, setIsLoading] = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [cidadeEmbarqueCustom, setCidadeEmbarqueCustom] = React.useState("");
@@ -74,39 +76,79 @@ export function PassageiroEditDialog({
 
   useEffect(() => {
     const loadPassageiroData = async () => {
-      if (passageiro) {
-        // Carregar dados básicos
-        form.reset({
-          setor_maracana: passageiro.setor_maracana || "",
-          status_pagamento: passageiro.status_pagamento || "Pendente",
-          forma_pagamento: passageiro.forma_pagamento || "",
-          valor: passageiro.valor || 0,
-          desconto: passageiro.desconto || 0,
-          onibus_id: passageiro.onibus_id?.toString() || "",
-          cidade_embarque: passageiro.cidade_embarque || "",
-          observacoes: passageiro.observacoes || "",
-          passeios_selecionados: [],
-          gratuito: passageiro.gratuito || false
-        });
+      try {
+        if (passageiro) {
+          
+          // Carregar dados básicos
+          form.reset({
+            setor_maracana: passageiro.setor_maracana || "",
+            status_pagamento: passageiro.status_pagamento || "Pendente",
+            forma_pagamento: passageiro.forma_pagamento || "",
+            valor: passageiro.valor || 0,
+            desconto: passageiro.desconto || 0,
+            onibus_id: passageiro.onibus_id?.toString() || "",
+            cidade_embarque: passageiro.cidade_embarque || "",
+            observacoes: passageiro.observacoes || "",
+            passeios_selecionados: [],
+            gratuito: false // Valor padrão, será carregado do banco
+          });
 
-        // Carregar passeios selecionados convertendo nomes para IDs
-        if (passageiro.passeios && passageiro.passeios.length > 0) {
-          try {
-            const nomesPasseios = passageiro.passeios.map(p => p.passeio_nome);
-            
-            const { data: passeiosInfo, error } = await supabase
-              .from('passeios')
-              .select('id, nome')
-              .in('nome', nomesPasseios);
-
-            if (!error && passeiosInfo) {
-              const idsPasseios = passeiosInfo.map(p => p.id);
-              form.setValue('passeios_selecionados', idsPasseios);
-            }
-          } catch (error) {
-            console.error('Erro ao carregar passeios selecionados:', error);
+          // Configurar cidade de embarque customizada se necessário
+          if (passageiro.cidade_embarque && isCidadeOutra(passageiro.cidade_embarque)) {
+            setCidadeEmbarqueCustom(passageiro.cidade_embarque);
           }
+
+          // Carregar passeios selecionados convertendo nomes para IDs
+          if (passageiro.passeios && passageiro.passeios.length > 0) {
+            try {
+              // 🔍 [DEBUG] Filtrar apenas passeios válidos (não órfãos)
+              // Buscar passeios válidos da viagem
+              const { data: passeiosViagem, error: viagemError } = await supabase
+                .from('viagem_passeios')
+                .select('passeio_id')
+                .eq('viagem_id', passageiro.viagem_id);
+
+              if (!viagemError && passeiosViagem) {
+                const idsPasseiosValidos = passeiosViagem.map(vp => vp.passeio_id);
+                
+                // Buscar nomes dos passeios válidos
+                const { data: passeiosInfo, error: passeiosError } = await supabase
+                  .from('passeios')
+                  .select('id, nome')
+                  .in('id', idsPasseiosValidos);
+                
+                if (!passeiosError && passeiosInfo) {
+                  const nomesPasseiosValidos = passeiosInfo.map(p => p.nome);
+                  console.log('🔍 [DEBUG] Passeios válidos da viagem:', nomesPasseiosValidos);
+                  
+                  // Filtrar apenas passeios que existem na viagem (não órfãos)
+                  const passeiosValidosDoPassageiro = passageiro.passeios.filter(p => 
+                    nomesPasseiosValidos.includes(p.passeio_nome)
+                  );
+                  
+                  console.log('🔍 [DEBUG] Passeios válidos do passageiro:', passeiosValidosDoPassageiro);
+                  
+                  if (passeiosValidosDoPassageiro.length > 0) {
+                    const nomesPasseios = passeiosValidosDoPassageiro.map(p => p.passeio_nome);
+                    
+                    const passeiosParaFormulario = passeiosInfo.filter(p => 
+                      nomesPasseios.includes(p.nome)
+                    );
+                    
+                    const idsPasseios = passeiosParaFormulario.map(p => p.id);
+                    console.log('🔍 [DEBUG] IDs dos passeios carregados no formulário:', idsPasseios);
+                    form.setValue('passeios_selecionados', idsPasseios);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Erro ao carregar passeios selecionados:', error);
+            }
+          }
+          
         }
+      } catch (error) {
+        console.error('❌ Erro no useEffect do PassageiroEditDialog:', error);
       }
     };
 
@@ -131,9 +173,11 @@ export function PassageiroEditDialog({
   }, [gratuito, passageiro, form]);
 
   const onSubmit = async (values: FormData) => {
-    if (!passageiro?.viagem_passageiro_id) return;
-    setIsLoading(true);
     try {
+      setIsLoading(true);
+      console.log("Salvando passageiro:", values);
+
+      if (!passageiro?.viagem_passageiro_id) return;
       // Se o status for 'Pago', garantir quitação automática
       if (values.status_pagamento === "Pago") {
         // Buscar parcelas atuais do passageiro
@@ -215,7 +259,18 @@ export function PassageiroEditDialog({
       if (error) throw error;
 
       toast.success("Passageiro atualizado com sucesso!");
-      onSuccess();
+      
+      // ✅ CORREÇÃO: Aguardar mais tempo para garantir que todas as operações do banco foram concluídas
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // ✅ CORREÇÃO: Forçar atualização dos dados antes de chamar onSuccess
+      if (onSuccess) {
+        await onSuccess();
+      }
+      
+      // ✅ CORREÇÃO: Aguardar mais um pouco antes de fechar o modal
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       onOpenChange(false);
     } catch (error) {
       console.error("Erro ao atualizar passageiro:", error);
@@ -425,13 +480,12 @@ export function PassageiroEditDialog({
                     </FormItem>
                   )}
                 />
-                {/* Seção de Passeios Atualizada */}
-                <PasseiosEditSectionSimples 
+                {/* Seção de Passeios */}
+                <PasseiosEditSectionSimples
                   form={form} 
                   viagemId={passageiro?.viagem_id || ''} 
-                  passageiroId={passageiro?.viagem_passageiro_id || passageiro?.id}
+                  passageiroId={passageiro?.viagem_passageiro_id?.toString() || ''}
                   onPasseiosChange={() => {
-                    // Forçar refresh da seção financeira
                     console.log('🔄 Passeios alterados, atualizando seção financeira...');
                     setRefreshKey(prev => prev + 1);
                   }}
@@ -442,14 +496,13 @@ export function PassageiroEditDialog({
               <div className="space-y-6">
                 {/* Campos do sistema antigo removidos - usando apenas Situação Financeira */}
 
-                {/* Sistema Financeiro Avançado */}
+                {/* Seção Financeira Avançada */}
                 <SecaoFinanceiraAvancada
                   key={refreshKey}
-                  passageiroId={passageiro.viagem_passageiro_id?.toString() || passageiro.id?.toString() || ''}
+                  passageiroId={passageiro.viagem_passageiro_id?.toString() || ''}
                   nomePassageiro={passageiro.nome}
                   onPagamentoRealizado={async () => {
                     console.log('💰 Pagamento realizado, atualizando dados...');
-                    // Chamar onSuccess para atualizar os dados financeiros
                     if (onSuccess) {
                       console.log('🔄 Chamando onSuccess...');
                       await onSuccess();

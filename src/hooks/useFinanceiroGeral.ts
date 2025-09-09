@@ -186,9 +186,11 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           receitas_viagem: 0,
           receitas_passeios: 0,
           receitas_extras: 0,
+          receitas_ingressos: 0,
           percentual_viagem: 0,
           percentual_passeios: 0,
-          percentual_extras: 0
+          percentual_extras: 0,
+          percentual_ingressos: 0
         });
         return;
       }
@@ -550,9 +552,11 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           receitas_viagem: receitasViagemTotal,
           receitas_passeios: receitasPasseiosTotal,
           receitas_extras: receitasExtrasViagem,
+          receitas_ingressos: 0,
           percentual_viagem: percentualViagem,
           percentual_passeios: percentualPasseios,
-          percentual_extras: percentualExtras
+          percentual_extras: percentualExtras,
+          percentual_ingressos: 0
         };
       });
 
@@ -579,7 +583,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           preco_custo,
           situacao_financeira,
           cliente_id,
-          cliente_nome
+          clientes(nome)
         `)
         .gte('jogo_data', filtroData.inicio)
         .lte('jogo_data', filtroData.fim)
@@ -610,7 +614,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
           lucro,
           margem,
           situacao_financeira: ingresso.situacao_financeira,
-          cliente_nome: ingresso.cliente_nome || 'Cliente não informado'
+          cliente_nome: ingresso.clientes?.nome || 'Cliente não informado'
         };
       });
 
@@ -927,7 +931,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             valor_final,
             preco_custo,
             situacao_financeira,
-            cliente_nome,
+            clientes(nome),
             created_at
           `)
           .gte('jogo_data', filtroData.inicio)
@@ -942,7 +946,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             if (ingresso.situacao_financeira === 'pago') {
               fluxoItems.push({
                 data: ingresso.jogo_data,
-                descricao: `Ingresso: ${ingresso.cliente_nome || 'Cliente'} - ${ingresso.adversario} (${ingresso.setor_estadio})`,
+                descricao: `Ingresso: ${ingresso.clientes?.nome || 'Cliente'} - ${ingresso.adversario} (${ingresso.setor_estadio})`,
                 tipo: 'entrada',
                 categoria: 'ingressos',
                 valor: ingresso.valor_final || 0,
@@ -1101,7 +1105,7 @@ export function useFinanceiroGeral(filtroData: { inicio: string; fim: string }) 
             data_vencimento: viagem?.data_jogo || passageiro.created_at,
             dias_atraso: diasAtraso,
             status: valorPago > 0 ? 'Parcial' : 'Pendente',
-            pagamentos_detalhes: pagamentosDetalhes
+            parcelas_detalhes: pagamentosDetalhes
           });
           // }
         }
