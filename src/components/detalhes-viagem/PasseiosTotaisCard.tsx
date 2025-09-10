@@ -1,9 +1,14 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Users } from "lucide-react";
+import { MapPin, Users, Baby, GraduationCap, User, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { calcularIdade } from "@/utils/formatters";
 
 interface PassageiroDisplay {
+  data_nascimento?: string;
+  clientes?: {
+    data_nascimento?: string;
+  };
   passeios?: Array<{ 
     passeio_nome: string; 
     status: string;
@@ -20,24 +25,55 @@ interface PasseiosTotaisCardProps {
   className?: string;
 }
 
+// Função para mapear faixa etária para tipo de ingresso
+const obterTipoIngresso = (idade: number): string => {
+  if (idade >= 0 && idade <= 5) return 'Bebê';
+  if (idade >= 6 && idade <= 12) return 'Criança';
+  if (idade >= 13 && idade <= 17) return 'Estudante';
+  if (idade >= 18 && idade <= 59) return 'Adulto';
+  if (idade >= 60) return 'Idoso';
+  return 'Não Informado';
+};
+
+// Função para obter ícone por faixa etária
+const getIconeIdade = (categoria: string) => {
+  if (categoria === 'Bebê') return <Baby className="h-3 w-3 text-pink-600" />;
+  if (categoria === 'Criança') return <Baby className="h-3 w-3 text-blue-600" />;
+  if (categoria === 'Estudante') return <GraduationCap className="h-3 w-3 text-purple-600" />;
+  if (categoria === 'Adulto') return <User className="h-3 w-3 text-green-600" />;
+  if (categoria === 'Idoso') return <UserCheck className="h-3 w-3 text-orange-600" />;
+  return <Users className="h-3 w-3 text-gray-600" />;
+};
+
 export function PasseiosTotaisCard({ passageiros, className }: PasseiosTotaisCardProps) {
-  // Calcular totais de passeios
+  // Calcular totais de passeios com faixas etárias
   const passeioTotais = passageiros.reduce((acc, passageiro) => {
     if (passageiro.passeios && passageiro.passeios.length > 0) {
+      // Calcular idade do passageiro
+      const dataNasc = passageiro.clientes?.data_nascimento || passageiro.data_nascimento;
+      let faixaEtaria = 'Não Informado';
+      
+      if (dataNasc && dataNasc.trim() !== '') {
+        const idade = calcularIdade(dataNasc);
+        faixaEtaria = obterTipoIngresso(idade);
+      }
+      
       passageiro.passeios.forEach(passeio => {
         const nomePasseio = passeio.passeio?.nome || passeio.passeio_nome || 'Passeio não identificado';
         
         if (!acc[nomePasseio]) {
           acc[nomePasseio] = {
-            quantidade: 0
+            quantidade: 0,
+            faixasEtarias: {}
           };
         }
         
         acc[nomePasseio].quantidade += 1;
+        acc[nomePasseio].faixasEtarias[faixaEtaria] = (acc[nomePasseio].faixasEtarias[faixaEtaria] || 0) + 1;
       });
     }
     return acc;
-  }, {} as Record<string, { quantidade: number }>);
+  }, {} as Record<string, { quantidade: number; faixasEtarias: Record<string, number> }>);
 
   const totalPasseios = Object.values(passeioTotais).reduce((sum, item) => sum + item.quantidade, 0);
   const passageirosComPasseios = passageiros.filter(p => p.passeios && p.passeios.length > 0).length;
@@ -59,12 +95,44 @@ export function PasseiosTotaisCard({ passageiros, className }: PasseiosTotaisCar
                   <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center mb-3">
                     <Badge variant="secondary" className="text-lg px-3 py-1">
                       <Users className="h-4 w-4 mr-2" />
                       {dados.quantidade}
                     </Badge>
                   </div>
+                  
+                  {/* Faixas Etárias */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-700 text-center mb-2">
+                      Por Faixa Etária:
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {Object.entries(dados.faixasEtarias)
+                        .sort(([a], [b]) => {
+                          const ordem = ['Bebê', 'Criança', 'Estudante', 'Adulto', 'Idoso', 'Não Informado'];
+                          return ordem.indexOf(a) - ordem.indexOf(b);
+                        })
+                        .map(([faixa, quantidade]) => (
+                          <div key={faixa} className={`flex items-center justify-between p-1 rounded text-xs ${
+                            faixa === 'Bebê' ? 'bg-pink-50 text-pink-800' :
+                            faixa === 'Criança' ? 'bg-blue-50 text-blue-800' :
+                            faixa === 'Estudante' ? 'bg-purple-50 text-purple-800' :
+                            faixa === 'Adulto' ? 'bg-green-50 text-green-800' :
+                            faixa === 'Idoso' ? 'bg-orange-50 text-orange-800' :
+                            'bg-gray-50 text-gray-800'
+                          }`}>
+                            <div className="flex items-center gap-1">
+                              {getIconeIdade(faixa)}
+                              <span className="truncate">{faixa}</span>
+                            </div>
+                            <span className="font-bold">{quantidade}</span>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                  
                   <div className="text-center mt-2">
                     <div className="text-xs text-gray-500">
                       {dados.quantidade === 1 ? 'passageiro' : 'passageiros'}

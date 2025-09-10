@@ -95,13 +95,37 @@ export function ClienteSearchWithSuggestions({ control, viagemId }: ClienteSearc
   const fetchClientes = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from("clientes")
-        .select("id, nome, telefone, email, cidade")
-        .order("nome");
-
-      if (error) throw error;
-      setClientes(data || []);
+      
+      // Usar paginação para contornar o limite de 1000 registros do Supabase
+      let todosClientes = [];
+      let offset = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("clientes")
+          .select("id, nome, telefone, email, cidade")
+          .order("nome")
+          .range(offset, offset + pageSize - 1);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          hasMore = false;
+        } else {
+          todosClientes.push(...data);
+          
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            offset += pageSize;
+          }
+        }
+      }
+      
+      console.log(`✅ Clientes carregados com paginação: ${todosClientes.length} total`);
+      setClientes(todosClientes);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
       toast.error("Erro ao carregar a lista de clientes");

@@ -75,18 +75,36 @@ const Clientes = () => {
         setLoading(true);
         setError(null);
 
-        const { data, error } = await supabase
-          .from('clientes')
-          .select('*')
-          .order('nome', { ascending: true }); // Ordem alfabética
-
-        console.log('Resultado:', { data, error });
-
-        if (error) {
-          throw error;
+        // Usar paginação para contornar o limite de 1000 registros do Supabase
+        let todosClientes = [];
+        let offset = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('clientes')
+            .select('*')
+            .order('nome', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+            hasMore = false;
+          } else {
+            todosClientes.push(...data);
+            
+            if (data.length < pageSize) {
+              hasMore = false;
+            } else {
+              offset += pageSize;
+            }
+          }
         }
-
-        setClientes(data || []);
+        
+        console.log(`✅ Clientes carregados com paginação: ${todosClientes.length} total`);
+        setClientes(todosClientes);
       } catch (err: any) {
         console.error('Erro ao buscar clientes:', err);
         setError(err.message || 'Erro ao carregar os clientes');
