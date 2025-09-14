@@ -428,6 +428,8 @@ export type Database = {
           numero_identificacao: string | null
           tipo_onibus: string
           updated_at: string
+          wifi_ssid: string | null
+          wifi_password: string | null
         }
         Insert: {
           capacidade: number
@@ -439,6 +441,8 @@ export type Database = {
           numero_identificacao?: string | null
           tipo_onibus: string
           updated_at?: string
+          wifi_ssid?: string | null
+          wifi_password?: string | null
         }
         Update: {
           capacidade?: number
@@ -450,6 +454,8 @@ export type Database = {
           numero_identificacao?: string | null
           tipo_onibus?: string
           updated_at?: string
+          wifi_ssid?: string | null
+          wifi_password?: string | null
         }
         Relationships: []
       }

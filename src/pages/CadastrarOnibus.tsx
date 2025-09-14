@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, Upload } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, Copy, Wifi } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { SimpleImageUpload } from "@/components/onibus/SimpleImageUpload";
@@ -26,6 +26,8 @@ const CadastrarOnibus = () => {
     numero_identificacao: "",
     capacidade: "",
     description: "",
+    wifiSsid: "",
+    wifiPassword: "",
   });
 
   const handleInputChange = (name: string, value: string) => {
@@ -52,7 +54,9 @@ const CadastrarOnibus = () => {
           numero_identificacao: formData.numero_identificacao || null,
           capacidade: parseInt(formData.capacidade),
           description: formData.description || null,
-          image_path: imagePath
+          image_path: imagePath,
+          wifi_ssid: formData.wifiSsid || null,
+          wifi_password: formData.wifiPassword || null,
         })
         .select("id")
         .single();
@@ -163,6 +167,46 @@ const CadastrarOnibus = () => {
                 placeholder="Informações adicionais sobre o ônibus"
                 className="min-h-[100px]"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="wifiSsid" className="flex items-center gap-2">
+                  <Wifi className="h-4 w-4" />
+                  SSID do WiFi
+                </Label>
+                <Input
+                  id="wifiSsid"
+                  value={formData.wifiSsid}
+                  onChange={(e) => handleInputChange("wifiSsid", e.target.value)}
+                  placeholder="Nome da rede WiFi"
+                />
+              </div>
+              <div>
+                <Label htmlFor="wifiPassword">Senha do WiFi</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wifiPassword"
+                    value={formData.wifiPassword}
+                    onChange={(e) => handleInputChange("wifiPassword", e.target.value)}
+                    placeholder="Senha da rede WiFi"
+                    type="password"
+                  />
+                  {formData.wifiPassword && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(formData.wifiPassword);
+                        toast.success("Senha copiada para a área de transferência");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -22,6 +22,8 @@ export interface Onibus {
   updated_at: string;
   image_path: string | null;
   description: string | null;
+  wifi_ssid: string | null;
+  wifi_password: string | null;
 }
 
 export interface OnibusDisplay extends Onibus {

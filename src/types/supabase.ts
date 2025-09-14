@@ -81,6 +81,10 @@ export interface Database {
           capacidade: number
           created_at: string
           updated_at: string
+          description: string | null
+          image_path: string | null
+          wifi_ssid: string | null
+          wifi_password: string | null
         }
         Insert: {
           id?: string
@@ -90,6 +94,10 @@ export interface Database {
           capacidade: number
           created_at?: string
           updated_at?: string
+          description?: string | null
+          image_path?: string | null
+          wifi_ssid?: string | null
+          wifi_password?: string | null
         }
         Update: {
           id?: string
@@ -99,6 +107,10 @@ export interface Database {
           capacidade?: number
           created_at?: string
           updated_at?: string
+          description?: string | null
+          image_path?: string | null
+          wifi_ssid?: string | null
+          wifi_password?: string | null
         }
       }
     }
