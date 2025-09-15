@@ -211,21 +211,28 @@ export function ModernViagemDetailsLayout({
                 onClick={async () => {
                   try {
                     const url = `${window.location.origin}/viagem/${viagem.id}/meu-onibus`;
+                    
+                    // Abrir em nova aba automaticamente
+                    window.open(url, '_blank');
+                    
+                    // Também copiar para clipboard
                     await navigator.clipboard.writeText(url);
-                    toast.success("🚌 Link copiado!", {
-                      description: "Compartilhe com os passageiros para eles encontrarem seu ônibus.",
+                    toast.success("🚌 Página aberta e link copiado!", {
+                      description: "Nova aba aberta + link copiado para compartilhar com passageiros.",
                       duration: 4000,
                     });
                   } catch (error) {
-                    // Fallback se clipboard não funcionar
-                    toast.info("🔗 Link gerado!", {
-                      description: `Copie manualmente: ${window.location.origin}/viagem/${viagem.id}/meu-onibus`,
+                    // Fallback se clipboard não funcionar, mas ainda abre a aba
+                    const url = `${window.location.origin}/viagem/${viagem.id}/meu-onibus`;
+                    window.open(url, '_blank');
+                    toast.info("🔗 Página aberta!", {
+                      description: `Nova aba aberta. Copie manualmente: ${url}`,
                       duration: 6000,
                     });
                   }
                 }}
                 className="bg-white hover:bg-blue-50 border-blue-200 text-blue-700"
-                title="Copiar link para passageiros encontrarem seu ônibus"
+                title="Abrir página Meu Ônibus em nova aba e copiar link"
               >
                 <Bus className="h-4 w-4 mr-2" />
                 Meu Ônibus

@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WifiInfo } from "@/components/onibus/WifiInfo";
 
 interface Onibus {
   id: string;
@@ -41,6 +42,8 @@ interface Onibus {
   numero_identificacao: string | null;
   image_path: string | null;
   description: string | null;
+  wifi_ssid: string | null;
+  wifi_password: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -410,6 +413,12 @@ const DetalhesOnibus = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Informações de WiFi */}
+            <WifiInfo 
+              wifi_ssid={onibus.wifi_ssid}
+              wifi_password={onibus.wifi_password}
+            />
           </TabsContent>
 
           {/* Tab de Especificações */}

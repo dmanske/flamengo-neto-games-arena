@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 // Removido useViagemDetails para evitar redirecionamentos
 import { supabase } from '@/lib/supabase';
 import { CreditoBadge, useCreditoBadgeType } from '@/components/detalhes-viagem/CreditoBadge';
+import { WifiInfo } from '@/components/onibus/WifiInfo';
 
 // Usando tipos do hook existente - dados sempre consistentes
 
@@ -21,6 +22,7 @@ const MeuOnibus = () => {
   const [searchResult, setSearchResult] = useState<any>(null);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [busImages, setBusImages] = useState<Record<string, string>>({});
+  const [onibusWifiInfo, setOnibusWifiInfo] = useState<Record<string, any>>({});
 
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -102,6 +104,33 @@ const MeuOnibus = () => {
 
         if (onibusError) throw onibusError;
         setOnibusList(onibusData || []);
+
+        // Buscar informações de WiFi dos ônibus usando tipo_onibus e empresa
+        if (onibusData && onibusData.length > 0) {
+          const wifiMap: Record<string, any> = {};
+          
+          // Para cada ônibus da viagem, buscar WiFi pelo tipo_onibus e empresa
+          for (const viagemOnibus of onibusData) {
+            if (viagemOnibus.tipo_onibus && viagemOnibus.empresa) {
+              const { data: onibusWifi, error: wifiError } = await supabase
+                .from("onibus")
+                .select("id, wifi_ssid, wifi_password")
+                .eq("tipo_onibus", viagemOnibus.tipo_onibus)
+                .eq("empresa", viagemOnibus.empresa)
+                .single();
+
+              if (!wifiError && onibusWifi && (onibusWifi.wifi_ssid || onibusWifi.wifi_password)) {
+                // Usar o ID da viagem_onibus como chave
+                wifiMap[viagemOnibus.id] = {
+                  wifi_ssid: onibusWifi.wifi_ssid,
+                  wifi_password: onibusWifi.wifi_password
+                };
+              }
+            }
+          }
+          
+          setOnibusWifiInfo(wifiMap);
+        }
 
         // Buscar passageiros com dados do cliente
         const { data: passageirosData, error: passageirosError } = await supabase
@@ -367,7 +396,7 @@ const MeuOnibus = () => {
                     </p>
                     <div className="flex flex-wrap justify-center gap-4 text-sm text-red-100 mb-3">
                       {searchResult.cpf && (
-                        <span>�  CPF: {formatCPF(searchResult.cpf)}</span>
+                        <span>📄 CPF: {formatCPF(searchResult.cpf)}</span>
                       )}
                       {searchResult.telefone && (
                         <span>📞 {formatPhone(searchResult.telefone)}</span>
@@ -527,6 +556,8 @@ const MeuOnibus = () => {
                             </div>
                           </div>
                         </div>
+
+
                       </div>
                     ) : (
                       <div className="bg-yellow-500/20 rounded-lg p-4 mb-6">
@@ -535,6 +566,19 @@ const MeuOnibus = () => {
                         </p>
                       </div>
                     );
+                  })()}
+
+                  {/* Informações de WiFi - Dados reais do ônibus */}
+                  {(() => {
+                    const wifiInfo = onibusWifiInfo[searchResult.onibus_id];
+                    return wifiInfo && (wifiInfo.wifi_ssid || wifiInfo.wifi_password) ? (
+                      <div className="mt-6">
+                        <WifiInfo 
+                          wifi_ssid={wifiInfo.wifi_ssid}
+                          wifi_password={wifiInfo.wifi_password}
+                        />
+                      </div>
+                    ) : null;
                   })()}
 
                   {/* Passeios Contratados */}

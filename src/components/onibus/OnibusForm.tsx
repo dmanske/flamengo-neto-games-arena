@@ -15,6 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Button } from "@/components/ui/button";
+import { Wifi, Copy, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export const onibusFormSchema = z.object({
   tipo_onibus: z.string().min(1, "Tipo de ônibus é obrigatório"),
@@ -23,7 +26,9 @@ export const onibusFormSchema = z.object({
   capacidade: z.number().int().min(1, "Capacidade deve ser pelo menos 1").or(
     z.string().regex(/^\d+$/).transform(Number)
   ),
-  description: z.string().optional().or(z.literal(""))
+  description: z.string().optional().or(z.literal("")),
+  wifi_ssid: z.string().optional().or(z.literal("")),
+  wifi_password: z.string().optional().or(z.literal(""))
 });
 
 export type OnibusFormValues = z.infer<typeof onibusFormSchema>;
@@ -140,6 +145,89 @@ export function OnibusForm({
             </FormItem>
           )}
         />
+
+        <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Wifi className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900">Configurações de WiFi</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="wifi_ssid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da Rede (SSID)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome da rede WiFi" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nome da rede WiFi disponível no ônibus
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="wifi_password"
+              render={({ field }) => {
+                const [showPassword, setShowPassword] = React.useState(false);
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Senha do WiFi</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input 
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Senha da rede WiFi" 
+                            {...field} 
+                          />
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                        {field.value && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              navigator.clipboard.writeText(field.value);
+                              toast.success("Senha copiada!");
+                            }}
+                            title="Copiar senha"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                  </FormControl>
+                  <FormDescription>
+                    Senha para conectar na rede WiFi
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         <div className="space-y-2">
           <FormLabel>Imagem do Ônibus</FormLabel>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Upload, X, Loader2, Wifi, Copy } from "lucide-react";
+import { ArrowLeft, Upload, X, Loader2, Wifi, Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { SimpleImageUpload } from "@/components/onibus/SimpleImageUpload";
@@ -18,6 +18,7 @@ const EditarOnibus = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const [newImagePath, setNewImagePath] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     tipo_onibus: "",
     empresa: "",
@@ -287,13 +288,30 @@ const EditarOnibus = () => {
               <div>
                 <Label htmlFor="wifi_password">Senha do WiFi</Label>
                 <div className="flex gap-2">
-                  <Input
-                    id="wifi_password"
-                    type="password"
-                    value={formData.wifi_password}
-                    onChange={(e) => handleInputChange("wifi_password", e.target.value)}
-                    placeholder="Senha da rede WiFi"
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      id="wifi_password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.wifi_password}
+                      onChange={(e) => handleInputChange("wifi_password", e.target.value)}
+                      placeholder="Senha da rede WiFi"
+                    />
+                    {formData.wifi_password && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                   {formData.wifi_password && (
                     <Button
                       type="button"

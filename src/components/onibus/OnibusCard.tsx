@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pencil, Trash2, Users, Building2, Info } from "lucide-react";
+import { Eye, Pencil, Trash2, Users, Building2, Info, Wifi } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Tooltip,
@@ -18,6 +18,8 @@ interface OnibusCardProps {
     numero_identificacao: string | null;
     image_path: string | null;
     description: string | null;
+    wifi_ssid: string | null;
+    wifi_password: string | null;
   };
   onDeleteClick: (onibus: any) => void;
 }
@@ -42,12 +44,20 @@ export function OnibusCard({ onibus, onDeleteClick }: OnibusCardProps) {
           )}
         </div>
         
-        {/* Badge de Identificação */}
-        {onibus.numero_identificacao && (
-          <Badge className="absolute top-3 right-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-md">
-            #{onibus.numero_identificacao}
-          </Badge>
-        )}
+        {/* Badges */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          {onibus.numero_identificacao && (
+            <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-md">
+              #{onibus.numero_identificacao}
+            </Badge>
+          )}
+          {(onibus.wifi_ssid || onibus.wifi_password) && (
+            <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-md flex items-center gap-1">
+              <Wifi className="h-3 w-3" />
+              WiFi
+            </Badge>
+          )}
+        </div>
       </div>
       
       <CardHeader className="pb-2 pt-4 px-4 bg-gradient-to-r from-slate-50 to-blue-50/30">
