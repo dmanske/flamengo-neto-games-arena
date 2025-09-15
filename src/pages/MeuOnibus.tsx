@@ -154,7 +154,12 @@ const MeuOnibus = () => {
             passageiro_passeios (
               passeio_nome,
               status,
-              valor_cobrado
+              valor_cobrado,
+              passeio:passeios!passeio_id (
+                nome,
+                valor,
+                categoria
+              )
             )
           `)
           .eq("viagem_id", id);
@@ -596,7 +601,7 @@ const MeuOnibus = () => {
                               : 'bg-blue-600 text-white'
                               } px-3 py-1`}
                           >
-                            {pp.passeios?.nome || 'Passeio'}
+                            {pp.passeio?.nome || pp.passeio_nome || 'Passeio'}
                             {(pp.valor_cobrado || 0) === 0 && ' 🎁'}
                           </Badge>
                         ))}
