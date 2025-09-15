@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { TransferDataDialog } from './TransferDataDialog';
 
 
 
@@ -18,6 +19,9 @@ interface Onibus {
   numero_identificacao: string | null;
   passageiros_count?: number;
   lugares_extras?: number;
+  rota_transfer?: string;
+  placa_transfer?: string;
+  motorista_transfer?: string;
 }
 
 interface OnibusCardsProps {
@@ -48,6 +52,7 @@ export function OnibusCards({
   onUpdatePassageiros
 }: OnibusCardsProps) {
   const [busImages, setBusImages] = useState<Record<string, string>>({});
+  const [transferData, setTransferData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -217,6 +222,29 @@ export function OnibusCards({
                           />
                         </div>
                         
+                        {/* Botão Editar Transfer - Discreto */}
+                        <div className="pt-2 border-t border-gray-100 flex justify-end">
+                          <TransferDataDialog
+                            onibusId={onibus.id}
+                            onibusNome={onibus.numero_identificacao || `Ônibus ${onibus.tipo_onibus}`}
+                            currentData={{
+                              nome_tour_transfer: onibus.nome_tour_transfer,
+                              rota_transfer: onibus.rota_transfer,
+                              placa_transfer: onibus.placa_transfer,
+                              motorista_transfer: onibus.motorista_transfer
+                            }}
+                            onUpdate={(data) => {
+                              setTransferData(prev => ({
+                                ...prev,
+                                [onibus.id]: data
+                              }));
+                              // Atualizar a lista de ônibus se necessário
+                              if (onUpdatePassageiros) {
+                                onUpdatePassageiros();
+                              }
+                            }}
+                          />
+                        </div>
 
                       </div>
                     </CardContent>
@@ -239,6 +267,7 @@ export function OnibusCards({
                       <Badge variant="outline" className={isSelected ? "text-blue-700 border-blue-300" : "text-gray-600 border-gray-300"}>
                         {responsaveisDesteOnibus.length}
                       </Badge>
+
                       {isSelected && lastUpdate && (
                         <span className="text-xs text-slate-500" title={`Última atualização: ${lastUpdate.toLocaleTimeString()}`}>
                           {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

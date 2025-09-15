@@ -357,21 +357,60 @@ export function useViagemDetails(viagemId: string | undefined) {
     }
 
     try {
-      const { data, error } = await supabase
+      console.log('🔍 Buscando ônibus para viagem:', viagemId);
+      
+      // Primeiro, buscar dados básicos dos ônibus
+      const { data: onibusData, error: onibusError } = await supabase
         .from("viagem_onibus")
         .select("*")
         .eq("viagem_id", viagemId);
 
-      if (error) throw error;
+      if (onibusError) {
+        console.error('❌ Erro ao buscar ônibus:', onibusError);
+        throw onibusError;
+      }
 
-      if (data && data.length > 0) {
-        setOnibusList(data as Onibus[]);
+      console.log('✅ Dados dos ônibus carregados:', onibusData?.length || 0);
+
+      if (onibusData && onibusData.length > 0) {
+        // Buscar dados de transfer separadamente
+        const onibusIds = onibusData.map(o => o.id);
+        const { data: transferData, error: transferError } = await supabase
+          .from("transfer_data_simple")
+          .select("viagem_onibus_id, nome_tour, rota, placa, motorista")
+          .in("viagem_onibus_id", onibusIds);
+
+        if (transferError) {
+          console.warn('⚠️ Erro ao buscar dados de transfer (não crítico):', transferError);
+        }
+
+        console.log('📋 Dados de transfer carregados:', transferData?.length || 0);
+
+        // Mapear dados de transfer para cada ônibus
+        const onibusComTransfer = onibusData.map(onibus => {
+          const transfer = transferData?.find(t => t.viagem_onibus_id === onibus.id);
+          return {
+            ...onibus,
+            nome_tour_transfer: transfer?.nome_tour || null,
+            rota_transfer: transfer?.rota || null,
+            placa_transfer: transfer?.placa || null,
+            motorista_transfer: transfer?.motorista || null
+          };
+        });
+        
+        console.log('🚌 Ônibus finais com transfer:', onibusComTransfer);
+        
+        setOnibusList(onibusComTransfer as Onibus[]);
         // Seleciona o primeiro ônibus por padrão
-        setSelectedOnibusId(data[0].id);
+        setSelectedOnibusId(onibusData[0].id);
+      } else {
+        console.log('⚠️ Nenhum ônibus encontrado para esta viagem');
+        setOnibusList([]);
       }
     } catch (err) {
-      console.error("Erro ao buscar ônibus:", err);
+      console.error("❌ Erro ao buscar ônibus:", err);
       toast.error("Erro ao carregar dados dos ônibus");
+      setOnibusList([]);
     }
   };
 

@@ -97,6 +97,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     filters.modoResponsavel ||
     filters.modoPassageiro ||
     filters.modoEmpresaOnibus ||
+    filters.modoTransfer ||
     !filters.mostrarStatusPagamento ||
     !filters.mostrarValorPadrao ||
     !filters.mostrarValoresPassageiros ||
@@ -194,6 +195,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       modoEmpresaOnibus: false,
       modoComprarIngressos: false,
       modoComprarPasseios: true,
+      modoTransfer: false,
       incluirResumoFinanceiro: false,
       incluirDistribuicaoSetor: false, // Remove distribuição por setor
       incluirListaOnibus: false,
@@ -210,6 +212,31 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     onFiltersChange(comprarPasseiosFilters);
   };
 
+  const applyTransferMode = () => {
+    const transferFilters = {
+      ...filters,
+      modoResponsavel: false,
+      modoPassageiro: false,
+      modoEmpresaOnibus: false,
+      modoComprarIngressos: false,
+      modoComprarPasseios: false,
+      modoTransfer: true,
+      incluirResumoFinanceiro: false,
+      incluirDistribuicaoSetor: false,
+      incluirListaOnibus: false, // Remove lista de ônibus
+      incluirPassageirosNaoAlocados: false,
+      mostrarValorPadrao: false,
+      mostrarValoresPassageiros: false,
+      mostrarStatusPagamento: false,
+      mostrarTelefone: false,
+      mostrarNomesPasseios: true, // Mostrar passeios na lista
+      mostrarFotoOnibus: false,
+      mostrarNumeroPassageiro: true,
+      agruparPorOnibus: true, // Agrupar por ônibus
+    };
+    onFiltersChange(transferFilters);
+  };
+
   const resetToNormalMode = () => {
     const normalFilters = {
       ...filters,
@@ -218,6 +245,7 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
       modoEmpresaOnibus: false,
       modoComprarIngressos: false,
       modoComprarPasseios: false,
+      modoTransfer: false,
       incluirResumoFinanceiro: true,
       incluirDistribuicaoSetor: true,
       mostrarValorPadrao: true,
@@ -238,14 +266,15 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
         filters.modoPassageiro ? 'border-blue-200 bg-blue-50' : 
         filters.modoEmpresaOnibus ? 'border-green-200 bg-green-50' :
         filters.modoComprarIngressos ? 'border-purple-200 bg-purple-50' :
-        filters.modoComprarPasseios ? 'border-pink-200 bg-pink-50' : ''
+        filters.modoComprarPasseios ? 'border-pink-200 bg-pink-50' :
+        filters.modoTransfer ? 'border-teal-200 bg-teal-50' : ''
       }>
         <CardHeader>
           <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus && !filters.modoComprarIngressos && !filters.modoComprarPasseios ? (
+            {!filters.modoResponsavel && !filters.modoPassageiro && !filters.modoEmpresaOnibus && !filters.modoComprarIngressos && !filters.modoComprarPasseios && !filters.modoTransfer ? (
               <>
                 <Button
                   onClick={applyResponsavelMode}
@@ -282,6 +311,13 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 >
                   🎠 Comprar Passeios
                 </Button>
+                <Button
+                  onClick={applyTransferMode}
+                  variant="outline"
+                  className="bg-teal-50 hover:bg-teal-100 border-teal-200 text-teal-700"
+                >
+                  🚌 Transfer
+                </Button>
               </>
             ) : (
               <div className="flex items-center gap-3">
@@ -310,6 +346,11 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                     🎠 Modo: Comprar Passeios
                   </Badge>
                 )}
+                {filters.modoTransfer && (
+                  <Badge className="bg-teal-100 text-teal-700 px-3 py-1">
+                    🚌 Modo: Transfer
+                  </Badge>
+                )}
                 <Button
                   onClick={resetToNormalMode}
                   variant="outline"
@@ -319,7 +360,8 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                     filters.modoPassageiro ? "text-blue-700 border-blue-300" :
                     filters.modoEmpresaOnibus ? "text-green-700 border-green-300" :
                     filters.modoComprarIngressos ? "text-purple-700 border-purple-300" :
-                    filters.modoComprarPasseios ? "text-pink-700 border-pink-300" : ""
+                    filters.modoComprarPasseios ? "text-pink-700 border-pink-300" :
+                    filters.modoTransfer ? "text-teal-700 border-teal-300" : ""
                   }
                 >
                   Voltar ao Normal
@@ -410,6 +452,19 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
                 <p><strong>Inclui:</strong> Passeios & Faixas Etárias, Ingressos por Faixa Etária (Passageiros com Passeios)</p>
                 <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Passeio</p>
                 <p><strong>Removido:</strong> Total de ingressos, distribuição de setor, informações financeiras</p>
+              </div>
+            </div>
+          )}
+
+          {filters.modoTransfer && (
+            <div className="mt-4 p-3 bg-teal-100 rounded-lg">
+              <p className="text-sm text-teal-800 mb-2">
+                <strong>Modo Transfer Ativo:</strong> Relatório agrupado por ônibus com informações de transfer
+              </p>
+              <div className="text-sm text-teal-700">
+                <p><strong>Inclui:</strong> Passeios & Faixas Etárias, Totais de Passeios, cada ônibus em página separada</p>
+                <p><strong>Colunas exibidas:</strong> Número, Nome, Passeio + Rota, Placa e Motorista</p>
+                <p><strong>Removido:</strong> Lista de ônibus, informações financeiras, distribuição de setor</p>
               </div>
             </div>
           )}

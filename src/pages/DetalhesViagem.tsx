@@ -327,19 +327,20 @@ const DetalhesViagem = () => {
   const mainContent = (
     <>
       <div style={{ display: 'none' }}>
-        {(filters.modoComprarIngressos || filters.modoComprarPasseios) ? (
+        {(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? (
            <IngressosViagemReport
              ref={ingressosReportRef}
-             passageiros={passageirosFiltrados}
+             passageiros={passageirosFiltrados.length > 0 ? passageirosFiltrados : originalPassageiros}
              jogoInfo={{
                adversario: viagem?.adversario || 'Adversário',
                jogo_data: viagem?.data_jogo || new Date().toISOString(),
                local_jogo: 'casa',
-               total_ingressos: passageirosFiltrados.length,
+               total_ingressos: passageirosFiltrados.length > 0 ? passageirosFiltrados.length : originalPassageiros.length,
                logo_flamengo: viagem?.logo_flamengo || '/logos/flamengo.png',
                logo_adversario: viagem?.logo_adversario || '/logos/adversario.png'
              }}
              filters={filters}
+             onibusList={onibusList}
            />
         ) : (
           <ViagemReport
@@ -518,8 +519,8 @@ const DetalhesViagem = () => {
     <ModernViagemDetailsLayout
       viagem={viagem}
       onDelete={() => handleDelete()}
-      onPrint={(filters.modoComprarIngressos || filters.modoComprarPasseios) ? handleIngressosPrint : handlePrint}
-      onExportPDF={(filters.modoComprarIngressos || filters.modoComprarPasseios) ? handleIngressosExportPDF : handleExportPDF}
+      onPrint={(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? handleIngressosPrint : handlePrint}
+      onExportPDF={(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? handleIngressosExportPDF : handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
       onVincularCredito={() => setModalVincularAberto(true)}
       onibusList={onibusList}

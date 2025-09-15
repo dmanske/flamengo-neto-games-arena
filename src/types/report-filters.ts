@@ -29,6 +29,7 @@ export interface ReportFilters {
   modoEmpresaOnibus: boolean; // Lista para empresa de ônibus (CPF, data nascimento, embarque)
   modoComprarIngressos: boolean; // Lista para compra de ingressos (similar ao sistema de ingressos)
   modoComprarPasseios: boolean; // Lista para compra de passeios (foco em passeios e faixas etárias)
+  modoTransfer: boolean; // Lista para transfer (agrupado por ônibus com rota, placa e motorista)
   mostrarStatusPagamento: boolean; // Para modo responsável
   mostrarValorPadrao: boolean; // Mostrar valor padrão nas informações da viagem
   mostrarValoresPassageiros: boolean; // Mostrar valores na lista de passageiros
@@ -62,6 +63,7 @@ export const defaultReportFilters: ReportFilters = {
   modoEmpresaOnibus: false,
   modoComprarIngressos: false,
   modoComprarPasseios: false,
+  modoTransfer: false,
   mostrarStatusPagamento: true,
   mostrarValorPadrao: true,
   mostrarValoresPassageiros: true,
@@ -142,6 +144,7 @@ export const comprarPasseiosModeFilters: Partial<ReportFilters> = {
   modoPassageiro: false,
   modoEmpresaOnibus: false,
   modoComprarIngressos: false,
+  modoTransfer: false,
   incluirResumoFinanceiro: false,
   incluirDistribuicaoSetor: false, // Remove distribuição por setor
   incluirListaOnibus: false,
@@ -154,4 +157,26 @@ export const comprarPasseiosModeFilters: Partial<ReportFilters> = {
   mostrarFotoOnibus: false,
   mostrarNumeroPassageiro: true,
   agruparPorOnibus: false,
+};
+
+// Preset para modo transfer
+export const transferModeFilters: Partial<ReportFilters> = {
+  modoTransfer: true,
+  modoResponsavel: false,
+  modoPassageiro: false,
+  modoEmpresaOnibus: false,
+  modoComprarIngressos: false,
+  modoComprarPasseios: false,
+  incluirResumoFinanceiro: false,
+  incluirDistribuicaoSetor: false,
+  incluirListaOnibus: false, // Remove lista de ônibus
+  incluirPassageirosNaoAlocados: false,
+  mostrarValorPadrao: false,
+  mostrarValoresPassageiros: false,
+  mostrarStatusPagamento: false,
+  mostrarTelefone: false,
+  mostrarNomesPasseios: true, // Mostrar passeios na lista
+  mostrarFotoOnibus: false,
+  mostrarNumeroPassageiro: true,
+  agruparPorOnibus: true, // Agrupar por ônibus
 };
