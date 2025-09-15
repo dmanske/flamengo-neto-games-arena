@@ -399,6 +399,108 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
                   })()} 
                 </div>
               </div>
+              
+              {/* Estatísticas dos Taxis - Apenas no modo Transfer */}
+              {filters?.modoTransfer && onibusList && onibusList.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-md font-medium mb-3 text-gray-700">🚕 Estatísticas dos Taxis</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                    {(() => {
+                      // Calcular estatísticas dos taxis
+                      const totalTaxis = onibusList.length;
+                      let taxisCompletos = 0;
+                      let taxisIncompletos = 0;
+                      const ocupacaoPorCapacidade: Record<string, { ocupados: number; total: number }> = {};
+                      
+                      onibusList.forEach(onibus => {
+                        const passageirosNoTaxi = passageiros.filter(p => p.onibus_id === onibus.id).length;
+                        const capacidade = onibus.capacidade_onibus || 0;
+                        const capacidadeTotal = capacidade + (onibus.lugares_extras || 0);
+                        
+                        // Contar completos vs incompletos
+                        if (passageirosNoTaxi >= capacidadeTotal && capacidadeTotal > 0) {
+                          taxisCompletos++;
+                        } else {
+                          taxisIncompletos++;
+                        }
+                        
+                        // Agrupar por capacidade
+                        const chaveCapacidade = `${capacidadeTotal} lugares`;
+                        if (!ocupacaoPorCapacidade[chaveCapacidade]) {
+                          ocupacaoPorCapacidade[chaveCapacidade] = { ocupados: 0, total: 0 };
+                        }
+                        ocupacaoPorCapacidade[chaveCapacidade].total++;
+                        if (passageirosNoTaxi >= capacidadeTotal && capacidadeTotal > 0) {
+                          ocupacaoPorCapacidade[chaveCapacidade].ocupados++;
+                        }
+                      });
+                      
+                      const cards = [];
+                      
+                      // Card Total de Taxis
+                      cards.push(
+                        <div key="total" className="bg-gray-50 p-4 rounded-lg border">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-gray-600">{totalTaxis}</div>
+                            <div className="text-sm text-gray-600 mt-1">Total de Taxis</div>
+                          </div>
+                        </div>
+                      );
+                      
+                      // Card Taxis Completos
+                      if (taxisCompletos > 0) {
+                        cards.push(
+                          <div key="completos" className="bg-green-50 p-4 rounded-lg border">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-green-600">{taxisCompletos}</div>
+                              <div className="text-sm text-gray-600 mt-1">Taxis Lotados</div>
+                              <div className="text-xs text-green-500 mt-1">100% ocupação</div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      // Card Taxis Incompletos
+                      if (taxisIncompletos > 0) {
+                        cards.push(
+                          <div key="incompletos" className="bg-yellow-50 p-4 rounded-lg border">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-yellow-600">{taxisIncompletos}</div>
+                              <div className="text-sm text-gray-600 mt-1">Taxis Incompletos</div>
+                              <div className="text-xs text-yellow-500 mt-1">Com vagas</div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      // Cards por Capacidade (ex: 4/4, 5/5)
+                      Object.entries(ocupacaoPorCapacidade)
+                        .sort(([a], [b]) => {
+                          const numA = parseInt(a.split(' ')[0]);
+                          const numB = parseInt(b.split(' ')[0]);
+                          return numA - numB;
+                        })
+                        .forEach(([capacidade, dados]) => {
+                          cards.push(
+                            <div key={capacidade} className="bg-blue-50 p-4 rounded-lg border">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-blue-600">
+                                  {dados.ocupados}/{dados.total}
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">{capacidade}</div>
+                                <div className="text-xs text-blue-500 mt-1">
+                                  {dados.ocupados > 0 ? 'Lotados' : 'Disponíveis'}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      
+                      return cards;
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
