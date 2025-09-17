@@ -5176,3 +5176,277 @@ const transferModeFilters: Partial<ReportFilters> = {
 - **Funcionalidades novas**: 100% operacionais
 - **Tempo de implementação**: 1 sessão completa
 - **Cobertura de testes**: 100% dos componentes testados
+
+---
+
+## 🚌 **IMPLEMENTAÇÃO SISTEMA TRANSFER COMPLETO - SESSÃO 15/09/2025**
+
+### **📋 TASK CONCLUÍDA: Sistema Transfer com Dados Editáveis**
+
+**OBJETIVO**: Implementar sistema completo de transfer com dados editáveis (nome do tour, rota, placa, motorista) e relatórios otimizados.
+
+---
+
+### **🗄️ 1. ESTRUTURA DO BANCO DE DADOS**
+
+#### **1.1 Tabela `transfer_data_simple`**
+**Migration aplicada**: `create_simple_transfer_table`
+
+```sql
+CREATE TABLE transfer_data_simple (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  viagem_onibus_id UUID NOT NULL UNIQUE,
+  nome_tour TEXT,
+  rota TEXT,
+  placa TEXT,
+  motorista TEXT,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+```
+
+#### **1.2 Função RPC para Salvamento**
+```sql
+CREATE OR REPLACE FUNCTION save_transfer_data(
+  onibus_id UUID,
+  nome_tour TEXT DEFAULT NULL,
+  rota TEXT DEFAULT NULL,
+  placa TEXT DEFAULT NULL,
+  motorista TEXT DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO transfer_data_simple (viagem_onibus_id, nome_tour, rota, placa, motorista)
+  VALUES (onibus_id, nome_tour, rota, placa, motorista)
+  ON CONFLICT (viagem_onibus_id) 
+  DO UPDATE SET 
+    nome_tour = EXCLUDED.nome_tour,
+    rota = EXCLUDED.rota,
+    placa = EXCLUDED.placa,
+    motorista = EXCLUDED.motorista,
+    updated_at = NOW();
+END;
+$$;
+```
+
+---
+
+### **🎨 2. INTERFACE DE USUÁRIO**
+
+#### **2.1 TransferDataDialog Aprimorado**
+- **Arquivo**: `src/components/detalhes-viagem/TransferDataDialog.tsx`
+- **Campos editáveis**:
+  - 🎯 **Nome do Tour**: Input para nome do passeio/tour
+  - 🗺️ **Rota**: Textarea com placeholder "Blumenau → Joinville → Rio de Janeiro"
+  - 🚗 **Placa**: Input com formatação automática em maiúsculas
+  - 👨‍✈️ **Motorista**: Input para nome completo do motorista
+
+#### **2.2 Botão Discreto nos Cards de Ônibus**
+- **Localização**: Card principal de cada ônibus (não mais no card de responsáveis)
+- **Estilo**: Botão pequeno e discreto "Transfer" no canto direito
+- **Visibilidade**: Aparece em TODOS os ônibus, não apenas no selecionado
+
+#### **2.3 Integração com useViagemDetails**
+- **Hook atualizado**: `src/hooks/useViagemDetails.ts`
+- **Query otimizada**: Carrega dados básicos dos ônibus + dados de transfer em queries separadas
+- **Mapeamento**: Combina dados das duas tabelas no formato esperado
+
+---
+
+### **📊 3. SISTEMA DE RELATÓRIOS APRIMORADO**
+
+#### **3.1 Ordenação Inteligente de Taxis**
+- **Critério**: Taxis lotados aparecem primeiro, incompletos por último
+- **Algoritmo**: 
+  ```typescript
+  const lotacaoCompleta = passageiros >= capacidade && capacidade > 0;
+  // Primeiro os com lotação completa, depois os incompletos
+  ```
+- **Indicador visual**: Badge com status "✅ LOTADO" ou "⚠️ INCOMPLETO"
+
+#### **3.2 Quebras de Página Otimizadas**
+- **CSS aprimorado**: 
+  ```css
+  .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  ```
+- **Style inline**: `pageBreakBefore: 'always'` como backup
+- **Aplicação**: A partir do segundo taxi
+
+#### **3.3 Faixas Etárias com Critérios**
+- **Cards dos taxis**: Mostram critérios (ex: "Estudante - 13-17 anos")
+- **Seção principal**: Faixas etárias com critérios visíveis
+- **Filtro inteligente**: Cards com 0 passageiros são ocultados automaticamente
+
+#### **3.4 Nova Seção: Estatísticas dos Taxis**
+- **Localização**: Página 2, após "Distribuição por Idade"
+- **Cards incluídos**:
+  - 🔢 **Total de Taxis**: Número total de taxis
+  - ✅ **Taxis Lotados**: Quantos estão com 100% ocupação
+  - ⚠️ **Taxis Incompletos**: Quantos têm vagas disponíveis
+  - 🚌 **Por Capacidade**: Formato "2/3" (2 lotados de 3 taxis de 15 lugares)
+
+#### **3.5 Layout do Relatório Transfer Atualizado**
+```
+📄 Página 1: Resumo Geral
+├── Header personalizado: "Lista de Clientes - Transfers e Passeios"
+├── Informações do jogo
+├── Totais de Passeios
+├── Distribuição por Idade (com critérios)
+└── Estatísticas dos Taxis
+
+📄 Página 2+: Cada Taxi
+├── Header: "TAXI 1 - [Nome] - [Status de Lotação]"
+├── Faixas Etárias específicas do taxi (com critérios)
+├── Lista de passageiros (numeração reinicia por taxi)
+└── Informações de Transfer:
+    ├── 🎯 NOME DO TOUR: [editável ou linha para preenchimento]
+    ├── 🗺️ ROTA: [editável ou linha para preenchimento]
+    ├── 🚗 PLACA: [editável ou linha para preenchimento]
+    └── 👨‍✈️ MOTORISTA: [editável ou linha para preenchimento]
+```
+
+---
+
+### **🔧 4. MELHORIAS TÉCNICAS**
+
+#### **4.1 Carregamento de Dados Robusto**
+- **Queries separadas**: Ônibus básicos + dados de transfer
+- **Logs detalhados**: Para debug fácil
+- **Tratamento de erros**: Resiliente a falhas de transfer
+- **Fallback**: Sistema funciona mesmo sem dados de transfer
+
+#### **4.2 Salvamento Otimizado**
+- **RPC function**: `save_transfer_data` com upsert automático
+- **Recarregamento**: Força atualização dos dados após salvar
+- **Feedback**: Toast de sucesso/erro com mensagens específicas
+
+#### **4.3 Arquivos Modificados**
+```
+src/components/detalhes-viagem/TransferDataDialog.tsx    ✅ Dialog completo
+src/components/detalhes-viagem/OnibusCards.tsx          ✅ Botão discreto
+src/components/relatorios/IngressosViagemReport.tsx     ✅ Relatório aprimorado
+src/hooks/useViagemDetails.ts                           ✅ Carregamento otimizado
+```
+
+---
+
+### **🎯 5. FUNCIONALIDADES IMPLEMENTADAS**
+
+#### **✅ Sistema de Edição**
+- [x] Dialog responsivo para editar dados de transfer
+- [x] 4 campos específicos (nome do tour, rota, placa, motorista)
+- [x] Salvamento automático no banco de dados
+- [x] Validação e feedback visual
+- [x] Botão discreto em todos os ônibus
+
+#### **✅ Relatório Transfer Otimizado**
+- [x] Header personalizado para transfers
+- [x] Ordenação inteligente (lotados primeiro)
+- [x] Cada ônibus em página separada
+- [x] Numeração reinicia por ônibus
+- [x] Informações de transfer completas
+- [x] Faixas etárias com critérios
+- [x] Estatísticas dos taxis
+- [x] Layout otimizado para impressão
+
+#### **✅ Quebras de Página e Performance**
+- [x] Quebras de página funcionando corretamente
+- [x] CSS otimizado para impressão
+- [x] Carregamento de dados eficiente
+- [x] Sistema resiliente a erros
+
+---
+
+### **📈 6. IMPACTO QUANTIFICADO**
+
+#### **🗄️ Banco de Dados**
+- **Nova tabela**: `transfer_data_simple` (5 campos + metadados)
+- **Nova função**: `save_transfer_data` (upsert otimizado)
+- **Performance**: Queries separadas para melhor performance
+
+#### **🎨 Interface**
+- **Componentes atualizados**: 4 arquivos principais
+- **Novo dialog**: TransferDataDialog completo
+- **Botões**: Movidos para posição mais intuitiva
+- **Linhas de código**: ~800+ adicionadas/modificadas
+
+#### **📊 Relatórios**
+- **Novas seções**: Estatísticas dos taxis
+- **Melhorias**: Ordenação, quebras de página, faixas etárias
+- **Otimizações**: Cards vazios ocultados automaticamente
+- **Layout**: Profissional e organizado
+
+---
+
+### **🚀 7. COMO USAR O SISTEMA TRANSFER COMPLETO**
+
+#### **📝 Passo a Passo**
+1. **Acessar viagem**: Ir para detalhes da viagem
+2. **Editar dados de transfer**:
+   - Localizar qualquer ônibus na lista
+   - Clicar no botão discreto "Transfer" (canto direito)
+   - Preencher: Nome do Tour, Rota, Placa, Motorista
+   - Salvar
+3. **Gerar relatório**:
+   - Ir para "Filtros Rápidos"
+   - Clicar em "🚌 Transfer"
+   - Gerar PDF
+4. **Resultado**: Relatório completo com:
+   - Estatísticas dos taxis na página 2
+   - Cada ônibus em página separada
+   - Dados de transfer editáveis preenchidos
+   - Ordenação inteligente (lotados primeiro)
+
+#### **💡 Dicas de Uso**
+- **Nome do Tour**: Ex: "Tour Cristo Redentor + Pão de Açúcar"
+- **Rota**: Use → para separar cidades
+- **Placa**: Formato automático em maiúsculas
+- **Motorista**: Nome completo do motorista
+- **Relatório**: Ideal para empresas de transfer e controle logístico
+
+---
+
+### **🎯 8. BENEFÍCIOS PARA O NEGÓCIO**
+
+#### **🚌 Controle Logístico Completo**
+- **Informações centralizadas**: Todos os dados de transfer em um local
+- **Relatórios profissionais**: Layout organizado e detalhado
+- **Eficiência operacional**: Dados acessíveis e editáveis
+- **Ordenação inteligente**: Taxis lotados aparecem primeiro
+
+#### **📊 Visão Gerencial**
+- **Estatísticas dos taxis**: Visão geral da ocupação
+- **Faixas etárias**: Controle demográfico dos passageiros
+- **Status de lotação**: Identificação rápida de vagas
+- **Quebras de página**: Cada taxi em página separada
+
+#### **🎨 Experiência do Usuário**
+- **Interface intuitiva**: Botões discretos e bem posicionados
+- **Feedback visual**: Toast notifications e estados de loading
+- **Sistema resiliente**: Funciona mesmo com dados incompletos
+- **Performance otimizada**: Carregamento rápido e eficiente
+
+---
+
+### **✅ 9. STATUS FINAL**
+
+#### **🎯 Todas as Funcionalidades Implementadas**
+- ✅ **Sistema de edição**: Dialog completo com 4 campos
+- ✅ **Banco de dados**: Tabela e função RPC funcionando
+- ✅ **Interface**: Botões discretos em todos os ônibus
+- ✅ **Relatórios**: Layout otimizado com estatísticas
+- ✅ **Ordenação**: Taxis lotados primeiro
+- ✅ **Quebras de página**: Funcionando corretamente
+- ✅ **Faixas etárias**: Com critérios e filtros inteligentes
+- ✅ **Performance**: Carregamento otimizado e resiliente
+
+#### **🚀 Sistema Pronto para Produção**
+O sistema de transfer está **100% funcional** e pronto para uso em produção, com todas as funcionalidades solicitadas implementadas e testadas.
+
+**📊 RESULTADO**: Sistema completo de gestão de transfers com interface intuitiva, relatórios profissionais e dados editáveis em tempo real.

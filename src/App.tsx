@@ -79,6 +79,12 @@ import Creditos from "@/pages/Creditos";
 // Import Sistema de Configuração de Passeios
 import ConfiguracaoPasseios from "@/pages/ConfiguracaoPasseios";
 
+// Import Sistema de Fornecedores
+import Fornecedores from "@/pages/Fornecedores";
+import CadastrarFornecedor from "@/pages/CadastrarFornecedor";
+import EditarFornecedor from "@/pages/EditarFornecedor";
+import FornecedorDetalhes from "@/pages/FornecedorDetalhes";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -152,6 +158,12 @@ function App() {
                   
                   {/* Sistema de Configuração de Passeios */}
                   <Route path="configuracao-passeios" element={<ConfiguracaoPasseios />} />
+                  
+                  {/* Sistema de Fornecedores */}
+                  <Route path="fornecedores" element={<Fornecedores />} />
+                  <Route path="fornecedores/:id" element={<FornecedorDetalhes />} />
+                  <Route path="fornecedores/cadastrar" element={<CadastrarFornecedor />} />
+                  <Route path="fornecedores/:id/editar" element={<EditarFornecedor />} />
                   
                   {/* Rotas Financeiras */}
                   <Route path="financeiro" element={<FinanceiroGeral />} />
