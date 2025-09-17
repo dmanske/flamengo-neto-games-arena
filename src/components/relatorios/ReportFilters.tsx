@@ -446,11 +446,12 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
           {filters.modoComprarPasseios && (
             <div className="mt-4 p-3 bg-pink-100 rounded-lg">
               <p className="text-sm text-pink-800 mb-2">
-                <strong>Modo Comprar Passeios Ativo:</strong> Relatório focado em passeios e faixas etárias
+                <strong>Modo Comprar Passeios Ativo:</strong> Relatório inteligente com faixas etárias específicas por passeio
               </p>
               <div className="text-sm text-pink-700">
-                <p><strong>Inclui:</strong> Passeios & Faixas Etárias, Ingressos por Faixa Etária (Passageiros com Passeios)</p>
-                <p><strong>Colunas exibidas:</strong> Número, Nome, CPF, Data de Nascimento, Passeio</p>
+                <p><strong>✨ Novo:</strong> Tipos de Ingresso específicos (Cristo Redentor, Pão de Açúcar, Museu Flamengo)</p>
+                <p><strong>Inclui:</strong> Totais por tipo de ingresso, cores por faixa etária, badges coloridos</p>
+                <p><strong>Colunas:</strong> Número, Nome, CPF, Data Nascimento, Passeio, Tipo de Ingresso</p>
                 <p><strong>Removido:</strong> Total de ingressos, distribuição de setor, informações financeiras</p>
               </div>
             </div>

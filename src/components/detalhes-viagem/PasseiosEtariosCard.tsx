@@ -15,6 +15,13 @@ import {
 } from "lucide-react";
 import { isPasseioPago } from "@/data/passeios";
 import { calcularIdade } from "@/utils/formatters";
+import { 
+  categorizarIdadePorPasseio, 
+  obterDescricaoFaixaEtaria,
+  detectarTipoPasseio,
+  FAIXAS_ETARIAS_PADRAO,
+  type FaixaEtariaConfig 
+} from "@/utils/passeiosFaixasEtarias";
 
 interface PassageiroDisplay {
   clientes?: {
@@ -49,13 +56,13 @@ const categorizarPorIdade = (idade: number): string => {
   return 'Não informado';
 };
 
-// Função para mapear faixa etária para tipo de ingresso
-const obterTipoIngresso = (idade: number): string => {
-  if (idade >= 0 && idade <= 5) return 'Ingresso Bebê';
-  if (idade >= 6 && idade <= 12) return 'Ingresso Criança';
-  if (idade >= 13 && idade <= 17) return 'Ingresso Estudante';
-  if (idade >= 18 && idade <= 59) return 'Ingresso Adulto';
-  if (idade >= 60) return 'Ingresso Idoso';
+// Função para mapear faixa etária para tipo de ingresso usando faixas padrão
+const obterTipoIngressoPadrao = (idade: number): string => {
+  for (const faixa of FAIXAS_ETARIAS_PADRAO) {
+    if (idade >= faixa.idadeMin && idade <= faixa.idadeMax) {
+      return `Ingresso ${faixa.nome}`;
+    }
+  }
   return 'Ingresso Não Informado';
 };
 
@@ -81,7 +88,7 @@ export function PasseiosEtariosCard({ passageiros }: PasseiosEtariosCardProps) {
     
     if (dataNasc && dataNasc.trim() !== '') {
       const idade = calcularIdade(dataNasc);
-      const tipoIngresso = obterTipoIngresso(idade);
+      const tipoIngresso = obterTipoIngressoPadrao(idade);
       acc[tipoIngresso] = (acc[tipoIngresso] || 0) + 1;
       
 

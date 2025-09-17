@@ -1,9 +1,16 @@
 import React from 'react';
 import { PassageiroDisplay } from '@/hooks/useViagemDetails';
-import { formatCPF, formatBirthDate } from '@/utils/formatters';
+import { formatCPF, formatBirthDate, calcularIdade } from '@/utils/formatters';
 import { useEmpresa } from '@/hooks/useEmpresa';
 import { formatDateTimeSafe } from '@/lib/date-utils';
 import { ReportFilters } from '@/types/report-filters';
+import { 
+  categorizarIdadePorPasseio, 
+  obterDescricaoFaixaEtaria,
+  detectarTipoPasseio,
+  type FaixaEtariaConfig 
+} from '@/utils/passeiosFaixasEtarias';
+import { Baby, GraduationCap, User, UserCheck, Users } from 'lucide-react';
 
 interface JogoInfo {
   adversario: string;
@@ -34,6 +41,36 @@ interface IngressosViagemReportProps {
   filters?: ReportFilters;
   onibusList?: OnibusData[];
 }
+
+// Função para obter ícone por tipo
+const getIconeIdade = (icone: string) => {
+  switch (icone) {
+    case 'baby': return <Baby className="h-3 w-3" />;
+    case 'graduationCap': return <GraduationCap className="h-3 w-3" />;
+    case 'user': return <User className="h-3 w-3" />;
+    case 'userCheck': return <UserCheck className="h-3 w-3" />;
+    default: return <Users className="h-3 w-3" />;
+  }
+};
+
+// Função para definir prioridade de ordenação dos passeios
+const obterPrioridadePasseio = (nomePasseio: string): number => {
+  const nome = nomePasseio.toLowerCase();
+  
+  // Cristo Redentor e variações - Prioridade 1
+  if (nome.includes('cristo redentor') || nome.includes('cristo redendor') || nome.includes('cristo')) {
+    return 1;
+  }
+  
+  // Pão de Açúcar e variações - Prioridade 2
+  if (nome.includes('pão de açúcar') || nome.includes('pao de acucar') || nome.includes('bondinho') ||
+      (nome.includes('pão') && nome.includes('açúcar')) || (nome.includes('pao') && nome.includes('acucar'))) {
+    return 2;
+  }
+  
+  // Outros passeios - Prioridade 3 (ordem alfabética)
+  return 3;
+};
 
 export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosViagemReportProps>(
   ({ passageiros, jogoInfo, filters, onibusList = [] }, ref) => {
@@ -117,6 +154,11 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
               .page-break {
                 page-break-before: always !important;
                 break-before: page !important;
+              }
+              
+              .page-break-after {
+                page-break-after: always !important;
+                break-after: page !important;
               }
               
               .no-break {
@@ -322,80 +364,83 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-4 text-gray-800">Ingressos por Faixa Etária (Passageiros com Passeios)</h3>
               
-              {/* Totais de Passeios - Movido para baixo do header */}
+
+              {/* Totais Agrupados por Passeio */}
               <div className="mb-6">
-                <h4 className="text-md font-medium mb-3 text-gray-700">📊 Totais de Passeios</h4>
+                <h4 className="text-md font-medium mb-3 text-gray-700">👥 Totais por Passeio</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                   {(() => {
-                    const passeiosTotais = passageiros.reduce((acc, p) => {
-                      const passeios = p.passeios || [];
-                      
-                      passeios.forEach(pp => {
-                        const passeioNome = pp.passeio?.nome || pp.passeio_nome || 'Passeio não identificado';
-                        acc[passeioNome] = (acc[passeioNome] || 0) + 1;
-                      });
-                      
-                      return acc;
-                    }, {} as Record<string, number>);
-                    
-                    return Object.entries(passeiosTotais).map(([passeioNome, quantidade]) => (
-                      <div key={passeioNome} className="bg-green-50 p-4 rounded-lg border">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">{quantidade}</div>
-                          <div className="text-sm text-gray-600 mt-1">{passeioNome}</div>
-                        </div>
-                      </div>
-                    ));
-                  })()} 
-                </div>
-              </div>
-              
-              {/* Faixas Etárias */}
-              <div className="mb-6">
-                <h4 className="text-md font-medium mb-3 text-gray-700">👥 Distribuição por Idade</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-                  {(() => {
                     const passageirosComPasseios = passageiros.filter(p => p.passeios && p.passeios.length > 0);
-                    const faixasEtarias = passageirosComPasseios.reduce((acc, p) => {
-                      const idade = p.data_nascimento ? 
-                        new Date().getFullYear() - new Date(p.data_nascimento).getFullYear() : null;
-                      
-                      let faixaEtaria = 'Não informado';
-                      if (idade !== null) {
-                        if (idade >= 0 && idade <= 5) faixaEtaria = 'Bebê';
-                        else if (idade >= 6 && idade <= 12) faixaEtaria = 'Criança';
-                        else if (idade >= 13 && idade <= 17) faixaEtaria = 'Estudante';
-                        else if (idade >= 18 && idade <= 59) faixaEtaria = 'Adulto';
-                        else if (idade >= 60) faixaEtaria = 'Idoso';
-                        else faixaEtaria = 'Não informado';
+                    const passeioTotais: Record<string, { 
+                      total: number; 
+                      faixas: Record<string, { quantidade: number; config: FaixaEtariaConfig }>;
+                      prioridade: number;
+                    }> = {};
+                    
+                    // Calcular totais agrupados por passeio
+                    passageirosComPasseios.forEach(p => {
+                      if (p.passeios && p.passeios.length > 0) {
+                        p.passeios.forEach(passeio => {
+                          const nomePasseio = passeio.passeio?.nome || passeio.passeio_nome || 'Passeio não identificado';
+                          const idade = p.data_nascimento ? calcularIdade(p.data_nascimento) : 0;
+                          const faixa = categorizarIdadePorPasseio(idade, nomePasseio);
+                          const prioridade = obterPrioridadePasseio(nomePasseio);
+                          
+                          if (!passeioTotais[nomePasseio]) {
+                            passeioTotais[nomePasseio] = {
+                              total: 0,
+                              faixas: {},
+                              prioridade
+                            };
+                          }
+                          
+                          passeioTotais[nomePasseio].total += 1;
+                          
+                          if (!passeioTotais[nomePasseio].faixas[faixa.nome]) {
+                            passeioTotais[nomePasseio].faixas[faixa.nome] = {
+                              quantidade: 0,
+                              config: faixa
+                            };
+                          }
+                          passeioTotais[nomePasseio].faixas[faixa.nome].quantidade += 1;
+                        });
                       }
-                      
-                      acc[faixaEtaria] = (acc[faixaEtaria] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>);
+                    });
                     
-                    const faixasCriterios = {
-                      'Bebê': '0-5 anos',
-                      'Criança': '6-12 anos',
-                      'Estudante': '13-17 anos',
-                      'Adulto': '18-59 anos',
-                      'Idoso': '60+ anos',
-                      'Não informado': 'Sem data'
-                    };
-                    
-                    const faixasOrdenadas = ['Bebê', 'Criança', 'Estudante', 'Adulto', 'Idoso', 'Não informado'];
-                    
-                    return faixasOrdenadas
-                      .filter(faixa => (faixasEtarias[faixa] || 0) > 0) // Ocultar se for 0
-                      .map(faixa => (
-                      <div key={faixa} className="bg-blue-50 p-4 rounded-lg border">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{faixasEtarias[faixa] || 0}</div>
-                          <div className="text-sm text-gray-600 mt-1">{faixa}</div>
-                          <div className="text-xs text-blue-500 mt-1">{faixasCriterios[faixa]}</div>
+                    return Object.entries(passeioTotais)
+                      .sort(([, a], [, b]) => a.prioridade - b.prioridade || b.total - a.total)
+                      .map(([nomePasseio, dados]) => (
+                        <div key={nomePasseio} className="bg-gray-50 p-4 rounded-lg border">
+                          <div className="text-center mb-3">
+                            <div className="text-2xl font-bold text-gray-700">
+                              {dados.total}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600 mt-1">
+                              {nomePasseio}
+                            </div>
+                          </div>
+                          
+                          {/* Faixas etárias do passeio */}
+                          <div className="space-y-1">
+                            {Object.entries(dados.faixas)
+                              .sort(([, a], [, b]) => a.config.idadeMin - b.config.idadeMin)
+                              .map(([faixaNome, faixaDados]) => (
+                                <div key={faixaNome} className={`flex items-center justify-between px-2 py-1 rounded text-xs ${faixaDados.config.cor} ${faixaDados.config.corTexto}`}>
+                                  <div className="flex items-center gap-1 flex-1">
+                                    {getIconeIdade(faixaDados.config.icone)}
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{faixaNome}</span>
+                                      <span className="text-xs opacity-75">
+                                        {obterDescricaoFaixaEtaria(faixaDados.config)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className="font-bold">{faixaDados.quantidade}</span>
+                                </div>
+                              ))}
+                          </div>
                         </div>
-                      </div>
-                    ));
+                      ));
                   })()} 
                 </div>
               </div>
@@ -731,7 +776,18 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
           ) : (
             // Modo normal
             <>
-              <h3 className="font-semibold text-gray-800 mb-4 text-lg">Lista de Clientes</h3>
+              {filters?.modoComprarPasseios ? (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-800 mb-2 text-lg">Lista de Clientes</h3>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-yellow-800">
+                      <strong>📋 Organização:</strong> Faixas especiais primeiro (Gratuidade, Meia-Entrada, etc.), depois ingressos Inteira
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <h3 className="font-semibold text-gray-800 mb-4 text-lg">Lista de Clientes</h3>
+              )}
               
               {(() => {
                 // No modo comprar passeios, usar todos os passageiros, senão usar apenas os com setor
@@ -754,37 +810,143 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
                     </tr>
                   </thead>
                   <tbody>
-                    {passageirosParaExibir
-                      .sort((a, b) => {
-                        const nomeA = a.nome || '';
-                        const nomeB = b.nome || '';
-                        return nomeA.localeCompare(nomeB, 'pt-BR');
-                      })
-                      .map((passageiro, index) => (
-                      <tr key={passageiro.id} className="hover:bg-gray-50">
-                        <td className="border p-3 text-center font-medium">{index + 1}</td>
-                        <td className="border p-3">{passageiro.nome || '-'}</td>
-                        <td className="border p-3 text-center">
-                          {passageiro.cpf ? formatCPF(passageiro.cpf) : '-'}
-                        </td>
-                        <td className="border p-3 text-center">
-                          {passageiro.data_nascimento 
-                            ? formatBirthDate(passageiro.data_nascimento)
-                            : '-'
+                    {(() => {
+                      // Ordenação inteligente para modo comprar passeios - MANTENDO PASSAGEIROS AGRUPADOS
+                      if (filters?.modoComprarPasseios) {
+                        // Processar passageiros mantendo-os agrupados
+                        const passageirosProcessados = passageirosParaExibir.map(passageiro => {
+                          if (passageiro.passeios && passageiro.passeios.length > 0) {
+                            const idade = passageiro.data_nascimento ? calcularIdade(passageiro.data_nascimento) : 0;
+                            
+                            // Processar todos os passeios do passageiro
+                            const passeiosProcessados = passageiro.passeios.map(passeio => {
+                              const nomePasseio = passeio.passeio?.nome || passeio.passeio_nome || 'Passeio não identificado';
+                              const faixa = categorizarIdadePorPasseio(idade, nomePasseio);
+                              const isInteira = faixa.nome === 'Inteira';
+                              const isAdulto = faixa.nome === 'Adulto';
+                              const tipoPasseio = detectarTipoPasseio(nomePasseio);
+                              const temFaixaEspecial = tipoPasseio !== 'padrao';
+                              
+                              return {
+                                passeio,
+                                faixa,
+                                isInteira,
+                                isAdulto,
+                                temFaixaEspecial,
+                                prioridadePasseio: obterPrioridadePasseio(nomePasseio),
+                                prioridadeFaixa: !isInteira && !isAdulto ? 1 : 2 // Qualquer badge (não inteira/adulto) = prioridade 1
+                              };
+                            });
+                            
+                            // Determinar prioridade geral do passageiro baseada no melhor caso
+                            // Se tem pelo menos um passeio com badge (qualquer faixa especial), vai para prioridade 1
+                            const temAlgumBadge = passeiosProcessados.some(p => p.prioridadeFaixa === 1);
+                            const menorPrioridadeFaixa = temAlgumBadge ? 1 : 2;
+                            const menorPrioridadePasseio = Math.min(...passeiosProcessados.map(p => p.prioridadePasseio));
+                            
+                            return {
+                              passageiro,
+                              passeiosProcessados,
+                              prioridadeFaixa: menorPrioridadeFaixa,
+                              prioridadePasseio: menorPrioridadePasseio
+                            };
+                          } else {
+                            // Passageiro sem passeios
+                            return {
+                              passageiro,
+                              passeiosProcessados: [],
+                              prioridadeFaixa: 3,
+                              prioridadePasseio: 999
+                            };
                           }
-                        </td>
-                        {(filters?.modoComprarPasseios || filters?.modoTransfer) ? (
-                          <td className="border p-3">
-                            {passageiro.passeios && passageiro.passeios.length > 0 
-                              ? passageiro.passeios.map(pp => pp.passeio?.nome || pp.passeio_nome).filter(Boolean).join(', ') || '-'
-                              : '-'
+                        });
+                        
+                        // Ordenar passageiros mantendo-os agrupados
+                        return passageirosProcessados
+                          .sort((a, b) => {
+                            // Primeiro: prioridade por badges (quem tem qualquer badge vs quem não tem)
+                            if (a.prioridadeFaixa !== b.prioridadeFaixa) {
+                              return a.prioridadeFaixa - b.prioridadeFaixa;
                             }
-                          </td>
-                        ) : (
-                          <td className="border p-3">{passageiro.setor_maracana || '-'}</td>
-                        )}
-                      </tr>
-                    ))}
+                            
+                            // Segundo: prioridade de passeio (Cristo, Pão de Açúcar, Museu, outros)
+                            if (a.prioridadePasseio !== b.prioridadePasseio) {
+                              return a.prioridadePasseio - b.prioridadePasseio;
+                            }
+                            
+                            // Terceiro: ordem alfabética do nome do passageiro
+                            const nomeA = a.passageiro.nome || '';
+                            const nomeB = b.passageiro.nome || '';
+                            return nomeA.localeCompare(nomeB, 'pt-BR');
+                          });
+                      } else {
+                        // Ordenação normal para outros modos
+                        return passageirosParaExibir
+                          .sort((a, b) => {
+                            const nomeA = a.nome || '';
+                            const nomeB = b.nome || '';
+                            return nomeA.localeCompare(nomeB, 'pt-BR');
+                          })
+                          .map(passageiro => ({ passageiro, passeio: null, faixa: null, isInteira: false, prioridade: 1 }));
+                      }
+                    })()
+                      .map((dadosPassageiro, index) => {
+                        const { passageiro, passeiosProcessados, prioridadeFaixa } = dadosPassageiro;
+                        
+                        // Calcular cor da linha baseada no primeiro passeio com faixa especial
+                        let corLinha = 'hover:bg-gray-50';
+                        const primeiraFaixaEspecial = passeiosProcessados.find(p => p.prioridadeFaixa === 1);
+                        if (primeiraFaixaEspecial) {
+                          const corBase = primeiraFaixaEspecial.faixa.cor.replace('-50', '-25');
+                          corLinha = `${corBase} hover:${primeiraFaixaEspecial.faixa.cor.replace('-50', '-100')}`;
+                        }
+                        
+                        // Não quebrar página automaticamente - deixar fluir naturalmente
+                        const deveQuebrarPagina = false;
+                        
+                        return (
+                          <tr key={`${passageiro.id}-${index}`} className={corLinha}>
+                              <td className="border p-3 text-center font-medium">{index + 1}</td>
+                              <td className="border p-3">{passageiro.nome || '-'}</td>
+                              <td className="border p-3 text-center">
+                                {passageiro.cpf ? formatCPF(passageiro.cpf) : '-'}
+                              </td>
+                              <td className="border p-3 text-center">
+                                {passageiro.data_nascimento 
+                                  ? formatBirthDate(passageiro.data_nascimento)
+                                  : '-'
+                                }
+                              </td>
+                              {(filters?.modoComprarPasseios || filters?.modoTransfer) ? (
+                                <td className="border p-3">
+                                  {passeiosProcessados.length > 0 ? (
+                                    <div className="flex flex-col gap-1">
+                                      {passeiosProcessados
+                                        .sort((a, b) => a.prioridadePasseio - b.prioridadePasseio)
+                                        .map((dadosPasseio, idx) => (
+                                          <div key={idx} className="flex items-center gap-2">
+                                            <span className="text-sm">
+                                              {dadosPasseio.passeio.passeio?.nome || dadosPasseio.passeio.passeio_nome || 'Passeio não identificado'}
+                                            </span>
+                                            {dadosPasseio.temFaixaEspecial && !dadosPasseio.isInteira && !dadosPasseio.isAdulto && 
+                                             !dadosPasseio.passeio.passeio_nome?.toLowerCase().includes('museu do flamengo') && 
+                                             !dadosPasseio.passeio.passeio?.nome?.toLowerCase().includes('museu do flamengo') && (
+                                              <div className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${dadosPasseio.faixa.cor} ${dadosPasseio.faixa.corTexto}`}>
+                                                {getIconeIdade(dadosPasseio.faixa.icone)}
+                                                <span>{dadosPasseio.faixa.nome}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                    </div>
+                                  ) : '-'}
+                                </td>
+                              ) : (
+                                <td className="border p-3">{passageiro.setor_maracana || '-'}</td>
+                              )}
+                            </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -802,8 +964,6 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
             </>
           )}
         </div>
-
-
 
         {/* Rodapé */}
         <div className="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-600" style={{ marginBottom: 0, paddingBottom: 0, backgroundColor: 'white' }}>
