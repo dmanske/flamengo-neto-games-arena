@@ -12,6 +12,9 @@ import { ReportFilters, ReportPreviewData } from '@/types/report-filters';
 import { PassageiroDisplay } from '@/hooks/useViagemDetails';
 import { formatCurrency } from '@/lib/utils';
 import { ReportPreview } from './ReportPreview';
+import { ReportPersonalizationButton } from './ReportPersonalizationButton';
+import { PersonalizationConfig } from '@/types/personalizacao-relatorios';
+import { convertPersonalizationToFilters } from '@/lib/personalizacao/integration';
 
 interface Onibus {
   id: string;
@@ -33,6 +36,8 @@ interface ReportFiltersProps {
   onibusList: Onibus[];
   passeios?: Passeio[];
   previewData: ReportPreviewData;
+  viagemId?: string;
+  viagem?: any; // Dados da viagem
 }
 
 export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
@@ -41,7 +46,9 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   passageiros = [],
   onibusList = [],
   passeios = [],
-  previewData
+  previewData,
+  viagemId,
+  viagem
 }) => {
   // Verificação de segurança
   if (!filters || !onFiltersChange) {
@@ -270,7 +277,44 @@ export const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
         filters.modoTransfer ? 'border-teal-200 bg-teal-50' : ''
       }>
         <CardHeader>
-          <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">⚡ Filtros Rápidos</CardTitle>
+            {viagemId && (
+              <ReportPersonalizationButton
+                viagemId={viagemId}
+                currentFilters={filters}
+                onConfigApplied={(config: PersonalizationConfig) => {
+                  // Converter configuração de personalização de volta para filtros
+                  const newFilters = convertPersonalizationToFilters(config);
+                  onFiltersChange({ ...filters, ...newFilters });
+                }}
+                dadosReais={{
+                  viagem: viagem ? {
+                    id: viagem.id,
+                    adversario: viagem.adversario,
+                    dataJogo: viagem.data_jogo,
+                    localJogo: viagem.local_jogo || 'Maracanã',
+                    estadio: viagem.nome_estadio || 'Estádio do Maracanã',
+                    status: viagem.status_viagem,
+                    valorPadrao: viagem.valor_padrao || 0,
+                    setorPadrao: viagem.setor_padrao || 'Norte'
+                  } : {
+                    id: viagemId,
+                    adversario: 'Adversário da Viagem',
+                    dataJogo: new Date().toISOString(),
+                    localJogo: 'Maracanã',
+                    estadio: 'Estádio do Maracanã',
+                    status: 'Confirmada',
+                    valorPadrao: 150,
+                    setorPadrao: 'Norte'
+                  },
+                  passageiros: passageiros || [],
+                  onibus: onibusList || [],
+                  passeios: passeios || []
+                }}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">

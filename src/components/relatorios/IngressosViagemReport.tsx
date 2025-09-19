@@ -880,25 +880,35 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
                             return nomeA.localeCompare(nomeB, 'pt-BR');
                           });
                       } else {
-                        // Ordenação normal para outros modos
+                        // ✅ CORREÇÃO: Ordenação normal para outros modos - incluir passeiosProcessados vazio
                         return passageirosParaExibir
                           .sort((a, b) => {
                             const nomeA = a.nome || '';
                             const nomeB = b.nome || '';
                             return nomeA.localeCompare(nomeB, 'pt-BR');
                           })
-                          .map(passageiro => ({ passageiro, passeio: null, faixa: null, isInteira: false, prioridade: 1 }));
+                          .map(passageiro => ({ 
+                            passageiro, 
+                            passeiosProcessados: [], // ✅ CORREÇÃO: Adicionar array vazio para evitar erro
+                            passeio: null, 
+                            faixa: null, 
+                            isInteira: false, 
+                            prioridade: 1,
+                            prioridadeFaixa: 2
+                          }));
                       }
                     })()
                       .map((dadosPassageiro, index) => {
                         const { passageiro, passeiosProcessados, prioridadeFaixa } = dadosPassageiro;
                         
-                        // Calcular cor da linha baseada no primeiro passeio com faixa especial
+                        // ✅ CORREÇÃO: Calcular cor da linha baseada no primeiro passeio com faixa especial
                         let corLinha = 'hover:bg-gray-50';
-                        const primeiraFaixaEspecial = passeiosProcessados.find(p => p.prioridadeFaixa === 1);
-                        if (primeiraFaixaEspecial) {
-                          const corBase = primeiraFaixaEspecial.faixa.cor.replace('-50', '-25');
-                          corLinha = `${corBase} hover:${primeiraFaixaEspecial.faixa.cor.replace('-50', '-100')}`;
+                        if (passeiosProcessados && Array.isArray(passeiosProcessados)) {
+                          const primeiraFaixaEspecial = passeiosProcessados.find(p => p.prioridadeFaixa === 1);
+                          if (primeiraFaixaEspecial) {
+                            const corBase = primeiraFaixaEspecial.faixa.cor.replace('-50', '-25');
+                            corLinha = `${corBase} hover:${primeiraFaixaEspecial.faixa.cor.replace('-50', '-100')}`;
+                          }
                         }
                         
                         // Não quebrar página automaticamente - deixar fluir naturalmente
@@ -919,7 +929,7 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
                               </td>
                               {(filters?.modoComprarPasseios || filters?.modoTransfer) ? (
                                 <td className="border p-3">
-                                  {passeiosProcessados.length > 0 ? (
+                                  {passeiosProcessados && Array.isArray(passeiosProcessados) && passeiosProcessados.length > 0 ? (
                                     <div className="flex flex-col gap-1">
                                       {passeiosProcessados
                                         .sort((a, b) => a.prioridadePasseio - b.prioridadePasseio)

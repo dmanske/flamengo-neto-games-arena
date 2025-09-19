@@ -50,6 +50,19 @@ export function PassageiroEditDialog({
 }: PassageiroEditDialogProps) {
   console.log('🔍 PassageiroEditDialog - Props recebidas:', { open, passageiro, viagem });
   
+  // ✅ CORREÇÃO: Verificação de segurança mais rigorosa
+  if (!passageiro || !passageiro.viagem_passageiro_id) {
+    console.warn('PassageiroEditDialog: passageiro ou viagem_passageiro_id não fornecido', passageiro);
+    
+    // Fechar o modal se estiver aberto com dados inválidos
+    if (open) {
+      console.log('🔒 Fechando modal devido a dados inválidos');
+      onOpenChange(false);
+    }
+    
+    return null;
+  }
+  
   const [isLoading, setIsLoading] = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [cidadeEmbarqueCustom, setCidadeEmbarqueCustom] = React.useState("");
@@ -280,10 +293,7 @@ export function PassageiroEditDialog({
     }
   };
 
-  if (!passageiro || !passageiro.viagem_passageiro_id) {
-    console.warn('PassageiroEditDialog: passageiro ou viagem_passageiro_id não fornecido', passageiro);
-    return null;
-  }
+  // ✅ CORREÇÃO: Esta verificação foi movida para o início da função
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

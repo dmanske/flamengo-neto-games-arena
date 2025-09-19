@@ -26,6 +26,9 @@ import CadastrarViagem from "@/pages/CadastrarViagem";
 import EditarViagem from "@/pages/EditarViagem";
 import DetalhesViagem from '@/pages/DetalhesViagem';
 import ListaPresenca from '@/pages/ListaPresenca';
+import ListaPresencaOnibus from '@/pages/ListaPresencaOnibus';
+import ListaPresencaPublica from '@/pages/ListaPresencaPublica';
+import ListaPresencaOnibusPublica from '@/pages/ListaPresencaOnibusPublica';
 import Onibus from '@/pages/Onibus';
 import CadastrarOnibus from '@/pages/CadastrarOnibus';
 import EditarOnibus from '@/pages/EditarOnibus';
@@ -112,6 +115,10 @@ function App() {
               <Route path="/viagem/:id/test" element={<MeuOnibusTest />} />
               <Route path="/viagem/:id/simple" element={<MeuOnibusSimple />} />
               
+              {/* Páginas públicas Lista de Presença */}
+              <Route path="/lista-presenca/:viagemId" element={<ListaPresencaPublica />} />
+              <Route path="/lista-presenca/:viagemId/onibus/:onibusId" element={<ListaPresencaOnibusPublica />} />
+              
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
@@ -130,9 +137,12 @@ function App() {
                   <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
                   <Route path="viagens" element={<Viagens />} />
                   <Route path="viagem/:id" element={<DetalhesViagem />} />
+                  <Route path="viagens/:viagemId/detalhes" element={<DetalhesViagem />} />
                   <Route path="viagem/:id/editar" element={<EditarViagem />} />
                   <Route path="cadastrar-viagem" element={<CadastrarViagem />} />
                   <Route path="presenca/:viagemId" element={<ListaPresenca />} />
+                  <Route path="viagens/:viagemId/lista-presenca/:onibusId" element={<ListaPresencaOnibus />} />
+
                   <Route path="cadastrar-passageiro" element={<CadastrarPassageiro />} />
                   <Route path="cadastrar-passageiro-simples" element={<CadastrarPassageiroSimples />} />
                   {/* Route demo-parcelamento removida - sistema desabilitado */}

@@ -309,12 +309,13 @@ export function CleanViagemCard({
                   variant="ghost" 
                   size="sm"
                   className="rounded-none border-r border-gray-100 h-12 hover:bg-amber-500 hover:text-white transition-colors"
-                  asChild
+                  onClick={() => {
+                    const url = `/dashboard/presenca/${viagem.id}`;
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }}
                 >
-                  <Link to={`/dashboard/presenca/${viagem.id}`}>
-                    <Users className="h-4 w-4 mr-1" />
-                    <span className="text-xs">Presença</span>
-                  </Link>
+                  <Users className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Presença</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Lista de Presença</TooltipContent>

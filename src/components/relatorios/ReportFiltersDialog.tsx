@@ -36,6 +36,8 @@ interface ReportFiltersDialogProps {
   onibusList: Onibus[];
   passeios?: Passeio[];
   previewData: ReportPreviewData;
+  viagemId?: string;
+  viagem?: any; // Dados da viagem
 }
 
 export const ReportFiltersDialog: React.FC<ReportFiltersDialogProps> = ({
@@ -47,7 +49,9 @@ export const ReportFiltersDialog: React.FC<ReportFiltersDialogProps> = ({
   passageiros,
   onibusList,
   passeios,
-  previewData
+  previewData,
+  viagemId,
+  viagem
 }) => {
   const [localFilters, setLocalFilters] = useState<ReportFilters>(filters);
 
@@ -108,6 +112,8 @@ export const ReportFiltersDialog: React.FC<ReportFiltersDialogProps> = ({
             onibusList={onibusList}
             passeios={passeios}
             previewData={previewData}
+            viagemId={viagemId}
+            viagem={viagem}
           />
         </div>
 

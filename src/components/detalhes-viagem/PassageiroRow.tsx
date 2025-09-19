@@ -43,8 +43,11 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
       </TableRow>
     );
   }
-  // USAR MESMO SISTEMA DO MODAL DE EDIÇÃO - com verificação de segurança
+  // ✅ CORREÇÃO: USAR MESMO SISTEMA DO MODAL DE EDIÇÃO - com verificação de segurança mais rigorosa
   const passageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+  
+  // ✅ CORREÇÃO: Verificar se o ID é válido antes de usar o hook
+  const idValido = passageiroId && passageiroId !== 'undefined' && passageiroId !== 'null' && passageiroId !== 'fallback-id';
   
   const {
     breakdown,
@@ -52,7 +55,7 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
     loading: loadingPagamentos,
     error: errorPagamentos,
     obterStatusAtual
-  } = usePagamentosSeparados(passageiroId || 'fallback-id');
+  } = usePagamentosSeparados(idValido ? passageiroId : undefined);
 
   // ✅ NOVO: Determinar tipo de badge de crédito ANTES do if
   const creditoBadgeData = useCreditoBadgeType(passageiro);

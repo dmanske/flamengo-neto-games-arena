@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Users, DollarSign } from "lucide-react";
+import { Users, DollarSign, UserCheck, UserX, TrendingUp, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { PassageiroDialog } from "@/components/detalhes-viagem/PassageiroDialog";
 import { PassageiroEditDialog } from "@/components/detalhes-viagem/PassageiroEditDialog";
@@ -32,6 +33,7 @@ import { useCreditos } from "@/hooks/useCreditos";
 import { toast } from "sonner";
 
 import { PasseiosTotaisCard } from "@/components/detalhes-viagem/PasseiosTotaisCard";
+import { LinksOnibusSection } from "@/components/lista-presenca/LinksOnibusSection";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -253,6 +255,20 @@ const DetalhesViagem = () => {
   const openEditPassageiroDialog = (passageiro: any) => {
     console.log("Abrindo dialog de edição para:", passageiro);
     console.log("viagem_passageiro_id:", passageiro?.viagem_passageiro_id);
+    
+    // ✅ CORREÇÃO: Verificação de segurança antes de abrir o modal
+    if (!passageiro) {
+      console.error('❌ Tentativa de abrir modal de edição com passageiro null/undefined');
+      toast.error('Erro: Dados do passageiro não encontrados');
+      return;
+    }
+    
+    if (!passageiro.viagem_passageiro_id) {
+      console.error('❌ Tentativa de abrir modal de edição sem viagem_passageiro_id', passageiro);
+      toast.error('Erro: ID do passageiro não encontrado');
+      return;
+    }
+    
     setSelectedPassageiro(passageiro);
     setEditPassageiroOpen(true);
   };
@@ -372,10 +388,12 @@ const DetalhesViagem = () => {
         onibusList={onibusList}
         passeios={temPasseios ? passeios : []}
         previewData={previewData}
+        viagemId={id}
+        viagem={viagem}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="passageiros" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Passageiros
@@ -383,6 +401,10 @@ const DetalhesViagem = () => {
           <TabsTrigger value="financeiro" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Financeiro
+          </TabsTrigger>
+          <TabsTrigger value="presenca" className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            Presença
           </TabsTrigger>
         </TabsList>
 
@@ -429,6 +451,8 @@ const DetalhesViagem = () => {
             />
           </div>
 
+
+
           {onibusList.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-medium mb-3">Ônibus da Viagem</h2>
@@ -458,6 +482,100 @@ const DetalhesViagem = () => {
             viagemId={id || ""}
             onDataUpdate={refreshAllFinancialData}
           />
+        </TabsContent>
+
+        {/* Nova Aba Presença */}
+        <TabsContent value="presenca" className="space-y-6">
+            {/* Resumo de Presença */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Users className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold">{originalPassageiros.length}</p>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <UserCheck className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {originalPassageiros.filter(p => p.status_presenca === 'presente').length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Presentes</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <UserX className="h-8 w-8 text-orange-500 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {originalPassageiros.filter(p => p.status_presenca === 'pendente').length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Pendentes</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <TrendingUp className="h-8 w-8 text-purple-500 mr-3" />
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {originalPassageiros.length > 0 ? 
+                        Math.round((originalPassageiros.filter(p => p.status_presenca === 'presente').length / originalPassageiros.length) * 100) : 0
+                      }%
+                    </p>
+                    <p className="text-sm text-muted-foreground">Taxa Presença</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Aviso se viagem não está em andamento */}
+            {viagem?.status_viagem !== 'Em andamento' && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-yellow-800">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="font-medium">Atenção:</span>
+                  </div>
+                  <p className="text-yellow-700 mt-1">
+                    A lista de presença está disponível apenas para consulta. 
+                    Para marcar presença, a viagem precisa estar com status "Em andamento".
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Links por Ônibus */}
+            {onibusList.length > 0 && (
+              <LinksOnibusSection
+                viagemId={id || ""}
+                onibus={onibusList}
+              />
+            )}
+
+            {/* Botão para Lista Completa */}
+            <Card>
+              <CardContent className="p-6 text-center">
+                <h3 className="text-lg font-semibold mb-2">Lista de Presença Completa</h3>
+                <p className="text-muted-foreground mb-4">
+                  Acesse a lista de presença completa com todos os passageiros de todos os ônibus
+                </p>
+                <Button asChild size="lg">
+                  <Link to={`/lista-presenca/${id}`} target="_blank" rel="noopener noreferrer">
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Abrir Lista Completa
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
 

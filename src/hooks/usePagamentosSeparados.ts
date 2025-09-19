@@ -61,8 +61,37 @@ export const usePagamentosSeparados = (
   const [error, setError] = useState<string | null>(null);
 
   // Verificação de segurança para IDs inválidos
-  if (!viagemPassageiroId || viagemPassageiroId === 'fallback-id') {
+  if (!viagemPassageiroId || viagemPassageiroId === 'fallback-id' || viagemPassageiroId === 'undefined') {
     console.warn('⚠️ ID inválido fornecido:', viagemPassageiroId);
+    
+    // ✅ CORREÇÃO: Retornar estado vazio imediatamente para IDs inválidos
+    return {
+      passageiro: null,
+      breakdown: null,
+      historicoPagamentos: [],
+      loading: false,
+      error: 'ID inválido fornecido',
+      
+      // Ações (todas retornam false)
+      registrarPagamento: async () => false,
+      pagarViagem: async () => false,
+      pagarPasseios: async () => false,
+      deletarPagamento: async () => false,
+      editarPagamento: async () => false,
+      
+      // Utilitários (todos retornam valores padrão)
+      calcularValorViagem: () => 0,
+      calcularValorPasseios: () => 0,
+      calcularValorTotal: () => 0,
+      verificarViagemPaga: () => false,
+      verificarPasseiosPagos: () => false,
+      verificarPagoCompleto: () => false,
+      obterStatusAtual: () => 'Pendente' as StatusPagamentoAvancado,
+      
+      // Refresh (função vazia)
+      refetch: async () => {},
+      atualizarAposVinculacaoCredito: async () => {}
+    };
   }
 
   // Buscar dados completos do passageiro com pagamentos
