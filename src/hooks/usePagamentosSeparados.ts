@@ -1,7 +1,7 @@
 // Hook para gerenciar pagamentos separados (viagem vs passeios)
 // Task 19.2: Modificar hooks financeiros
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -57,49 +57,35 @@ export const usePagamentosSeparados = (
   const [passageiro, setPassageiro] = useState<ViagemPassageiroComPagamentos | null>(null);
   const [breakdown, setBreakdown] = useState<BreakdownPagamento | null>(null);
   const [historicoPagamentos, setHistoricoPagamentos] = useState<HistoricoPagamentoCategorizado[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // ✅ CORREÇÃO: Iniciar como false para IDs inválidos
   const [error, setError] = useState<string | null>(null);
 
-  // Verificação de segurança para IDs inválidos
-  if (!viagemPassageiroId || viagemPassageiroId === 'fallback-id' || viagemPassageiroId === 'undefined') {
-    console.warn('⚠️ ID inválido fornecido:', viagemPassageiroId);
-    
-    // ✅ CORREÇÃO: Retornar estado vazio imediatamente para IDs inválidos
-    return {
-      passageiro: null,
-      breakdown: null,
-      historicoPagamentos: [],
-      loading: false,
-      error: 'ID inválido fornecido',
-      
-      // Ações (todas retornam false)
-      registrarPagamento: async () => false,
-      pagarViagem: async () => false,
-      pagarPasseios: async () => false,
-      deletarPagamento: async () => false,
-      editarPagamento: async () => false,
-      
-      // Utilitários (todos retornam valores padrão)
-      calcularValorViagem: () => 0,
-      calcularValorPasseios: () => 0,
-      calcularValorTotal: () => 0,
-      verificarViagemPaga: () => false,
-      verificarPasseiosPagos: () => false,
-      verificarPagoCompleto: () => false,
-      obterStatusAtual: () => 'Pendente' as StatusPagamentoAvancado,
-      
-      // Refresh (função vazia)
-      refetch: async () => {},
-      atualizarAposVinculacaoCredito: async () => {}
-    };
-  }
+  // ✅ CORREÇÃO CRÍTICA: Verificação mais rigorosa para IDs inválidos
+  const isValidId = React.useMemo(() => {
+    if (!viagemPassageiroId) return false;
+    if (viagemPassageiroId === 'fallback-id') return false;
+    if (viagemPassageiroId === 'undefined') return false;
+    if (viagemPassageiroId === 'null') return false;
+    if (viagemPassageiroId.length < 10) return false; // IDs muito curtos são suspeitos
+    return true;
+  }, [viagemPassageiroId]);
+
+  // ✅ CORREÇÃO: Definir se deve carregar dados baseado no ID válido
+  React.useEffect(() => {
+    if (!isValidId) {
+      console.warn('⚠️ ID inválido fornecido:', viagemPassageiroId);
+      setError('ID inválido fornecido');
+      setLoading(false);
+      return;
+    }
+  }, [isValidId, viagemPassageiroId]);
 
   // Buscar dados completos do passageiro com pagamentos
   const fetchDadosPassageiro = useCallback(async () => {
-    console.log('🔍 fetchDadosPassageiro iniciado:', { viagemPassageiroId });
+    console.log('🔍 fetchDadosPassageiro iniciado:', { viagemPassageiroId, isValidId });
     
-    if (!viagemPassageiroId) {
-      console.warn('⚠️ viagemPassageiroId não fornecido');
+    if (!isValidId || !viagemPassageiroId) {
+      console.warn('⚠️ ID inválido ou não fornecido');
       setLoading(false);
       return;
     }
@@ -245,7 +231,7 @@ export const usePagamentosSeparados = (
     } finally {
       setLoading(false);
     }
-  }, [viagemPassageiroId]);
+  }, [viagemPassageiroId, isValidId]);
 
   // Registrar pagamento genérico
   const registrarPagamento = useCallback(async (
@@ -310,8 +296,8 @@ export const usePagamentosSeparados = (
   ): Promise<boolean> => {
     console.log('💰 pagarViagem iniciado:', { viagemPassageiroId, valor, formaPagamento });
     
-    if (!viagemPassageiroId || !breakdown) {
-      console.error('❌ pagarViagem: dados insuficientes', { viagemPassageiroId, breakdown });
+    if (!isValidId || !viagemPassageiroId || !breakdown) {
+      console.error('❌ pagarViagem: dados insuficientes', { isValidId, viagemPassageiroId, breakdown });
       return false;
     }
 
@@ -344,7 +330,7 @@ export const usePagamentosSeparados = (
       console.error('❌ Erro em pagarViagem:', error);
       return false;
     }
-  }, [viagemPassageiroId, breakdown, registrarPagamento]);
+  }, [isValidId, viagemPassageiroId, breakdown, registrarPagamento]);
 
   // Pagar apenas passeios
   const pagarPasseios = useCallback(async (
@@ -355,8 +341,8 @@ export const usePagamentosSeparados = (
   ): Promise<boolean> => {
     console.log('🎢 pagarPasseios iniciado:', { viagemPassageiroId, valor, formaPagamento });
     
-    if (!viagemPassageiroId) {
-      console.error('❌ pagarPasseios: viagemPassageiroId não fornecido');
+    if (!isValidId || !viagemPassageiroId) {
+      console.error('❌ pagarPasseios: ID inválido ou não fornecido');
       return false;
     }
 
@@ -411,7 +397,7 @@ export const usePagamentosSeparados = (
       console.error('❌ Erro em pagarPasseios:', error);
       return false;
     }
-  }, [viagemPassageiroId, registrarPagamento]);
+  }, [isValidId, viagemPassageiroId, breakdown, registrarPagamento]);
 
   // Função pagarTudo removida
 
@@ -535,11 +521,13 @@ export const usePagamentosSeparados = (
     return determinarStatusPagamento(breakdown, passageiro);
   }, [breakdown, passageiro]);
 
-  // Carregar dados na inicialização
+  // Carregar dados na inicialização - apenas se ID for válido
   useEffect(() => {
-    console.log('🔄 useEffect executado, chamando fetchDadosPassageiro...');
-    fetchDadosPassageiro();
-  }, [fetchDadosPassageiro]);
+    if (isValidId) {
+      console.log('🔄 useEffect executado, chamando fetchDadosPassageiro...');
+      fetchDadosPassageiro();
+    }
+  }, [fetchDadosPassageiro, isValidId]);
 
   return {
     passageiro,

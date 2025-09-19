@@ -50,22 +50,21 @@ export function PassageiroEditDialog({
 }: PassageiroEditDialogProps) {
   console.log('🔍 PassageiroEditDialog - Props recebidas:', { open, passageiro, viagem });
   
-  // ✅ CORREÇÃO: Verificação de segurança mais rigorosa
-  if (!passageiro || !passageiro.viagem_passageiro_id) {
-    console.warn('PassageiroEditDialog: passageiro ou viagem_passageiro_id não fornecido', passageiro);
-    
-    // Fechar o modal se estiver aberto com dados inválidos
-    if (open) {
-      console.log('🔒 Fechando modal devido a dados inválidos');
-      onOpenChange(false);
-    }
-    
-    return null;
-  }
-  
+  // ✅ CORREÇÃO: Todos os hooks devem ser chamados SEMPRE, sem condições
   const [isLoading, setIsLoading] = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [cidadeEmbarqueCustom, setCidadeEmbarqueCustom] = React.useState("");
+
+  // ✅ CORREÇÃO: Verificação de segurança mais rigorosa para evitar erro React #310
+  const isValidPassageiro = React.useMemo(() => {
+    if (!passageiro) return false;
+    if (!passageiro.viagem_passageiro_id) return false;
+    if (typeof passageiro.viagem_passageiro_id !== 'string') return false;
+    if (passageiro.viagem_passageiro_id === 'undefined') return false;
+    if (passageiro.viagem_passageiro_id === 'null') return false;
+    if (passageiro.viagem_passageiro_id.length < 10) return false;
+    return true;
+  }, [passageiro]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -87,6 +86,7 @@ export function PassageiroEditDialog({
   const desconto = form.watch("desconto");
   const gratuito = form.watch("gratuito");
 
+  // ✅ CORREÇÃO: TODOS os useEffect devem vir ANTES do return condicional
   useEffect(() => {
     const loadPassageiroData = async () => {
       try {
@@ -184,6 +184,19 @@ export function PassageiroEditDialog({
       form.setValue("status_pagamento", passageiro.status_pagamento || "Pendente");
     }
   }, [gratuito, passageiro, form]);
+
+  // ✅ CORREÇÃO: Fechar modal se dados inválidos - APÓS TODOS os hooks
+  React.useEffect(() => {
+    if (open && !isValidPassageiro) {
+      console.warn('PassageiroEditDialog: dados inválidos detectados, fechando modal', passageiro);
+      onOpenChange(false);
+    }
+  }, [open, isValidPassageiro, onOpenChange, passageiro]);
+  
+  // ✅ CORREÇÃO: Não renderizar se dados inválidos - APÓS TODOS os hooks
+  if (!isValidPassageiro) {
+    return null;
+  }
 
   const onSubmit = async (values: FormData) => {
     try {
@@ -292,8 +305,6 @@ export function PassageiroEditDialog({
       setIsLoading(false);
     }
   };
-
-  // ✅ CORREÇÃO: Esta verificação foi movida para o início da função
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

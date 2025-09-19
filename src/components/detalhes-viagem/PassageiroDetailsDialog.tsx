@@ -71,13 +71,24 @@ export function PassageiroDetailsDialog({
 }: PassageiroDetailsDialogProps) {
   const { passeios } = usePasseios();
   
-  // Usar sistema novo de pagamentos separados - só chama se passageiro existe
+  // ✅ CORREÇÃO: Verificar se o ID é válido antes de usar o hook
+  const isValidId = React.useMemo(() => {
+    if (!passageiro?.viagem_passageiro_id) return false;
+    if (typeof passageiro.viagem_passageiro_id !== 'string') return false;
+    if (passageiro.viagem_passageiro_id === 'undefined') return false;
+    if (passageiro.viagem_passageiro_id === 'null') return false;
+    if (passageiro.viagem_passageiro_id === 'fallback-id') return false;
+    if (passageiro.viagem_passageiro_id.length < 10) return false;
+    return true;
+  }, [passageiro?.viagem_passageiro_id]);
+  
+  // Usar sistema novo de pagamentos separados - só chama se ID for válido
   const {
     breakdown,
     historicoPagamentos,
     loading: loadingPagamentos,
     obterStatusAtual
-  } = usePagamentosSeparados(passageiro?.viagem_passageiro_id || undefined);
+  } = usePagamentosSeparados(isValidId ? passageiro?.viagem_passageiro_id : undefined);
   
   if (!passageiro) return null;
 

@@ -33,6 +33,17 @@ export function SecaoFinanceiraAvancada({
   nomePassageiro,
   onPagamentoRealizado
 }: SecaoFinanceiraAvancadaProps) {
+  // ✅ CORREÇÃO: Verificar se o ID é válido antes de usar o hook
+  const isValidId = React.useMemo(() => {
+    if (!passageiroId) return false;
+    if (typeof passageiroId !== 'string') return false;
+    if (passageiroId === 'undefined') return false;
+    if (passageiroId === 'null') return false;
+    if (passageiroId === 'fallback-id') return false;
+    if (passageiroId.length < 10) return false;
+    return true;
+  }, [passageiroId]);
+
   const {
     passageiro,
     breakdown,
@@ -46,7 +57,7 @@ export function SecaoFinanceiraAvancada({
     editarPagamento,
     obterStatusAtual,
     refetch
-  } = usePagamentosSeparados(passageiroId);
+  } = usePagamentosSeparados(isValidId ? passageiroId : undefined);
 
   const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
 

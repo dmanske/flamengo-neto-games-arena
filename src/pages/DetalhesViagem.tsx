@@ -256,20 +256,41 @@ const DetalhesViagem = () => {
     console.log("Abrindo dialog de edição para:", passageiro);
     console.log("viagem_passageiro_id:", passageiro?.viagem_passageiro_id);
     
-    // ✅ CORREÇÃO: Verificação de segurança antes de abrir o modal
+    // ✅ CORREÇÃO: Verificação de segurança mais rigorosa antes de abrir o modal
     if (!passageiro) {
       console.error('❌ Tentativa de abrir modal de edição com passageiro null/undefined');
       toast.error('Erro: Dados do passageiro não encontrados');
       return;
     }
     
-    if (!passageiro.viagem_passageiro_id) {
-      console.error('❌ Tentativa de abrir modal de edição sem viagem_passageiro_id', passageiro);
-      toast.error('Erro: ID do passageiro não encontrado');
+    const viagemPassageiroId = passageiro.viagem_passageiro_id || passageiro.id;
+    
+    if (!viagemPassageiroId || typeof viagemPassageiroId !== 'string') {
+      console.error('❌ Tentativa de abrir modal de edição sem ID válido', {
+        passageiro,
+        viagemPassageiroId,
+        tipo: typeof viagemPassageiroId
+      });
+      toast.error('Erro: ID do passageiro não encontrado ou inválido');
       return;
     }
     
-    setSelectedPassageiro(passageiro);
+    if (viagemPassageiroId === 'undefined' || viagemPassageiroId === 'null' || viagemPassageiroId.length < 10) {
+      console.error('❌ Tentativa de abrir modal com ID suspeito', {
+        viagemPassageiroId,
+        length: viagemPassageiroId.length
+      });
+      toast.error('Erro: ID do passageiro inválido');
+      return;
+    }
+    
+    // ✅ CORREÇÃO: Garantir que o passageiro tenha o ID correto
+    const passageiroComId = {
+      ...passageiro,
+      viagem_passageiro_id: viagemPassageiroId
+    };
+    
+    setSelectedPassageiro(passageiroComId);
     setEditPassageiroOpen(true);
   };
 

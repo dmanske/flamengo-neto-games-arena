@@ -46,8 +46,16 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
   // ✅ CORREÇÃO: USAR MESMO SISTEMA DO MODAL DE EDIÇÃO - com verificação de segurança mais rigorosa
   const passageiroId = passageiro.viagem_passageiro_id || passageiro.id;
   
-  // ✅ CORREÇÃO: Verificar se o ID é válido antes de usar o hook
-  const idValido = passageiroId && passageiroId !== 'undefined' && passageiroId !== 'null' && passageiroId !== 'fallback-id';
+  // ✅ CORREÇÃO: Verificação mais rigorosa para evitar erro React #310
+  const idValido = React.useMemo(() => {
+    if (!passageiroId) return false;
+    if (typeof passageiroId !== 'string') return false;
+    if (passageiroId === 'undefined') return false;
+    if (passageiroId === 'null') return false;
+    if (passageiroId === 'fallback-id') return false;
+    if (passageiroId.length < 10) return false; // IDs muito curtos são suspeitos
+    return true;
+  }, [passageiroId]);
   
   const {
     breakdown,
