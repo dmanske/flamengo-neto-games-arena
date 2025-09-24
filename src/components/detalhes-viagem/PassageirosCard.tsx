@@ -31,6 +31,7 @@ import { StatusBadgeAvancado, BreakdownVisual } from "./StatusBadgeAvancado";
 import { BotoesAcaoRapida } from "./BotoesAcaoRapida";
 import { PassageiroRow } from "./PassageiroRow";
 import { PassageiroComStatus } from "./PassageiroComStatus";
+import { TrocarOnibusModal } from "./TrocarOnibusModal";
 import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 import type { StatusPagamentoAvancado, CategoriaPagamento } from "@/types/pagamentos-separados";
 import { obterValoresPasseiosPorNomes } from "@/utils/passeiosUtils";
@@ -57,6 +58,10 @@ interface PassageirosCardProps {
   setIsLoading: (isLoading: boolean) => void;
   capacidadeTotal?: number;
   totalPassageiros?: number;
+  // Novos props para funcionalidade de grupos e troca
+  onibusList?: any[];
+  passageirosCount?: Record<string, number>;
+  onUpdatePassageiros?: () => void;
 }
 
 export function PassageirosCard({
@@ -80,16 +85,42 @@ export function PassageirosCard({
   setIsLoading,
   capacidadeTotal,
   totalPassageiros,
+  onibusList = [],
+  passageirosCount = {},
+  onUpdatePassageiros,
 }: PassageirosCardProps) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [activeTab, setActiveTab] = useState<string>("todos");
   const [faixaEtariaFilter, setFaixaEtariaFilter] = useState<string | null>(null);
+  
+  // Estados para modal de troca de ônibus
+  const [passageiroParaTroca, setPassageiroParaTroca] = useState<any | null>(null);
+  const [modalTrocaAberto, setModalTrocaAberto] = useState(false);
   
   // Calcular se há vagas disponíveis no ônibus atual
   const capacidadeOnibusAtual = onibusAtual ? onibusAtual.capacidade_onibus + (onibusAtual.lugares_extras || 0) : 0;
   const passageirosNoOnibus = passageirosAtuais?.length || 0;
   const vagasDisponiveis = capacidadeOnibusAtual - passageirosNoOnibus;
   const onibusLotado = onibusAtual && vagasDisponiveis <= 0;
+
+  // Funções para troca de ônibus
+  const handleTrocarOnibus = (passageiro: any) => {
+    setPassageiroParaTroca(passageiro);
+    setModalTrocaAberto(true);
+  };
+
+  const handleConfirmarTroca = () => {
+    setModalTrocaAberto(false);
+    setPassageiroParaTroca(null);
+    if (onUpdatePassageiros) {
+      onUpdatePassageiros();
+    }
+  };
+
+  const handleFecharModal = () => {
+    setModalTrocaAberto(false);
+    setPassageiroParaTroca(null);
+  };
 
   // Permitir controle externo do filtro de status
   useEffect(() => {
@@ -402,6 +433,12 @@ export function PassageirosCard({
                   (Não Alocados)
                 </span>
               )}
+              {/* Indicador de funcionalidades de grupos */}
+              {onibusList.length > 0 && (
+                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                  🔄 Troca & Grupos
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
               {passageirosFiltrados.length} de {(passageirosAtuais || []).length} passageiros
@@ -579,6 +616,7 @@ export function PassageirosCard({
                           onDeletePassageiro={onDeletePassageiro}
                           onDesvincularCredito={onDesvincularCredito}
                           onViewDetails={onViewDetails}
+                          onTrocarOnibus={handleTrocarOnibus}
                           handlePagamento={handlePagamento}
                         />
                       );
@@ -593,6 +631,18 @@ export function PassageirosCard({
         </div>
       </CardContent>
     </Card>
+    
+    {/* Modal de Troca de Ônibus */}
+    {passageiroParaTroca && onibusList.length > 0 && (
+      <TrocarOnibusModal
+        isOpen={modalTrocaAberto}
+        onClose={handleFecharModal}
+        passageiro={passageiroParaTroca}
+        onibusList={onibusList}
+        passageirosCount={passageirosCount}
+        onConfirm={handleConfirmarTroca}
+      />
+    )}
     </TooltipProvider>
   );
 }

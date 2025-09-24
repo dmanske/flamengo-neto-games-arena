@@ -11,6 +11,8 @@ export const formSchema = z.object({
   cidade_embarque: z.string().min(1, "Selecione uma cidade de embarque"),
   passeios_selecionados: z.array(z.string()).default([]),
   gratuito: z.boolean().default(false),
+  grupo_nome: z.string().nullable().optional(),
+  grupo_cor: z.string().nullable().optional(),
 });
 
 export type FormData = z.infer<typeof formSchema>;

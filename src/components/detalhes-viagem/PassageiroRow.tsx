@@ -3,7 +3,8 @@ import React from 'react';
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, Eye, CreditCard, Copy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Pencil, Eye, CreditCard, Copy, ArrowRightLeft } from "lucide-react";
 import { formatBirthDate, formatarNomeComPreposicoes, formatCPF, formatPhone } from "@/utils/formatters";
 import { copyNome, copyCPF, copyDataNascimento } from "@/utils/clipboard";
 import { StatusBadgeAvancado, BreakdownVisual } from "./StatusBadgeAvancado";
@@ -21,6 +22,7 @@ interface PassageiroRowProps {
   onEditPassageiro: (passageiro: any) => void;
   onDeletePassageiro: (passageiro: any) => void;
   onDesvincularCredito?: (passageiro: any) => void;
+  onTrocarOnibus?: (passageiro: any) => void;
   handlePagamento: (passageiroId: string, categoria: string, valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
 }
 
@@ -31,6 +33,7 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
   onEditPassageiro,
   onDeletePassageiro,
   onDesvincularCredito,
+  onTrocarOnibus,
   handlePagamento
 }) => {
   // Verificação de segurança para evitar erros
@@ -94,26 +97,42 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
                 {(passageiro.clientes?.nome || passageiro.nome).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex items-center gap-1">
-              {onViewDetails ? (
-                <button
-                  onClick={() => onViewDetails(passageiro)}
-                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                {onViewDetails ? (
+                  <button
+                    onClick={() => onViewDetails(passageiro)}
+                    className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                  >
+                    {formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}
+                  </button>
+                ) : (
+                  <span>{formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}</span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => copyNome(passageiro.clientes?.nome || passageiro.nome)}
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                  title="Copiar nome"
                 >
-                  {formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}
-                </button>
-              ) : (
-                <span>{formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}</span>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+              {/* Badge do Grupo */}
+              {passageiro.grupo_nome && passageiro.grupo_cor && (
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs w-fit"
+                  style={{ 
+                    backgroundColor: `${passageiro.grupo_cor}20`,
+                    color: passageiro.grupo_cor,
+                    borderColor: passageiro.grupo_cor
+                  }}
+                >
+                  {passageiro.grupo_nome}
+                </Badge>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => copyNome(passageiro.clientes?.nome || passageiro.nome)}
-                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                title="Copiar nome"
-              >
-                <Copy className="h-3 w-3" />
-              </Button>
             </div>
           </div>
         </TableCell>
@@ -176,6 +195,18 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
             <Button variant="outline" size="sm" onClick={() => onEditPassageiro(passageiro)} className="h-8 w-8 p-0">
               <Pencil className="h-4 w-4" />
             </Button>
+            {/* Botão de trocar ônibus */}
+            {onTrocarOnibus && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onTrocarOnibus(passageiro)} 
+                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                title="Trocar de ônibus"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            )}
             {/* Botão de desvincular crédito - só aparece para passageiros pagos por crédito */}
             {passageiro.pago_por_credito && passageiro.credito_origem_id && onDesvincularCredito && (
               <Button 
@@ -227,26 +258,42 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
               </AvatarFallback>
             </Avatar>
           )}
-          <div className="flex items-center gap-1">
-            {onViewDetails ? (
-              <button
-                onClick={() => onViewDetails(passageiro)}
-                className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              {onViewDetails ? (
+                <button
+                  onClick={() => onViewDetails(passageiro)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                >
+                  {formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}
+                </button>
+              ) : (
+                <span>{formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}</span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyNome(passageiro.clientes?.nome || passageiro.nome)}
+                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                title="Copiar nome"
               >
-                {formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}
-              </button>
-            ) : (
-              <span>{formatarNomeComPreposicoes(passageiro.clientes?.nome || passageiro.nome)}</span>
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+            {/* Badge do Grupo */}
+            {passageiro.grupo_nome && passageiro.grupo_cor && (
+              <Badge 
+                variant="secondary" 
+                className="text-xs w-fit"
+                style={{ 
+                  backgroundColor: `${passageiro.grupo_cor}20`,
+                  color: passageiro.grupo_cor,
+                  borderColor: passageiro.grupo_cor
+                }}
+              >
+                {passageiro.grupo_nome}
+              </Badge>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => copyNome(passageiro.clientes?.nome || passageiro.nome)}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-              title="Copiar nome"
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
           </div>
         </div>
       </TableCell>
@@ -330,6 +377,18 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
           >
             <Pencil className="h-4 w-4" />
           </Button>
+          {/* Botão de trocar ônibus */}
+          {onTrocarOnibus && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onTrocarOnibus(passageiro)} 
+              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              title="Trocar de ônibus"
+            >
+              <ArrowRightLeft className="h-4 w-4" />
+            </Button>
+          )}
           {/* Botão de desvincular crédito - só aparece para passageiros pagos por crédito */}
           {passageiro.pago_por_credito && passageiro.credito_origem_id && onDesvincularCredito && (
             <Button 

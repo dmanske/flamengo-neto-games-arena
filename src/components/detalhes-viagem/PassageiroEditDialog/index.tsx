@@ -40,6 +40,7 @@ import { PasseiosEditSectionSimples } from "./PasseiosEditSectionSimples";
 import { SecaoFinanceiraAvancada } from "./SecaoFinanceiraAvancada";
 import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 import { CIDADES_EMBARQUE_COMPLETA, isCidadeOutra, isCidadePredefinida } from "@/data/cidades";
+import { PassageiroGroupForm } from "../PassageiroGroupForm";
 
 export function PassageiroEditDialog({
   open,
@@ -103,7 +104,9 @@ export function PassageiroEditDialog({
             cidade_embarque: passageiro.cidade_embarque || "",
             observacoes: passageiro.observacoes || "",
             passeios_selecionados: [],
-            gratuito: false // Valor padrão, será carregado do banco
+            gratuito: false, // Valor padrão, será carregado do banco
+            grupo_nome: passageiro.grupo_nome || null,
+            grupo_cor: passageiro.grupo_cor || null
           });
 
           // Configurar cidade de embarque customizada se necessário
@@ -280,6 +283,8 @@ export function PassageiroEditDialog({
           cidade_embarque: values.cidade_embarque,
           observacoes: values.observacoes,
           gratuito: values.gratuito,
+          grupo_nome: values.grupo_nome || null,
+          grupo_cor: values.grupo_cor || null,
         })
         .eq("id", passageiro.viagem_passageiro_id);
       if (error) throw error;
@@ -533,6 +538,19 @@ export function PassageiroEditDialog({
                 />
                 
                 {/* Sistema de Parcelas Legado removido - usando apenas Situação Financeira Avançada */}
+              </div>
+              
+              {/* Campo de Grupo */}
+              <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <PassageiroGroupForm
+                  viagemId={viagem?.id || ''}
+                  grupoNome={form.watch('grupo_nome') || ''}
+                  grupoCor={form.watch('grupo_cor') || ''}
+                  onChange={(nome, cor) => {
+                    form.setValue('grupo_nome', nome);
+                    form.setValue('grupo_cor', cor);
+                  }}
+                />
               </div>
             </div>
 

@@ -37,6 +37,7 @@ import { formSchema, FormData } from "./formSchema";
 import { PassageiroDialogProps } from "./types";
 import { getSetorLabel, getSetorOptions } from "@/data/estadios";
 import { CIDADES_EMBARQUE_COMPLETA, isCidadeOutra, isCidadePredefinida } from "@/data/cidades";
+import { PassageiroGroupForm } from "../PassageiroGroupForm";
 
 import { Users, MapPin, CreditCard, Ticket, Bus, Home, Zap, Settings, Info } from "lucide-react";
 
@@ -291,6 +292,8 @@ export function PassageiroDialog({
         onibus_id: values.onibus_id,
         cidade_embarque: values.cidade_embarque || null,
         gratuito: values.gratuito || false, // Adicionar campo gratuito
+        grupo_nome: values.grupo_nome || null,
+        grupo_cor: values.grupo_cor || null,
       }));
 
       const { data: novosPassageirosData, error: insertError } = await supabase
@@ -890,6 +893,19 @@ export function PassageiroDialog({
               )}
 
               {/* Sistema de parcelamento removido - cadastro simples */}
+
+              {/* Campo de Grupo */}
+              <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <PassageiroGroupForm
+                  viagemId={viagemId}
+                  grupoNome={form.watch('grupo_nome') || ''}
+                  grupoCor={form.watch('grupo_cor') || ''}
+                  onChange={(nome, cor) => {
+                    form.setValue('grupo_nome', nome);
+                    form.setValue('grupo_cor', cor);
+                  }}
+                />
+              </div>
 
               <DialogFooter>
                 <Button

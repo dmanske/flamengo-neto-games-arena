@@ -463,12 +463,18 @@ const DetalhesViagem = () => {
               onViewDetails={openDetailsPassageiroDialog}
               filterStatus={filterStatus}
               passeiosPagos={viagem?.passeios_pagos}
-
               viagemId={id || ""}
               setPassageiros={() => fetchPassageiros(id || '')}
               setIsLoading={() => {}}
               capacidadeTotal={viagem?.capacidade_onibus}
               totalPassageiros={originalPassageiros.length}
+              // Novos props para funcionalidade de grupos e troca
+              onibusList={onibusList}
+              passageirosCount={contadorPassageiros}
+              onUpdatePassageiros={() => {
+                fetchPassageiros(id || '');
+                fetchOnibus(id || '');
+              }}
             />
           </div>
 

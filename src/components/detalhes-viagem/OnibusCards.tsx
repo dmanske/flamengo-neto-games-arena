@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
-import { Bus, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bus, Users, Palette } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -138,7 +138,40 @@ export function OnibusCards({
   // Debug para verificar os passageiros
   console.log('Passageiros do ônibus:', passageirosOnibus);
 
+  // Função simples para agrupar passageiros sem usar o hook
+  const agruparPassageirosSimples = React.useCallback((passageirosDoOnibus: any[]) => {
+    const gruposMap = new Map<string, any[]>();
+    
+    passageirosDoOnibus.forEach(passageiro => {
+      if (passageiro.grupo_nome && passageiro.grupo_cor) {
+        const key = `${passageiro.grupo_nome}|${passageiro.grupo_cor}`;
+        if (!gruposMap.has(key)) {
+          gruposMap.set(key, []);
+        }
+        gruposMap.get(key)!.push(passageiro);
+      }
+    });
 
+    return Array.from(gruposMap.entries()).map(([key, passageiros]) => {
+      const [nome, cor] = key.split('|');
+      return {
+        nome,
+        cor,
+        passageiros,
+        total_membros: passageiros.length
+      };
+    });
+  }, []);
+
+  // Pré-calcular grupos para todos os ônibus para evitar re-renders
+  const gruposPorOnibus = React.useMemo(() => {
+    const grupos: Record<string, any[]> = {};
+    onibusList.forEach(onibus => {
+      const passageirosDoOnibus = passageiros.filter(p => p.onibus_id === onibus.id);
+      grupos[onibus.id] = agruparPassageirosSimples(passageirosDoOnibus);
+    });
+    return grupos;
+  }, [passageiros, onibusList, agruparPassageirosSimples]);
 
   return (
     <>
@@ -164,6 +197,10 @@ export function OnibusCards({
           // Responsáveis deste ônibus específico
           const responsaveisDesteOnibus = passageiros.filter(p => p.is_responsavel_onibus === true && p.onibus_id === onibus.id);
           const passageirosDesteOnibus = passageiros.filter(p => p.onibus_id === onibus.id);
+          
+          // Usar grupos pré-calculados
+          const gruposDesteOnibus = gruposPorOnibus[onibus.id] || [];
+          const temGrupos = gruposDesteOnibus.length > 0;
           
           return (
             <div key={onibus.id} className="flex gap-4 items-stretch">
@@ -197,6 +234,15 @@ export function OnibusCards({
                         <div className="flex items-center gap-2 text-gray-600">
                           <Bus className="h-4 w-4" />
                           <span>{onibus.empresa}</span>
+                          {/* Indicador de grupos */}
+                          {temGrupos && (
+                            <div className="flex items-center gap-1 ml-auto">
+                              <Palette className="h-3 w-3 text-blue-500" />
+                              <span className="text-xs text-blue-600 font-medium">
+                                {gruposDesteOnibus.length} grupo{gruposDesteOnibus.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
@@ -221,6 +267,37 @@ export function OnibusCards({
                             className={`h-2 ${percentualOcupacao > 90 ? 'bg-red-200' : percentualOcupacao > 70 ? 'bg-yellow-200' : ''}`}
                           />
                         </div>
+                        
+                        {/* Indicadores de grupos com cores */}
+                        {temGrupos && (
+                          <div className="pt-2 border-t border-gray-100">
+                            <div className="flex items-center gap-1 mb-1">
+                              <Palette className="h-3 w-3 text-gray-500" />
+                              <span className="text-xs text-gray-600">Grupos:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {gruposDesteOnibus.map(grupo => (
+                                <div
+                                  key={`${grupo.nome}-${grupo.cor}`}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-full text-xs border"
+                                  style={{
+                                    backgroundColor: `${grupo.cor}15`,
+                                    borderColor: `${grupo.cor}40`,
+                                    color: grupo.cor
+                                  }}
+                                  title={`Grupo ${grupo.nome}: ${grupo.total_membros} membro${grupo.total_membros !== 1 ? 's' : ''}`}
+                                >
+                                  <div 
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: grupo.cor }}
+                                  />
+                                  <span className="font-medium">{grupo.nome}</span>
+                                  <span className="text-xs opacity-75">({grupo.total_membros})</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         
                         {/* Botão Editar Transfer - Discreto */}
                         <div className="pt-2 border-t border-gray-100 flex justify-end">
