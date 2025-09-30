@@ -13,8 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useGruposPassageiros } from '@/hooks/useGruposPassageiros';
 import { CORES_GRUPOS } from '@/types/grupos-passageiros';
-import { verificarConflitosGrupo } from '@/utils/validacoes-grupos-onibus';
-import { ConflitosGrupoModal } from './ConflitosGrupoModal';
+
 
 interface PassageiroGroupFormProps {
   viagemId: string;
@@ -101,7 +100,7 @@ export function PassageiroGroupForm({
         
         try {
           // Importar a função correta que aceita passageiroAtualId
-          const { verificarConflitosGrupo, exibirAvisoConflitosGrupo } = await import('@/utils/validacoes-grupos-onibus');
+          const { verificarConflitosGrupo, exibirAvisoConflitosGrupo } = await import('@/utils/validacoes-grupos');
           
           const conflitos = await verificarConflitosGrupo(
             viagemId,
@@ -168,7 +167,7 @@ export function PassageiroGroupForm({
       switch (acao) {
         case 'mover-grupo-para-ca':
           console.log('🚚 Movendo grupo existente para cá');
-          const { moverGrupoParaOnibus } = await import('@/utils/validacoes-grupos-onibus');
+          const { moverGrupoParaOnibus } = await import('@/utils/validacoes-grupos');
           const sucesso = await moverGrupoParaOnibus(viagemId, grupoNome, grupoCor, onibusAtualId);
           if (sucesso) {
             onChange(grupoNome, grupoCor);
@@ -362,18 +361,26 @@ export function PassageiroGroupForm({
         </div>
       )}
 
-      {/* Modal de Resolução de Conflitos */}
-      <ConflitosGrupoModal
-        isOpen={conflitosModal.isOpen}
-        onClose={() => setConflitosModal({ ...conflitosModal, isOpen: false })}
-        conflitos={conflitosModal.conflitos}
-        grupoNome={conflitosModal.grupoNome}
-        grupoCor={conflitosModal.grupoCor}
-        viagemId={viagemId}
-        onibusAtualId={onibusAtualId}
-        passageiroAtualId={passageiroAtualId}
-        onResolucao={handleResolucaoConflito}
-      />
+      {/* Modal de Resolução de Conflitos - Temporariamente removido */}
+      {conflitosModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Conflito de Grupos Detectado</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              O grupo "{conflitosModal.grupoNome}" já existe em outro ônibus. 
+              Por enquanto, o conflito será ignorado.
+            </p>
+            <Button 
+              onClick={() => {
+                setConflitosModal({ ...conflitosModal, isOpen: false });
+                onChange(conflitosModal.grupoNome, conflitosModal.grupoCor);
+              }}
+            >
+              Continuar Mesmo Assim
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
