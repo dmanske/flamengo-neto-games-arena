@@ -24,6 +24,7 @@ interface PassageiroRowProps {
   onDesvincularCredito?: (passageiro: any) => void;
   onTrocarOnibus?: (passageiro: any) => void;
   handlePagamento: (passageiroId: string, categoria: string, valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
+  grupoInfo?: { totalMembros: number } | null;
 }
 
 export const PassageiroRow: React.FC<PassageiroRowProps> = ({
@@ -34,7 +35,8 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
   onDeletePassageiro,
   onDesvincularCredito,
   onTrocarOnibus,
-  handlePagamento
+  handlePagamento,
+  grupoInfo
 }) => {
   // Verificação de segurança para evitar erros
   if (!passageiro) {
@@ -131,6 +133,9 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
                   }}
                 >
                   {passageiro.grupo_nome}
+                  {grupoInfo && grupoInfo.totalMembros > 1 && (
+                    <span className="ml-1 opacity-75">({grupoInfo.totalMembros})</span>
+                  )}
                 </Badge>
               )}
             </div>
@@ -292,6 +297,9 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
                 }}
               >
                 {passageiro.grupo_nome}
+                {grupoInfo && grupoInfo.totalMembros > 1 && (
+                  <span className="ml-1 opacity-75">({grupoInfo.totalMembros})</span>
+                )}
               </Badge>
             )}
           </div>

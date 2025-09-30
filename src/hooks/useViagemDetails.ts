@@ -895,10 +895,42 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   // Funções auxiliares
   const getPassageirosDoOnibusAtual = () => {
+    let passageiros: PassageiroDisplay[] = [];
+    
     if (selectedOnibusId === null) {
-      return passageiroPorOnibus.sem_onibus || [];
+      passageiros = passageiroPorOnibus.sem_onibus || [];
+    } else {
+      passageiros = passageiroPorOnibus[selectedOnibusId] || [];
     }
-    return passageiroPorOnibus[selectedOnibusId] || [];
+
+    // Ordenar passageiros: primeiro por grupo (se tiver), depois por nome individual
+    return passageiros.sort((a, b) => {
+      const grupoA = a.grupo_nome || '';
+      const grupoB = b.grupo_nome || '';
+      
+      // Se ambos têm grupo
+      if (grupoA && grupoB) {
+        // Se são do mesmo grupo, ordenar por nome do passageiro
+        if (grupoA === grupoB) {
+          return a.nome.localeCompare(b.nome, 'pt-BR');
+        }
+        // Senão, ordenar por nome do grupo
+        return grupoA.localeCompare(grupoB, 'pt-BR');
+      }
+      
+      // Se apenas A tem grupo, A vem primeiro
+      if (grupoA && !grupoB) {
+        return -1;
+      }
+      
+      // Se apenas B tem grupo, B vem primeiro
+      if (!grupoA && grupoB) {
+        return 1;
+      }
+      
+      // Se nenhum tem grupo, ordenar por nome
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    });
   };
 
   const getOnibusAtual = () => {
@@ -908,9 +940,20 @@ export function useViagemDetails(viagemId: string | undefined) {
 
   // Filtro de passageiros
   const filterPassageiros = (passageiros: PassageiroDisplay[], searchTerm: string): PassageiroDisplay[] => {
-    if (!searchTerm.trim()) return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    // Verificar se há grupos na lista
+    const temGrupos = passageiros.some(p => p.grupo_nome && p.grupo_cor);
+    
+    if (!searchTerm.trim()) {
+      if (!temGrupos) {
+        // Se não há grupos, ordenar alfabeticamente como antes
+        return passageiros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      } else {
+        // Se há grupos, deixar para o componente de grupos ordenar
+        return passageiros;
+      }
+    }
 
-    return passageiros.filter(passageiro => {
+    const passageirosFiltrados = passageiros.filter(passageiro => {
       // Usar texto pré-processado para busca mais rápida
       if (passageiro.normalizedSearchText) {
         const normalizedSearchTerm = normalizeText(searchTerm);
@@ -933,7 +976,18 @@ export function useViagemDetails(viagemId: string | undefined) {
       ];
 
       return matchesAllTerms(searchFields, searchTerm);
-    }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    });
+
+    // Aplicar mesma lógica para resultados filtrados
+    const temGruposNosFiltrados = passageirosFiltrados.some(p => p.grupo_nome && p.grupo_cor);
+    
+    if (!temGruposNosFiltrados) {
+      // Se não há grupos nos resultados filtrados, ordenar alfabeticamente
+      return passageirosFiltrados.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    } else {
+      // Se há grupos nos resultados filtrados, deixar para o componente de grupos ordenar
+      return passageirosFiltrados;
+    }
   };
 
   // Buscar dados financeiros da viagem (receitas e despesas)

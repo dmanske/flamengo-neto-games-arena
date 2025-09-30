@@ -11,6 +11,9 @@ interface PassageirosComGruposProps {
   onEditPassageiro: (passageiro: PassageiroDisplay) => void;
   onDeletePassageiro: (passageiro: PassageiroDisplay) => void;
   onUpdatePassageiros: () => void;
+  // Novos props para filtros
+  statusFilter?: string;
+  passaNoFiltroStatus?: (status: any) => boolean;
 }
 
 export function PassageirosComGrupos({

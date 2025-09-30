@@ -17,6 +17,7 @@ interface UseGruposPassageiros {
   agruparPassageiros: (passageiros: PassageiroDisplay[]) => {
     grupos: GrupoPassageiros[];
     semGrupo: PassageiroDisplay[];
+    passageirosOrdenados: PassageiroDisplay[];
   };
   loading: boolean;
   error: string | null;
@@ -64,19 +65,47 @@ export function useGruposPassageiros(viagemId: string): UseGruposPassageiros {
 
   // Agrupar passageiros por grupo
   const agruparPassageiros = useCallback((passageiros: PassageiroDisplay[]) => {
-    const gruposMap = new Map<string, PassageiroDisplay[]>();
+    console.log('🔄 useGruposPassageiros: Agrupando', passageiros.length, 'passageiros');
+    
+    // Separar passageiros com e sem grupo
+    const comGrupo: PassageiroDisplay[] = [];
     const semGrupo: PassageiroDisplay[] = [];
 
     passageiros.forEach(passageiro => {
       if (passageiro.grupo_nome && passageiro.grupo_cor) {
-        const key = `${passageiro.grupo_nome}|${passageiro.grupo_cor}`;
-        if (!gruposMap.has(key)) {
-          gruposMap.set(key, []);
-        }
-        gruposMap.get(key)!.push(passageiro);
+        console.log(`👥 Passageiro ${passageiro.nome} → Grupo: ${passageiro.grupo_nome}`);
+        comGrupo.push(passageiro);
       } else {
+        console.log(`👤 Passageiro ${passageiro.nome} → Individual`);
         semGrupo.push(passageiro);
       }
+    });
+
+    // Ordenar passageiros com grupo: primeiro por nome do grupo, depois por nome do passageiro
+    comGrupo.sort((a, b) => {
+      const grupoA = a.grupo_nome || '';
+      const grupoB = b.grupo_nome || '';
+      
+      // Se são do mesmo grupo, ordenar por nome do passageiro
+      if (grupoA === grupoB) {
+        return a.nome.localeCompare(b.nome, 'pt-BR');
+      }
+      
+      // Senão, ordenar por nome do grupo
+      return grupoA.localeCompare(grupoB, 'pt-BR');
+    });
+    
+    // Ordenar passageiros sem grupo por nome
+    semGrupo.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    // Criar mapa de grupos para exibição em cards
+    const gruposMap = new Map<string, PassageiroDisplay[]>();
+    comGrupo.forEach(passageiro => {
+      const key = `${passageiro.grupo_nome}|${passageiro.grupo_cor}`;
+      if (!gruposMap.has(key)) {
+        gruposMap.set(key, []);
+      }
+      gruposMap.get(key)!.push(passageiro);
     });
 
     // Converter Map para array de grupos
@@ -92,17 +121,19 @@ export function useGruposPassageiros(viagemId: string): UseGruposPassageiros {
 
     // Ordenar grupos por nome
     gruposArray.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    
-    // Ordenar passageiros sem grupo por nome
-    semGrupo.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
-    // NÃO atualizar estado aqui para evitar re-renders desnecessários
-    // setGrupos(gruposArray);
-    // setPassageirosSemGrupo(semGrupo);
+    console.log('✅ useGruposPassageiros: Resultado final:', {
+      grupos: gruposArray.length,
+      individuais: semGrupo.length,
+      detalhesGrupos: gruposArray.map(g => `${g.nome} (${g.total_membros})`),
+      ordemFinal: `${comGrupo.length} com grupo + ${semGrupo.length} individuais`
+    });
 
     return {
       grupos: gruposArray,
-      semGrupo
+      semGrupo,
+      // Retornar também a lista ordenada para uso direto
+      passageirosOrdenados: [...comGrupo, ...semGrupo]
     };
   }, []);
 

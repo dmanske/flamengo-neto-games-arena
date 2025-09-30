@@ -1,4 +1,3 @@
-import React from 'react';
 import { Users, Palette } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PassageiroRow } from './PassageiroRow';
@@ -74,9 +73,9 @@ export function GrupoPassageiros({
               }}
             />
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" style={{ color: textColor }} />
+              <Users className="h-4 w-4" style={{ color: textColor }} />
               <h3 
-                className="text-lg font-semibold"
+                className="text-sm font-semibold"
                 style={{ color: textColor }}
               >
                 {grupo.nome}
@@ -120,6 +119,7 @@ export function GrupoPassageiros({
                   onEditPassageiro={onEditPassageiro}
                   onDeletePassageiro={onDeletePassageiro}
                   onDesvincularCredito={onDesvincularCredito}
+                  onTrocarOnibus={onTrocarOnibus}
                   handlePagamento={handlePagamento}
                 />
               </tr>

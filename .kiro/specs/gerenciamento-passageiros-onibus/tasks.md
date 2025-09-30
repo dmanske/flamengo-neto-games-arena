@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Criar estrutura de banco de dados para grupos
+- [x] 1. Criar estrutura de banco de dados para grupos
   - Criar migration para adicionar colunas grupo_nome e grupo_cor na tabela viagem_passageiros
   - Criar índice para otimizar consultas por grupo
   - Testar migration em ambiente de desenvolvimento
@@ -123,3 +123,50 @@
   - Ajustar estilos e UX conforme necessário
   - Validar acessibilidade dos novos componentes
   - _Requirements: 1.6, 2.4, 4.2, 4.3, 5.5_
+
+## 🚀 MELHORIAS ADICIONAIS
+
+- [x] 17. Adicionar campo de grupo no modal "Adicionar Passageiro"
+  - Integrar PassageiroGroupForm no PassageiroDialog
+  - Permitir criar grupos já no primeiro cadastro
+  - Adicionar campos grupo_nome e grupo_cor no schema
+  - Implementar lógica de salvamento com grupos
+  - _Requirements: 2.1, 4.1_
+
+- [x] 18. Corrigir atualização da interface após trocas
+  - Melhorar evento 'passageiroTrocado' para atualizar ambos os ônibus
+  - Implementar reload completo dos dados após troca
+  - Garantir que badges de grupo apareçam imediatamente
+  - Atualizar contadores de passageiros em tempo real
+  - _Requirements: 1.5, 1.6_
+
+- [x] 19. Implementar sistema de troca inteligente para ônibus lotados
+  - Criar TrocarOnibusModalAvancado com seleção múltipla
+  - Implementar lógica de validação matemática de trocas
+  - Permitir trocas equilibradas (5↔5) e desbalanceadas (5↔4)
+  - Suportar trocas múltiplas (5↔3+2, 4↔1+1+1+1)
+  - Detectar grupos automaticamente e oferecer opções
+  - _Requirements: 1.3, 1.4_
+
+- [x] 20. Implementar lógica de grupos em trocas
+  - Oferecer opção "trocar apenas indivíduo" vs "trocar grupo inteiro"
+  - Validar espaço disponível para grupos completos
+  - Permitir trocas grupo↔grupo de tamanhos diferentes
+  - Implementar seleção múltipla para trocas complexas
+  - _Requirements: 2.5, 2.6_
+
+- [x] 21. Criar interface de seleção múltipla para trocas
+  - Checkboxes para selecionar passageiros individuais
+  - Checkboxes para selecionar grupos inteiros
+  - Contador em tempo real (selecionados vs necessário)
+  - Preview matemático da troca antes de confirmar
+  - Validação automática - botão só habilita quando válido
+  - _Requirements: 1.4, 4.3, 4.4_
+
+- [x] 22. Implementar validações avançadas de troca
+  - Função validarTrocaCompleta() para múltiplas combinações
+  - Suporte para trocas: Individual↔Individual, Grupo↔Grupo, Múltiplos↔Múltiplos
+  - Permitir criar vagas (trocar 5 por 4) se houver espaço
+  - Impedir exceder capacidade máxima dos ônibus
+  - Mostrar preview: "Resultado: A=44/45, B=42/45"
+  - _Requirements: 1.3, 1.4, 4.4_

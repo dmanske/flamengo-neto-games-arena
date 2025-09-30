@@ -25,6 +25,9 @@ interface PassageirosListProps {
   onEdit: (passageiro: PassageiroDisplay) => void;
   onDelete: (passageiro: PassageiroDisplay) => void;
   onTrocarOnibus?: (passageiro: PassageiroDisplay) => void;
+  // Novos props para filtros
+  statusFilter?: string;
+  passaNoFiltroStatus?: (status: any) => boolean;
 }
 
 export function PassageirosList({
@@ -36,8 +39,11 @@ export function PassageirosList({
 }: PassageirosListProps) {
   const { agruparPassageiros } = useGruposPassageiros(viagemId);
   
-  // Agrupar passageiros por grupo
-  const { grupos, semGrupo } = agruparPassageiros(passageiros);
+  // Agrupar passageiros por grupo - forçar reagrupamento sempre que passageiros mudarem
+  const { grupos, semGrupo } = React.useMemo(() => {
+    console.log('🔄 PassageirosList: Reagrupando passageiros...', passageiros.length);
+    return agruparPassageiros(passageiros);
+  }, [passageiros, agruparPassageiros]);
   
   // Função placeholder para handlePagamento (necessária para PassageiroRow)
   const handlePagamento = async () => {

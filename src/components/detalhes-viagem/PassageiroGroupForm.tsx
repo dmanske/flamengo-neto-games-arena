@@ -13,6 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useGruposPassageiros } from '@/hooks/useGruposPassageiros';
 import { CORES_GRUPOS } from '@/types/grupos-passageiros';
+import { verificarConflitosGrupo } from '@/utils/validacoes-grupos-onibus';
+import { ConflitosGrupoModal } from './ConflitosGrupoModal';
 
 interface PassageiroGroupFormProps {
   viagemId: string;
@@ -20,6 +22,8 @@ interface PassageiroGroupFormProps {
   grupoCor?: string;
   onChange: (grupoNome: string | null, grupoCor: string | null) => void;
   disabled?: boolean;
+  onibusAtualId?: string | null; // Para verificar conflitos
+  passageiroAtualId?: string; // Para excluir da verificação (edição)
 }
 
 export function PassageiroGroupForm({
@@ -27,12 +31,27 @@ export function PassageiroGroupForm({
   grupoNome = '',
   grupoCor = '',
   onChange,
-  disabled = false
+  disabled = false,
+  onibusAtualId = null,
+  passageiroAtualId
 }: PassageiroGroupFormProps) {
   const [modoEdicao, setModoEdicao] = useState<'selecionar' | 'criar'>('selecionar');
   const [novoGrupoNome, setNovoGrupoNome] = useState('');
   const [novoGrupoCor, setNovoGrupoCor] = useState('');
   const [grupoSelecionado, setGrupoSelecionado] = useState('');
+  
+  // Estados para o modal de conflitos
+  const [conflitosModal, setConflitosModal] = useState<{
+    isOpen: boolean;
+    conflitos: any;
+    grupoNome: string;
+    grupoCor: string;
+  }>({
+    isOpen: false,
+    conflitos: null,
+    grupoNome: '',
+    grupoCor: ''
+  });
 
   const { gruposExistentes, obterCoresDisponiveis } = useGruposPassageiros(viagemId);
 
@@ -58,7 +77,7 @@ export function PassageiroGroupForm({
   // Cores disponíveis (não usadas por outros grupos)
   const coresDisponiveis = obterCoresDisponiveis();
 
-  const handleGrupoSelecionadoChange = (value: string) => {
+  const handleGrupoSelecionadoChange = async (value: string) => {
     setGrupoSelecionado(value);
     
     if (value === 'sem-grupo') {
@@ -69,6 +88,53 @@ export function PassageiroGroupForm({
       setNovoGrupoCor(coresDisponiveis[0] || CORES_GRUPOS[0]);
     } else {
       const [nome, cor] = value.split('|');
+      
+      // ✅ NOVO: Verificar conflitos quando seleciona grupo existente
+      if (onibusAtualId !== undefined) {
+        console.log('🔍 Verificando conflitos para grupo selecionado:', { 
+          nome, 
+          cor, 
+          onibusAtualId, 
+          passageiroAtualId,
+          contexto: passageiroAtualId ? 'edição' : 'novo'
+        });
+        
+        try {
+          // Importar a função correta que aceita passageiroAtualId
+          const { verificarConflitosGrupo, exibirAvisoConflitosGrupo } = await import('@/utils/validacoes-grupos-onibus');
+          
+          const conflitos = await verificarConflitosGrupo(
+            viagemId,
+            nome,
+            cor,
+            onibusAtualId,
+            passageiroAtualId // ✅ Excluir o próprio passageiro na edição
+          );
+
+          if (conflitos.temConflito) {
+            console.log('⚠️ Conflito detectado! Abrindo modal...', conflitos);
+            
+            // Verificar se os dados estão válidos antes de abrir o modal
+            if (conflitos.onibusConflitantes && conflitos.onibusConflitantes.length > 0) {
+              // Abrir modal de resolução de conflitos
+              setConflitosModal({
+                isOpen: true,
+                conflitos,
+                grupoNome: nome,
+                grupoCor: cor
+              });
+              
+              // Não aplicar a mudança ainda, esperar resolução
+              return;
+            } else {
+              console.warn('Dados de conflito inválidos, aplicando mudança normalmente');
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar conflitos:', error);
+        }
+      }
+      
       onChange(nome, cor);
     }
   };
@@ -93,6 +159,61 @@ export function PassageiroGroupForm({
   const nomeJaExiste = gruposExistentes.some(g => 
     g.nome.toLowerCase() === novoGrupoNome.trim().toLowerCase()
   );
+
+  // Função para lidar com a resolução dos conflitos
+  const handleResolucaoConflito = async (acao: string, dados?: any) => {
+    const { grupoNome, grupoCor } = conflitosModal;
+    
+    try {
+      switch (acao) {
+        case 'mover-grupo-para-ca':
+          console.log('🚚 Movendo grupo existente para cá');
+          const { moverGrupoParaOnibus } = await import('@/utils/validacoes-grupos-onibus');
+          const sucesso = await moverGrupoParaOnibus(viagemId, grupoNome, grupoCor, onibusAtualId);
+          if (sucesso) {
+            onChange(grupoNome, grupoCor);
+            setGrupoSelecionado(`${grupoNome}|${grupoCor}`);
+            window.location.reload();
+          }
+          break;
+
+        case 'mover-passageiro-para-la':
+          console.log('🔄 Movendo passageiro para lá');
+          // Esta ação será implementada no contexto do formulário pai
+          onChange(grupoNome, grupoCor);
+          setGrupoSelecionado(`${grupoNome}|${grupoCor}`);
+          break;
+
+        case 'trocar-por-especifico':
+          console.log('🔀 Trocando por passageiro específico:', dados?.passageiroParaTroca);
+          // Esta ação será implementada no contexto do formulário pai
+          onChange(grupoNome, grupoCor);
+          setGrupoSelecionado(`${grupoNome}|${grupoCor}`);
+          break;
+
+        case 'manter-separados':
+          console.log('⚠️ Mantendo grupos separados');
+          onChange(grupoNome, grupoCor);
+          setGrupoSelecionado(`${grupoNome}|${grupoCor}`);
+          break;
+
+        case 'criar-novo-grupo':
+          console.log('✏️ Criando novo grupo:', dados?.novoNome);
+          if (dados?.novoNome) {
+            onChange(dados.novoNome, grupoCor);
+            setGrupoSelecionado(`${dados.novoNome}|${grupoCor}`);
+          }
+          break;
+
+        default:
+          console.log('❌ Ação cancelada');
+          setGrupoSelecionado('sem-grupo');
+          onChange(null, null);
+      }
+    } catch (error) {
+      console.error('Erro ao resolver conflito:', error);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -240,6 +361,19 @@ export function PassageiroGroupForm({
           </div>
         </div>
       )}
+
+      {/* Modal de Resolução de Conflitos */}
+      <ConflitosGrupoModal
+        isOpen={conflitosModal.isOpen}
+        onClose={() => setConflitosModal({ ...conflitosModal, isOpen: false })}
+        conflitos={conflitosModal.conflitos}
+        grupoNome={conflitosModal.grupoNome}
+        grupoCor={conflitosModal.grupoCor}
+        viagemId={viagemId}
+        onibusAtualId={onibusAtualId}
+        passageiroAtualId={passageiroAtualId}
+        onResolucao={handleResolucaoConflito}
+      />
     </div>
   );
 }

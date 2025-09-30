@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Pencil, Users, Plus, Search, Eye, Bus, Ticket, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Trash2, Pencil, Users, Plus, Search, Eye, Bus, Ticket, Clock, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
@@ -32,6 +32,7 @@ import { BotoesAcaoRapida } from "./BotoesAcaoRapida";
 import { PassageiroRow } from "./PassageiroRow";
 import { PassageiroComStatus } from "./PassageiroComStatus";
 import { TrocarOnibusModal } from "./TrocarOnibusModal";
+import { TrocarOnibusModalAvancado } from "./TrocarOnibusModalAvancado";
 import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 import type { StatusPagamentoAvancado, CategoriaPagamento } from "@/types/pagamentos-separados";
 import { obterValoresPasseiosPorNomes } from "@/utils/passeiosUtils";
@@ -92,6 +93,7 @@ export function PassageirosCard({
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [activeTab, setActiveTab] = useState<string>("todos");
   const [faixaEtariaFilter, setFaixaEtariaFilter] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
   
   // Estados para modal de troca de ônibus
   const [passageiroParaTroca, setPassageiroParaTroca] = useState<any | null>(null);
@@ -107,6 +109,33 @@ export function PassageirosCard({
   const handleTrocarOnibus = (passageiro: any) => {
     setPassageiroParaTroca(passageiro);
     setModalTrocaAberto(true);
+  };
+
+  // Determinar qual modal usar baseado na situação
+  const usarModalAvancado = () => {
+    if (!passageiroParaTroca || !onibusList.length) return false;
+    
+    // Usar modal avançado se passageiro faz parte de um grupo
+    const temGrupo = passageiroParaTroca.grupo_nome && passageiroParaTroca.grupo_cor;
+    if (temGrupo) {
+      console.log('🎯 Usando modal avançado: passageiro faz parte de grupo', passageiroParaTroca.grupo_nome);
+      return true;
+    }
+    
+    // Usar modal avançado se algum ônibus está lotado ou próximo da capacidade
+    const temOnibusLotado = onibusList.some(onibus => {
+      const ocupacao = passageirosCount[onibus.id] || 0;
+      const capacidade = onibus.capacidade_onibus + (onibus.lugares_extras || 0);
+      return ocupacao >= capacidade - 1; // Lotado ou com apenas 1 vaga
+    });
+    
+    if (temOnibusLotado) {
+      console.log('🎯 Usando modal avançado: ônibus lotado detectado');
+      return true;
+    }
+    
+    console.log('🎯 Usando modal simples: sem grupos e ônibus com vagas');
+    return false;
   };
 
   const handleConfirmarTroca = () => {
@@ -135,6 +164,30 @@ export function PassageirosCard({
 
   // Calcular contadores por faixa etária
   const contadoresFaixaEtaria = contarPorFaixaEtaria(passageirosAtuais || []);
+
+  // Calcular informações dos grupos para exibir no badge
+  const gruposInfo = React.useMemo(() => {
+    const grupos = new Map<string, number>();
+    
+    (passageirosAtuais || []).forEach(passageiro => {
+      if (passageiro.grupo_nome && passageiro.grupo_cor) {
+        const key = `${passageiro.grupo_nome}|${passageiro.grupo_cor}`;
+        grupos.set(key, (grupos.get(key) || 0) + 1);
+      }
+    });
+    
+    return grupos;
+  }, [passageirosAtuais]);
+
+  // Função para obter informações do grupo de um passageiro
+  const obterGrupoInfo = (passageiro: any) => {
+    if (!passageiro.grupo_nome || !passageiro.grupo_cor) return null;
+    
+    const key = `${passageiro.grupo_nome}|${passageiro.grupo_cor}`;
+    const totalMembros = gruposInfo.get(key) || 0;
+    
+    return { totalMembros };
+  };
 
   // Filtrar passageiros com busca inteligente e faixa etária
   const passageirosFiltrados = (passageirosAtuais || []).filter((passageiro) => {
@@ -466,21 +519,43 @@ export function PassageirosCard({
               )}
             </CardDescription>
           </div>
-          <Button 
-            onClick={() => setAddPassageiroOpen(true)}
-            disabled={onibusLotado}
-            className={`${
-              onibusLotado 
-                ? 'bg-gray-400 cursor-not-allowed opacity-50' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-            title={onibusLotado ? 'Ônibus lotado - sem vagas disponíveis' : 'Adicionar novo passageiro'}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {onibusLotado ? 'Ônibus Lotado' : 'Adicionar Passageiro'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="flex items-center gap-1"
+              title={isMinimized ? 'Expandir lista' : 'Minimizar lista'}
+            >
+              {isMinimized ? (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Expandir
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Minimizar
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={() => setAddPassageiroOpen(true)}
+              disabled={onibusLotado}
+              className={`${
+                onibusLotado 
+                  ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              title={onibusLotado ? 'Ônibus lotado - sem vagas disponíveis' : 'Adicionar novo passageiro'}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {onibusLotado ? 'Ônibus Lotado' : 'Adicionar Passageiro'}
+            </Button>
+          </div>
         </div>
       </CardHeader>
+      {!isMinimized && (
       <CardContent>
         <div className="flex flex-col gap-4 mb-4">
           {/* Barra de busca e filtro de status */}
@@ -618,6 +693,7 @@ export function PassageirosCard({
                           onViewDetails={onViewDetails}
                           onTrocarOnibus={handleTrocarOnibus}
                           handlePagamento={handlePagamento}
+                          grupoInfo={obterGrupoInfo(passageiro)}
                         />
                       );
                     }}
@@ -630,18 +706,34 @@ export function PassageirosCard({
           </Table>
         </div>
       </CardContent>
+      )}
     </Card>
     
     {/* Modal de Troca de Ônibus */}
     {passageiroParaTroca && onibusList.length > 0 && (
-      <TrocarOnibusModal
-        isOpen={modalTrocaAberto}
-        onClose={handleFecharModal}
-        passageiro={passageiroParaTroca}
-        onibusList={onibusList}
-        passageirosCount={passageirosCount}
-        onConfirm={handleConfirmarTroca}
-      />
+      <>
+        {usarModalAvancado() ? (
+          <TrocarOnibusModalAvancado
+            isOpen={modalTrocaAberto}
+            onClose={handleFecharModal}
+            passageiro={passageiroParaTroca}
+            onibusList={onibusList}
+            passageiros={passageiros}
+            passageirosCount={passageirosCount}
+            onConfirm={handleConfirmarTroca}
+          />
+        ) : (
+          <TrocarOnibusModal
+            isOpen={modalTrocaAberto}
+            onClose={handleFecharModal}
+            passageiro={passageiroParaTroca}
+            onibusList={onibusList}
+            passageirosCount={passageirosCount}
+            onConfirm={handleConfirmarTroca}
+            todosPassageiros={passageiros}
+          />
+        )}
+      </>
     )}
     </TooltipProvider>
   );

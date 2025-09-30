@@ -6,8 +6,9 @@ import type { Onibus } from '@/hooks/useViagemDetails';
 import { validarTrocaOnibus, tratarErroSupabase, executarComRetry, MENSAGENS_ERRO } from '@/utils/validacoes-grupos';
 
 interface UseTrocaOnibus {
-  trocarPassageiro: (passageiroId: string, onibusDestinoId: string | null) => Promise<void>;
+  trocarPassageiro: (passageiroId: string, onibusDestinoId: string | null, bypassValidation?: boolean) => Promise<void>;
   trocarGrupoInteiro: (grupoNome: string, viagemId: string, onibusDestinoId: string | null) => Promise<void>;
+  trocarGrupoDoOnibus: (grupoNome: string, viagemId: string, onibusOrigemId: string | null, onibusDestinoId: string | null) => Promise<void>;
   verificarCapacidade: (onibusId: string) => number;
   obterOnibusDisponiveis: (onibusList: Onibus[], passageirosCount: Record<string, number>) => OnibusDisponivel[];
   loading: boolean;
@@ -19,7 +20,7 @@ export function useTrocaOnibus(): UseTrocaOnibus {
   const [error, setError] = useState<string | null>(null);
 
   // Trocar passageiro entre ônibus
-  const trocarPassageiro = useCallback(async (passageiroId: string, onibusDestinoId: string | null) => {
+  const trocarPassageiro = useCallback(async (passageiroId: string, onibusDestinoId: string | null, bypassValidation: boolean = false) => {
     if (!passageiroId) {
       throw new Error('ID do passageiro é obrigatório');
     }
@@ -44,8 +45,8 @@ export function useTrocaOnibus(): UseTrocaOnibus {
           return;
         }
 
-        // Se está movendo para um ônibus específico, validar capacidade
-        if (onibusDestinoId) {
+        // Se está movendo para um ônibus específico, validar capacidade (apenas se não for bypass)
+        if (onibusDestinoId && !bypassValidation) {
           const { data: onibusDestino, error: errorOnibus } = await supabase
             .from('viagem_onibus')
             .select('capacidade_onibus, lugares_extras')
@@ -101,8 +102,21 @@ export function useTrocaOnibus(): UseTrocaOnibus {
 
         // Disparar evento customizado para atualizar a interface
         window.dispatchEvent(new CustomEvent('passageiroTrocado', {
-          detail: { passageiroId, onibusDestinoId }
+          detail: { 
+            passageiroId, 
+            onibusDestinoId,
+            onibusOrigemId: passageiroAtual?.onibus_id,
+            timestamp: Date.now()
+          }
         }));
+
+        // Também disparar evento global para forçar reload completo
+        if (typeof window !== 'undefined' && (window as any).reloadViagemPassageiros) {
+          console.log('🔄 Chamando reload global após troca');
+          setTimeout(() => {
+            (window as any).reloadViagemPassageiros();
+          }, 100); // Pequeno delay para garantir que a transação foi commitada
+        }
       });
 
     } catch (err: any) {
@@ -230,9 +244,110 @@ export function useTrocaOnibus(): UseTrocaOnibus {
     }
   }, []);
 
+  // Trocar apenas o grupo do ônibus atual (não todos os grupos com mesmo nome)
+  const trocarGrupoDoOnibus = useCallback(async (grupoNome: string, viagemId: string, onibusOrigemId: string | null, onibusDestinoId: string | null) => {
+    if (!grupoNome || !viagemId) {
+      throw new Error('Nome do grupo e ID da viagem são obrigatórios');
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await executarComRetry(async () => {
+        // Buscar apenas os passageiros do grupo NO ÔNIBUS ATUAL
+        const { data: passageirosGrupo, error: errorBusca } = await supabase
+          .from('viagem_passageiros')
+          .select(`
+            id, 
+            onibus_id,
+            clientes!viagem_passageiros_cliente_id_fkey (
+              nome
+            )
+          `)
+          .eq('viagem_id', viagemId)
+          .eq('grupo_nome', grupoNome)
+          .eq('onibus_id', onibusOrigemId); // ✅ FILTRO CRUCIAL: apenas do ônibus atual
+
+        if (errorBusca) throw errorBusca;
+
+        if (!passageirosGrupo || passageirosGrupo.length === 0) {
+          throw new Error('Nenhum passageiro do grupo encontrado neste ônibus');
+        }
+
+        console.log(`🚌 Movendo grupo "${grupoNome}" do ônibus atual:`, {
+          onibusOrigemId,
+          onibusDestinoId,
+          passageiros: passageirosGrupo.map(p => p.clientes?.nome || 'Nome não encontrado'),
+          total: passageirosGrupo.length
+        });
+
+        // Se está movendo para um ônibus específico, verificar capacidade
+        if (onibusDestinoId) {
+          const { data: onibusDestino, error: errorOnibus } = await supabase
+            .from('viagem_onibus')
+            .select('capacidade_onibus, lugares_extras')
+            .eq('id', onibusDestinoId)
+            .single();
+
+          if (errorOnibus) throw errorOnibus;
+
+          // Contar passageiros atuais no ônibus de destino
+          const { count: passageirosAtuais, error: errorCount } = await supabase
+            .from('viagem_passageiros')
+            .select('*', { count: 'exact', head: true })
+            .eq('onibus_id', onibusDestinoId);
+
+          if (errorCount) throw errorCount;
+
+          const capacidadeTotal = onibusDestino.capacidade_onibus + (onibusDestino.lugares_extras || 0);
+          const ocupacaoAtual = passageirosAtuais || 0;
+          const vagasNecessarias = passageirosGrupo.length;
+
+          // Verificar se há capacidade para o grupo do ônibus atual
+          if (ocupacaoAtual + vagasNecessarias > capacidadeTotal) {
+            throw new Error(`Não há capacidade suficiente no ônibus de destino. Necessário: ${vagasNecessarias} vagas, disponível: ${capacidadeTotal - ocupacaoAtual}`);
+          }
+        }
+
+        // Atualizar apenas os passageiros do grupo do ônibus atual
+        const { error: errorUpdate } = await supabase
+          .from('viagem_passageiros')
+          .update({ onibus_id: onibusDestinoId })
+          .eq('viagem_id', viagemId)
+          .eq('grupo_nome', grupoNome)
+          .eq('onibus_id', onibusOrigemId); // ✅ FILTRO CRUCIAL: apenas do ônibus atual
+
+        if (errorUpdate) throw errorUpdate;
+
+        // Mensagem de sucesso
+        const origemTexto = onibusOrigemId ? 'ônibus atual' : 'não alocados';
+        const destinoTexto = onibusDestinoId ? 'ônibus selecionado' : 'não alocados';
+        const mensagem = `Grupo "${grupoNome}" (${passageirosGrupo.length} passageiros) transferido de ${origemTexto} para ${destinoTexto}`;
+        
+        toast.success(mensagem);
+
+        // Disparar evento customizado para atualizar a interface
+        window.dispatchEvent(new CustomEvent('grupoTrocado', {
+          detail: { grupoNome, onibusOrigemId, onibusDestinoId, totalPassageiros: passageirosGrupo.length }
+        }));
+      });
+
+    } catch (err: any) {
+      console.error('Erro ao trocar grupo do ônibus:', err);
+      const errorMessage = tratarErroSupabase(err);
+      setError(errorMessage);
+      toast.error(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     trocarPassageiro,
     trocarGrupoInteiro,
+    trocarGrupoDoOnibus,
     verificarCapacidade,
     obterOnibusDisponiveis,
     loading,
