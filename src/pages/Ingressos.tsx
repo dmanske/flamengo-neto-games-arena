@@ -180,7 +180,7 @@ export default function Ingressos() {
           adversario: ingresso.adversario,
           jogo_data: dataJogoCorreta, // ✅ Usar data correta
           local_jogo: ingresso.local_jogo,
-          logo_adversario: ingresso.logo_adversario || logosAdversarios[ingresso.adversario] || null,
+          logo_adversario: logosAdversarios[ingresso.adversario] || null,
           logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
           ingressos: [],
           total_ingressos: 0,
@@ -239,6 +239,70 @@ export default function Ingressos() {
     // 3. Converter para array e ordenar por data
     return Object.values(gruposUnificados).sort((a: any, b: any) => {
       return new Date(a.jogo_data).getTime() - new Date(b.jogo_data).getTime();
+    });
+  }, [ingressosFiltrados, logosAdversarios, viagensIngressos]);
+
+  // JOGOS PASSADOS - mesma lógica mas com filtro invertido
+  const jogosPassados = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const gruposUnificados: Record<string, any> = {};
+
+    // 1. Processar ingressos passados
+    const ingressosPassados = ingressosFiltrados.filter(ingresso => {
+      const dataJogoString = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      const dataJogo = new Date(dataJogoString);
+      return dataJogo < hoje; // Filtro invertido para jogos passados
+    });
+
+    ingressosPassados.forEach(ingresso => {
+      const dataJogo = ingresso.viagem?.data_jogo || ingresso.jogo_data;
+      const dataJogoNormalizada = new Date(dataJogo).toISOString().split('T')[0];
+      const chaveJogo = `${ingresso.adversario.toLowerCase()}-${dataJogoNormalizada}-${ingresso.local_jogo}`;
+      
+      if (!gruposUnificados[chaveJogo]) {
+        let dataJogoCorreta = ingresso.viagem?.data_jogo;
+        
+        if (!dataJogoCorreta && ingresso.viagem_ingressos_id) {
+          const viagemIngressos = viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id);
+          dataJogoCorreta = viagemIngressos?.data_jogo;
+        }
+        
+        if (!dataJogoCorreta) {
+          dataJogoCorreta = ingresso.jogo_data;
+        }
+        
+        gruposUnificados[chaveJogo] = {
+          adversario: ingresso.adversario,
+          jogo_data: dataJogoCorreta,
+          local_jogo: ingresso.local_jogo,
+          logo_adversario: logosAdversarios[ingresso.adversario] || null,
+          logo_flamengo: "https://logodetimes.com/times/flamengo/logo-flamengo-256.png",
+          ingressos: [],
+          total_ingressos: 0,
+          receita_total: 0,
+          lucro_total: 0,
+          ingressos_pendentes: 0,
+          ingressos_pagos: 0,
+        };
+      }
+      
+      gruposUnificados[chaveJogo].ingressos.push(ingresso);
+      gruposUnificados[chaveJogo].total_ingressos++;
+      gruposUnificados[chaveJogo].receita_total += ingresso.valor_final || 0;
+      gruposUnificados[chaveJogo].lucro_total += ingresso.lucro || 0;
+      
+      if (ingresso.situacao_financeira === 'pago') {
+        gruposUnificados[chaveJogo].ingressos_pagos++;
+      } else if (ingresso.situacao_financeira === 'pendente') {
+        gruposUnificados[chaveJogo].ingressos_pendentes++;
+      }
+    });
+
+    // Converter para array e ordenar por data (mais recentes primeiro)
+    return Object.values(gruposUnificados).sort((a: any, b: any) => {
+      return new Date(b.jogo_data).getTime() - new Date(a.jogo_data).getTime();
     });
   }, [ingressosFiltrados, logosAdversarios, viagensIngressos]);
 
@@ -632,7 +696,30 @@ export default function Ingressos() {
         </CardContent>
       </Card>
 
-
+      {/* Cards de Jogos Passados */}
+      {jogosPassados.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Jogos Passados ({jogosPassados.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {jogosPassados.map((jogo: any) => (
+                <CleanJogoCard
+                  key={`passado-${jogo.adversario}-${jogo.jogo_data}-${jogo.local_jogo}`}
+                  jogo={jogo}
+                  onVerIngressos={handleVerIngressosJogo}
+                  onDeletarJogo={handleDeletarJogo}
+                  onExportarPDF={handleExportarPDFJogo}
+                  onNovoIngresso={handleNovoIngressoJogo}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modais */}
       <IngressoFormModal
