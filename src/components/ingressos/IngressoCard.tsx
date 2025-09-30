@@ -30,6 +30,8 @@ import { Separator } from '@/components/ui/separator';
 import { Ingresso, SituacaoFinanceiraIngresso } from '@/types/ingressos';
 import { formatCurrency, formatCPF, formatPhone } from '@/utils/formatters';
 import { formatDateTimeSafe } from '@/lib/date-utils';
+import { useCadastroFacial } from '@/hooks/useCadastroFacial';
+import { StatusCadastroFacial } from '@/components/ui/StatusCadastroFacial';
 
 interface IngressoCardProps {
   ingresso: Ingresso;
@@ -50,6 +52,15 @@ export function IngressoCard({
   onNovoPagamento,
   isLoading = false
 }: IngressoCardProps) {
+  
+  // Hook para cadastro facial
+  const { 
+    cadastroFacialData, 
+    loading: loadingCadastroFacial, 
+    toggleCadastroFacial 
+  } = useCadastroFacial(
+    ingresso.cliente?.id ? [ingresso.cliente.id] : []
+  );
   
   // Função para obter cor do badge de status
   const getStatusBadgeVariant = (status: SituacaoFinanceiraIngresso) => {
@@ -192,9 +203,17 @@ export function IngressoCard({
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   {ingresso.cliente.cpf && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">CPF:</span>
-                      <span className="font-mono">{formatCPF(ingresso.cliente.cpf)}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">CPF:</span>
+                        <span className="font-mono">{formatCPF(ingresso.cliente.cpf)}</span>
+                      </div>
+                      <StatusCadastroFacial 
+                        clienteId={ingresso.cliente.id}
+                        cadastroFacialData={cadastroFacialData}
+                        loading={loadingCadastroFacial}
+                        onClick={toggleCadastroFacial}
+                      />
                     </div>
                   )}
                   {ingresso.cliente.telefone && (

@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { X, AlertTriangle, Trash2, ChevronLeft, ChevronRight, Copy, Eye, Edit } from 'lucide-react';
 import { formatDateTimeSafe } from '@/lib/date-utils';
 import { toast } from 'sonner';
+import { useCadastroFacial } from '@/hooks/useCadastroFacial';
+import { StatusCadastroFacial } from '@/components/ui/StatusCadastroFacial';
 import {
   Dialog,
   DialogContent,
@@ -66,6 +68,14 @@ export function IngressosJogoModal({
   const [ingressoParaDeletar, setIngressoParaDeletar] = useState<Ingresso | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  
+  // Hook para cadastro facial
+  const clienteIds = ingressos.map(i => i.cliente?.id).filter(Boolean) as string[];
+  const { 
+    cadastroFacialData, 
+    loading: loadingCadastroFacial, 
+    toggleCadastroFacial 
+  } = useCadastroFacial(clienteIds);
   
   const ITENS_POR_PAGINA = 10;
   
@@ -300,20 +310,30 @@ export function IngressosJogoModal({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono">
-                              {ingresso.cliente?.cpf ? formatCPF(ingresso.cliente.cpf) : '-'}
-                            </span>
-                            {ingresso.cliente?.cpf && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copiarCampo(ingresso.cliente!.cpf!, 'CPF')}
-                                className="h-6 w-6 p-0 hover:bg-blue-100"
-                                title="Copiar CPF"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono">
+                                {ingresso.cliente?.cpf ? formatCPF(ingresso.cliente.cpf) : '-'}
+                              </span>
+                              {ingresso.cliente?.cpf && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copiarCampo(ingresso.cliente!.cpf!, 'CPF')}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                  title="Copiar CPF"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                            {ingresso.cliente?.id && (
+                              <StatusCadastroFacial 
+                                clienteId={ingresso.cliente.id}
+                                cadastroFacialData={cadastroFacialData}
+                                loading={loadingCadastroFacial}
+                                onClick={toggleCadastroFacial}
+                              />
                             )}
                           </div>
                         </TableCell>
