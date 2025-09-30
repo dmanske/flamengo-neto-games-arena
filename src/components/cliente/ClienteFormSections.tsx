@@ -2,6 +2,8 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PersonalInfoFields } from "./PersonalInfoFields";
 import { ContactInfoFields } from "./ContactInfoFields";
 import { AddressFields } from "./AddressFields";
@@ -25,6 +27,23 @@ export const ClienteFormSections: React.FC<ClienteFormSectionsProps> = ({ form }
         </CardHeader>
         <CardContent>
           <PersonalInfoFields form={form} />
+          
+          {/* 🆕 NOVO: Seção de cadastramento facial */}
+          <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border mt-4">
+            <Checkbox 
+              id="cadastro_facial"
+              checked={form.watch('cadastro_facial') || false}
+              onCheckedChange={(checked) => form.setValue('cadastro_facial', !!checked)}
+            />
+            <div className="flex flex-col">
+              <Label htmlFor="cadastro_facial" className="text-sm font-medium cursor-pointer">
+                Possui cadastramento facial
+              </Label>
+              <span className="text-xs text-gray-500">
+                Marque se o cliente já realizou o cadastramento facial
+              </span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -37,6 +37,7 @@ const EditarCliente = () => {
       foto: "",
       passeio_cristo: "sim",
       fonte_cadastro: "admin",
+      cadastro_facial: false, // 🆕 NOVO: Campo cadastramento facial
     },
     mode: "onChange",
   });

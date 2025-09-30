@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Pencil, Eye, CreditCard, Copy, ArrowRightLeft } from "lucide-react";
 import { formatBirthDate, formatarNomeComPreposicoes, formatCPF, formatPhone } from "@/utils/formatters";
 import { copyNome, copyCPF, copyDataNascimento } from "@/utils/clipboard";
+import { StatusCadastroFacial } from "@/components/ui/StatusCadastroFacial";
 import { StatusBadgeAvancado, BreakdownVisual } from "./StatusBadgeAvancado";
 import { BotoesAcaoRapida } from "./BotoesAcaoRapida";
 import { PasseiosSimples } from "./PasseiosSimples";
@@ -25,6 +26,9 @@ interface PassageiroRowProps {
   onTrocarOnibus?: (passageiro: any) => void;
   handlePagamento: (passageiroId: string, categoria: string, valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
   grupoInfo?: { totalMembros: number } | null;
+  cadastroFacialData?: { [key: string]: boolean }; // 🆕 NOVO: Dados de cadastro facial
+  loadingCadastroFacial?: boolean; // 🆕 NOVO: Loading do cadastro facial
+  onToggleCadastroFacial?: (clienteId: string, novoStatus: boolean) => void; // 🆕 NOVO: Função de toggle
 }
 
 export const PassageiroRow: React.FC<PassageiroRowProps> = ({
@@ -36,7 +40,10 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
   onDesvincularCredito,
   onTrocarOnibus,
   handlePagamento,
-  grupoInfo
+  grupoInfo,
+  cadastroFacialData = {}, // 🆕 NOVO: Dados de cadastro facial
+  loadingCadastroFacial = false, // 🆕 NOVO: Loading do cadastro facial
+  onToggleCadastroFacial // 🆕 NOVO: Função de toggle
 }) => {
   // Verificação de segurança para evitar erros
   if (!passageiro) {
@@ -72,6 +79,8 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
 
   // ✅ NOVO: Determinar tipo de badge de crédito ANTES do if
   const creditoBadgeData = useCreditoBadgeType(passageiro);
+
+  // 🆕 REMOVIDO: Função de toggle temporariamente removida
 
   // Se ainda carregando ou erro, mostrar dados básicos
   if (loadingPagamentos || !breakdown || errorPagamentos) {
@@ -142,17 +151,28 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
           </div>
         </TableCell>
         <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap px-2">
-          <div className="flex items-center justify-center gap-1">
-            <span>{formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => copyCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-              title="Copiar CPF"
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center justify-center gap-1">
+              <span>{formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
+                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                title="Copiar CPF"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            {/* 🆕 NOVO: Status do cadastramento facial - clicável para editar */}
+            {/* 🆕 NOVO: Status de cadastro facial */}
+            <StatusCadastroFacial 
+              clienteId={passageiro.cliente_id}
+              cadastroFacialData={cadastroFacialData}
+              loading={loadingCadastroFacial}
+              onClick={onToggleCadastroFacial}
+            />
           </div>
         </TableCell>
         <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap px-2">
@@ -306,17 +326,28 @@ export const PassageiroRow: React.FC<PassageiroRowProps> = ({
         </div>
       </TableCell>
       <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">
-        <div className="flex items-center justify-center gap-1">
-          <span>{formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => copyCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
-            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-            title="Copiar CPF"
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
+            <span>{formatCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copyCPF(passageiro.clientes?.cpf || passageiro.cpf || '')}
+              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+              title="Copiar CPF"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          {/* 🆕 NOVO: Status do cadastramento facial - clicável para editar */}
+          {/* 🆕 NOVO: Status de cadastro facial */}
+          <StatusCadastroFacial 
+            clienteId={passageiro.cliente_id}
+            cadastroFacialData={cadastroFacialData}
+            loading={loadingCadastroFacial}
+            onClick={onToggleCadastroFacial}
+          />
         </div>
       </TableCell>
       <TableCell className="font-cinzel font-semibold text-center text-black whitespace-nowrap">

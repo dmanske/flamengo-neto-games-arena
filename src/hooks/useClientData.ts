@@ -53,6 +53,7 @@ export const useClientData = (id: string | undefined, form: UseFormReturn<Client
             foto: cliente.foto || "",
             passeio_cristo: cliente.passeio_cristo || "sim",
             fonte_cadastro: cliente.fonte_cadastro || "admin",
+            cadastro_facial: cliente.cadastro_facial ?? false, // 🆕 NOVO: Campo cadastramento facial
           });
         }
       } catch (error) {

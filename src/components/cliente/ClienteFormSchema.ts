@@ -137,6 +137,11 @@ export const formSchema = z.object({
   passeio_cristo: z.string()
     .optional()
     .default("sim"),
+
+  // 🆕 NOVO: Campo para cadastramento facial
+  cadastro_facial: z.boolean()
+    .optional()
+    .default(false),
 });
 
 export type ClienteFormData = z.infer<typeof formSchema>;

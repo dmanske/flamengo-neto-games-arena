@@ -25,6 +25,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router-dom";
 import { formatPhone, formatCPF, formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters";
+import { CadastroFacialIndicator } from "@/components/ui/CadastroFacialIndicator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -381,9 +382,16 @@ const Clientes = () => {
                           )}
 
                           {cliente.cpf && (
-                            <div className="flex items-center text-sm text-gray-600">
-                              <CreditCard className="h-3 w-3 mr-2 text-purple-600" />
-                              <span>{formatCPF(cliente.cpf)}</span>
+                            <div className="flex items-center justify-between text-sm text-gray-600">
+                              <div className="flex items-center">
+                                <CreditCard className="h-3 w-3 mr-2 text-purple-600" />
+                                <span>{formatCPF(cliente.cpf)}</span>
+                              </div>
+                              {/* 🆕 NOVO: Indicador de cadastro facial */}
+                              <CadastroFacialIndicator 
+                                temCadastro={cliente.cadastro_facial ?? false}
+                                size="sm"
+                              />
                             </div>
                           )}
 

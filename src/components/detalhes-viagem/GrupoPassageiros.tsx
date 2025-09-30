@@ -13,6 +13,7 @@ interface GrupoPassageirosProps {
   onDesvincularCredito?: (passageiro: PassageiroDisplay) => void;
   onTrocarOnibus: (passageiro: PassageiroDisplay) => void;
   handlePagamento: (passageiroId: string, categoria: string, valor: number, formaPagamento?: string, observacoes?: string, dataPagamento?: string) => Promise<boolean>;
+  onToggleCadastroFacial?: (passageiro: PassageiroDisplay) => void; // 🆕 NOVO
 }
 
 export function GrupoPassageiros({
@@ -23,7 +24,8 @@ export function GrupoPassageiros({
   onDeletePassageiro,
   onDesvincularCredito,
   onTrocarOnibus,
-  handlePagamento
+  handlePagamento,
+  onToggleCadastroFacial // 🆕 NOVO
 }: GrupoPassageirosProps) {
   // Função para converter hex para rgba com transparência
   const hexToRgba = (hex: string, alpha: number = 0.1) => {
@@ -121,6 +123,7 @@ export function GrupoPassageiros({
                   onDesvincularCredito={onDesvincularCredito}
                   onTrocarOnibus={onTrocarOnibus}
                   handlePagamento={handlePagamento}
+                  onToggleCadastroFacial={onToggleCadastroFacial} // 🆕 NOVO
                 />
               </tr>
             ))}

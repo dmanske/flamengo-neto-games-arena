@@ -68,6 +68,7 @@ export interface Cliente {
   foto?: string | null;
   passeio_cristo: string;
   fonte_cadastro: string;
+  cadastro_facial?: boolean; // 🆕 NOVO: Campo para cadastramento facial
   created_at?: string;
   updated_at?: string;
 }

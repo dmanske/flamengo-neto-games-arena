@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useClientValidation } from "@/hooks/useClientValidation";
 import { cleanCPF, cleanPhone, convertBrazilianDateToISO, convertISOToBrazilianDate } from "@/utils/formatters";
 import { formSchema, type ClienteFormData } from "./ClienteFormSchema";
@@ -45,6 +47,7 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
       observacoes: cliente?.observacoes || "",
       foto: cliente?.foto || "",
       fonte_cadastro: cliente?.fonte_cadastro || "admin",
+      cadastro_facial: cliente?.cadastro_facial ?? false, // 🆕 NOVO: Campo cadastramento facial
     },
   });
 
@@ -81,6 +84,7 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
         observacoes: data.observacoes?.trim() || null,
         foto: data.foto || null,
         fonte_cadastro: data.fonte_cadastro,
+        cadastro_facial: data.cadastro_facial || false, // 🆕 NOVO: Campo cadastramento facial
       };
 
       if (cliente) {
@@ -142,6 +146,23 @@ export const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, onSubmitSucce
             <p className="text-sm text-gray-600">Informações básicas do cliente</p>
           </div>
           <PersonalInfoFields form={form} />
+          
+          {/* 🆕 NOVO: Seção de cadastramento facial */}
+          <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
+            <Checkbox 
+              id="cadastro_facial"
+              checked={form.watch('cadastro_facial') || false}
+              onCheckedChange={(checked) => form.setValue('cadastro_facial', !!checked)}
+            />
+            <div className="flex flex-col">
+              <Label htmlFor="cadastro_facial" className="text-sm font-medium cursor-pointer">
+                Possui cadastramento facial
+              </Label>
+              <span className="text-xs text-gray-500">
+                Marque se o cliente já realizou o cadastramento facial
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Informações de Contato */}

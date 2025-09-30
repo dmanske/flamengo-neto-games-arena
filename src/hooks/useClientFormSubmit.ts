@@ -43,6 +43,7 @@ export const useClientFormSubmit = (clienteId?: string) => {
         foto: data.foto || null,
         passeio_cristo: data.passeio_cristo,
         fonte_cadastro: data.fonte_cadastro,
+        cadastro_facial: data.cadastro_facial ?? false, // 🆕 NOVO: Campo cadastramento facial
       };
 
       const { error } = await supabase

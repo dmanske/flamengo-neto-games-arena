@@ -24,6 +24,16 @@ import { formatBirthDate, formatarNomeComPreposicoes } from "@/utils/formatters"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PasseiosCompactos } from "./PasseiosCompactos";
 import { calcularValorFinalPassageiro } from "@/utils/passageiroCalculos";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +47,7 @@ import { usePagamentosSeparados } from "@/hooks/usePagamentosSeparados";
 import type { StatusPagamentoAvancado, CategoriaPagamento } from "@/types/pagamentos-separados";
 import { obterValoresPasseiosPorNomes } from "@/utils/passeiosUtils";
 import { FAIXAS_ETARIAS, contarPorFaixaEtaria, obterFaixaEtaria, calcularIdade, type FaixaEtaria } from "@/utils/faixaEtariaUtils";
+import { useCadastroFacial } from "@/hooks/useCadastroFacial";
 
 interface PassageirosCardProps {
   passageirosAtuais: any[];
@@ -333,7 +344,64 @@ export function PassageirosCard({
     }
   };
 
+  // 🆕 NOVO: Hook para buscar dados de cadastro facial
+  const clienteIds = passageirosAtuais.map(p => p.cliente_id).filter(Boolean);
+  const { cadastroFacialData, loading: loadingCadastroFacial, toggleCadastroFacial } = useCadastroFacial(clienteIds);
+
+  // 🆕 NOVO: Estado para controlar o modal de confirmação
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    clienteId: string;
+    nomeCliente: string;
+  }>({
+    isOpen: false,
+    clienteId: '',
+    nomeCliente: ''
+  });
+
+  // 🆕 NOVO: Função para alterar cadastro facial
+  const handleToggleCadastroFacial = async (clienteId: string, novoStatus: boolean) => {
+    // Se está removendo o cadastro facial (de true para false), pedir confirmação
+    if (!novoStatus && cadastroFacialData[clienteId] === true) {
+      // Encontrar o nome do cliente
+      const passageiro = passageirosAtuais.find(p => p.cliente_id === clienteId);
+      const nomeCliente = passageiro?.clientes?.nome || passageiro?.nome || 'Cliente';
+      
+      setConfirmDialog({
+        isOpen: true,
+        clienteId,
+        nomeCliente
+      });
+      return;
+    }
+
+    // Se está adicionando (de false para true), fazer diretamente
+    const sucesso = await toggleCadastroFacial(clienteId, novoStatus);
+    if (sucesso) {
+      toast.success(
+        novoStatus 
+          ? 'Cadastro facial marcado como realizado' 
+          : 'Cadastro facial marcado como pendente'
+      );
+    } else {
+      toast.error('Erro ao alterar cadastro facial');
+    }
+  };
+
+  // 🆕 NOVO: Confirmar remoção do cadastro facial
+  const confirmarRemocaoFacial = async () => {
+    const sucesso = await toggleCadastroFacial(confirmDialog.clienteId, false);
+    if (sucesso) {
+      toast.success('Cadastro facial removido com sucesso');
+    } else {
+      toast.error('Erro ao remover cadastro facial');
+    }
+    
+    setConfirmDialog({ isOpen: false, clienteId: '', nomeCliente: '' });
+  };
+
   const fetchPassageiros = async () => {
+    console.log('🚀 INICIANDO fetchPassageiros...');
     try {
       setIsLoading(true);
 
@@ -351,17 +419,21 @@ export function PassageirosCard({
       }
 
       console.log('🚀 DEBUG PassageirosCard: Executando query para viagemId:', viagemId);
+      console.log('🚀 ANTES DA QUERY...');
       
+      // 🆕 NOVO: Tentar consulta mais simples primeiro
       const { data, error } = await supabase
         .from('viagem_passageiros')
         .select(`
           *,
-          clientes!viagem_passageiros_cliente_id_fkey (
+          clientes (
+            id,
             nome,
             telefone,
             email,
             data_nascimento,
-            foto
+            foto,
+            cadastro_facial
           ),
           passageiro_passeios (
             id,
@@ -377,14 +449,52 @@ export function PassageirosCard({
         .eq('viagem_id', viagemId)
         .order('created_at', { ascending: false });
       
+      console.log('🚀 DEPOIS DA QUERY...');
       console.log('🚀 DEBUG PassageirosCard: Resultado da query:', { 
         data, 
         error, 
         viagemId,
         dataLength: data?.length,
-        primeiroItem: data?.[0],
-        exemploPasseios: data?.[0]?.passageiro_passeios
       });
+      
+      // 🆕 NOVO: Log detalhado dos dados dos clientes
+      if (data && data.length > 0) {
+        console.log('🔍 DEBUG: Primeiro passageiro completo:', data[0]);
+        console.log('🔍 DEBUG: Dados do cliente do primeiro passageiro:', data[0]?.clientes);
+        console.log('🔍 DEBUG: Campo cadastro_facial:', data[0]?.clientes?.cadastro_facial);
+        console.log('🔍 DEBUG: cliente_id do passageiro:', data[0]?.cliente_id);
+      }
+
+      // 🆕 NOVO: SEMPRE buscar dados dos clientes separadamente (mais confiável)
+      if (data && data.length > 0) {
+        console.log('🔄 Buscando dados dos clientes separadamente...');
+        
+        // Obter IDs únicos dos clientes
+        const clienteIds = [...new Set(data.map(p => p.cliente_id).filter(Boolean))];
+        console.log('🔍 IDs dos clientes para buscar:', clienteIds);
+        
+        if (clienteIds.length > 0) {
+          const { data: clientesData, error: clientesError } = await supabase
+            .from('clientes')
+            .select('id, nome, telefone, email, data_nascimento, foto, cadastro_facial')
+            .in('id', clienteIds);
+          
+          console.log('🔍 Dados dos clientes buscados:', { clientesData, clientesError });
+          
+          if (!clientesError && clientesData) {
+            // Juntar dados dos clientes com passageiros
+            data.forEach(passageiro => {
+              const cliente = clientesData.find(c => c.id === passageiro.cliente_id);
+              if (cliente) {
+                passageiro.clientes = cliente;
+                console.log(`✅ Cliente ${cliente.nome} - cadastro_facial: ${cliente.cadastro_facial}`);
+              }
+            });
+            
+            console.log('✅ Dados unidos - primeiro passageiro:', data[0]);
+          }
+        }
+      }
 
       if (error) {
         throw error;
@@ -694,6 +804,9 @@ export function PassageirosCard({
                           onTrocarOnibus={handleTrocarOnibus}
                           handlePagamento={handlePagamento}
                           grupoInfo={obterGrupoInfo(passageiro)}
+                          cadastroFacialData={cadastroFacialData} // 🆕 NOVO: Dados de cadastro facial
+                          loadingCadastroFacial={loadingCadastroFacial} // 🆕 NOVO: Loading
+                          onToggleCadastroFacial={handleToggleCadastroFacial} // 🆕 NOVO: Função de toggle
                         />
                       );
                     }}
