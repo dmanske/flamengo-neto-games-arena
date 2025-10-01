@@ -34,6 +34,7 @@ import { toast } from "sonner";
 
 import { PasseiosTotaisCard } from "@/components/detalhes-viagem/PasseiosTotaisCard";
 import { LinksOnibusSection } from "@/components/lista-presenca/LinksOnibusSection";
+import { WhatsAppMassaModal } from "@/components/whatsapp-massa/WhatsAppMassaModal";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +69,9 @@ const DetalhesViagem = () => {
   // Estados para vinculação de crédito
   const [modalVincularAberto, setModalVincularAberto] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
+  
+  // Estado para WhatsApp em massa
+  const [whatsAppMassaModalOpen, setWhatsAppMassaModalOpen] = useState(false);
 
   const {
     viagem,
@@ -668,10 +672,21 @@ const DetalhesViagem = () => {
       onExportPDF={(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? handleIngressosExportPDF : handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
       onVincularCredito={() => setModalVincularAberto(true)}
+      onWhatsAppMassa={() => setWhatsAppMassaModalOpen(true)}
       onibusList={onibusList}
       passageiros={originalPassageiros}
     >
       {mainContent}
+      
+      {/* Modal de WhatsApp em Massa */}
+      <WhatsAppMassaModal
+        open={whatsAppMassaModalOpen}
+        onOpenChange={setWhatsAppMassaModalOpen}
+        viagemId={id || ""}
+        viagem={viagem}
+        passageiros={originalPassageiros}
+        onibusList={onibusList}
+      />
     </ModernViagemDetailsLayout>
   );
 };
