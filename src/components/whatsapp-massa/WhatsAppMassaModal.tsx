@@ -52,6 +52,7 @@ export const WhatsAppMassaModal: React.FC<WhatsAppMassaModalProps> = ({
 }) => {
   const [filtroOnibus, setFiltroOnibus] = useState<string>('todos');
   const [mensagem, setMensagem] = useState<string>('');
+  const [linkGrupo, setLinkGrupo] = useState<string>('');
   
   // Hook para lógica de WhatsApp
   const {
@@ -114,6 +115,8 @@ export const WhatsAppMassaModal: React.FC<WhatsAppMassaModalProps> = ({
             <CampoMensagem 
               mensagem={mensagem}
               onMensagemChange={setMensagem}
+              linkGrupo={linkGrupo}
+              onLinkGrupoChange={setLinkGrupo}
               dadosViagem={{
                 adversario: viagem.adversario || 'Adversário',
                 dataJogo: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data do jogo',

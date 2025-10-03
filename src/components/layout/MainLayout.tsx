@@ -139,6 +139,12 @@ const MainLayout = () => {
             to="/dashboard/viagens" 
             onClick={closeMenu} 
           />
+          <NavItem 
+            icon={<MessageSquare className="h-5 w-5" />} 
+            title="WhatsViagem" 
+            to="/dashboard/templates-whatsapp" 
+            onClick={closeMenu} 
+          />
 
           <NavItem 
             icon={<Users className="h-5 w-5" />} 

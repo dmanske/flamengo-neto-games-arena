@@ -4,10 +4,47 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WhatsappLinkGenerator from "@/components/WhatsappLinkGenerator";
-import { MessageSquare, Users, TrendingUp, Zap, Phone, Send, Copy, CheckCircle } from "lucide-react";
+import { WhatsAppMassaComTemplates } from "@/components/whatsapp/WhatsAppMassaComTemplates";
+import { MessageSquare, Users, TrendingUp, Zap, Phone, Send, Copy, CheckCircle, Megaphone } from "lucide-react";
 
 const GerenciadorWhatsApp = () => {
   const [activeTab, setActiveTab] = useState("generator");
+  
+  // Dados mock para demonstração
+  const viagemMock = {
+    id: '1',
+    destino: 'Rio de Janeiro',
+    data_viagem: new Date().toISOString(),
+    horario_saida: '06:00',
+    local_saida: 'Terminal Rodoviário',
+    onibus: { numero: '001', nome: 'Ônibus Executivo' },
+    link_grupo: 'https://chat.whatsapp.com/exemplo123',
+    telefone_contato: '(11) 99999-9999'
+  };
+  
+  const passageirosMock = [
+    {
+      id: '1',
+      nome: 'João Silva',
+      telefone: '(11) 98765-4321',
+      valor_total: 150.00,
+      status_pagamento: 'pago' as const
+    },
+    {
+      id: '2',
+      nome: 'Maria Santos',
+      telefone: '(11) 97654-3210',
+      valor_total: 150.00,
+      status_pagamento: 'pendente' as const
+    },
+    {
+      id: '3',
+      nome: 'Pedro Costa',
+      telefone: '(11) 96543-2109',
+      valor_total: 150.00,
+      status_pagamento: 'pago' as const
+    }
+  ];
 
   const stats = [
     { label: "Links Gerados", value: "247", icon: Send, color: "text-blue-600" },
@@ -74,10 +111,14 @@ const GerenciadorWhatsApp = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
             <TabsTrigger value="generator" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Gerador
+            </TabsTrigger>
+            <TabsTrigger value="massa" className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4" />
+              Em Massa
             </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <Copy className="h-4 w-4" />
@@ -134,6 +175,17 @@ const GerenciadorWhatsApp = () => {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="massa" className="space-y-6">
+            <WhatsAppMassaComTemplates
+              viagem={viagemMock}
+              passageiros={passageirosMock}
+              onEnvioCompleto={(resultados) => {
+                console.log('Envio completo:', resultados);
+              }}
+              showPreview={true}
+            />
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-6">

@@ -89,6 +89,9 @@ import CadastrarFornecedor from "@/pages/CadastrarFornecedor";
 import EditarFornecedor from "@/pages/EditarFornecedor";
 import FornecedorDetalhes from "@/pages/FornecedorDetalhes";
 
+// Import Sistema de Templates WhatsApp
+import { TemplatesWhatsApp } from "@/pages/TemplatesWhatsApp";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -137,6 +140,7 @@ function App() {
                   <Route path="clientes/:id/editar" element={<EditarCliente />} />
                   <Route path="cadastrar-cliente" element={<CadastrarCliente />} />
                   <Route path="viagens" element={<Viagens />} />
+                  <Route path="templates-whatsapp" element={<TemplatesWhatsApp />} />
                   <Route path="viagem/:id" element={<DetalhesViagem />} />
                   <Route path="viagens/:viagemId/detalhes" element={<DetalhesViagem />} />
                   <Route path="viagem/:id/editar" element={<EditarViagem />} />

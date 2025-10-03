@@ -21,9 +21,9 @@ interface ResultadoEnvio {
 
 // Configurações da Z-API (suas credenciais)
 const ZAPI_CONFIG = {
-  instance: '3E8077178ADA21EF6CC5B2116B9188C4',
-  instanceToken: 'A2DA670A44F0FD8D1A23579E',
-  clientToken: 'F768d310a3ecf4c68860d6ced0840019dS', // ✅ Client-Token da conta
+  instance: '3E828379B96321C3F05F8E65D9290832',
+  instanceToken: '919F340DFC24793E6272CEE2',
+  clientToken: 'F0f2b43602eec4a579190654f25cbfbd9S', // ✅ Client-Token da conta
   baseUrl: 'https://api.z-api.io'
 };
 
