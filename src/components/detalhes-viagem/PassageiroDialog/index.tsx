@@ -304,7 +304,7 @@ export function PassageiroDialog({
 
       if (insertError) throw insertError;
 
-      console.log("Passageiros inseridos:", novosPassageirosData);
+
 
       // Salvar relacionamentos passageiro-passeios baseado no modo
       if (modoPasseiosAtual !== 'rapido' && novosPassageirosData) {

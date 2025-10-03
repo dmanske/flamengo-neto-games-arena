@@ -13,11 +13,7 @@ interface PasseiosSimples {
 
 export function PasseiosSimples({ passeios = [] }: PasseiosSimples) {
   // Debug temporário para investigar
-  console.log('🔍 PasseiosSimples recebeu:', {
-    passeios,
-    length: passeios?.length || 0,
-    primeiroPasseio: passeios?.[0]
-  });
+
 
   if (!passeios || passeios.length === 0) {
     return <span className="text-gray-400 text-xs">-</span>;

@@ -185,27 +185,25 @@ export function useViagemDetails(viagemId: string | undefined) {
       console.log('🔔 [useViagemDetails] Viagem atual:', viagemId, 'Evento para viagem:', eventViagemId);
       
       if (eventViagemId === viagemId) {
-        console.log('✅ [useViagemDetails] Evento é para esta viagem, recarregando dados...');
-        console.log('🔄 [useViagemDetails] Chamando fetchPassageiros para viagem:', viagemId);
+
         fetchPassageiros(viagemId);
-        console.log('✅ [useViagemDetails] fetchPassageiros executado');
+
       } else {
-        console.log('⚠️ [useViagemDetails] Evento é para outra viagem:', eventViagemId, 'atual:', viagemId);
+
       }
     };
 
     const handlePassageiroTrocado = (event: CustomEvent) => {
-      console.log('🔄 [useViagemDetails] Evento de troca de passageiro recebido:', event.detail);
-      console.log('🔄 [useViagemDetails] Recarregando dados da viagem:', viagemId);
+
       fetchPassageiros(viagemId);
     };
 
-    console.log('🎧 [useViagemDetails] Registrando listeners para eventos, viagem:', viagemId);
+
     window.addEventListener('viagemPassageiroRemovido', handleViagemPassageiroRemovido as EventListener);
     window.addEventListener('passageiroTrocado', handlePassageiroTrocado as EventListener);
     
     return () => {
-      console.log('🧹 [useViagemDetails] Removendo listeners');
+  
       window.removeEventListener('viagemPassageiroRemovido', handleViagemPassageiroRemovido as EventListener);
       window.removeEventListener('passageiroTrocado', handlePassageiroTrocado as EventListener);
     };
@@ -225,11 +223,11 @@ export function useViagemDetails(viagemId: string | undefined) {
           const isRecent = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutos
           
           if (isForThisViagem && isRecent) {
-            console.log('✅ [useViagemDetails] Flag é para esta viagem e recente, recarregando...');
+
             fetchPassageiros(viagemId);
             localStorage.removeItem('viagemNeedsReload');
           } else if (!isRecent) {
-            console.log('⚠️ [useViagemDetails] Flag muito antiga, removendo...');
+
             localStorage.removeItem('viagemNeedsReload');
           }
         } catch (error) {
@@ -365,7 +363,7 @@ export function useViagemDetails(viagemId: string | undefined) {
     }
 
     try {
-      console.log('🔍 Buscando ônibus para viagem:', viagemId);
+
       
       // Primeiro, buscar dados básicos dos ônibus
       const { data: onibusData, error: onibusError } = await supabase
@@ -378,7 +376,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         throw onibusError;
       }
 
-      console.log('✅ Dados dos ônibus carregados:', onibusData?.length || 0);
+
 
       if (onibusData && onibusData.length > 0) {
         // Buscar dados de transfer separadamente
@@ -392,7 +390,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           console.warn('⚠️ Erro ao buscar dados de transfer (não crítico):', transferError);
         }
 
-        console.log('📋 Dados de transfer carregados:', transferData?.length || 0);
+
 
         // Mapear dados de transfer para cada ônibus
         const onibusComTransfer = onibusData.map(onibus => {
@@ -406,7 +404,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           };
         });
         
-        console.log('🚌 Ônibus finais com transfer:', onibusComTransfer);
+
         
         setOnibusList(onibusComTransfer as Onibus[]);
         // Seleciona o primeiro ônibus por padrão
@@ -435,12 +433,11 @@ export function useViagemDetails(viagemId: string | undefined) {
       console.warn("ID da viagem não é um UUID válido:", viagemId);
       return;
     }
-    console.log('🚀 DEBUG: UUID válido, prosseguindo...');
+
 
     try {
       // Buscar passageiros da viagem com dados do cliente usando a relação específica
-      console.log('🚀 DEBUG: Executando query para viagemId:', viagemId);
-      console.log('🚀 DEBUG: Iniciando query Supabase...');
+
 
       // Primeiro, verificar se as colunas de grupo existem
       let temColunaGrupo = false;
@@ -452,10 +449,10 @@ export function useViagemDetails(viagemId: string | undefined) {
         
         if (!testError) {
           temColunaGrupo = true;
-          console.log('✅ Colunas de grupo detectadas no banco');
+
         }
       } catch (err) {
-        console.log('⚠️ Colunas de grupo não existem ainda no banco');
+
       }
 
       // Query base
@@ -589,29 +586,12 @@ export function useViagemDetails(viagemId: string | undefined) {
         .select(selectQuery)
         .eq("viagem_id", viagemId);
 
-      console.log('🚀 DEBUG: Resultado da query:', {
-        data,
-        error,
-        viagemId,
-        dataLength: data?.length,
-        primeiroItem: data?.[0],
-        primeiroItemPasseios: data?.[0]?.passageiro_passeios
-      });
+
 
       if (error) throw error;
 
       // Debug: verificar dados brutos da query
-      console.log('🔍 DEBUG useViagemDetails - Dados brutos da query:', {
-        viagemId,
-        totalPassageiros: data?.length || 0,
-        primeiroPassageiro: data?.[0],
-        passageirosComPasseios: data?.filter(p => p.passageiro_passeios?.length > 0).length || 0,
-        exemploPasseios: data?.[0]?.passageiro_passeios,
-        todosPasseios: data?.map((p: any) => ({
-          nome: p.clientes?.nome,
-          passeios: p.passageiro_passeios?.length || 0
-        })) || []
-      });
+
 
       // Formatar os dados para exibição com pré-processamento para busca
       const formattedPassageiros: PassageiroDisplay[] = (data || []).map((item: any) => {
@@ -725,7 +705,7 @@ export function useViagemDetails(viagemId: string | undefined) {
         const ehBrinde = (valorTotalPassageiro === 0);
 
         // Debug básico para todos os passageiros - VERSÃO NOVA
-        console.log(`[DEBUG NOVO] ${passageiro.nome}: ehBrinde=${ehBrinde}, valorTotal=${valorTotalPassageiro}, status=${passageiro.status_pagamento}`);
+
 
         if (!ehBrinde) {
           // Contar passageiros com desconto (apenas não-brindes)
@@ -772,7 +752,7 @@ export function useViagemDetails(viagemId: string | undefined) {
           const valorPagoParcelas = valorPagoViagem + valorPagoPasseios;
 
           // Debug do total pago por passageiro
-          console.log(`[DEBUG] ${passageiro.nome}: Status=${passageiro.status_pagamento}, PagoCredito=${passageiro.pago_por_credito}, ValorCredito=R$ ${passageiro.valor_credito_utilizado || 0}, PagoViagem=R$ ${valorPagoViagem}, PagoPasseios=R$ ${valorPagoPasseios}, Total=R$ ${valorPagoParcelas}`);
+
 
           // Breakdown por categoria
           receitaViagem += valorLiquidoViagem;

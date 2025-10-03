@@ -59,12 +59,7 @@ export function CleanJogoCard({
   const formatDateTime = formatDateTimeSafe;
 
   // Debug da data do jogo
-  console.log('🎯 CleanJogoCard - Data do jogo:', {
-    adversario: jogo.adversario,
-    jogo_data: jogo.jogo_data,
-    formatado: formatDateTime(jogo.jogo_data),
-    total_ingressos: jogo.total_ingressos
-  });
+
 
   const getLocalBadge = (local: 'casa' | 'fora') => {
     if (local === 'casa') {

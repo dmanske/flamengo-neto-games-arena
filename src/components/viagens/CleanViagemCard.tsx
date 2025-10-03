@@ -42,12 +42,14 @@ interface CleanViagemCardProps {
   viagem: Viagem;
   onDeleteClick: (viagem: Viagem) => void;
   passageirosCount?: number;
+  capacidadeReal?: number;
 }
 
 export function CleanViagemCard({
   viagem,
   onDeleteClick,
-  passageirosCount = 0
+  passageirosCount = 0,
+  capacidadeReal
 }: CleanViagemCardProps) {
   const formatDate = (dateString: string) => {
     try {
@@ -88,7 +90,11 @@ export function CleanViagemCard({
     }
   };
 
-  const percentualOcupacao = Math.round((passageirosCount / viagem.capacidade_onibus) * 100);
+  // Usar capacidade real se disponível, senão usar capacidade padrão da viagem
+  const capacidadeTotal = capacidadeReal !== undefined ? capacidadeReal : viagem.capacidade_onibus;
+  const percentualOcupacao = capacidadeTotal > 0 ? Math.round((passageirosCount / capacidadeTotal) * 100) : 0;
+  
+
   
   return (
     <TooltipProvider>
@@ -268,7 +274,12 @@ export function CleanViagemCard({
           <div className="bg-professional-light rounded-lg p-3">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-professional-navy">Ocupação</span>
-              <span className="text-sm font-bold text-professional-blue">{passageirosCount}/{viagem.capacidade_onibus}</span>
+              <span className="text-sm font-bold text-professional-blue">
+                {passageirosCount}/{capacidadeTotal}
+                {capacidadeTotal === 0 && (
+                  <span className="text-xs text-orange-500 ml-1">(sem ônibus)</span>
+                )}
+              </span>
             </div>
             <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
@@ -277,7 +288,7 @@ export function CleanViagemCard({
               />
             </div>
             <div className="text-xs text-center text-professional-slate mt-1">
-              {percentualOcupacao}% ocupado
+              {capacidadeTotal === 0 ? 'N/A - Sem ônibus cadastrados' : `${percentualOcupacao}% ocupado`}
             </div>
           </div>
         </div>

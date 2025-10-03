@@ -133,7 +133,7 @@ export function BotoesAcaoRapida({
       // Usar data personalizada ou atual
       const dataFinal = dataPagamento || new Date().toISOString();
       
-      console.log('🚀 Chamando onPagamento...');
+
       const sucesso = await onPagamento(
         dadosModal.categoria,
         valorNumerico,
@@ -142,7 +142,7 @@ export function BotoesAcaoRapida({
         dataFinal
       );
 
-      console.log('✅ Resultado onPagamento:', sucesso);
+
 
       if (sucesso) {
         setModalAberto(false);

@@ -42,13 +42,7 @@ export const HistoricoPagamentosModal: React.FC<HistoricoPagamentosModalProps> =
   const [pagamentoParaEditar, setPagamentoParaEditar] = useState<HistoricoPagamentoCategorizado | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
 
-  console.log('🔍 [MODAL] HistoricoPagamentosModal renderizado:', {
-    open,
-    passageiroNome,
-    historicoPagamentos: historicoPagamentos.length,
-    valorViagem,
-    valorPasseios
-  });
+
   // Calcular totais pagos por categoria
   const totalPagoViagem = historicoPagamentos
     .filter(h => h.categoria === 'viagem' || h.categoria === 'ambos')

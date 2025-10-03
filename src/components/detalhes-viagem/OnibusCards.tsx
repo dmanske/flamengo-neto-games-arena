@@ -95,7 +95,7 @@ export function OnibusCards({
   useEffect(() => {
     if (!viagemId) return;
 
-    console.log('🔄 Configurando Realtime para viagem:', viagemId);
+
     
     // Criar canal do Supabase Realtime
     const channel = supabase
@@ -124,19 +124,19 @@ export function OnibusCards({
         }
       )
       .subscribe((status) => {
-        console.log('📡 Status do Realtime:', status);
+
         setIsRealtimeConnected(status === 'SUBSCRIBED');
       });
 
     // Cleanup: remover subscription quando componente desmontar
     return () => {
-      console.log('🔌 Desconectando Realtime');
+
       supabase.removeChannel(channel);
     };
   }, [viagemId, setPassageiros, setIsLoading, toast]);
 
   // Debug para verificar os passageiros
-  console.log('Passageiros do ônibus:', passageirosOnibus);
+
 
   // Função simples para agrupar passageiros sem usar o hook
   const agruparPassageirosSimples = React.useCallback((passageirosDoOnibus: any[]) => {

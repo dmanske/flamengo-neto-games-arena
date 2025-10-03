@@ -49,7 +49,7 @@ export function PassageiroEditDialog({
   viagem,
   onSuccess,
 }: PassageiroEditDialogProps) {
-  console.log('🔍 PassageiroEditDialog - Props recebidas:', { open, passageiro, viagem });
+
   
   // ✅ CORREÇÃO: Todos os hooks devem ser chamados SEMPRE, sem condições
   const [isLoading, setIsLoading] = React.useState(false);
@@ -135,14 +135,14 @@ export function PassageiroEditDialog({
                 
                 if (!passeiosError && passeiosInfo) {
                   const nomesPasseiosValidos = passeiosInfo.map(p => p.nome);
-                  console.log('🔍 [DEBUG] Passeios válidos da viagem:', nomesPasseiosValidos);
+
                   
                   // Filtrar apenas passeios que existem na viagem (não órfãos)
                   const passeiosValidosDoPassageiro = passageiro.passeios.filter(p => 
                     nomesPasseiosValidos.includes(p.passeio_nome)
                   );
                   
-                  console.log('🔍 [DEBUG] Passeios válidos do passageiro:', passeiosValidosDoPassageiro);
+
                   
                   if (passeiosValidosDoPassageiro.length > 0) {
                     const nomesPasseios = passeiosValidosDoPassageiro.map(p => p.passeio_nome);
@@ -152,7 +152,7 @@ export function PassageiroEditDialog({
                     );
                     
                     const idsPasseios = passeiosParaFormulario.map(p => p.id);
-                    console.log('🔍 [DEBUG] IDs dos passeios carregados no formulário:', idsPasseios);
+
                     form.setValue('passeios_selecionados', idsPasseios);
                   }
                 }
@@ -204,7 +204,7 @@ export function PassageiroEditDialog({
   const onSubmit = async (values: FormData) => {
     try {
       setIsLoading(true);
-      console.log("Salvando passageiro:", values);
+
 
       if (!passageiro?.viagem_passageiro_id) return;
       // Se o status for 'Pago', garantir quitação automática
@@ -528,11 +528,11 @@ export function PassageiroEditDialog({
                   passageiroId={passageiro.viagem_passageiro_id?.toString() || ''}
                   nomePassageiro={passageiro.nome}
                   onPagamentoRealizado={async () => {
-                    console.log('💰 Pagamento realizado, atualizando dados...');
+
                     if (onSuccess) {
-                      console.log('🔄 Chamando onSuccess...');
+
                       await onSuccess();
-                      console.log('✅ onSuccess executado');
+
                     }
                   }}
                 />

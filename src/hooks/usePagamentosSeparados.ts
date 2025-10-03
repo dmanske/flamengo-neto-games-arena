@@ -52,7 +52,7 @@ export interface UsePagamentosSeparadosReturn {
 export const usePagamentosSeparados = (
   viagemPassageiroId: string | undefined
 ): UsePagamentosSeparadosReturn => {
-  console.log('🎯 usePagamentosSeparados iniciado:', { viagemPassageiroId });
+
   
   const [passageiro, setPassageiro] = useState<ViagemPassageiroComPagamentos | null>(null);
   const [breakdown, setBreakdown] = useState<BreakdownPagamento | null>(null);
@@ -73,7 +73,7 @@ export const usePagamentosSeparados = (
   // ✅ CORREÇÃO: Definir se deve carregar dados baseado no ID válido
   React.useEffect(() => {
     if (!isValidId) {
-      console.warn('⚠️ ID inválido fornecido:', viagemPassageiroId);
+
       setError('ID inválido fornecido');
       setLoading(false);
       return;
@@ -82,10 +82,10 @@ export const usePagamentosSeparados = (
 
   // Buscar dados completos do passageiro com pagamentos
   const fetchDadosPassageiro = useCallback(async () => {
-    console.log('🔍 fetchDadosPassageiro iniciado:', { viagemPassageiroId, isValidId });
+
     
     if (!isValidId || !viagemPassageiroId) {
-      console.warn('⚠️ ID inválido ou não fornecido');
+
       setLoading(false);
       return;
     }
@@ -116,7 +116,7 @@ export const usePagamentosSeparados = (
 
       if (passageiroError) throw passageiroError;
       
-      console.log('📊 Dados do passageiro encontrados:', passageiroData);
+
 
       // 2. Buscar valor total dos passeios do passageiro
       const { data: passeiosData, error: passeiosError } = await supabase
@@ -194,7 +194,7 @@ export const usePagamentosSeparados = (
         console.warn('⚠️ Erro ao buscar créditos vinculados:', creditosError);
       }
 
-      console.log('💳 Créditos vinculados encontrados:', creditosVinculados);
+
 
       // 4. Montar objeto completo do passageiro
       const passageiroCompleto: ViagemPassageiroComPagamentos = {
@@ -207,16 +207,14 @@ export const usePagamentosSeparados = (
       };
 
       // 5. Calcular breakdown
-      console.log('🧮 Calculando breakdown para:', passageiroCompleto);
       const breakdownCalculado = calcularBreakdownPagamento(passageiroCompleto);
-      console.log('📊 Breakdown calculado:', breakdownCalculado);
 
       // 6. Atualizar estados
       setPassageiro(passageiroCompleto);
       setBreakdown(breakdownCalculado);
       setHistoricoPagamentos(historico || []);
       
-      console.log('✅ Estados atualizados com sucesso');
+
 
     } catch (err: any) {
       console.error('❌ Erro ao buscar dados do passageiro:', err);
@@ -237,7 +235,7 @@ export const usePagamentosSeparados = (
   const registrarPagamento = useCallback(async (
     request: RegistroPagamentoRequest
   ): Promise<boolean> => {
-    console.log('📝 registrarPagamento iniciado:', request);
+
     
     try {
       const dadosInsert = {
@@ -249,7 +247,7 @@ export const usePagamentosSeparados = (
         data_pagamento: request.data_pagamento || new Date().toISOString()
       };
       
-      console.log('💾 Dados para inserir:', dadosInsert);
+
       
       const { error } = await supabase
         .from('historico_pagamentos_categorizado')
@@ -260,7 +258,7 @@ export const usePagamentosSeparados = (
         throw error;
       }
 
-      console.log('✅ Pagamento inserido com sucesso');
+
       toast.success(`Pagamento de ${request.categoria} registrado com sucesso!`);
       
       // Refresh duplo para garantir atualização
@@ -268,7 +266,7 @@ export const usePagamentosSeparados = (
       
       // Segundo refresh com delay para casos de quitação completa
       setTimeout(async () => {
-        console.log('🔄 Segundo refresh com delay...');
+
         await fetchDadosPassageiro();
       }, 300);
       
@@ -294,7 +292,7 @@ export const usePagamentosSeparados = (
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
-    console.log('💰 pagarViagem iniciado:', { viagemPassageiroId, valor, formaPagamento });
+
     
     if (!isValidId || !viagemPassageiroId || !breakdown) {
       console.error('❌ pagarViagem: dados insuficientes', { isValidId, viagemPassageiroId, breakdown });
@@ -324,7 +322,7 @@ export const usePagamentosSeparados = (
         data_pagamento: dataPagamento
       });
       
-      console.log('✅ Resultado pagarViagem:', resultado);
+
       return resultado;
     } catch (error) {
       console.error('❌ Erro em pagarViagem:', error);
@@ -339,10 +337,10 @@ export const usePagamentosSeparados = (
     observacoes?: string,
     dataPagamento?: string
   ): Promise<boolean> => {
-    console.log('🎢 pagarPasseios iniciado:', { viagemPassageiroId, valor, formaPagamento });
+
     
     if (!isValidId || !viagemPassageiroId) {
-      console.error('❌ pagarPasseios: ID inválido ou não fornecido');
+
       return false;
     }
 
@@ -360,7 +358,7 @@ export const usePagamentosSeparados = (
           data_pagamento: dataPagamento
         });
         
-        console.log('✅ Resultado pagarPasseios (fallback):', resultado);
+
         return resultado;
       } catch (error) {
         console.error('❌ Erro em pagarPasseios (fallback):', error);
@@ -391,7 +389,7 @@ export const usePagamentosSeparados = (
         data_pagamento: dataPagamento
       });
       
-      console.log('✅ Resultado pagarPasseios:', resultado);
+
       return resultado;
     } catch (error) {
       console.error('❌ Erro em pagarPasseios:', error);
@@ -524,7 +522,7 @@ export const usePagamentosSeparados = (
   // Carregar dados na inicialização - apenas se ID for válido
   useEffect(() => {
     if (isValidId) {
-      console.log('🔄 useEffect executado, chamando fetchDadosPassageiro...');
+  
       fetchDadosPassageiro();
     }
   }, [fetchDadosPassageiro, isValidId]);

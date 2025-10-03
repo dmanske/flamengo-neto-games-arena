@@ -141,12 +141,7 @@ export function PasseiosEtariosCard({ passageiros }: PasseiosEtariosCardProps) {
   const percentualComPasseiosGratuitos = totalPassageiros > 0 ? Math.round((passageirosComPasseiosGratuitos / totalPassageiros) * 100) : 0;
 
   // Debug final
-  console.log('🎯 Estado final dos arrays:', {
-    resumoIngressos,
-    passageirosSemData,
-    totalPassageirosComPasseios: passageirosComPasseios.length,
-    ingressosNaoInformado: resumoIngressos['Ingresso Não Informado']
-  });
+
 
   const getIconeIdade = (categoria: string) => {
     if (categoria.includes('Bebês') || categoria.includes('Bebê')) return <Baby className="h-4 w-4 text-pink-600" />;

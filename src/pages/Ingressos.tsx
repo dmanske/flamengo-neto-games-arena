@@ -167,14 +167,7 @@ export default function Ingressos() {
           dataJogoCorreta = ingresso.jogo_data;
         }
         
-        console.log('🎯 Agrupamento - Criando grupo:', {
-          adversario: ingresso.adversario,
-          dataViagem: ingresso.viagem?.data_jogo,
-          dataViagemIngressos: viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id)?.data_jogo,
-          dataIngresso: ingresso.jogo_data,
-          dataEscolhida: dataJogoCorreta,
-          chaveJogo
-        });
+
         
         gruposUnificados[chaveJogo] = {
           adversario: ingresso.adversario,

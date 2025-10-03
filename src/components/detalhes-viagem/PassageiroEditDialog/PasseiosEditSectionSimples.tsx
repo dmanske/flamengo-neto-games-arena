@@ -62,7 +62,7 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
 
   // Debug: Log dos props recebidos
   useEffect(() => {
-    console.log('🔍 Props recebidos:', { viagemId, passageiroId, passeiosSelecionados });
+
   }, [viagemId, passageiroId, passeiosSelecionados]);
 
   // Carregar passeios da viagem e detectar órfãos
@@ -127,7 +127,7 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
     if (!passageiroId || !viagemId) return;
     
     try {
-      console.log('🔍 [DEBUG] Iniciando detecção de órfãos para passageiro:', passageiroId);
+
       
       // Buscar passeios do passageiro
       const { data: passeiosPassageiro, error: errorPassageiro } = await supabase
@@ -137,7 +137,7 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
         
       if (errorPassageiro) throw errorPassageiro;
       
-      console.log('🔍 [DEBUG] Passeios do passageiro encontrados:', passeiosPassageiro);
+
       
       // Buscar passeios ativos da viagem
       const { data: passeiosViagem, error: errorViagem } = await supabase
@@ -147,7 +147,7 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
         
       if (errorViagem) throw errorViagem;
       
-      console.log('🔍 [DEBUG] Passeios da viagem encontrados:', passeiosViagem);
+
       
       // Identificar órfãos
       const nomesPasseiosViagem = new Set(
@@ -157,13 +157,13 @@ export const PasseiosEditSectionSimples: React.FC<PasseiosEditSectionProps> = ({
           }).filter(Boolean)
         );
       
-      console.log('🔍 [DEBUG] Nomes dos passeios da viagem:', Array.from(nomesPasseiosViagem));
+
       
       const orfaos = passeiosPassageiro?.filter(
         pp => !nomesPasseiosViagem.has(pp.passeio_nome)
       ) || [];
       
-      console.log('🔍 [DEBUG] Órfãos identificados:', orfaos);
+
       
       setPasseiosOrfaos(orfaos);
       

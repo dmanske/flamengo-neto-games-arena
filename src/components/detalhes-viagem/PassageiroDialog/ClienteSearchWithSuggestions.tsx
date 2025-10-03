@@ -124,7 +124,7 @@ export function ClienteSearchWithSuggestions({ control, viagemId }: ClienteSearc
         }
       }
       
-      console.log(`✅ Clientes carregados com paginação: ${todosClientes.length} total`);
+
       setClientes(todosClientes);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);

@@ -173,16 +173,14 @@ const DetalhesViagem = () => {
   React.useEffect(() => {
     if (fetchPassageiros && id) {
       (window as any).reloadViagemPassageiros = () => {
-        console.log('🔄 [DetalhesViagem] Função global chamada - recarregando passageiros da viagem:', id);
-        console.log('🔄 [DetalhesViagem] fetchPassageiros disponível:', !!fetchPassageiros);
+
         fetchPassageiros(id);
-        console.log('✅ [DetalhesViagem] fetchPassageiros executado para viagem:', id);
+
       };
-      console.log('✅ [DetalhesViagem] Função global reloadViagemPassageiros registrada para viagem:', id);
-      console.log('✅ [DetalhesViagem] Função registrada no window:', !!(window as any).reloadViagemPassageiros);
+
     }
     return () => {
-      console.log('🧹 [DetalhesViagem] Removendo função global reloadViagemPassageiros');
+
       delete (window as any).reloadViagemPassageiros;
     };
   }, [fetchPassageiros, id]);
@@ -198,16 +196,16 @@ const DetalhesViagem = () => {
 
   // Função para atualizar todos os dados quando há mudanças nos pagamentos
   const refreshAllData = async () => {
-    console.log('🔄 refreshAllData chamado - Atualizando dados financeiros e passageiros...');
+
     if (id) {
-      console.log('📊 Executando Promise.all para atualizar dados...');
+
       await Promise.all([
         fetchPassageiros(id),
         refreshFinanceiro()
       ]);
-      console.log('✅ refreshAllData concluído - Dados atualizados com sucesso!');
+
     } else {
-      console.warn('⚠️ refreshAllData: ID não disponível');
+
     }
   };
 
@@ -225,27 +223,7 @@ const DetalhesViagem = () => {
     pendentePasseios: resumoFinanceiro?.pendencias_passeios ?? 0
   };
 
-  // Debug dos valores financeiros
-  console.log('💰 RESUMO FINANCEIRO:', resumoFinanceiro?.pendencias_viagem, resumoFinanceiro?.pendencias_passeios);
-  console.log('💰 VALORES CALCULADOS:', valoresFinanceiros.pendenteViagem, valoresFinanceiros.pendentePasseios);
-  console.log('💰 DEBUG - Valores Financeiros DETALHADO:', {
-    resumoFinanceiro: resumoFinanceiro ? {
-      total_receitas: resumoFinanceiro.total_receitas,
-      total_pendencias: resumoFinanceiro.total_pendencias,
-      pendencias_viagem: resumoFinanceiro.pendencias_viagem,
-      pendencias_passeios: resumoFinanceiro.pendencias_passeios,
-      receitas_viagem: resumoFinanceiro.receitas_viagem,
-      receitas_passeios: resumoFinanceiro.receitas_passeios
-    } : null,
-    valoresFinanceiros: {
-      totalPendente: valoresFinanceiros.totalPendente,
-      pendenteViagem: valoresFinanceiros.pendenteViagem,
-      pendentePasseios: valoresFinanceiros.pendentePasseios,
-      pagoViagem: valoresFinanceiros.pagoViagem,
-      pagoPasseios: valoresFinanceiros.pagoPasseios
-    },
-    loadingFinanceiro
-  });
+
 
 
 
@@ -257,8 +235,7 @@ const DetalhesViagem = () => {
   }, [originalPassageiros, selectedOnibusId, onibusList]);
 
   const openEditPassageiroDialog = (passageiro: any) => {
-    console.log("Abrindo dialog de edição para:", passageiro);
-    console.log("viagem_passageiro_id:", passageiro?.viagem_passageiro_id);
+
     
     // ✅ CORREÇÃO: Verificação de segurança mais rigorosa antes de abrir o modal
     if (!passageiro) {

@@ -105,7 +105,7 @@ export function ClienteSearchSelect({
         }
       }
       
-      console.log(`✅ Clientes carregados com paginação (ingressos): ${todosClientes.length} total`);
+
       setClientes(todosClientes);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);

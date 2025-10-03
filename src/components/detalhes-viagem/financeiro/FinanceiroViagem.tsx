@@ -183,13 +183,7 @@ export function FinanceiroViagem({ viagemId, onDataUpdate }: FinanceiroViagemPro
                     const totalDespesasArray = despesas?.reduce((sum, d) => sum + d.valor, 0) || 0;
                     const custos_passeios = resumoFinanceiro?.custos_passeios || 0;
                     
-                    console.log('🔍 DEBUG Despesas:', {
-                      totalDespesasResumo,
-                      totalDespesasArray,
-                      custos_passeios,
-                      despesasCount: despesas?.length || 0,
-                      resumoFinanceiro: resumoFinanceiro ? 'existe' : 'null'
-                    });
+
                     
                     // Usar o valor do resumo se disponível, senão calcular
                     return formatCurrency(totalDespesasResumo || totalDespesasArray);
@@ -887,12 +881,7 @@ export function FinanceiroViagem({ viagemId, onDataUpdate }: FinanceiroViagemPro
                                 return passeiosValidos.length > 0;
                               }).length || 0;
                               
-                              console.log('🔍 DEBUG Taxa Conversão:', {
-                                totalPassageiros,
-                                passageirosComPasseios,
-                                primeiroPassageiro: todosPassageiros?.[0],
-                                passeiosPrimeiroPassageiro: todosPassageiros?.[0]?.passeios
-                              });
+
                               
                               return totalPassageiros > 0 
                                 ? Math.round((passageirosComPasseios / totalPassageiros) * 100)

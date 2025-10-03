@@ -76,9 +76,10 @@ export function usePassageirosCount(viagemId: string) {
   };
 }
 
-// New hook for multiple viagens
+// New hook for multiple viagens with real capacity calculation
 export function useMultiplePassageirosCount(viagemIds: string[]) {
   const [passageirosCount, setPassageirosCount] = useState<Record<string, number>>({});
+  const [capacidadeReal, setCapacidadeReal] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -86,25 +87,57 @@ export function useMultiplePassageirosCount(viagemIds: string[]) {
       try {
         setIsLoading(true);
         const counts: Record<string, number> = {};
+        const capacidades: Record<string, number> = {};
 
-        // Fetch counts for all viagens at once
         if (viagemIds.length > 0) {
-          const { data: passageiros, error } = await supabase
-            .from('viagem_passageiros')
-            .select('viagem_id')
-            .in('viagem_id', viagemIds);
+          // Use individual queries instead of .in() to match useViagemDetails behavior
+          // This fixes the discrepancy between .eq() and .in() queries
+          for (const viagemId of viagemIds) {
+            const { data: passageiros, error: passageirosError } = await supabase
+              .from('viagem_passageiros')
+              .select('id')
+              .eq('viagem_id', viagemId);
+              // EXACT same query as useViagemDetails - no filters
 
-          if (error) {
-            throw error;
+            if (passageirosError) {
+              console.error(`Erro ao buscar passageiros da viagem ${viagemId}:`, passageirosError);
+              continue; // Skip this viagem but continue with others
+            }
+
+            // Count passengers for this viagem
+            counts[viagemId] = passageiros?.length || 0;
           }
 
-          // Count passengers per viagem
-          passageiros?.forEach(p => {
-            counts[p.viagem_id] = (counts[p.viagem_id] || 0) + 1;
-          });
+          // Fetch real capacity from viagem_onibus
+          const { data: onibus, error: onibusError } = await supabase
+            .from('viagem_onibus')
+            .select('viagem_id, capacidade_onibus, lugares_extras')
+            .in('viagem_id', viagemIds);
+
+          if (onibusError) {
+            console.error('Erro ao buscar capacidade dos ônibus:', onibusError);
+            // Se não conseguir buscar ônibus, usar capacidade padrão das viagens
+            viagemIds.forEach(id => {
+              capacidades[id] = 0; // Será usado o valor padrão da viagem
+            });
+          } else {
+            // Calculate real capacity per viagem
+            onibus?.forEach(o => {
+              const capacidadeOnibus = (o.capacidade_onibus || 0) + (o.lugares_extras || 0);
+              capacidades[o.viagem_id] = (capacidades[o.viagem_id] || 0) + capacidadeOnibus;
+            });
+
+            // Ensure all viagens have a capacity entry (even if 0)
+            viagemIds.forEach(id => {
+              if (!(id in capacidades)) {
+                capacidades[id] = 0;
+              }
+            });
+          }
         }
 
         setPassageirosCount(counts);
+        setCapacidadeReal(capacidades);
       } catch (error: any) {
         console.error('Erro ao buscar contagem de passageiros:', error);
         toast.error('Erro ao carregar contagem de passageiros');
@@ -118,6 +151,7 @@ export function useMultiplePassageirosCount(viagemIds: string[]) {
 
   return {
     passageirosCount,
+    capacidadeReal,
     isLoading,
   };
 }

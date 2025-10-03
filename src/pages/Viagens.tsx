@@ -110,8 +110,7 @@ const Viagens = () => {
         throw error;
       }
 
-      console.log(`Viagens carregadas do servidor: ${data?.length || 0}`);
-      console.log('IDs das viagens:', data?.map(v => `${v.id} - ${v.adversario}`) || []);
+
 
       setViagens(data || []);
     } catch (error: any) {
@@ -145,8 +144,8 @@ const Viagens = () => {
     return data && data.length === 0;
   };
 
-  // Buscar contagem de passageiros para cada viagem
-  const { passageirosCount } = useMultiplePassageirosCount(
+  // Buscar contagem de passageiros e capacidade real para cada viagem
+  const { passageirosCount, capacidadeReal } = useMultiplePassageirosCount(
     viagens.map(viagem => viagem.id)
   );
 
@@ -443,7 +442,7 @@ const Viagens = () => {
                           <TableCell>{viagem.rota}</TableCell>
                           <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
                           <TableCell>
-                            {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
+                            {passageirosCount[viagem.id] || 0}/{capacidadeReal[viagem.id] || viagem.capacidade_onibus}
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
@@ -520,6 +519,7 @@ const Viagens = () => {
                     key={viagem.id}
                     viagem={viagem}
                     passageirosCount={passageirosCount[viagem.id] || 0}
+                    capacidadeReal={capacidadeReal[viagem.id] || viagem.capacidade_onibus}
                     onDeleteClick={(v) => setViagemToDelete(v)}
                   />
                 ))}
@@ -567,7 +567,7 @@ const Viagens = () => {
                   <TableCell>{viagem.rota}</TableCell>
                   <TableCell>{formatValue(viagem.valor_padrao)}</TableCell>
                   <TableCell>
-                    {passageirosCount[viagem.id] || 0}/{viagem.capacidade_onibus}
+                    {passageirosCount[viagem.id] || 0}/{capacidadeReal[viagem.id] || viagem.capacidade_onibus}
                   </TableCell>
                   <TableCell className="text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(viagem.status_viagem)}`}>
@@ -635,6 +635,7 @@ const Viagens = () => {
             key={viagem.id}
             viagem={viagem}
             passageirosCount={passageirosCount[viagem.id] || 0}
+            capacidadeReal={capacidadeReal[viagem.id] || viagem.capacidade_onibus}
             onDeleteClick={(v) => setViagemToDelete(v)}
           />
         ))}

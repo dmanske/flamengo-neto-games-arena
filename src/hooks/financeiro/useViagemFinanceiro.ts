@@ -178,22 +178,22 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
 
       if (error) throw error;
 
-      console.log('🚌 DEBUG - Ônibus encontrados:', data?.length || 0, data);
+
       
       if (data && data.length > 0) {
         const capacidadeTotalCalculada = data.reduce(
           (total: number, onibus: any) => {
             const capacidade = (onibus.capacidade_onibus || 0) + (onibus.lugares_extras || 0);
-            console.log('🚌 Ônibus:', onibus.numero_identificacao, 'Capacidade:', capacidade);
+
             return total + capacidade;
           },
           0
         );
         
-        console.log('🚌 Capacidade total calculada:', capacidadeTotalCalculada);
+
         setCapacidadeTotal(capacidadeTotalCalculada);
       } else {
-        console.log('🚌 Nenhum ônibus encontrado para a viagem');
+
         setCapacidadeTotal(0);
       }
     } catch (error) {
@@ -657,8 +657,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
       // ✨ NOVO: Variáveis para custos dos passeios
       let custosPasseios = 0;
 
-      console.log('🔍 DEBUG - Calculando resumo financeiro para viagem:', viagemId);
-      console.log('📊 Passageiros encontrados:', passageiros?.length || 0);
+
 
       passageiros?.forEach((p: any, index: number) => {
         const valorViagem = (p.valor || 0) - (p.desconto || 0);
@@ -675,10 +674,10 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
 
         historicoPagamentos.forEach((h: any) => {
           if (h.categoria === 'viagem') {
-            console.log(`💰 Pagamento viagem encontrado: R$ ${h.valor_pago}`);
+
             pagoViagem += h.valor_pago;
           } else if (h.categoria === 'passeios') {
-            console.log(`🎢 Pagamento passeios encontrado: R$ ${h.valor_pago}`);
+
             pagoPasseios += h.valor_pago;
           } else if (h.categoria === 'ambos') {
             // CATEGORIA 'AMBOS' = APENAS QUITAÇÃO COMPLETA
@@ -698,17 +697,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
           }
         });
 
-        console.log(`👤 Passageiro ${index + 1} - Cálculo final:`, {
-          nome: p.clientes?.nome || 'Nome não encontrado',
-          valorViagem,
-          valorPasseios,
-          pagoViagem: pagoViagem.toFixed(2),
-          pagoPasseios: pagoPasseios.toFixed(2),
-          historicoPagamentos: historicoPagamentos.map((h: any) => ({
-            categoria: h.categoria,
-            valor: h.valor_pago
-          }))
-        });
+
 
         // Fallback para sistema antigo se não houver dados novos
         const valorPagoTotal = pagoViagem + pagoPasseios;
@@ -745,20 +734,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
           totalDescontos += desconto;
         }
 
-        console.log(`👤 Passageiro ${index + 1}:`, {
-          nome: p.clientes?.nome || 'Nome não encontrado',
-          valor_viagem: valorViagem,
-          valor_passeios: valorPasseios,
-          pago_viagem: pagoViagem.toFixed(2),
-          pago_passeios: pagoPasseios.toFixed(2),
-          pendente_viagem: pendenteViagem.toFixed(2),
-          pendente_passeios: pendentePasseios.toFixed(2),
-          historico_pagamentos: historicoPagamentos.map((h: any) => ({
-            categoria: h.categoria,
-            valor: h.valor_pago
-          })),
-          status_pagamento: p.status_pagamento
-        });
+
       });
 
       // Somar outras receitas
@@ -771,13 +747,7 @@ export function useViagemFinanceiro(viagemId: string | undefined, customFetchAll
       const despesasOperacionais = despesas.filter(d => !d.isVirtual).reduce((sum, d) => sum + d.valor, 0);
       const totalDespesas = despesasOperacionais + custosPasseios;
 
-      console.log('🔍 DEBUG - Correção duplicação custos:', {
-        despesasOperacionais: despesasOperacionais.toFixed(2),
-        custosPasseios: custosPasseios.toFixed(2),
-        totalDespesas: totalDespesas.toFixed(2),
-        despesasVirtuais: despesas.filter(d => d.isVirtual).length,
-        despesasManuais: despesas.filter(d => !d.isVirtual).length
-      });
+
 
       // Calcular métricas
       const lucroBruto = totalReceitas - totalDespesas;
