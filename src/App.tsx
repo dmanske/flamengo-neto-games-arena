@@ -73,6 +73,7 @@ import MeuOnibusSimple from "@/pages/MeuOnibusSimple";
 
 // Import Sistema de Ingressos
 import Ingressos from "@/pages/Ingressos";
+import DetalhesJogoIngressos from "@/pages/DetalhesJogoIngressos";
 import CadastrarViagemIngressos from "@/pages/CadastrarViagemIngressos";
 import ViagensIngressos from "@/pages/ViagensIngressos";
 
@@ -160,6 +161,7 @@ function App() {
                   
                   {/* Sistema de Ingressos */}
                   <Route path="ingressos" element={<Ingressos />} />
+                  <Route path="jogo-ingressos/:jogoKey" element={<DetalhesJogoIngressos />} />
                   <Route path="cadastrar-viagem-ingressos" element={<CadastrarViagemIngressos />} />
                   <Route path="viagens-ingressos" element={<ViagensIngressos />} />
                   

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { formatDateTimeSafe } from '@/lib/date-utils';
 
-import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, FileText, Plus } from "lucide-react";
+import { Calendar, MapPin, Ticket, DollarSign, Eye, Trash2, Edit3, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -26,7 +26,6 @@ interface CleanJogoCardProps {
   jogo: JogoIngresso;
   onVerIngressos: (jogo: JogoIngresso) => void;
   onDeletarJogo: (jogo: JogoIngresso) => void;
-  onExportarPDF?: (jogo: JogoIngresso) => void;
   onNovoIngresso?: (jogo: JogoIngresso) => void;
   isSelected?: boolean;
 }
@@ -35,7 +34,6 @@ export function CleanJogoCard({
   jogo,
   onVerIngressos,
   onDeletarJogo,
-  onExportarPDF,
   onNovoIngresso,
   isSelected = false
 }: CleanJogoCardProps) {
@@ -235,16 +233,9 @@ export function CleanJogoCard({
             </div>
           </div>
 
-          {/* Resumo financeiro */}
+          {/* Status resumido */}
           {jogo.total_ingressos > 0 && (
             <div className="border-t border-gray-100 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-professional-navy">Lucro Total</span>
-                <span className={`text-sm font-bold ${jogo.lucro_total >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(jogo.lucro_total)}
-                </span>
-              </div>
-              
               <div className="flex flex-wrap gap-1">
                 {jogo.ingressos_pagos > 0 && (
                   <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200 text-xs">
@@ -289,7 +280,7 @@ export function CleanJogoCard({
         </div>
         
         {/* Actions footer */}
-        <div className="grid grid-cols-4 border-t border-gray-100">
+        <div className="grid grid-cols-3 border-t border-gray-100">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -321,24 +312,6 @@ export function CleanJogoCard({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Criar novo ingresso para este jogo</TooltipContent>
-            </Tooltip>
-          )}
-          
-          {onExportarPDF && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="rounded-none border-r border-gray-100 h-12 hover:bg-green-50 hover:text-green-600 transition-colors"
-                  onClick={() => onExportarPDF(jogo)}
-                  disabled={jogo.total_ingressos === 0}
-                >
-                  <FileText className="h-4 w-4 mr-1" />
-                  <span className="text-xs">PDF</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Exportar lista de clientes em PDF</TooltipContent>
             </Tooltip>
           )}
           

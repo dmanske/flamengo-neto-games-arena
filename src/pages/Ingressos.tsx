@@ -44,10 +44,10 @@ import { ptBR } from 'date-fns/locale';
 
 export default function Ingressos() {
   const navigate = useNavigate();
-  const { 
-    ingressos, 
-    resumoFinanceiro, 
-    estados, 
+  const {
+    ingressos,
+    resumoFinanceiro,
+    estados,
     buscarIngressos,
     buscarResumoFinanceiro,
     deletarIngresso
@@ -68,12 +68,12 @@ export default function Ingressos() {
   const [viagemToDelete, setViagemToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [jogoSelecionadoParaIngresso, setJogoSelecionadoParaIngresso] = useState<any>(null);
-  
+
   // Novos estados para sistema de abas
   const [activeTab, setActiveTab] = useState<'futuros' | 'passados'>('futuros');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
-  
+
   // Hook para relatório PDF
   const { reportRef, handleExportPDF } = useIngressosReport();
 
@@ -81,7 +81,7 @@ export default function Ingressos() {
   const ingressosFiltrados = useMemo(() => {
     return ingressos.filter(ingresso => {
       if (!busca) return true;
-      
+
       const termoBusca = busca.toLowerCase();
       return (
         ingresso.adversario.toLowerCase().includes(termoBusca) ||
@@ -134,19 +134,19 @@ export default function Ingressos() {
       const dataJogo = ingresso.viagem?.data_jogo || ingresso.jogo_data;
       const dataJogoNormalizada = new Date(dataJogo).toISOString().split('T')[0];
       const chaveJogo = `${ingresso.adversario.toLowerCase()}-${dataJogoNormalizada}-${ingresso.local_jogo}`;
-      
+
       if (!gruposUnificados[chaveJogo]) {
         let dataJogoCorreta = ingresso.viagem?.data_jogo;
-        
+
         if (!dataJogoCorreta && ingresso.viagem_ingressos_id) {
           const viagemIngressos = viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id);
           dataJogoCorreta = viagemIngressos?.data_jogo;
         }
-        
+
         if (!dataJogoCorreta) {
           dataJogoCorreta = ingresso.jogo_data;
         }
-        
+
         gruposUnificados[chaveJogo] = {
           adversario: ingresso.adversario,
           jogo_data: dataJogoCorreta,
@@ -161,12 +161,12 @@ export default function Ingressos() {
           ingressos_pagos: 0,
         };
       }
-      
+
       gruposUnificados[chaveJogo].ingressos.push(ingresso);
       gruposUnificados[chaveJogo].total_ingressos++;
       gruposUnificados[chaveJogo].receita_total += ingresso.valor_final || 0;
       gruposUnificados[chaveJogo].lucro_total += ingresso.lucro || 0;
-      
+
       if (ingresso.situacao_financeira === 'pago') {
         gruposUnificados[chaveJogo].ingressos_pagos++;
       } else if (ingresso.situacao_financeira === 'pendente') {
@@ -183,7 +183,7 @@ export default function Ingressos() {
     viagensFuturas.forEach(viagem => {
       const dataJogoNormalizada = new Date(viagem.data_jogo).toISOString().split('T')[0];
       const chaveJogo = `${viagem.adversario.toLowerCase()}-${dataJogoNormalizada}-${viagem.local_jogo}`;
-      
+
       if (!gruposUnificados[chaveJogo]) {
         gruposUnificados[chaveJogo] = {
           adversario: viagem.adversario,
@@ -228,19 +228,19 @@ export default function Ingressos() {
       const dataJogo = ingresso.viagem?.data_jogo || ingresso.jogo_data;
       const dataJogoNormalizada = new Date(dataJogo).toISOString().split('T')[0];
       const chaveJogo = `${ingresso.adversario.toLowerCase()}-${dataJogoNormalizada}-${ingresso.local_jogo}`;
-      
+
       if (!gruposUnificados[chaveJogo]) {
         let dataJogoCorreta = ingresso.viagem?.data_jogo;
-        
+
         if (!dataJogoCorreta && ingresso.viagem_ingressos_id) {
           const viagemIngressos = viagensIngressos.find(v => v.id === ingresso.viagem_ingressos_id);
           dataJogoCorreta = viagemIngressos?.data_jogo;
         }
-        
+
         if (!dataJogoCorreta) {
           dataJogoCorreta = ingresso.jogo_data;
         }
-        
+
         gruposUnificados[chaveJogo] = {
           adversario: ingresso.adversario,
           jogo_data: dataJogoCorreta,
@@ -255,12 +255,12 @@ export default function Ingressos() {
           ingressos_pagos: 0,
         };
       }
-      
+
       gruposUnificados[chaveJogo].ingressos.push(ingresso);
       gruposUnificados[chaveJogo].total_ingressos++;
       gruposUnificados[chaveJogo].receita_total += ingresso.valor_final || 0;
       gruposUnificados[chaveJogo].lucro_total += ingresso.lucro || 0;
-      
+
       if (ingresso.situacao_financeira === 'pago') {
         gruposUnificados[chaveJogo].ingressos_pagos++;
       } else if (ingresso.situacao_financeira === 'pendente') {
@@ -315,11 +315,11 @@ export default function Ingressos() {
   // Função para agrupar jogos por mês (baseada na página Viagens)
   const agruparJogosPorMes = (jogos: any[]) => {
     const grupos: { [key: string]: any[] } = {};
-    
+
     jogos.forEach(jogo => {
       const data = new Date(jogo.jogo_data);
       const chave = format(data, 'yyyy-MM', { locale: ptBR });
-      
+
       if (!grupos[chave]) {
         grupos[chave] = [];
       }
@@ -328,7 +328,7 @@ export default function Ingressos() {
 
     // Ordenar por data (mais recente primeiro)
     const chavesOrdenadas = Object.keys(grupos).sort((a, b) => b.localeCompare(a));
-    
+
     return chavesOrdenadas.map(chave => ({
       chave,
       mesAno: format(new Date(chave + '-01'), 'MMMM yyyy', { locale: ptBR }),
@@ -353,7 +353,7 @@ export default function Ingressos() {
       const dataJogoIngresso = ingresso.viagem?.data_jogo || ingresso.jogo_data;
       const dataIngressoNormalizada = new Date(dataJogoIngresso).toISOString().split('T')[0];
       const dataJogoNormalizada = new Date(jogo.jogo_data).toISOString().split('T')[0];
-      
+
       return (
         ingresso.adversario.toLowerCase() === jogo.adversario.toLowerCase() &&
         dataIngressoNormalizada === dataJogoNormalizada &&
@@ -379,10 +379,20 @@ export default function Ingressos() {
     setModalFormAberto(true);
   };
 
-  // Função para abrir modal de ingressos do jogo
+  // Função para navegar para página de detalhes do jogo
   const handleVerIngressosJogo = (jogo: any) => {
-    setJogoSelecionado(jogo);
-    setModalJogoAberto(true);
+    // Gerar chave do jogo para navegação
+    const adversarioLimpo = jogo.adversario.toLowerCase().replace(/\s+/g, '-');
+    const dataFormatada = new Date(jogo.jogo_data).toISOString().split('T')[0];
+    const jogoKey = `${adversarioLimpo}-${dataFormatada}-${jogo.local_jogo}`;
+
+    // Navegar para página de detalhes passando os dados do jogo via state
+    navigate(`/dashboard/jogo-ingressos/${jogoKey}`, {
+      state: {
+        jogoData: jogo,
+        ingressosDoJogo: getIngressosDoJogo(jogo)
+      }
+    });
   };
 
   // Função para abrir modal de novo ingresso com jogo pré-selecionado
@@ -392,23 +402,7 @@ export default function Ingressos() {
     setModalFormAberto(true);
   };
 
-  // Função para exportar PDF de um jogo específico
-  const handleExportarPDFJogo = (jogo: any) => {
-    const ingressosDoJogo = getIngressosDoJogo(jogo);
-    
-    if (ingressosDoJogo.length === 0) {
-      toast.warning('Não há ingressos para exportar neste jogo.');
-      return;
-    }
 
-    // Definir o jogo selecionado para o relatório
-    setJogoSelecionado(jogo);
-
-    // Aguardar um momento para o estado ser atualizado e então exportar
-    setTimeout(() => {
-      handleExportPDF();
-    }, 100);
-  };
 
   // Função para abrir modal de confirmação de exclusão
   const handleDeletarJogo = (jogo: any) => {
@@ -606,22 +600,7 @@ export default function Ingressos() {
                         </TooltipContent>
                       </Tooltip>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleExportarPDFJogo(jogo)}
-                            className="h-8 w-8 p-0"
-                            disabled={jogo.total_ingressos === 0}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Exportar PDF</p>
-                        </TooltipContent>
-                      </Tooltip>
+
 
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -650,14 +629,13 @@ export default function Ingressos() {
 
     // Grid view
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {jogos.map((jogo: any) => (
           <CleanJogoCard
             key={`grid-${jogo.adversario}-${jogo.jogo_data}-${jogo.local_jogo}`}
             jogo={jogo}
             onVerIngressos={handleVerIngressosJogo}
             onDeletarJogo={handleDeletarJogo}
-            onExportarPDF={handleExportarPDFJogo}
             onNovoIngresso={handleNovoIngressoJogo}
           />
         ))}
@@ -684,9 +662,9 @@ export default function Ingressos() {
               <Plus className="h-4 w-4" />
               Novo Ingresso
             </Button>
-            <Button 
-              onClick={() => navigate('/dashboard/cadastrar-viagem-ingressos')} 
-              variant="outline" 
+            <Button
+              onClick={() => navigate('/dashboard/cadastrar-viagem-ingressos')}
+              variant="outline"
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
@@ -779,13 +757,13 @@ export default function Ingressos() {
                   />
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Select
                   value={filtros.situacao_financeira || 'todos'}
-                  onValueChange={(value) => 
-                    setFiltros(prev => ({ 
-                      ...prev, 
+                  onValueChange={(value) =>
+                    setFiltros(prev => ({
+                      ...prev,
                       situacao_financeira: value === 'todos' ? undefined : value as any
                     }))
                   }
@@ -801,8 +779,8 @@ export default function Ingressos() {
                   </SelectContent>
                 </Select>
 
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setModalFiltrosAberto(true)}
                   className="gap-2"
                 >
@@ -866,9 +844,9 @@ export default function Ingressos() {
                     <span className="text-4xl mb-4 block">🎫</span>
                     <p>Nenhum jogo futuro encontrado</p>
                     <p className="text-sm">Crie viagens para ingressos ou cadastre ingressos para jogos futuros</p>
-                    
+
                     <div className="flex gap-2 justify-center mt-4">
-                      <Button 
+                      <Button
                         onClick={() => navigate('/dashboard/cadastrar-viagem-ingressos')}
                         variant="outline"
                       >
@@ -905,7 +883,7 @@ export default function Ingressos() {
                   />
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Select
                   value={periodoFiltro}
@@ -927,9 +905,9 @@ export default function Ingressos() {
 
                 <Select
                   value={filtros.situacao_financeira || 'todos'}
-                  onValueChange={(value) => 
-                    setFiltros(prev => ({ 
-                      ...prev, 
+                  onValueChange={(value) =>
+                    setFiltros(prev => ({
+                      ...prev,
                       situacao_financeira: value === 'todos' ? undefined : value as any
                     }))
                   }
@@ -1069,15 +1047,15 @@ export default function Ingressos() {
           open={confirmDeleteOpen}
           onOpenChange={setConfirmDeleteOpen}
           title="🗑️ Deletar Jogo Completo"
-          description={jogoParaDeletar ? 
+          description={jogoParaDeletar ?
             `Você está prestes a deletar COMPLETAMENTE este jogo:\n\n` +
-            `🏆 Jogo: ${jogoParaDeletar.local_jogo === 'fora' ? 
-              `${jogoParaDeletar.adversario} × Flamengo` : 
+            `🏆 Jogo: ${jogoParaDeletar.local_jogo === 'fora' ?
+              `${jogoParaDeletar.adversario} × Flamengo` :
               `Flamengo × ${jogoParaDeletar.adversario}`}\n` +
             `🎫 Total de ingressos: ${getIngressosDoJogo(jogoParaDeletar).length}\n` +
             `💰 Receita total: ${formatCurrency(jogoParaDeletar.receita_total)}\n\n` +
-            `${jogoParaDeletar.viagem_ingressos_id ? 
-              '🗑️ Isso irá deletar TODOS os ingressos E a viagem para ingressos!\n' : 
+            `${jogoParaDeletar.viagem_ingressos_id ?
+              '🗑️ Isso irá deletar TODOS os ingressos E a viagem para ingressos!\n' :
               '🗑️ Isso irá deletar TODOS os ingressos deste jogo!\n'
             }\n` +
             `⚠️ Esta ação não pode ser desfeita!\n\n` +
