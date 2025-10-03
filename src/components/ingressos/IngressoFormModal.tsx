@@ -137,7 +137,7 @@ export function IngressoFormModal({
           viagem_ingressos_id: ingresso.viagem_ingressos_id, // Usar o valor correto do ingresso
           jogo_data: ingresso.jogo_data.slice(0, 16), // YYYY-MM-DDTHH:MM para datetime-local
           adversario: ingresso.adversario,
-          logo_adversario: ingresso.logo_adversario || '',
+          logo_adversario: '',
           local_jogo: ingresso.local_jogo,
           setor_estadio: ingresso.setor_estadio,
           preco_custo: ingresso.preco_custo,
@@ -184,13 +184,6 @@ export function IngressoFormModal({
           }
           
           setLocalJogo(jogoPreSelecionado.local_jogo);
-          
-          console.log('🎯 Jogo pré-selecionado:', {
-            original: jogoPreSelecionado.jogo_data,
-            formatado: dataFormatada,
-            adversario: jogoPreSelecionado.adversario,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          });
         } else {
           setLocalJogo('casa');
         }
@@ -296,7 +289,15 @@ export function IngressoFormModal({
     
     try {
       // Não incluir campos calculados (valor_final, lucro, margem_percentual são colunas geradas)
-      const dadosParaSalvar = data;
+      // Definir situacao_financeira baseado no pagamento inicial
+      const situacaoFinanceira = pagamentoInicial.registrar && pagamentoInicial.valor >= valoresCalculados.valorFinal 
+        ? 'pago' as const
+        : 'pendente' as const;
+        
+      const dadosParaSalvar = {
+        ...data,
+        situacao_financeira: situacaoFinanceira
+      } as IngressoFormData;
       
 
       
@@ -306,30 +307,16 @@ export function IngressoFormModal({
         // Editar ingresso existente
         sucesso = await atualizarIngresso(ingresso.id, dadosParaSalvar);
       } else {
-        // Criar novo ingresso - passar valor calculado como backup
-        sucesso = await criarIngresso({
+        // Criar novo ingresso - passar valor calculado como backup e dados de pagamento inicial
+        const dadosComExtras = {
           ...dadosParaSalvar,
-          valorFinalCalculado: valoresCalculados.valorFinal
-        });
+          valorFinalCalculado: valoresCalculados.valorFinal,
+          pagamentoInicial: pagamentoInicial.registrar ? pagamentoInicial : null
+        };
+        sucesso = await criarIngresso(dadosComExtras as any);
       }
 
       if (sucesso) {
-        // Se é criação e tem pagamento inicial, registrar o pagamento
-        if (!ingresso && pagamentoInicial.registrar && pagamentoInicial.valor > 0) {
-          try {
-            // Buscar o ingresso recém-criado para obter o ID
-            // Como não temos o ID retornado, vamos usar o hook de pagamentos
-            // Isso será feito após o onSuccess() para garantir que o ingresso foi criado
-            console.log('Pagamento inicial será registrado:', pagamentoInicial);
-            
-            // TODO: Implementar registro do pagamento inicial
-            // Isso pode ser feito através de um callback ou estado global
-          } catch (error) {
-            console.error('Erro ao registrar pagamento inicial:', error);
-            // Não bloquear o sucesso da criação do ingresso
-          }
-        }
-        
         onSuccess();
       }
     } catch (error) {
@@ -447,14 +434,8 @@ export function IngressoFormModal({
                                       
                                       form.setValue('jogo_data', dataFormatada);
                                       form.setValue('adversario', viagemSelecionada.adversario);
-                                      form.setValue('local_jogo', viagemSelecionada.local_jogo || 'casa');
-                                      setLocalJogo(viagemSelecionada.local_jogo || 'casa');
-                                      
-                                      console.log('🎯 Viagem sistema selecionada:', {
-                                        original: viagemSelecionada.data_jogo,
-                                        formatado: dataFormatada,
-                                        adversario: viagemSelecionada.adversario
-                                      });
+                                      form.setValue('local_jogo', 'casa');
+                                      setLocalJogo('casa');
                                     }
                                   }
                                 }} 
@@ -474,7 +455,35 @@ export function IngressoFormModal({
                                       <SelectLabel>Viagens do Sistema</SelectLabel>
                                       {viagens.map((viagem) => (
                                         <SelectItem key={viagem.id} value={viagem.id}>
-                                          {viagem.adversario} - {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')} às {new Date(viagem.data_jogo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                          <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2">
+                                              <img 
+                                                src="https://logodetimes.com/times/flamengo/logo-flamengo-256.png" 
+                                                alt="Flamengo"
+                                                className="w-6 h-6 object-contain rounded"
+                                              />
+                                              <span className="text-xs text-gray-500">vs</span>
+                                              {logosAdversarios[viagem.adversario] ? (
+                                                <img 
+                                                  src={logosAdversarios[viagem.adversario]} 
+                                                  alt={viagem.adversario}
+                                                  className="w-6 h-6 object-contain rounded"
+                                                />
+                                              ) : (
+                                                <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">
+                                                  <span className="text-xs font-bold text-gray-600">
+                                                    {viagem.adversario.charAt(0)}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="font-medium">{viagem.adversario}</span>
+                                              <span className="text-xs text-gray-500">
+                                                {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')} às {new Date(viagem.data_jogo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                              </span>
+                                            </div>
+                                          </div>
                                         </SelectItem>
                                       ))}
                                     </SelectGroup>
@@ -514,12 +523,6 @@ export function IngressoFormModal({
                                       form.setValue('adversario', viagemSelecionada.adversario);
                                       form.setValue('local_jogo', viagemSelecionada.local_jogo || 'casa');
                                       setLocalJogo(viagemSelecionada.local_jogo || 'casa');
-                                      
-                                      console.log('🎯 Viagem ingressos selecionada:', {
-                                        original: viagemSelecionada.data_jogo,
-                                        formatado: dataFormatada,
-                                        adversario: viagemSelecionada.adversario
-                                      });
                                     }
                                   }
                                 }} 
@@ -539,7 +542,35 @@ export function IngressoFormModal({
                                       <SelectLabel>Viagens para Ingressos</SelectLabel>
                                       {viagensIngressos.map((viagem) => (
                                         <SelectItem key={viagem.id} value={viagem.id}>
-                                          {viagem.adversario} - {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')} às {new Date(viagem.data_jogo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                          <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2">
+                                              <img 
+                                                src="https://logodetimes.com/times/flamengo/logo-flamengo-256.png" 
+                                                alt="Flamengo"
+                                                className="w-6 h-6 object-contain rounded"
+                                              />
+                                              <span className="text-xs text-gray-500">vs</span>
+                                              {viagem.logo_adversario ? (
+                                                <img 
+                                                  src={viagem.logo_adversario} 
+                                                  alt={viagem.adversario}
+                                                  className="w-6 h-6 object-contain rounded"
+                                                />
+                                              ) : (
+                                                <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">
+                                                  <span className="text-xs font-bold text-gray-600">
+                                                    {viagem.adversario.charAt(0)}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="font-medium">{viagem.adversario}</span>
+                                              <span className="text-xs text-gray-500">
+                                                {new Date(viagem.data_jogo).toLocaleDateString('pt-BR')} às {new Date(viagem.data_jogo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                              </span>
+                                            </div>
+                                          </div>
                                         </SelectItem>
                                       ))}
                                     </SelectGroup>

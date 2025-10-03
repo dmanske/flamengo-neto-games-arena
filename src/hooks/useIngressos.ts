@@ -263,7 +263,7 @@ export function useIngressos() {
       }
 
       // Remover campos calculados que não podem ser inseridos (colunas geradas)
-      const { valorFinalCalculado, lucro, margem_percentual, ...dadosParaInserir } = dados;
+      const { valorFinalCalculado, pagamentoInicial, ...dadosParaInserir } = dados;
       
       // Usar a viagem criada/encontrada
       if (viagemId) {
@@ -296,22 +296,14 @@ export function useIngressos() {
         return false;
       }
 
-      // Se o ingresso foi criado como "pago", criar automaticamente um registro de pagamento
-      if (data && dados.situacao_financeira === 'pago') {
-        // Usar o valor_final calculado pelo banco ou o valor passado como fallback
-        const valorPagamento = data.valor_final || valorFinalCalculado || 0;
-        
-        if (valorPagamento <= 0) {
-          console.warn('Valor inválido para pagamento automático:', valorPagamento);
-          return true; // Não falhar a criação do ingresso
-        }
-        
+      // Se há dados de pagamento inicial, criar o registro de pagamento
+      if (data && pagamentoInicial && pagamentoInicial.valor > 0) {
         const dadosPagamento = {
           ingresso_id: data.id,
-          valor_pago: valorPagamento,
-          data_pagamento: new Date().toISOString().split('T')[0], // Só a data, sem hora
-          forma_pagamento: 'dinheiro', // Padrão, pode ser alterado depois
-          observacoes: 'Pagamento registrado automaticamente na criação do ingresso'
+          valor_pago: pagamentoInicial.valor,
+          data_pagamento: pagamentoInicial.data || new Date().toISOString().split('T')[0],
+          forma_pagamento: pagamentoInicial.forma || 'dinheiro',
+          observacoes: 'Pagamento inicial registrado na criação do ingresso'
         };
         
         const { data: pagamentoData, error: errorPagamento } = await supabase
@@ -321,10 +313,34 @@ export function useIngressos() {
           .single();
 
         if (errorPagamento) {
-          console.error('Erro ao criar pagamento automático:', errorPagamento);
-          toast.warning('Ingresso criado, mas houve erro ao registrar o pagamento. Registre manualmente.');
+          console.error('Erro ao criar pagamento inicial:', errorPagamento);
+          toast.warning('Ingresso criado, mas houve erro ao registrar o pagamento inicial. Registre manualmente.');
         } else {
-          console.log('Pagamento automático criado com sucesso:', pagamentoData?.id);
+          toast.success('Ingresso e pagamento inicial registrados com sucesso!');
+        }
+      } else if (data && dados.situacao_financeira === 'pago') {
+        // Fallback: Se o ingresso foi criado como "pago" mas sem dados de pagamento inicial
+        const valorPagamento = data.valor_final || valorFinalCalculado || 0;
+        
+        if (valorPagamento > 0) {
+          const dadosPagamento = {
+            ingresso_id: data.id,
+            valor_pago: valorPagamento,
+            data_pagamento: new Date().toISOString().split('T')[0],
+            forma_pagamento: 'dinheiro',
+            observacoes: 'Pagamento registrado automaticamente (ingresso marcado como pago)'
+          };
+          
+          const { data: pagamentoData, error: errorPagamento } = await supabase
+            .from('historico_pagamentos_ingressos')
+            .insert([dadosPagamento])
+            .select()
+            .single();
+
+          if (errorPagamento) {
+            console.error('Erro ao criar pagamento automático:', errorPagamento);
+            toast.warning('Ingresso criado, mas houve erro ao registrar o pagamento. Registre manualmente.');
+          }
         }
       }
 
@@ -410,7 +426,7 @@ export function useIngressos() {
       if (ingressoAtual.situacao_financeira === 'pendente' && dados.situacao_financeira === 'pago') {
         // Criando pagamento automático
         
-        const valorPagamento = dados.valor_final || ingressoAtual.valor_final;
+        const valorPagamento = ingressoAtual.valor_final;
         
         const { error: errorPagamento } = await supabase
           .from('historico_pagamentos_ingressos')
@@ -556,10 +572,7 @@ export function useIngressos() {
       acc[chaveJogo].receita_total += ingresso.valor_final;
       acc[chaveJogo].lucro_total += ingresso.lucro;
       
-      // Se ainda não tem logo, tentar pegar do ingresso atual
-      if (!acc[chaveJogo].logo_adversario && ingresso.logo_adversario) {
-        acc[chaveJogo].logo_adversario = ingresso.logo_adversario;
-      }
+
       
       switch (ingresso.situacao_financeira) {
         case 'pago':

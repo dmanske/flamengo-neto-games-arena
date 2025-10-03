@@ -219,7 +219,21 @@ const CadastrarViagemIngressos = () => {
                           <SelectContent>
                             {adversarios.map((adv) => (
                               <SelectItem key={adv.id} value={adv.nome}>
-                                {adv.nome}
+                                <div className="flex items-center gap-2">
+                                  {adv.logo_url && (
+                                    <img 
+                                      src={adv.logo_url} 
+                                      alt={adv.nome} 
+                                      className="w-5 h-5 object-contain"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.src = "https://via.placeholder.com/20?text=?";
+                                      }}
+                                    />
+                                  )}
+                                  {adv.nome}
+                                </div>
                               </SelectItem>
                             ))}
                             <SelectItem value="outro">Outro (digitar manualmente)</SelectItem>

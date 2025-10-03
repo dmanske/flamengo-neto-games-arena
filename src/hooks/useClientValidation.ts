@@ -21,15 +21,10 @@ export const useClientValidation = () => {
     setIsValidating(true);
     
     try {
-      console.log('🔍 Iniciando validação de cliente...', { cpf: cpf?.substring(0, 3) + '***' });
-      
       const cleanedCPF = cleanCPF(cpf);
-      
-      console.log('🧹 CPF limpo:', { cleanedCPF: cleanedCPF?.substring(0, 3) + '***' });
       
       // Verificar apenas CPF duplicado (email e telefone podem duplicar)
       if (!cleanedCPF) {
-        console.log('✅ CPF vazio, validação aprovada');
         return { isValid: true };
       }
       
@@ -43,7 +38,6 @@ export const useClientValidation = () => {
         query = query.neq('id', excludeId);
       }
       
-      console.log('📡 Executando query de validação de CPF...');
       const { data: existingClients, error } = await query.maybeSingle();
       
       if (error) {
@@ -58,12 +52,8 @@ export const useClientValidation = () => {
         return { isValid: true }; // Allow creation if validation fails
       }
       
-      console.log('✅ Query executada com sucesso, clientes encontrados:', existingClients ? 1 : 0);
-      
       if (existingClients) {
         const existingClient = existingClients;
-        
-        console.log('⚠️ Cliente com CPF duplicado encontrado:', { existingClientName: existingClient.nome });
         
         return {
           isValid: false,
@@ -72,7 +62,6 @@ export const useClientValidation = () => {
         };
       }
       
-      console.log('✅ Validação concluída - CPF não encontrado, pode prosseguir');
       return { isValid: true };
     } catch (error) {
       console.error('💥 Erro inesperado ao validar cliente:', error);

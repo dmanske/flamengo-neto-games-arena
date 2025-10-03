@@ -157,7 +157,6 @@ export function useCreditosCliente(clienteId: string) {
           filter: `cliente_id=eq.${clienteId}`
         },
         (payload) => {
-          console.log('Mudança em créditos detectada:', payload);
           carregarDados();
         }
       )
@@ -169,7 +168,6 @@ export function useCreditosCliente(clienteId: string) {
           table: 'credito_viagem_vinculacoes'
         },
         (payload) => {
-          console.log('Mudança em vinculações detectada:', payload);
           // Recarregar apenas se for relacionado aos créditos deste cliente
           if (creditos.some(c => c.id === payload.new?.credito_id || c.id === payload.old?.credito_id)) {
             carregarDados();

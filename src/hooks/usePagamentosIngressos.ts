@@ -76,7 +76,7 @@ export function usePagamentosIngressos() {
           return false;
         }
 
-        console.log(`Status do ingresso ${ingressoId} atualizado para: ${novoStatus}`);
+
       }
 
       return true;
@@ -96,19 +96,11 @@ export function usePagamentosIngressos() {
     setEstados(prev => ({ ...prev, carregando: true }));
 
     try {
-      console.log('Buscando pagamentos para ingresso:', ingressoId);
-      
       const { data, error } = await supabase
         .from('historico_pagamentos_ingressos')
         .select('*')
         .eq('ingresso_id', ingressoId)
         .order('data_pagamento', { ascending: false });
-
-      console.log('=== DEBUG BUSCAR PAGAMENTOS ===');
-      console.log('Query executada para ingresso_id:', ingressoId);
-      console.log('Resultado da query:', { data, error });
-      console.log('Dados encontrados:', data);
-      console.log('Erro (se houver):', error);
 
       if (error) {
         console.error('Erro ao buscar pagamentos:', error);
@@ -117,10 +109,6 @@ export function usePagamentosIngressos() {
         return;
       }
 
-      console.log('Pagamentos encontrados:', data?.length || 0);
-      if (data && data.length > 0) {
-        console.log('Detalhes dos pagamentos:', data);
-      }
       setPagamentos(data || []);
     } catch (error) {
       console.error('Erro inesperado ao buscar pagamentos:', error);

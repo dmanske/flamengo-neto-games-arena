@@ -116,6 +116,14 @@ export interface IngressoFormData {
   desconto: number;
   situacao_financeira: SituacaoFinanceiraIngresso;
   observacoes?: string;
+  // Campos adicionais para processamento
+  valorFinalCalculado?: number;
+  pagamentoInicial?: {
+    registrar: boolean;
+    valor: number;
+    forma: FormaPagamentoIngresso;
+    data: string;
+  } | null;
 }
 
 export interface PagamentoIngressoFormData {
