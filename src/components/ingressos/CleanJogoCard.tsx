@@ -222,15 +222,7 @@ export function CleanJogoCard({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
-                <DollarSign className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-professional-navy font-medium text-sm">Receita Total</span>
-                <span className="font-bold text-professional-navy text-lg">{formatCurrency(jogo.receita_total)}</span>
-              </div>
-            </div>
+
           </div>
 
           {/* Status resumido */}

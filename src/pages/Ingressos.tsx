@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Download, Trash2, Loader2, Calendar, Archive, List, LayoutGrid, Eye } from 'lucide-react';
+import { Plus, Search, Filter, Download, Trash2, Loader2, Calendar, Archive, List, LayoutGrid, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,6 +73,13 @@ export default function Ingressos() {
   const [activeTab, setActiveTab] = useState<'futuros' | 'passados'>('futuros');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [periodoFiltro, setPeriodoFiltro] = useState<string>("todos");
+
+  // Estado para controlar visibilidade dos valores financeiros
+  const [showValues, setShowValues] = useState({
+    receita: false,
+    lucro: false,
+    pendencias: false // Pendências sempre visíveis, mas mantemos no estado para compatibilidade
+  });
 
   // Hook para relatório PDF
   const { reportRef, handleExportPDF } = useIngressosReport();
@@ -643,6 +650,48 @@ export default function Ingressos() {
     );
   }, [viewMode, formatDate]);
 
+  // Função auxiliar para renderizar valores ocultos/visíveis
+  const renderHiddenValue = (
+    value: string, 
+    isVisible: boolean, 
+    cardKey: keyof typeof showValues,
+    placeholder: string = "••••••"
+  ) => (
+    <div 
+      className={`cursor-pointer select-none transition-all duration-200 hover:scale-105 ${
+        !isVisible ? 'hover:bg-gray-50 rounded-md p-1 -m-1' : ''
+      }`}
+      onClick={() => {
+        setShowValues(prev => ({
+          ...prev,
+          [cardKey]: !prev[cardKey]
+        }));
+      }}
+      title={isVisible ? "Clique para ocultar valor" : "Clique para mostrar valor"}
+    >
+      <div className="flex items-center gap-2">
+        {isVisible ? (
+          <span className="text-2xl font-bold transition-all duration-300 animate-in fade-in-0 slide-in-from-left-2">
+            {value}
+          </span>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-gray-400 tracking-wider">
+              {placeholder}
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <Eye className="h-3 w-3" />
+              <span>Clique</span>
+            </div>
+          </div>
+        )}
+        {isVisible && (
+          <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider>
       <div className="container mx-auto p-6 space-y-6">
@@ -687,57 +736,129 @@ export default function Ingressos() {
           </TabsList>
 
           <TabsContent value="futuros">
+            {/* Controle de Visibilidade */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Resumo Geral</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Valores:</span>
+                <button
+                  onClick={() => {
+                    // Só controla receita e lucro, pendências sempre visíveis
+                    const receitaLucroVisible = showValues.receita && showValues.lucro;
+                    setShowValues({
+                      receita: !receitaLucroVisible,
+                      lucro: !receitaLucroVisible,
+                      pendencias: showValues.pendencias // Mantém estado atual das pendências
+                    });
+                  }}
+                  className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
+                >
+                  {showValues.receita && showValues.lucro ? (
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      Ocultar Valores
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      Mostrar Valores
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             {/* Cards de Resumo - apenas na aba futuros */}
             {resumoFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <Card>
+                {/* Total de Ingressos */}
+                <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 border-blue-200 hover:shadow-lg hover:shadow-blue-200/50 transition-all duration-300 hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total de Ingressos</CardTitle>
-                    <span className="text-2xl">🎫</span>
+                    <CardTitle className="text-sm font-medium text-blue-800">Total de Ingressos</CardTitle>
+                    <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-white text-sm">🎫</span>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{resumoFinanceiro.total_ingressos}</div>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="text-2xl font-bold text-blue-900 transition-all duration-300">
+                      {resumoFinanceiro.total_ingressos}
+                    </div>
+                    <p className="text-xs text-blue-700 mt-1">
                       {resumoFinanceiro.ingressos_pagos} pagos • {resumoFinanceiro.ingressos_pendentes} pendentes
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card>
+                {/* Receita Total */}
+                <Card className="bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 border-green-200 hover:shadow-lg hover:shadow-green-200/50 transition-all duration-300 hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-                    <span className="text-2xl">💰</span>
+                    <CardTitle className="text-sm font-medium text-green-800">Receita Total</CardTitle>
+                    <div className="h-8 w-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-white text-sm">💰</span>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.total_receita)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {formatCurrency(resumoFinanceiro.valor_recebido)} recebido
-                    </p>
+                    <div className="text-green-900">
+                      {renderHiddenValue(
+                        formatCurrency(resumoFinanceiro.total_receita),
+                        showValues.receita,
+                        'receita',
+                        'R$ ••••••'
+                      )}
+                    </div>
+                    {showValues.receita && (
+                      <p className="text-xs text-green-700 mt-1">
+                        {formatCurrency(resumoFinanceiro.valor_recebido)} recebido
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 
-                <Card>
+                {/* Lucro Total */}
+                <Card className="bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100 border-purple-200 hover:shadow-lg hover:shadow-purple-200/50 transition-all duration-300 hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
-                    <span className="text-2xl">📈</span>
+                    <CardTitle className="text-sm font-medium text-purple-800">Lucro Total</CardTitle>
+                    <div className="h-8 w-8 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-white text-sm">📈</span>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.total_lucro)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Margem: {resumoFinanceiro.margem_media.toFixed(1)}%
-                    </p>
+                    <div className="text-purple-900">
+                      {renderHiddenValue(
+                        formatCurrency(resumoFinanceiro.total_lucro),
+                        showValues.lucro,
+                        'lucro',
+                        'R$ ••••••'
+                      )}
+                    </div>
+                    {showValues.lucro && (
+                      <p className="text-xs text-purple-700 mt-1">
+                        Margem: {resumoFinanceiro.margem_media.toFixed(1)}%
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 
-                <Card>
+                {/* Pendências */}
+                <Card className="bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 border-orange-200 hover:shadow-lg hover:shadow-orange-200/50 transition-all duration-300 hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Pendências</CardTitle>
-                    <span className="text-2xl">⏳</span>
+                    <CardTitle className="text-sm font-medium text-orange-800">Pendências</CardTitle>
+                    <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-white text-sm">⏳</span>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.valor_pendente)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {resumoFinanceiro.ingressos_pendentes} ingressos pendentes
+                    <div className="text-orange-900">
+                      {renderHiddenValue(
+                        formatCurrency(resumoFinanceiro.valor_pendente),
+                        showValues.pendencias,
+                        'pendencias',
+                        'R$ ••••••'
+                      )}
+                    </div>
+                    {/* Sempre mostrar quantidade de ingressos pendentes */}
+                    <p className="text-xs text-orange-700 mt-1">
+                      {resumoFinanceiro.ingressos_pendentes} ingresso{resumoFinanceiro.ingressos_pendentes !== 1 ? 's' : ''} pendente{resumoFinanceiro.ingressos_pendentes !== 1 ? 's' : ''}
                     </p>
                   </CardContent>
                 </Card>
