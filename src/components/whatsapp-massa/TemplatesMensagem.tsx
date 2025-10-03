@@ -179,10 +179,115 @@ export const TemplatesMensagem: React.FC<TemplatesMensagemProps> = ({
         </Button>
       </div>
 
-      {/* Dica sobre Variáveis */}
-      <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded border-l-4 border-l-blue-400">
-        <strong>💡 Dica:</strong> Use <code>{'{nome}'}</code> para personalizar com o nome do passageiro. 
-        Outras variáveis disponíveis: <code>{'{adversario}'}</code>, <code>{'{dataJogo}'}</code>, <code>{'{valor}'}</code>, etc.
+      {/* Variáveis Disponíveis */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <h6 className="text-sm font-medium text-blue-800 mb-2">🔧 Variáveis Disponíveis (clique para adicionar):</h6>
+        
+        <div className="space-y-2">
+          {/* Variáveis do Passageiro */}
+          <div>
+            <div className="text-xs font-medium text-blue-700 mb-1">👤 Passageiro:</div>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{nome}')}
+              >
+                {'{nome}'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Variáveis da Viagem */}
+          <div>
+            <div className="text-xs font-medium text-blue-700 mb-1">🏆 Jogo:</div>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{adversario}')}
+              >
+                {'{adversario}'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{dataJogo}')}
+              >
+                {'{dataJogo}'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Variáveis da Viagem */}
+          <div>
+            <div className="text-xs font-medium text-blue-700 mb-1">🚌 Viagem:</div>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{dataViagem}')}
+              >
+                {'{dataViagem}'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{horario}')}
+              >
+                {'{horario}'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{localSaida}')}
+              >
+                {'{localSaida}'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{onibus}')}
+              >
+                {'{onibus}'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Variáveis Financeiras */}
+          <div>
+            <div className="text-xs font-medium text-blue-700 mb-1">💰 Financeiro:</div>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{valor}')}
+              >
+                {'{valor}'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-xs bg-white hover:bg-blue-100"
+                onClick={() => onMensagemChange(mensagem + '{prazo}')}
+              >
+                {'{prazo}'}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2 text-xs text-blue-600">
+          💡 <strong>Clique nas variáveis</strong> para adicionar automaticamente na sua mensagem!
+        </div>
       </div>
     </div>
   );

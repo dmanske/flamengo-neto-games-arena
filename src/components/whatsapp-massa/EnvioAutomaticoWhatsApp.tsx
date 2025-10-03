@@ -21,6 +21,16 @@ interface EnvioAutomaticoWhatsAppProps {
   passageiros: Passageiro[];
   mensagem: string;
   onRegistrarHistorico: (tipo: string, quantidade: number) => void;
+  dadosViagem?: {
+    adversario?: string;
+    dataJogo?: string;
+    dataViagem?: string;
+    horario?: string;
+    localSaida?: string;
+    valor?: string;
+    onibus?: string;
+    prazo?: string;
+  };
 }
 
 interface ResultadoEnvio {
@@ -34,7 +44,8 @@ interface ResultadoEnvio {
 export const EnvioAutomaticoWhatsApp: React.FC<EnvioAutomaticoWhatsAppProps> = ({
   passageiros,
   mensagem,
-  onRegistrarHistorico
+  onRegistrarHistorico,
+  dadosViagem
 }) => {
   const [enviando, setEnviando] = useState(false);
   const [progresso, setProgresso] = useState(0);
@@ -72,8 +83,8 @@ export const EnvioAutomaticoWhatsApp: React.FC<EnvioAutomaticoWhatsAppProps> = (
         return;
       }
 
-      // Usar o novo serviço
-      const response = await enviarMensagemMassa(passageiros, mensagem, tipoEnvio);
+      // Usar o novo serviço com dados da viagem
+      const response = await enviarMensagemMassa(passageiros, mensagem, tipoEnvio, dadosViagem);
 
       // Simular progresso em tempo real para melhor UX
       for (let i = 0; i < response.resultados.length; i++) {

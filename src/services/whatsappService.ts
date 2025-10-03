@@ -121,7 +121,7 @@ export async function testarConfiguracaoZAPI(): Promise<{ sucesso: boolean; erro
 }
 
 // Função para simular envio (para testes)
-export async function simularEnvio(passageiros: Passageiro[], _mensagem: string): Promise<ResultadoEnvio[]> {
+export async function simularEnvio(passageiros: Passageiro[], mensagem: string, dadosViagem?: Record<string, string>): Promise<ResultadoEnvio[]> {
   console.log('🎭 Iniciando simulação de envio...');
 
   const resultados: ResultadoEnvio[] = [];
@@ -151,8 +151,21 @@ export async function simularEnvio(passageiros: Passageiro[], _mensagem: string)
   return resultados;
 }
 
+// Função para substituir variáveis na mensagem
+function substituirVariaveis(texto: string, dados: Record<string, string>): string {
+  let textoFinal = texto;
+  
+  // Substituir variáveis no formato {variavel}
+  Object.entries(dados).forEach(([chave, valor]) => {
+    const regex = new RegExp(`\\{${chave}\\}`, 'g');
+    textoFinal = textoFinal.replace(regex, valor || `{${chave}}`);
+  });
+
+  return textoFinal;
+}
+
 // Função para enviar via Z-API real
-export async function enviarViaZAPI(passageiros: Passageiro[], mensagem: string): Promise<ResultadoEnvio[]> {
+export async function enviarViaZAPI(passageiros: Passageiro[], mensagem: string, dadosViagem?: Record<string, string>): Promise<ResultadoEnvio[]> {
   console.log(`🚀 Iniciando envio real via Z-API para ${passageiros.length} passageiros`);
 
   const resultados: ResultadoEnvio[] = [];
@@ -167,8 +180,12 @@ export async function enviarViaZAPI(passageiros: Passageiro[], mensagem: string)
       telefone = '55' + telefone;
     }
 
-    // Personalizar mensagem
-    const mensagemPersonalizada = mensagem.replace(/\{nome\}/g, nome);
+    // Personalizar mensagem com todas as variáveis
+    const dadosCompletos = {
+      nome,
+      ...dadosViagem
+    };
+    const mensagemPersonalizada = substituirVariaveis(mensagem, dadosCompletos);
 
     try {
       console.log(`📱 Enviando para ${nome} (${telefone})`);
@@ -236,7 +253,8 @@ export async function enviarViaZAPI(passageiros: Passageiro[], mensagem: string)
 export async function enviarMensagemMassa(
   passageiros: Passageiro[],
   mensagem: string,
-  tipoEnvio: 'simulacao' | 'z-api'
+  tipoEnvio: 'simulacao' | 'z-api',
+  dadosViagem?: Record<string, string>
 ): Promise<{
   resultados: ResultadoEnvio[];
   resumo: {
@@ -249,9 +267,9 @@ export async function enviarMensagemMassa(
   let resultados: ResultadoEnvio[] = [];
 
   if (tipoEnvio === 'simulacao') {
-    resultados = await simularEnvio(passageiros, mensagem);
+    resultados = await simularEnvio(passageiros, mensagem, dadosViagem);
   } else if (tipoEnvio === 'z-api') {
-    resultados = await enviarViaZAPI(passageiros, mensagem);
+    resultados = await enviarViaZAPI(passageiros, mensagem, dadosViagem);
   }
 
   const sucessos = resultados.filter(r => r.status === 'enviado').length;

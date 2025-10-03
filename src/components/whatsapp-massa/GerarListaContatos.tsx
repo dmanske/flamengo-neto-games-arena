@@ -25,6 +25,16 @@ interface GerarListaContatosProps {
   onGerarLista: () => string;
   onBaixarVCF: () => void;
   onRegistrarHistorico: (tipo: string, quantidade: number) => void;
+  dadosViagem?: {
+    adversario?: string;
+    dataJogo?: string;
+    dataViagem?: string;
+    horario?: string;
+    localSaida?: string;
+    valor?: string;
+    onibus?: string;
+    prazo?: string;
+  };
 }
 
 export const GerarListaContatos: React.FC<GerarListaContatosProps> = ({
@@ -32,7 +42,8 @@ export const GerarListaContatos: React.FC<GerarListaContatosProps> = ({
   mensagem,
   onGerarLista,
   onBaixarVCF,
-  onRegistrarHistorico
+  onRegistrarHistorico,
+  dadosViagem
 }) => {
   const [modoExibicao, setModoExibicao] = useState<'numeros' | 'vcf' | 'links' | 'automatico'>('automatico');
   const [copiandoLista, setCopiandoLista] = useState(false);
@@ -174,7 +185,20 @@ export const GerarListaContatos: React.FC<GerarListaContatosProps> = ({
                   ? telefoneNumeros 
                   : `55${telefoneNumeros}`;
                 const nome = passageiro.nome || passageiro.clientes?.nome || `Passageiro ${index + 1}`;
-                const whatsappUrl = `https://wa.me/${telefoneCompleto}?text=${encodeURIComponent(mensagem)}`;
+                
+                // Substituir variáveis na mensagem para este passageiro
+                const mensagemPersonalizada = mensagem
+                  .replace(/\{nome\}/g, nome)
+                  .replace(/\{adversario\}/g, dadosViagem?.adversario || 'Adversário')
+                  .replace(/\{dataJogo\}/g, dadosViagem?.dataJogo || 'Data do jogo')
+                  .replace(/\{dataViagem\}/g, dadosViagem?.dataViagem || 'Data da viagem')
+                  .replace(/\{horario\}/g, dadosViagem?.horario || 'Horário')
+                  .replace(/\{localSaida\}/g, dadosViagem?.localSaida || 'Local de saída')
+                  .replace(/\{valor\}/g, dadosViagem?.valor || 'R$ 150,00')
+                  .replace(/\{onibus\}/g, dadosViagem?.onibus || 'Ônibus')
+                  .replace(/\{prazo\}/g, dadosViagem?.prazo || 'Data limite');
+                
+                const whatsappUrl = `https://wa.me/${telefoneCompleto}?text=${encodeURIComponent(mensagemPersonalizada)}`;
                 
                 return (
                   <div key={passageiro.id} className="flex items-center justify-between bg-white p-2 rounded border">
@@ -210,7 +234,21 @@ export const GerarListaContatos: React.FC<GerarListaContatosProps> = ({
                       const telefoneCompleto = telefoneNumeros.startsWith('55') 
                         ? telefoneNumeros 
                         : `55${telefoneNumeros}`;
-                      const whatsappUrl = `https://wa.me/${telefoneCompleto}?text=${encodeURIComponent(mensagem)}`;
+                      const nome = passageiro.nome || passageiro.clientes?.nome || `Passageiro ${index + 1}`;
+                      
+                      // Substituir variáveis na mensagem para este passageiro
+                      const mensagemPersonalizada = mensagem
+                        .replace(/\{nome\}/g, nome)
+                        .replace(/\{adversario\}/g, dadosViagem?.adversario || 'Adversário')
+                        .replace(/\{dataJogo\}/g, dadosViagem?.dataJogo || 'Data do jogo')
+                        .replace(/\{dataViagem\}/g, dadosViagem?.dataViagem || 'Data da viagem')
+                        .replace(/\{horario\}/g, dadosViagem?.horario || 'Horário')
+                        .replace(/\{localSaida\}/g, dadosViagem?.localSaida || 'Local de saída')
+                        .replace(/\{valor\}/g, dadosViagem?.valor || 'R$ 150,00')
+                        .replace(/\{onibus\}/g, dadosViagem?.onibus || 'Ônibus')
+                        .replace(/\{prazo\}/g, dadosViagem?.prazo || 'Data limite');
+                      
+                      const whatsappUrl = `https://wa.me/${telefoneCompleto}?text=${encodeURIComponent(mensagemPersonalizada)}`;
                       window.open(whatsappUrl, '_blank');
                     }, index * 1000); // 1 segundo de delay entre cada abertura
                   });
@@ -258,6 +296,7 @@ export const GerarListaContatos: React.FC<GerarListaContatosProps> = ({
               passageiros={passageirosComTelefone}
               mensagem={mensagem}
               onRegistrarHistorico={onRegistrarHistorico}
+              dadosViagem={dadosViagem}
             />
           </TabsContent>
           

@@ -7,6 +7,7 @@ import { CampoMensagem } from './CampoMensagem';
 import { PreviewMensagem } from './PreviewMensagem';
 import { EstatisticasPassageiros } from './EstatisticasPassageiros';
 import { GerarListaContatos } from './GerarListaContatos';
+import { ListaPassageirosIndividual } from './ListaPassageirosIndividual';
 
 interface Viagem {
   id: string;
@@ -125,7 +126,19 @@ export const WhatsAppMassaModal: React.FC<WhatsAppMassaModalProps> = ({
               }}
             />
             
-            <PreviewMensagem mensagem={mensagem} />
+            <PreviewMensagem 
+              mensagem={mensagem} 
+              dadosViagem={{
+                adversario: viagem.adversario || 'Adversário',
+                dataJogo: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data do jogo',
+                dataViagem: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data da viagem',
+                horario: '07:00',
+                localSaida: 'Local de saída',
+                valor: 'R$ 150,00',
+                onibus: filtroOnibus !== 'todos' ? onibusList.find(o => o.id === filtroOnibus)?.numero_identificacao || 'Ônibus' : 'Ônibus',
+                prazo: 'Data limite'
+              }}
+            />
           </div>
           
           {/* Coluna Direita - Estatísticas e Ações */}
@@ -142,6 +155,31 @@ export const WhatsAppMassaModal: React.FC<WhatsAppMassaModalProps> = ({
               onGerarLista={gerarListaNumeros}
               onBaixarVCF={gerarArquivoVCF}
               onRegistrarHistorico={registrarHistorico}
+              dadosViagem={{
+                adversario: viagem.adversario || 'Adversário',
+                dataJogo: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data do jogo',
+                dataViagem: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data da viagem',
+                horario: '07:00',
+                localSaida: 'Local de saída',
+                valor: 'R$ 150,00',
+                onibus: filtroOnibus !== 'todos' ? onibusList.find(o => o.id === filtroOnibus)?.numero_identificacao || 'Ônibus' : 'Ônibus',
+                prazo: 'Data limite'
+              }}
+            />
+
+            <ListaPassageirosIndividual
+              passageiros={passageirosFiltrados}
+              mensagem={mensagem}
+              dadosViagem={{
+                adversario: viagem.adversario || 'Adversário',
+                dataJogo: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data do jogo',
+                dataViagem: viagem.data_jogo ? new Date(viagem.data_jogo).toLocaleDateString('pt-BR') : 'Data da viagem',
+                horario: '07:00',
+                localSaida: 'Local de saída',
+                valor: 'R$ 150,00',
+                onibus: filtroOnibus !== 'todos' ? onibusList.find(o => o.id === filtroOnibus)?.numero_identificacao || 'Ônibus' : 'Ônibus',
+                prazo: 'Data limite'
+              }}
             />
           </div>
         </div>
