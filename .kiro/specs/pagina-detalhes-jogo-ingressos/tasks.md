@@ -187,20 +187,20 @@
     - Visualizações de ROI
     - _Requirements: 16.1, 16.2, 16.3_
 
-- [ ] 12. Implementar formulários e modais específicos
-  - [ ] 12.1 Criar ReceitaJogoForm
+- [x] 12. Implementar formulários e modais específicos
+  - [x] 12.1 Criar ReceitaJogoForm
     - Formulário para receitas manuais
     - Validação com Zod
     - Integração com hook useJogoFinanceiro
     - _Requirements: 12.2_
 
-  - [ ] 12.2 Criar DespesaJogoForm
+  - [x] 12.2 Criar DespesaJogoForm
     - Formulário para despesas operacionais
     - Categorização automática
     - Cálculo de impacto na margem
     - _Requirements: 13.2_
 
-  - [ ] 12.3 Criar CobrancaModal
+  - [x] 12.3 Criar CobrancaModal
     - Interface para envio de cobranças
     - Templates de mensagem
     - Histórico de tentativas

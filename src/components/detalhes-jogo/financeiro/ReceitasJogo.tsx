@@ -10,13 +10,15 @@ import { formatCurrency } from '@/utils/formatters';
 import { Plus, Edit, Trash2, Users, DollarSign, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ReceitaJogoForm } from '../forms/ReceitaJogoForm';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 interface ReceitasJogoProps {
   jogo: JogoDetails;
   ingressos: Ingresso[];
   receitas: ReceitaJogo[];
   resumoFinanceiro: ResumoFinanceiroJogo | null;
-  onAdicionarReceita: (receita: Omit<ReceitaJogo, 'id' | 'created_at' | 'updated_at'>) => Promise<ReceitaJogo>;
+  onAdicionarReceita: (receita: Omit<ReceitaJogo, 'id' | 'jogo_key' | 'created_at' | 'updated_at'>) => Promise<ReceitaJogo>;
   onEditarReceita: (id: string, receita: Partial<ReceitaJogo>) => Promise<ReceitaJogo>;
   onExcluirReceita: (id: string) => Promise<void>;
 }
@@ -32,6 +34,9 @@ export function ReceitasJogo({
 }: ReceitasJogoProps) {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<ReceitaJogo | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [receitaToDelete, setReceitaToDelete] = useState<ReceitaJogo | null>(null);
 
   // Calcular receitas automáticas dos ingressos
   const receitasIngressos = {
@@ -59,9 +64,30 @@ export function ReceitasJogo({
     setShowFormModal(true);
   };
 
-  const handleExcluirReceita = async (receita: ReceitaJogo) => {
-    if (confirm(`Tem certeza que deseja excluir a receita "${receita.descricao}"?`)) {
-      await onExcluirReceita(receita.id);
+  const handleExcluirReceita = (receita: ReceitaJogo) => {
+    setReceitaToDelete(receita);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteReceita = async () => {
+    if (receitaToDelete) {
+      await onExcluirReceita(receitaToDelete.id);
+      setReceitaToDelete(null);
+    }
+  };
+
+  const handleSubmitReceita = async (receitaData: Omit<ReceitaJogo, 'id' | 'jogo_key' | 'created_at' | 'updated_at'>) => {
+    setIsSubmitting(true);
+    try {
+      if (editingReceita) {
+        await onEditarReceita(editingReceita.id, receitaData);
+      } else {
+        await onAdicionarReceita(receitaData);
+      }
+      setShowFormModal(false);
+      setEditingReceita(null);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -311,27 +337,40 @@ export function ReceitasJogo({
         </CardContent>
       </Card>
 
-      {/* TODO: Implementar modais de formulário */}
-      {showFormModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium mb-4">
-              {editingReceita ? 'Editar Receita' : 'Nova Receita'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Formulário de receita será implementado aqui.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowFormModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={() => setShowFormModal(false)}>
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Formulário de Receita */}
+      <ReceitaJogoForm
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditingReceita(null);
+        }}
+        onSubmit={handleSubmitReceita}
+        editingReceita={editingReceita}
+        jogoData={jogo.jogo_data}
+        isLoading={isSubmitting}
+      />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setReceitaToDelete(null);
+        }}
+        onConfirm={confirmDeleteReceita}
+        title="Excluir Receita"
+        description={receitaToDelete ? `Tem certeza que deseja excluir a receita "${receitaToDelete.descricao}"?
+
+💰 Valor: ${formatCurrency(receitaToDelete.valor)}
+📅 Data: ${format(new Date(receitaToDelete.data_receita), 'dd/MM/yyyy', { locale: ptBR })}
+🏷️ Tipo: ${receitaToDelete.tipo.replace('_', ' ')}
+
+⚠️ Esta ação não pode ser desfeita!` : ''}
+        confirmText="Excluir Receita"
+        cancelText="Cancelar"
+        variant="destructive"
+        icon={<Trash2 className="h-5 w-5 text-red-600" />}
+      />
     </div>
   );
 }

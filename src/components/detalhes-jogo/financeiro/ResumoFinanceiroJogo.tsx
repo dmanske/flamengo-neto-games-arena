@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,9 @@ import {
   Trophy,
   Users,
   Calendar,
-  BarChart3
+  BarChart3,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface ResumoFinanceiroJogoProps {
@@ -33,6 +35,22 @@ export function ResumoFinanceiroJogo({
   resumoFinanceiro, 
   setorAnalytics 
 }: ResumoFinanceiroJogoProps) {
+  
+  // Estado para controlar visibilidade dos valores financeiros
+  const [showValues, setShowValues] = useState({
+    receita: false,
+    custo: false,
+    lucro: false,
+    pendencias: false
+  });
+
+  // Função para alternar visibilidade de um card específico
+  const toggleVisibility = (card: keyof typeof showValues) => {
+    setShowValues(prev => ({
+      ...prev,
+      [card]: !prev[card]
+    }));
+  };
   
   // Calcular estatísticas básicas dos ingressos
   const estatisticasIngressos = useMemo(() => {
@@ -139,20 +157,94 @@ export function ResumoFinanceiroJogo({
       .slice(0, 3);
   }, [ingressos]);
 
+  // Componente auxiliar para renderizar valores ocultos/visíveis
+  const renderHiddenValue = (
+    value: string, 
+    isVisible: boolean, 
+    cardKey: keyof typeof showValues,
+    placeholder: string = "••••••"
+  ) => (
+    <div 
+      className={`cursor-pointer select-none transition-all duration-200 hover:scale-105 ${
+        !isVisible ? 'hover:bg-gray-50 rounded-md p-1 -m-1' : ''
+      }`}
+      onClick={() => toggleVisibility(cardKey)}
+      title={isVisible ? "Clique para ocultar valor" : "Clique para mostrar valor"}
+    >
+      <div className="flex items-center gap-2">
+        {isVisible ? (
+          <span className="text-2xl font-bold transition-all duration-300 animate-in fade-in-0 slide-in-from-left-2">
+            {value}
+          </span>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-gray-400 tracking-wider">
+              {placeholder}
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <Eye className="h-3 w-3" />
+              <span>Clique para ver</span>
+            </div>
+          </div>
+        )}
+        {isVisible && (
+          <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {/* Controle de Visibilidade */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-800">Resumo Financeiro</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">Valores:</span>
+          <button
+            onClick={() => {
+              const allVisible = Object.values(showValues).every(v => v);
+              setShowValues({
+                receita: !allVisible,
+                custo: !allVisible,
+                lucro: !allVisible,
+                pendencias: !allVisible
+              });
+            }}
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200"
+          >
+            {Object.values(showValues).every(v => v) ? (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Ocultar Todos
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4" />
+                Mostrar Todos
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Cards Principais de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Receita Total */}
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Receita Total</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(dadosFinanceiros.receita_total)}
-                </p>
-                {resumoFinanceiro && resumoFinanceiro.receitas_manuais > 0 && (
+                <div className="text-green-600">
+                  {renderHiddenValue(
+                    formatCurrency(dadosFinanceiros.receita_total),
+                    showValues.receita,
+                    'receita',
+                    'R$ ••••••'
+                  )}
+                </div>
+                {resumoFinanceiro && resumoFinanceiro.receitas_manuais > 0 && showValues.receita && (
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-xs text-gray-600">
                       <span>• Ingressos:</span>
@@ -171,15 +263,20 @@ export function ResumoFinanceiroJogo({
         </Card>
 
         {/* Custo Total */}
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Custo Total</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {formatCurrency(dadosFinanceiros.custo_total)}
-                </p>
-                {resumoFinanceiro && resumoFinanceiro.despesas_operacionais > 0 && (
+                <div className="text-red-600">
+                  {renderHiddenValue(
+                    formatCurrency(dadosFinanceiros.custo_total),
+                    showValues.custo,
+                    'custo',
+                    'R$ ••••••'
+                  )}
+                </div>
+                {resumoFinanceiro && resumoFinanceiro.despesas_operacionais > 0 && showValues.custo && (
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-xs text-gray-600">
                       <span>• Ingressos:</span>
@@ -198,19 +295,24 @@ export function ResumoFinanceiroJogo({
         </Card>
 
         {/* Lucro Líquido */}
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Lucro Líquido</p>
-                <p className={`text-2xl font-bold ${
-                  dadosFinanceiros.lucro_total >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatCurrency(dadosFinanceiros.lucro_total)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {dadosFinanceiros.lucro_total >= 0 ? '✅ Lucro' : '❌ Prejuízo'}
-                </p>
+                <div className={dadosFinanceiros.lucro_total >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  {renderHiddenValue(
+                    formatCurrency(dadosFinanceiros.lucro_total),
+                    showValues.lucro,
+                    'lucro',
+                    'R$ ••••••'
+                  )}
+                </div>
+                {showValues.lucro && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {dadosFinanceiros.lucro_total >= 0 ? '✅ Lucro' : '❌ Prejuízo'}
+                  </p>
+                )}
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
             </div>
@@ -218,17 +320,24 @@ export function ResumoFinanceiroJogo({
         </Card>
 
         {/* Pendências */}
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Pendências</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(estatisticasIngressos.receitaPendente)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {jogo.ingressos_pendentes} ingresso{jogo.ingressos_pendentes !== 1 ? 's' : ''}
-                </p>
+                <div className="text-orange-600">
+                  {renderHiddenValue(
+                    formatCurrency(estatisticasIngressos.receitaPendente),
+                    showValues.pendencias,
+                    'pendencias',
+                    'R$ ••••••'
+                  )}
+                </div>
+                {showValues.pendencias && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {jogo.ingressos_pendentes} ingresso{jogo.ingressos_pendentes !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-600" />
             </div>
@@ -345,12 +454,15 @@ export function ResumoFinanceiroJogo({
       </div>
 
       {/* Gráfico de Evolução Temporal das Vendas */}
-      {estatisticasIngressos.evolucaoTemporal.length > 1 && (
+      {estatisticasIngressos.evolucaoTemporal.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-blue-600" />
-              Evolução Temporal das Vendas
+              {estatisticasIngressos.evolucaoTemporal.length === 1 
+                ? 'Resumo das Vendas do Dia' 
+                : 'Evolução Temporal das Vendas'
+              }
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -389,7 +501,12 @@ export function ResumoFinanceiroJogo({
               {/* Gráfico de barras da evolução */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-700">Vendas por Dia</h4>
+                  <h4 className="font-medium text-gray-700">
+                    {estatisticasIngressos.evolucaoTemporal.length === 1 
+                      ? 'Detalhes das Vendas' 
+                      : 'Vendas por Dia'
+                    }
+                  </h4>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-blue-500 rounded"></div>
@@ -401,6 +518,16 @@ export function ResumoFinanceiroJogo({
                     </div>
                   </div>
                 </div>
+
+                {/* Nota explicativa para 1 dia */}
+                {estatisticasIngressos.evolucaoTemporal.length === 1 && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      📅 <strong>Vendas concentradas:</strong> Todos os {jogo.total_ingressos} ingressos foram vendidos em um único dia.
+                      {jogo.total_ingressos > 10 && ' Excelente performance de vendas!'}
+                    </p>
+                  </div>
+                )}
                 
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {estatisticasIngressos.evolucaoTemporal.map((ponto, index) => {

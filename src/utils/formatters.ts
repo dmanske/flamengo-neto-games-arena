@@ -1,9 +1,9 @@
 export const formatPhone = (phone: string): string => {
   if (!phone) return '';
-  
+
   // Remove all non-numeric characters
   const numbers = phone.replace(/\D/g, '');
-  
+
   // Format based on length
   if (numbers.length === 11) {
     // Mobile: (XX) 9 XXXX-XXXX - formato brasileiro com espaço após o 9
@@ -12,28 +12,28 @@ export const formatPhone = (phone: string): string => {
     // Landline: (XX) XXXX-XXXX
     return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
   }
-  
+
   return phone;
 };
 
 export const formatCPF = (cpf: string): string => {
   if (!cpf) return '';
-  
+
   const numbers = cpf.replace(/\D/g, '');
-  
+
   if (numbers.length === 11) {
     return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
-  
+
   return cpf;
 };
 
 export const formatDate = (date: string): string => {
   if (!date) return '';
-  
+
   // Remove all non-numeric characters
   const numbers = date.replace(/\D/g, '');
-  
+
   // Format as DD/MM/AAAA
   if (numbers.length <= 2) {
     return numbers;
@@ -48,21 +48,21 @@ export const formatDate = (date: string): string => {
   if (numbers.length <= 8) {
     return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
   }
-  
+
   // Limit to 8 digits (DDMMAAAA)
   return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
 };
 
 export const formatBirthDate = (dateString: string | null): string => {
   if (!dateString) return 'Data não informada';
-  
+
   try {
     // Se a data está no formato YYYY-MM-DD, converter diretamente
     if (dateString.includes('-') && dateString.length === 10) {
       const [year, month, day] = dateString.split('-');
       return `${day}/${month}/${year}`;
     }
-    
+
     // Caso contrário, tentar converter usando Date
     const date = new Date(dateString);
     if (!isNaN(date.getTime())) {
@@ -71,7 +71,7 @@ export const formatBirthDate = (dateString: string | null): string => {
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     }
-    
+
     return 'Data inválida';
   } catch (error) {
     return 'Data inválida';
@@ -88,9 +88,9 @@ export const cleanCPF = (cpf: string): string => {
 
 export const formatarNomeComPreposicoes = (nome: string): string => {
   if (!nome) return '';
-  
+
   const preposicoes = ['de', 'da', 'do', 'das', 'dos', 'e'];
-  
+
   return nome
     .toLowerCase()
     .split(' ')
@@ -108,35 +108,35 @@ export const formatarNomeComPreposicoes = (nome: string): string => {
 // Função para converter data brasileira DD/MM/AAAA para formato ISO AAAA-MM-DD
 export const convertBrazilianDateToISO = (brazilianDate: string): string => {
   if (!brazilianDate || brazilianDate.length !== 10) return "";
-  
+
   const [day, month, year] = brazilianDate.split('/');
   if (!day || !month || !year) return "";
-  
+
   // Validar se são números válidos
   const dayNum = parseInt(day, 10);
   const monthNum = parseInt(month, 10);
   const yearNum = parseInt(year, 10);
-  
+
   if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900) {
     return "";
   }
-  
+
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 };
 
 // Função para converter data ISO AAAA-MM-DD para formato brasileiro DD/MM/AAAA
 export const convertISOToBrazilianDate = (isoDate: string): string => {
   if (!isoDate) return "";
-  
+
   // Se já está no formato brasileiro, retorna como está
   if (isoDate.includes('/')) return isoDate;
-  
+
   // Se está no formato ISO AAAA-MM-DD
   if (isoDate.includes('-') && isoDate.length === 10) {
     const [year, month, day] = isoDate.split('-');
     return `${day}/${month}/${year}`;
   }
-  
+
   return "";
 };
 
@@ -150,29 +150,77 @@ export const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
+// Função para converter string de moeda para número
+export const parseCurrency = (value: string): number => {
+  if (!value) return 0;
+
+  // Remove tudo exceto números, vírgulas e pontos
+  let cleanValue = value.replace(/[^\d,.-]/g, '');
+
+  // Se não há valor limpo, retorna 0
+  if (!cleanValue) return 0;
+
+  // Se tem vírgula e ponto, assumir que vírgula é separador de milhares
+  if (cleanValue.includes(',') && cleanValue.includes('.')) {
+    // Remove vírgulas (separador de milhares) e mantém ponto (decimal)
+    cleanValue = cleanValue.replace(/,/g, '');
+  } else if (cleanValue.includes(',')) {
+    // Se só tem vírgula, assumir que é separador decimal brasileiro
+    cleanValue = cleanValue.replace(',', '.');
+  }
+
+  // Converte para número
+  const numericValue = parseFloat(cleanValue);
+
+  // Retorna 0 se não for um número válido
+  return isNaN(numericValue) ? 0 : numericValue;
+};
+
+// Função para formatar entrada de moeda (para usar durante a digitação)
+export const formatCurrencyInput = (value: string): string => {
+  if (!value) return '';
+
+  // Remove tudo exceto números
+  const numbers = value.replace(/\D/g, '');
+
+  if (!numbers) return '';
+
+  // Converte para número (centavos)
+  const numericValue = parseInt(numbers, 10);
+
+  // Converte centavos para reais
+  const realValue = numericValue / 100;
+
+  // Formata como moeda brasileira sem o símbolo R$
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(realValue);
+};
+
 // Função para calcular idade a partir da data de nascimento
 export const calcularIdade = (dataNascimento: string): number => {
   if (!dataNascimento) {
     return 0;
   }
-  
+
   try {
     const hoje = new Date();
     const nascimento = new Date(dataNascimento);
-    
+
     // Verificar se a data é válida
     if (isNaN(nascimento.getTime())) {
       return 0;
     }
-    
+
     let idade = hoje.getFullYear() - nascimento.getFullYear();
     const mesAtual = hoje.getMonth();
     const mesNascimento = nascimento.getMonth();
-    
+
     if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
       idade--;
     }
-    
+
     return idade;
   } catch (error) {
     console.error('❌ Erro ao calcular idade:', error, 'Data:', dataNascimento);

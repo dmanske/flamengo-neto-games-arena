@@ -12,6 +12,7 @@ import { Ingresso } from '@/types/ingressos';
 import { formatCurrency, formatPhone } from '@/utils/formatters';
 import { formatarDataBrasil, calcularDiferencaDias } from '@/utils/dateUtils';
 import { toast } from 'sonner';
+import { CobrancaModal } from '../forms/CobrancaModal';
 import { 
   AlertTriangle, 
   MessageCircle, 
@@ -66,8 +67,9 @@ export function PendenciasJogo({
 }: PendenciasJogoProps) {
   const [filtrosPrioridade, setFiltrosPrioridade] = useState<string>('todos');
   const [busca, setBusca] = useState('');
-  const [showMensagemModal, setShowMensagemModal] = useState(false);
+  const [showCobrancaModal, setShowCobrancaModal] = useState(false);
   const [ingressoSelecionado, setIngressoSelecionado] = useState<IngressoPendente | null>(null);
+  const [showMensagemModal, setShowMensagemModal] = useState(false);
   const [tipoMensagem, setTipoMensagem] = useState<'whatsapp' | 'email'>('whatsapp');
   const [mensagemEditavel, setMensagemEditavel] = useState('');
   const [assuntoEmail, setAssuntoEmail] = useState('');
@@ -204,7 +206,13 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
     }
   };
 
-  // Função para abrir modal de edição
+  // Função para abrir modal de cobrança
+  const abrirModalCobranca = (ingresso: IngressoPendente) => {
+    setIngressoSelecionado(ingresso);
+    setShowCobrancaModal(true);
+  };
+
+  // Função para abrir modal de edição (mantida para compatibilidade)
   const abrirModalEdicao = (ingresso: IngressoPendente, tipo: 'whatsapp' | 'email') => {
     setIngressoSelecionado(ingresso);
     setTipoMensagem(tipo);
@@ -257,6 +265,22 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
       await onMarcarComoPago(ingresso.id);
     }
   };
+
+  // Função para enviar cobrança via modal
+  const handleEnviarCobranca = async (
+    ingressoId: string,
+    tipo: 'whatsapp' | 'email' | 'telefone' | 'presencial' | 'outros',
+    mensagem?: string,
+    observacoes?: string
+  ) => {
+    await onRegistrarCobranca(ingressoId, tipo, mensagem);
+  };
+
+  // Filtrar histórico para o ingresso selecionado
+  const historicoIngressoSelecionado = useMemo(() => {
+    if (!ingressoSelecionado) return [];
+    return historicoCobrancas.filter(h => h.ingresso_id === ingressoSelecionado.id);
+  }, [historicoCobrancas, ingressoSelecionado]);
 
   return (
     <div className="space-y-6">
@@ -566,21 +590,21 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
                     <div className="flex gap-2 ml-4">
                       <Button
                         size="sm"
-                        onClick={() => abrirModalEdicao(ingresso, 'whatsapp')}
-                        className="bg-green-600 hover:bg-green-700 px-3"
+                        onClick={() => abrirModalCobranca(ingresso)}
+                        className="bg-blue-600 hover:bg-blue-700 px-3"
                       >
                         <MessageCircle className="h-4 w-4 mr-1" />
-                        WhatsApp
+                        Cobrança
                       </Button>
                       
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => abrirModalEdicao(ingresso, 'email')}
+                        onClick={() => abrirModalEdicao(ingresso, 'whatsapp')}
                         className="px-3"
                       >
-                        <Mail className="h-4 w-4 mr-1" />
-                        Email
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        WhatsApp
                       </Button>
 
                       <Button
@@ -701,6 +725,23 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Cobrança Completo */}
+      {ingressoSelecionado && (
+        <CobrancaModal
+          isOpen={showCobrancaModal}
+          onClose={() => {
+            setShowCobrancaModal(false);
+            setIngressoSelecionado(null);
+          }}
+          ingresso={ingressoSelecionado}
+          templates={templates}
+          historico={historicoIngressoSelecionado}
+          onEnviarCobranca={handleEnviarCobranca}
+          onMarcarComoPago={onMarcarComoPago}
+          onGerarMensagem={onGerarMensagem}
+        />
+      )}
     </div>
   );
 }

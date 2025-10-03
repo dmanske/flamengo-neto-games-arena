@@ -10,13 +10,15 @@ import { formatCurrency } from '@/utils/formatters';
 import { Plus, Edit, Trash2, Receipt, TrendingDown, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DespesaJogoForm } from '../forms/DespesaJogoForm';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 interface DespesasJogoProps {
   jogo: JogoDetails;
   ingressos: Ingresso[];
   despesas: DespesaJogo[];
   resumoFinanceiro: ResumoFinanceiroJogo | null;
-  onAdicionarDespesa: (despesa: Omit<DespesaJogo, 'id' | 'created_at' | 'updated_at'>) => Promise<DespesaJogo>;
+  onAdicionarDespesa: (despesa: Omit<DespesaJogo, 'id' | 'jogo_key' | 'created_at' | 'updated_at'>) => Promise<DespesaJogo>;
   onEditarDespesa: (id: string, despesa: Partial<DespesaJogo>) => Promise<DespesaJogo>;
   onExcluirDespesa: (id: string) => Promise<void>;
 }
@@ -32,6 +34,9 @@ export function DespesasJogo({
 }: DespesasJogoProps) {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<DespesaJogo | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [despesaToDelete, setDespesaToDelete] = useState<DespesaJogo | null>(null);
 
   // Calcular custos dos ingressos
   const custosIngressos = {
@@ -73,9 +78,30 @@ export function DespesasJogo({
     setShowFormModal(true);
   };
 
-  const handleExcluirDespesa = async (despesa: DespesaJogo) => {
-    if (confirm(`Tem certeza que deseja excluir a despesa "${despesa.descricao}"?`)) {
-      await onExcluirDespesa(despesa.id);
+  const handleExcluirDespesa = (despesa: DespesaJogo) => {
+    setDespesaToDelete(despesa);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteDespesa = async () => {
+    if (despesaToDelete) {
+      await onExcluirDespesa(despesaToDelete.id);
+      setDespesaToDelete(null);
+    }
+  };
+
+  const handleSubmitDespesa = async (despesaData: Omit<DespesaJogo, 'id' | 'jogo_key' | 'created_at' | 'updated_at'>) => {
+    setIsSubmitting(true);
+    try {
+      if (editingDespesa) {
+        await onEditarDespesa(editingDespesa.id, despesaData);
+      } else {
+        await onAdicionarDespesa(despesaData);
+      }
+      setShowFormModal(false);
+      setEditingDespesa(null);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -376,27 +402,43 @@ export function DespesasJogo({
         </CardContent>
       </Card>
 
-      {/* TODO: Implementar modais de formulário */}
-      {showFormModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium mb-4">
-              {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Formulário de despesa será implementado aqui.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowFormModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={() => setShowFormModal(false)}>
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Formulário de Despesa */}
+      <DespesaJogoForm
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditingDespesa(null);
+        }}
+        onSubmit={handleSubmitDespesa}
+        editingDespesa={editingDespesa}
+        jogoData={jogo.jogo_data}
+        receitaTotal={resumoFinanceiro?.receita_total || jogo.receita_total}
+        isLoading={isSubmitting}
+      />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setDespesaToDelete(null);
+        }}
+        onConfirm={confirmDeleteDespesa}
+        title="Excluir Despesa"
+        description={despesaToDelete ? `Tem certeza que deseja excluir a despesa "${despesaToDelete.descricao}"?
+
+💰 Valor: ${formatCurrency(despesaToDelete.valor)}
+📅 Data: ${format(new Date(despesaToDelete.data_despesa), 'dd/MM/yyyy', { locale: ptBR })}
+🏷️ Tipo: ${despesaToDelete.tipo.replace('_', ' ')}
+📊 Categoria: ${despesaToDelete.categoria === 'fixa' ? 'Fixa' : 'Variável'}${despesaToDelete.fornecedor ? `
+🏢 Fornecedor: ${despesaToDelete.fornecedor}` : ''}
+
+⚠️ Esta ação não pode ser desfeita!` : ''}
+        confirmText="Excluir Despesa"
+        cancelText="Cancelar"
+        variant="destructive"
+        icon={<Trash2 className="h-5 w-5 text-red-600" />}
+      />
     </div>
   );
 }
