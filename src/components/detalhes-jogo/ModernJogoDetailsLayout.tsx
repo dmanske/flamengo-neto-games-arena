@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Download, Trash2 } from 'lucide-react';
 import { JogoDetails } from '@/hooks/useJogoDetails';
 import { formatCurrency } from '@/utils/formatters';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatarDataHoraBrasil } from '@/utils/dateUtils';
 
 interface ModernJogoDetailsLayoutProps {
   jogo: JogoDetails;
@@ -23,25 +22,7 @@ function ModernJogoDetailsLayout({
   children
 }: ModernJogoDetailsLayoutProps) {
   
-  // Função para formatar data e hora
-  const formatarDataJogo = (dataString: string) => {
-    try {
-      const data = new Date(dataString);
-      return {
-        data: format(data, 'dd/MM/yyyy', { locale: ptBR }),
-        diaSemana: format(data, 'EEEE', { locale: ptBR }),
-        hora: format(data, 'HH:mm', { locale: ptBR })
-      };
-    } catch (error) {
-      return {
-        data: 'Data inválida',
-        diaSemana: '',
-        hora: ''
-      };
-    }
-  };
-
-  const { data, diaSemana, hora } = formatarDataJogo(jogo.jogo_data);
+  const { data, diaSemana, hora } = formatarDataHoraBrasil(jogo.jogo_data);
 
   return (
     <div className="space-y-6">
@@ -140,77 +121,7 @@ function ModernJogoDetailsLayout({
         </div>
       </div>
 
-      {/* Cards de resumo financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Ingressos</CardTitle>
-            <span className="text-2xl">🎫</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{jogo.total_ingressos}</div>
-            <p className="text-xs text-muted-foreground">
-              {jogo.ingressos_pagos} pagos • {jogo.ingressos_pendentes} pendentes
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <span className="text-2xl">💰</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(jogo.receita_total)}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor total dos ingressos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro Total</CardTitle>
-            <span className="text-2xl">📈</span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(jogo.lucro_total)}</div>
-            <p className="text-xs text-muted-foreground">
-              {jogo.receita_total > 0 
-                ? `Margem: ${((jogo.lucro_total / jogo.receita_total) * 100).toFixed(1)}%`
-                : 'Sem receita'
-              }
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <span className="text-2xl">
-              {jogo.ingressos_pendentes > 0 ? '⏳' : jogo.total_ingressos > 0 ? '✅' : '📝'}
-            </span>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {jogo.ingressos_pendentes > 0 
-                ? `${jogo.ingressos_pendentes} Pendente${jogo.ingressos_pendentes > 1 ? 's' : ''}`
-                : jogo.total_ingressos > 0 
-                  ? 'Completo'
-                  : 'Sem Ingressos'
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {jogo.total_ingressos === 0 
-                ? 'Nenhum ingresso cadastrado'
-                : jogo.ingressos_pendentes === 0 
-                  ? 'Todos os pagamentos em dia'
-                  : `${formatCurrency(jogo.receita_total * (jogo.ingressos_pendentes / jogo.total_ingressos))} pendente`
-              }
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Conteúdo das abas */}
       {children}

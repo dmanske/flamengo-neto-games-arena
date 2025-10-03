@@ -111,10 +111,71 @@ interface FinanceiroJogoProps {
 ```
 
 **Responsabilidades:**
-- Exibir resumo financeiro detalhado
-- Mostrar histórico de pagamentos
-- Renderizar gráficos de performance
-- Calcular métricas financeiras
+- Gerenciar sistema de sub-abas financeiras
+- Coordenar comunicação entre componentes filhos
+- Manter estado global da aba financeiro
+- Fornecer dados para todos os sub-componentes
+
+### Sub-Components da Aba Financeiro
+
+#### ResumoFinanceiroJogo Component
+```typescript
+interface ResumoFinanceiroJogoProps {
+  jogo: JogoDetails;
+  ingressos: Ingresso[];
+  receitas: ReceitaJogo[];
+  despesas: DespesaJogo[];
+}
+```
+
+#### ReceitasJogo Component
+```typescript
+interface ReceitasJogoProps {
+  jogo: JogoDetails;
+  ingressos: Ingresso[];
+  onAdicionarReceita: (receita: ReceitaJogo) => void;
+  onEditarReceita: (receita: ReceitaJogo) => void;
+  onExcluirReceita: (id: string) => void;
+}
+```
+
+#### DespesasJogo Component
+```typescript
+interface DespesasJogoProps {
+  jogo: JogoDetails;
+  ingressos: Ingresso[];
+  onAdicionarDespesa: (despesa: DespesaJogo) => void;
+  onEditarDespesa: (despesa: DespesaJogo) => void;
+  onExcluirDespesa: (id: string) => void;
+}
+```
+
+#### ListaClientesJogo Component
+```typescript
+interface ListaClientesJogoProps {
+  ingressos: Ingresso[];
+  onMarcarComoPago: (ingressoId: string) => void;
+  onEnviarCobranca: (cliente: Cliente) => void;
+}
+```
+
+#### PendenciasJogo Component
+```typescript
+interface PendenciasJogoProps {
+  ingressosPendentes: Ingresso[];
+  onRegistrarCobranca: (ingressoId: string, tipo: string) => void;
+  onMarcarComoPago: (ingressoId: string) => void;
+}
+```
+
+#### GraficosJogo Component
+```typescript
+interface GraficosJogoProps {
+  jogo: JogoDetails;
+  ingressos: Ingresso[];
+  dadosComparativos?: JogoComparativo[];
+}
+```
 
 ## Data Models
 
@@ -134,6 +195,64 @@ interface JogoDetails {
   ingressos_pagos: number;
   viagem_ingressos_id?: string;
 }
+```
+
+### New Data Models
+
+#### ReceitaJogo Interface
+```typescript
+interface ReceitaJogo {
+  id: string;
+  jogo_id: string;
+  tipo: 'ingresso' | 'patrocinio' | 'comissao' | 'extra';
+  descricao: string;
+  valor: number;
+  data_receita: string;
+  observacoes?: string;
+  created_at: string;
+}
+```
+
+#### DespesaJogo Interface
+```typescript
+interface DespesaJogo {
+  id: string;
+  jogo_id: string;
+  tipo: 'custo_ingresso' | 'transporte' | 'alimentacao' | 'comissao' | 'outros';
+  descricao: string;
+  valor: number;
+  data_despesa: string;
+  categoria: string;
+  observacoes?: string;
+  created_at: string;
+}
+```
+
+#### SetorAnalytics Interface
+```typescript
+interface SetorAnalytics {
+  setor: string;
+  quantidade_vendida: number;
+  receita_total: number;
+  custo_total: number;
+  lucro_total: number;
+  preco_medio: number;
+  margem_percentual: number;
+  taxa_ocupacao: number;
+}
+```
+
+#### JogoComparativo Interface
+```typescript
+interface JogoComparativo {
+  adversario: string;
+  data: string;
+  receita_total: number;
+  lucro_total: number;
+  total_ingressos: number;
+  ticket_medio: number;
+}
+```
 ```
 
 ### Search and Filter Logic

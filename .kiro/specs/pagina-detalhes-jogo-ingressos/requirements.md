@@ -85,14 +85,80 @@ Este documento define os requisitos para criar uma página dedicada "Detalhes do
 
 ### Requirement 8
 
-**User Story:** Como usuário, eu quero ver informações financeiras detalhadas na aba "Financeiro", para que eu possa analisar a performance financeira do jogo.
+**User Story:** Como usuário, eu quero ver informações financeiras detalhadas na aba "Financeiro" com sistema de sub-abas, para que eu possa analisar a performance financeira completa do jogo.
 
 #### Acceptance Criteria
 
-1. WHEN o usuário está na aba "Financeiro" THEN o sistema SHALL exibir resumo de receitas e custos
-2. WHEN há dados financeiros THEN o sistema SHALL calcular e exibir margem de lucro
+1. WHEN o usuário está na aba "Financeiro" THEN o sistema SHALL exibir 6 sub-abas: Resumo, Receitas, Despesas, Lista de Clientes, Pendências, Gráficos
+2. WHEN há dados financeiros THEN o sistema SHALL calcular e exibir margem de lucro por setor
 3. WHEN há dados financeiros THEN o sistema SHALL separar valores recebidos de pendentes
-4. WHEN há dados financeiros THEN o sistema SHALL exibir análise de performance
+4. WHEN há dados financeiros THEN o sistema SHALL exibir análise de performance por setor do estádio
+
+### Requirement 11
+
+**User Story:** Como usuário, eu quero ver um resumo financeiro completo na sub-aba "Resumo", para que eu tenha uma visão geral dos números do jogo.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Resumo" THEN o sistema SHALL exibir cards principais: Receita Total, Custo Total, Lucro Líquido, Pendências
+2. WHEN há ingressos THEN o sistema SHALL exibir cards secundários: Ticket Médio, Margem de Lucro, Taxa de Conversão
+3. WHEN há ingressos THEN o sistema SHALL exibir resumo por setor com vendas e lucro
+4. WHEN há ingressos THEN o sistema SHALL exibir indicadores visuais de progresso
+
+### Requirement 12
+
+**User Story:** Como usuário, eu quero gerenciar receitas automáticas e manuais na sub-aba "Receitas", para que eu possa controlar todas as entradas financeiras do jogo.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Receitas" THEN o sistema SHALL exibir receitas automáticas dos ingressos vendidos
+2. WHEN o usuário clica em "Nova Receita" THEN o sistema SHALL abrir formulário para receitas manuais (patrocínios, extras)
+3. WHEN há receitas THEN o sistema SHALL exibir detalhamento por cliente com valores individuais
+4. WHEN há receitas THEN o sistema SHALL exibir totalizadores separados por tipo
+
+### Requirement 13
+
+**User Story:** Como usuário, eu quero gerenciar despesas e custos na sub-aba "Despesas", para que eu possa controlar todos os gastos relacionados ao jogo.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Despesas" THEN o sistema SHALL exibir custos dos ingressos (preço compra vs venda)
+2. WHEN o usuário clica em "Nova Despesa" THEN o sistema SHALL abrir formulário para despesas operacionais
+3. WHEN há despesas THEN o sistema SHALL calcular e exibir análise de margem por ingresso
+4. WHEN há despesas THEN o sistema SHALL categorizar despesas fixas vs variáveis
+
+### Requirement 14
+
+**User Story:** Como usuário, eu quero ver lista completa de clientes na sub-aba "Lista de Clientes", para que eu possa acompanhar o status individual de cada cliente.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Lista de Clientes" THEN o sistema SHALL exibir tabela com todos os clientes do jogo
+2. WHEN há clientes THEN o sistema SHALL exibir status financeiro: Pago, Pendente, Cancelado
+3. WHEN há clientes THEN o sistema SHALL exibir valores detalhados: preço pago, desconto, lucro individual
+4. WHEN o usuário clica em ações THEN o sistema SHALL permitir marcar como pago ou enviar cobrança
+
+### Requirement 15
+
+**User Story:** Como usuário, eu quero gerenciar pendências na sub-aba "Pendências", para que eu possa fazer cobrança eficiente dos clientes em atraso.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Pendências" THEN o sistema SHALL exibir dashboard com clientes pendentes
+2. WHEN há pendências THEN o sistema SHALL fornecer ferramentas de cobrança (WhatsApp, email, telefone)
+3. WHEN há tentativas de cobrança THEN o sistema SHALL manter histórico de cobranças enviadas
+4. WHEN há múltiplas pendências THEN o sistema SHALL priorizar por valor e prazo
+
+### Requirement 16
+
+**User Story:** Como usuário, eu quero ver gráficos e analytics na sub-aba "Gráficos", para que eu possa analisar performance e tomar decisões estratégicas.
+
+#### Acceptance Criteria
+
+1. WHEN o usuário está na sub-aba "Gráficos" THEN o sistema SHALL exibir performance por setor do estádio
+2. WHEN há dados históricos THEN o sistema SHALL exibir análise temporal de vendas
+3. WHEN há outros jogos THEN o sistema SHALL exibir comparativo com média de outros jogos
+4. WHEN há dados de setores THEN o sistema SHALL calcular e exibir ROI por setor
 
 ### Requirement 9
 
