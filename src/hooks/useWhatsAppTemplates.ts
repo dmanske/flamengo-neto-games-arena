@@ -30,6 +30,26 @@ import {
 // INTERFACE DO HOOK
 // =====================================================
 
+interface TemplateGroup {
+  categoria: string;
+  emoji: string;
+  templates: WhatsAppTemplate[];
+  count: number;
+}
+
+interface TemplateSearchState {
+  query: string;
+  selectedCategory: string | null;
+  filteredTemplates: WhatsAppTemplate[];
+  isSearching: boolean;
+}
+
+interface TemplateCacheState {
+  status: 'loading' | 'fresh' | 'stale' | 'error';
+  lastUpdated: Date | null;
+  ttl: number;
+}
+
 interface UseWhatsAppTemplatesReturn {
   // Estados
   templates: WhatsAppTemplate[];
@@ -64,6 +84,21 @@ interface UseWhatsAppTemplatesReturn {
   reloadTemplates: () => Promise<void>;
   getTemplatesByCategory: (category: string) => WhatsAppTemplate[];
   validateTemplate: (data: CreateTemplateData) => { valid: boolean; errors: string[] };
+  
+  // Novas funcionalidades para reformulação
+  getTemplatesGroupedByCategory: () => Record<string, TemplateGroup>;
+  searchTemplatesRealTime: (query: string) => WhatsAppTemplate[];
+  getTemplatePreview: (template: WhatsAppTemplate, dadosViagem?: any) => string;
+  getCategoryStats: () => Record<string, number>;
+  
+  // Cache inteligente
+  cacheState: TemplateCacheState;
+  refreshCache: () => Promise<void>;
+  
+  // Estados de busca
+  searchState: TemplateSearchState;
+  setSearchQuery: (query: string) => void;
+  setSelectedCategory: (category: string | null) => void;
 }
 
 // =====================================================
@@ -81,6 +116,34 @@ export function useWhatsAppTemplates(): UseWhatsAppTemplatesReturn {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<TemplateFilters>({});
   const [selectedTemplates, setSelectedTemplates] = useState<SelectedTemplate[]>([]);
+  
+  // Novos estados para reformulação
+  const [cacheState, setCacheState] = useState<TemplateCacheState>({
+    status: 'loading',
+    lastUpdated: null,
+    ttl: 5 * 60 * 1000 // 5 minutos
+  });
+  
+  const [searchState, setSearchState] = useState<TemplateSearchState>({
+    query: '',
+    selectedCategory: null,
+    filteredTemplates: [],
+    isSearching: false
+  });
+  
+  // Cache para templates processados
+  const [templateCache, setTemplateCache] = useState<Map<string, any>>(new Map());
+  
+  // Mapeamento de emojis por categoria
+  const CATEGORY_EMOJIS: Record<string, string> = {
+    'confirmacao': '✅',
+    'grupo': '👥',
+    'lembrete': '⏰',
+    'cobranca': '💰',
+    'informativo': '📋',
+    'promocional': '🎉',
+    'outros': '📱'
+  };
   
   // =====================================================
   // FUNÇÕES CRUD
@@ -572,6 +635,158 @@ export function useWhatsAppTemplates(): UseWhatsAppTemplatesReturn {
   }
   
   // =====================================================
+  // NOVAS FUNCIONALIDADES PARA REFORMULAÇÃO
+  // =====================================================
+  
+  /**
+   * Agrupar templates por categoria com metadados
+   */
+  const getTemplatesGroupedByCategory = useCallback((): Record<string, TemplateGroup> => {
+    const activeTemplates = templates.filter(t => t.ativo);
+    const grouped: Record<string, TemplateGroup> = {};
+    
+    activeTemplates.forEach(template => {
+      const categoria = template.categoria;
+      if (!grouped[categoria]) {
+        grouped[categoria] = {
+          categoria,
+          emoji: CATEGORY_EMOJIS[categoria] || '📱',
+          templates: [],
+          count: 0
+        };
+      }
+      grouped[categoria].templates.push(template);
+      grouped[categoria].count++;
+    });
+    
+    return grouped;
+  }, [templates]);
+  
+  /**
+   * Busca em tempo real com debounce
+   */
+  const searchTemplatesRealTime = useCallback((query: string): WhatsAppTemplate[] => {
+    if (!query.trim()) return templates.filter(t => t.ativo);
+    
+    const searchTerm = query.toLowerCase();
+    return templates.filter(t => 
+      t.ativo && (
+        t.nome.toLowerCase().includes(searchTerm) ||
+        t.mensagem.toLowerCase().includes(searchTerm) ||
+        t.categoria.toLowerCase().includes(searchTerm)
+      )
+    );
+  }, [templates]);
+  
+  /**
+   * Preview de template com dados mock
+   */
+  const getTemplatePreview = useCallback((template: WhatsAppTemplate, dadosViagem?: any): string => {
+    const mockData = {
+      NOME: 'João Silva',
+      DESTINO: dadosViagem?.adversario || 'Rio de Janeiro',
+      DATA: dadosViagem?.data_jogo ? new Date(dadosViagem.data_jogo).toLocaleDateString('pt-BR') : '15/12/2024',
+      HORARIO: dadosViagem?.horario || '07:00',
+      LOCAL_SAIDA: dadosViagem?.local_saida || 'Terminal Rodoviário',
+      ONIBUS: dadosViagem?.onibus || 'Ônibus 001',
+      LINK_GRUPO: 'https://chat.whatsapp.com/exemplo123',
+      VALOR: 'R$ 150,00',
+      TELEFONE: '(11) 99999-9999',
+      HORARIO_CHEGADA: '06:30'
+    };
+    
+    let preview = template.mensagem;
+    Object.entries(mockData).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{${key}\\}`, 'g');
+      preview = preview.replace(regex, value);
+    });
+    
+    return preview;
+  }, []);
+  
+  /**
+   * Estatísticas por categoria
+   */
+  const getCategoryStats = useCallback((): Record<string, number> => {
+    const stats: Record<string, number> = {};
+    templates.filter(t => t.ativo).forEach(template => {
+      stats[template.categoria] = (stats[template.categoria] || 0) + 1;
+    });
+    return stats;
+  }, [templates]);
+  
+  /**
+   * Refresh do cache
+   */
+  const refreshCache = useCallback(async (): Promise<void> => {
+    setCacheState(prev => ({ ...prev, status: 'loading' }));
+    setTemplateCache(new Map());
+    await loadTemplates();
+    setCacheState(prev => ({ 
+      ...prev, 
+      status: 'fresh', 
+      lastUpdated: new Date() 
+    }));
+  }, [loadTemplates]);
+  
+  /**
+   * Definir query de busca
+   */
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchState(prev => ({
+      ...prev,
+      query,
+      isSearching: query.length > 0,
+      filteredTemplates: searchTemplatesRealTime(query)
+    }));
+  }, [searchTemplatesRealTime]);
+  
+  /**
+   * Definir categoria selecionada
+   */
+  const setSelectedCategory = useCallback((category: string | null) => {
+    setSearchState(prev => ({
+      ...prev,
+      selectedCategory: category,
+      filteredTemplates: category 
+        ? templates.filter(t => t.ativo && t.categoria === category)
+        : templates.filter(t => t.ativo)
+    }));
+  }, [templates]);
+  
+  // =====================================================
+  // EFEITOS APRIMORADOS
+  // =====================================================
+  
+  // Carregar templates iniciais e configurar cache
+  useEffect(() => {
+    loadTemplates().then(() => {
+      setCacheState(prev => ({ 
+        ...prev, 
+        status: 'fresh', 
+        lastUpdated: new Date() 
+      }));
+    });
+  }, []);
+  
+  // Verificar TTL do cache
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (cacheState.lastUpdated) {
+        const now = new Date().getTime();
+        const lastUpdate = cacheState.lastUpdated.getTime();
+        const elapsed = now - lastUpdate;
+        
+        if (elapsed > cacheState.ttl) {
+          setCacheState(prev => ({ ...prev, status: 'stale' }));
+        }
+      }
+    }, 60000); // Verificar a cada minuto
+    
+    return () => clearInterval(interval);
+  }, [cacheState.lastUpdated, cacheState.ttl]);
+  
+  // =====================================================
   // RETORNO DO HOOK
   // =====================================================
   
@@ -608,6 +823,21 @@ export function useWhatsAppTemplates(): UseWhatsAppTemplatesReturn {
     // Utilitários
     reloadTemplates,
     getTemplatesByCategory,
-    validateTemplate
+    validateTemplate,
+    
+    // Novas funcionalidades
+    getTemplatesGroupedByCategory,
+    searchTemplatesRealTime,
+    getTemplatePreview,
+    getCategoryStats,
+    
+    // Cache
+    cacheState,
+    refreshCache,
+    
+    // Busca
+    searchState,
+    setSearchQuery,
+    setSelectedCategory
   };
 }

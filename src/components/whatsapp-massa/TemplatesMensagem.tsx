@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Copy, Clipboard, Star } from 'lucide-react';
-import { useTemplatesMensagem, TemplateMensagem } from '@/hooks/useTemplatesMensagem';
+import { Copy, Clipboard, RefreshCw } from 'lucide-react';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
+import { TemplateSearch } from './TemplateSearch';
+import { TemplateCategoryGroup } from './TemplateCategoryGroup';
+import { TemplatesEmptyState } from './TemplatesEmptyState';
+import { toast } from 'sonner';
 
 interface TemplatesMensagemProps {
   mensagem: string;
@@ -26,44 +28,52 @@ export const TemplatesMensagem: React.FC<TemplatesMensagemProps> = ({
   onMensagemChange,
   dadosViagem = {}
 }) => {
+  // Hook principal para templates do banco de dados
   const { 
-    templates, 
-    substituirVariaveis, 
-    copiarTexto, 
-    colarTexto, 
-    getTemplatesPorCategoria 
-  } = useTemplatesMensagem();
-
-  // Hook para templates personalizados do banco
-  const { 
-    templates: templatesPersonalizados, 
-    loading: loadingPersonalizados,
-    previewTemplate
+    templates,
+    loading,
+    error,
+    getTemplatesGroupedByCategory,
+    searchState,
+    setSearchQuery,
+    setSelectedCategory,
+    cacheState,
+    refreshCache,
+    getTemplatePreview
   } = useWhatsAppTemplates();
 
-  // Templates rápidos (mais usados)
-  const templatesRapidos = getTemplatesPorCategoria().slice(0, 4);
+  // Processar templates agrupados por categoria
+  const templatesAgrupados = useMemo(() => {
+    return getTemplatesGroupedByCategory();
+  }, [getTemplatesGroupedByCategory]);
 
-  // Aplicar template rápido
-  const aplicarTemplate = (template: TemplateMensagem) => {
-    const dados = {
-      nome: '{nome}', // Mantém a variável para substituição posterior
-      ...dadosViagem
-    };
-    
-    const textoComVariaveis = substituirVariaveis(template.texto, dados);
-    onMensagemChange(textoComVariaveis);
-  };
+  // Obter templates filtrados baseado na busca
+  const templatesExibidos = useMemo(() => {
+    if (searchState.query || searchState.selectedCategory) {
+      return searchState.filteredTemplates;
+    }
+    return templates.filter(t => t.ativo);
+  }, [templates, searchState]);
 
-  // Aplicar template personalizado do banco
-  const aplicarTemplatePersonalizado = (template: any) => {
-    // Mapear variáveis do sistema antigo para o novo
+  // Preparar dados para o componente de busca
+  const categoriesForSearch = useMemo(() => {
+    return Object.values(templatesAgrupados).map(group => ({
+      categoria: group.categoria,
+      emoji: group.emoji,
+      count: group.count
+    }));
+  }, [templatesAgrupados]);
+
+  // Aplicar template selecionado
+  const aplicarTemplate = (template: any) => {
+    // Mapear variáveis do banco para o formato esperado pelo sistema
     let mensagemProcessada = template.mensagem;
     
-    // Mapeamento de variáveis
+    // Mapeamento de variáveis do banco para o sistema atual
     const mapeamentoVariaveis = {
       '{NOME}': '{nome}',
       '{ADVERSARIO}': dadosViagem.adversario || '{adversario}',
+      '{DESTINO}': dadosViagem.adversario || '{adversario}',
       '{DATA}': dadosViagem.dataJogo || '{dataJogo}',
       '{HORARIO}': dadosViagem.horario || '{horario}',
       '{LOCAL_SAIDA}': dadosViagem.localSaida || '{localSaida}',
@@ -76,7 +86,8 @@ export const TemplatesMensagem: React.FC<TemplatesMensagemProps> = ({
     
     // Substituir variáveis
     Object.entries(mapeamentoVariaveis).forEach(([variavelAntiga, variavelNova]) => {
-      mensagemProcessada = mensagemProcessada.replace(new RegExp(variavelAntiga.replace(/[{}]/g, '\\$&'), 'g'), variavelNova);
+      const regex = new RegExp(variavelAntiga.replace(/[{}]/g, '\\$&'), 'g');
+      mensagemProcessada = mensagemProcessada.replace(regex, variavelNova);
     });
     
     onMensagemChange(mensagemProcessada);
@@ -105,169 +116,168 @@ export const TemplatesMensagem: React.FC<TemplatesMensagemProps> = ({
   };
 
   // Copiar mensagem atual
-  const handleCopiar = () => {
-    copiarTexto(mensagem);
+  const handleCopiar = async () => {
+    try {
+      await navigator.clipboard.writeText(mensagem);
+      toast.success('📋 Mensagem copiada para área de transferência!');
+    } catch (error) {
+      toast.error('❌ Erro ao copiar mensagem');
+    }
   };
 
   // Colar do clipboard
   const handleColar = async () => {
-    const textoColado = await colarTexto();
-    if (textoColado) {
-      onMensagemChange(textoColado);
+    try {
+      const textoColado = await navigator.clipboard.readText();
+      if (textoColado) {
+        onMensagemChange(textoColado);
+        toast.success('📥 Texto colado da área de transferência!');
+      } else {
+        toast.warning('📋 Área de transferência vazia');
+      }
+    } catch (error) {
+      toast.error('❌ Erro ao acessar área de transferência');
     }
   };
 
+  // Navegar para gerenciador de templates
+  const handleOpenTemplateManager = () => {
+    window.open('/dashboard/templates-whatsapp', '_blank');
+  };
+
+  // Limpar busca
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSelectedCategory(null);
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Templates Rápidos */}
-      <div>
-        <h6 className="text-sm font-medium mb-2 text-gray-700">🚀 Templates Rápidos:</h6>
-        <div className="flex flex-wrap gap-2">
-          {templatesRapidos.map((template) => (
+    <div className="space-y-6">
+      {/* Header com Status do Cache */}
+      <div className="flex items-center justify-between">
+        <h6 className="text-lg font-medium text-gray-800">📋 Templates Disponíveis</h6>
+        <div className="flex items-center gap-2">
+          {cacheState.status === 'stale' && (
             <Button
-              key={template.id}
-              size="sm"
               variant="outline"
-              onClick={() => aplicarTemplate(template)}
-              className="text-xs"
+              size="sm"
+              onClick={refreshCache}
+              className="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
             >
-              {template.emoji} {template.nome}
+              <RefreshCw className="h-3 w-3" />
+              Atualizar
             </Button>
-          ))}
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenTemplateManager}
+            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+          >
+            Gerenciar Templates
+          </Button>
         </div>
       </div>
 
-      {/* Templates Personalizados do Banco */}
-      <div>
-        <h6 className="text-sm font-medium mb-2 text-gray-700 flex items-center gap-2">
-          <Star className="h-4 w-4 text-yellow-500" />
-          ⭐ Templates Personalizados:
-        </h6>
-        
-        {loadingPersonalizados ? (
-          <div className="text-sm text-gray-500 py-2">Carregando templates...</div>
-        ) : templatesPersonalizados.length > 0 ? (
-          <div className="space-y-2">
-            {templatesPersonalizados.filter(t => t.ativo).slice(0, 3).map((template) => (
-              <Card 
-                key={template.id} 
-                className="p-3 cursor-pointer hover:bg-yellow-50 transition-colors border-l-4 border-l-yellow-500"
-                onClick={() => aplicarTemplatePersonalizado(template)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-sm font-medium text-gray-800">
-                    ⭐ {template.nome}
-                  </div>
-                  <div className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
-                    {template.categoria}
-                  </div>
-                </div>
-                <div className="text-xs text-gray-600 line-clamp-2">
-                  {template.mensagem.substring(0, 100)}...
-                </div>
-              </Card>
-            ))}
-            
-            {templatesPersonalizados.length > 3 && (
-              <Select onValueChange={(templateId) => {
-                const template = templatesPersonalizados.find(t => t.id === templateId);
-                if (template) aplicarTemplatePersonalizado(template);
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Ver mais templates personalizados..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {templatesPersonalizados.filter(t => t.ativo).map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      ⭐ {template.nome} ({template.categoria})
-                    </SelectItem>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-gray-600">Carregando templates...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card className="p-4 bg-red-50 border-red-200">
+          <div className="flex items-center gap-2 text-red-700">
+            <span>❌</span>
+            <span className="font-medium">Erro ao carregar templates:</span>
+          </div>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshCache}
+            className="mt-3 text-red-600 border-red-200 hover:bg-red-50"
+          >
+            Tentar Novamente
+          </Button>
+        </Card>
+      )}
+
+      {/* Templates Content */}
+      {!loading && !error && (
+        <>
+          {/* Search and Filters */}
+          {templates.length > 0 && (
+            <TemplateSearch
+              onSearch={setSearchQuery}
+              onCategoryFilter={setSelectedCategory}
+              categories={categoriesForSearch}
+              currentQuery={searchState.query}
+              currentCategory={searchState.selectedCategory}
+              totalResults={templatesExibidos.length}
+              isSearching={searchState.isSearching}
+            />
+          )}
+
+          {/* Templates Display */}
+          {templatesExibidos.length > 0 ? (
+            <div className="space-y-6">
+              {/* Se há busca ativa, mostrar resultados em lista simples */}
+              {searchState.query || searchState.selectedCategory ? (
+                <div className="space-y-4">
+                  {Object.entries(
+                    templatesExibidos.reduce((acc, template) => {
+                      if (!acc[template.categoria]) acc[template.categoria] = [];
+                      acc[template.categoria].push(template);
+                      return acc;
+                    }, {} as Record<string, any[]>)
+                  ).map(([categoria, templates]) => (
+                    <TemplateCategoryGroup
+                      key={categoria}
+                      categoria={categoria}
+                      emoji={templatesAgrupados[categoria]?.emoji || '📱'}
+                      templates={templates}
+                      onTemplateSelect={aplicarTemplate}
+                      dadosViagem={dadosViagem}
+                      isExpanded={true}
+                    />
                   ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        ) : (
-          <div className="text-sm text-gray-500 py-2">
-            Nenhum template personalizado encontrado.
-          </div>
-        )}
-      </div>
-
-      {/* Dropdown com Todos os Templates Rápidos */}
-      <div>
-        <h6 className="text-sm font-medium mb-2 text-gray-700">📋 Mais Templates Rápidos:</h6>
-        <Select onValueChange={(templateId) => {
-          const template = templates.find(t => t.id === templateId);
-          if (template) aplicarTemplate(template);
-        }}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Escolher template rápido..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="confirmacao" disabled className="font-medium text-blue-600">
-              🏆 Confirmação
-            </SelectItem>
-            {getTemplatesPorCategoria('confirmacao').map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.emoji} {template.nome}
-              </SelectItem>
-            ))}
-            
-            <SelectItem value="pagamento" disabled className="font-medium text-green-600">
-              💰 Pagamento
-            </SelectItem>
-            {getTemplatesPorCategoria('pagamento').map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.emoji} {template.nome}
-              </SelectItem>
-            ))}
-            
-            <SelectItem value="embarque" disabled className="font-medium text-orange-600">
-              🚌 Embarque
-            </SelectItem>
-            {getTemplatesPorCategoria('embarque').map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.emoji} {template.nome}
-              </SelectItem>
-            ))}
-            
-            <SelectItem value="geral" disabled className="font-medium text-purple-600">
-              📱 Geral
-            </SelectItem>
-            {getTemplatesPorCategoria('geral').map((template) => (
-              <SelectItem key={template.id} value={template.id}>
-                {template.emoji} {template.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Cards com Preview dos Templates Principais */}
-      <div>
-        <h6 className="text-sm font-medium mb-2 text-gray-700">👀 Preview dos Templates:</h6>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {templatesRapidos.map((template) => (
-            <Card 
-              key={template.id} 
-              className="p-3 cursor-pointer hover:bg-gray-50 transition-colors border-l-4 border-l-blue-500"
-              onClick={() => aplicarTemplate(template)}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="text-sm font-medium text-gray-800">
-                  {template.emoji} {template.nome}
                 </div>
-                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  {template.categoria}
+              ) : (
+                /* Mostrar todos os templates agrupados por categoria */
+                <div className="space-y-4">
+                  {Object.values(templatesAgrupados).map((group) => (
+                    <TemplateCategoryGroup
+                      key={group.categoria}
+                      categoria={group.categoria}
+                      emoji={group.emoji}
+                      templates={group.templates}
+                      onTemplateSelect={aplicarTemplate}
+                      dadosViagem={dadosViagem}
+                    />
+                  ))}
                 </div>
-              </div>
-              <div className="text-xs text-gray-600 line-clamp-2">
-                {template.preview}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+              )}
+            </div>
+          ) : (
+            /* Empty State */
+            <TemplatesEmptyState
+              hasSearchQuery={!!(searchState.query || searchState.selectedCategory)}
+              searchQuery={searchState.query}
+              selectedCategory={searchState.selectedCategory}
+              onCreateTemplate={handleOpenTemplateManager}
+              onClearSearch={handleClearSearch}
+              onRefresh={refreshCache}
+              isLoading={loading}
+            />
+          )}
+        </>
+      )}
 
       {/* Botões de Copiar/Colar */}
       <div className="flex gap-2 pt-2 border-t">

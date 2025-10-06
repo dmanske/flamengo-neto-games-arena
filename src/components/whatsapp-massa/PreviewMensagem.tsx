@@ -1,6 +1,5 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { useTemplatesMensagem } from '@/hooks/useTemplatesMensagem';
 
 interface PreviewMensagemProps {
   mensagem: string;
@@ -17,13 +16,24 @@ interface PreviewMensagemProps {
 }
 
 export const PreviewMensagem: React.FC<PreviewMensagemProps> = ({ mensagem, dadosViagem }) => {
-  const { substituirVariaveis } = useTemplatesMensagem();
-  
   const agora = new Date();
   const horarioAtual = agora.toLocaleTimeString('pt-BR', { 
     hour: '2-digit', 
     minute: '2-digit' 
   });
+
+  // Função para substituir variáveis na mensagem
+  const substituirVariaveis = (texto: string, dados: Record<string, string>) => {
+    let textoFinal = texto;
+    
+    // Substituir variáveis no formato {variavel}
+    Object.entries(dados).forEach(([chave, valor]) => {
+      const regex = new RegExp(`\\{${chave}\\}`, 'g');
+      textoFinal = textoFinal.replace(regex, valor || `{${chave}}`);
+    });
+
+    return textoFinal;
+  };
 
   // Substituir variáveis na mensagem para o preview
   const mensagemComVariaveis = mensagem ? substituirVariaveis(mensagem, {
@@ -35,7 +45,8 @@ export const PreviewMensagem: React.FC<PreviewMensagemProps> = ({ mensagem, dado
     localSaida: dadosViagem?.localSaida || 'Local de saída',
     valor: dadosViagem?.valor || 'R$ 150,00',
     onibus: dadosViagem?.onibus || 'Ônibus',
-    prazo: dadosViagem?.prazo || 'Data limite'
+    prazo: dadosViagem?.prazo || 'Data limite',
+    linkGrupo: 'https://chat.whatsapp.com/exemplo123'
   }) : '';
   
   return (
