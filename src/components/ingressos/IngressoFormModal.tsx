@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -331,7 +332,7 @@ export function IngressoFormModal({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-describedby="ingresso-form-description">
         <DialogHeader>
           <DialogTitle>
             {ingresso ? 'Editar Ingresso' : 'Novo Ingresso'}
@@ -341,6 +342,9 @@ export function IngressoFormModal({
               </span>
             )}
           </DialogTitle>
+          <DialogDescription id="ingresso-form-description">
+            {ingresso ? 'Edite as informações do ingresso' : 'Preencha os dados para criar um novo ingresso'}
+          </DialogDescription>
           {camposDevemEstarBloqueados && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mt-3">
               <div className="flex items-start gap-3">
@@ -1147,8 +1151,11 @@ export function IngressoFormModal({
     {/* Modal de Histórico de Pagamentos */}
     {ingresso && (
       <Dialog open={modalHistoricoAberto} onOpenChange={setModalHistoricoAberto}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" aria-describedby="historico-pagamentos-description">
           <DialogHeader>
+            <DialogDescription id="historico-pagamentos-description">
+              Histórico de pagamentos do ingresso
+            </DialogDescription>
             <div className="flex items-center justify-between">
               <DialogTitle>📋 Histórico de Pagamentos</DialogTitle>
               <Button

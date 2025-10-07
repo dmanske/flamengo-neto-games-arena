@@ -21,8 +21,11 @@ export function FinanceiroJogo({ jogo, ingressos }: FinanceiroJogoProps) {
   // Estado da aba ativa
   const [activeTab, setActiveTab] = useState('resumo');
   
-  // Gerar jogo_key para os hooks
-  const jogoKey = `${jogo.adversario}-${jogo.jogo_data}-${jogo.local_jogo}`;
+  // Gerar jogo_key para os hooks - corrigir fuso horário
+  const dataJogoFormatada = new Date(jogo.jogo_data).toISOString().split('T')[0]; // YYYY-MM-DD
+  const jogoKey = `${jogo.adversario}-${dataJogoFormatada}-${jogo.local_jogo}`;
+  
+  console.log('🔍 JogoKey gerado:', jogoKey, 'de jogo_data original:', jogo.jogo_data);
   
   // Hooks para dados financeiros
   const jogoFinanceiro = useJogoFinanceiro(jogoKey);

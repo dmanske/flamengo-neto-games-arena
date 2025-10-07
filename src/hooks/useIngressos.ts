@@ -135,23 +135,44 @@ export function useIngressos() {
       }
 
       if (data) {
+        // 🎯 CORREÇÃO: Calcular valores reais considerando pagamentos efetivos
+        let valorRecebidoReal = 0;
+        let valorPendenteReal = 0;
+
+        // Para cada ingresso, buscar os pagamentos reais
+        for (const ingresso of data) {
+          // Buscar pagamentos do ingresso
+          const { data: pagamentos } = await supabase
+            .from('historico_pagamentos_ingressos')
+            .select('valor_pago')
+            .eq('ingresso_id', ingresso.id);
+
+          const totalPago = pagamentos?.reduce((sum, p) => sum + p.valor_pago, 0) || 0;
+          const valorFinal = ingresso.valor_final || 0;
+          const saldoDevedor = Math.max(0, valorFinal - totalPago);
+
+          valorRecebidoReal += totalPago;
+          
+          // Só considerar como pendente se realmente há saldo devedor
+          if (saldoDevedor > 0) {
+            valorPendenteReal += saldoDevedor;
+          }
+        }
+
         const resumo: ResumoFinanceiroIngressos = {
           total_ingressos: data.length,
-          total_receita: data.reduce((sum, ing) => sum + ing.valor_final, 0),
-          total_custo: data.reduce((sum, ing) => sum + ing.preco_custo, 0),
-          total_lucro: data.reduce((sum, ing) => sum + ing.lucro, 0),
+          total_receita: data.reduce((sum, ing) => sum + (ing.valor_final || 0), 0),
+          total_custo: data.reduce((sum, ing) => sum + (ing.preco_custo || 0), 0),
+          total_lucro: data.reduce((sum, ing) => sum + (ing.lucro || 0), 0),
           margem_media: data.length > 0 
-            ? data.reduce((sum, ing) => sum + ing.margem_percentual, 0) / data.length 
+            ? data.reduce((sum, ing) => sum + (ing.margem_percentual || 0), 0) / data.length 
             : 0,
           ingressos_pendentes: data.filter(ing => ing.situacao_financeira === 'pendente').length,
           ingressos_pagos: data.filter(ing => ing.situacao_financeira === 'pago').length,
           ingressos_cancelados: data.filter(ing => ing.situacao_financeira === 'cancelado').length,
-          valor_pendente: data
-            .filter(ing => ing.situacao_financeira === 'pendente')
-            .reduce((sum, ing) => sum + ing.valor_final, 0),
-          valor_recebido: data
-            .filter(ing => ing.situacao_financeira === 'pago')
-            .reduce((sum, ing) => sum + ing.valor_final, 0)
+          // 🎯 CORREÇÃO: Usar valores reais baseados em pagamentos efetivos
+          valor_pendente: valorPendenteReal,
+          valor_recebido: valorRecebidoReal
         };
 
         setResumoFinanceiro(resumo);

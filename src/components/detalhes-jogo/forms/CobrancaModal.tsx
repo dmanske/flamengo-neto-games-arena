@@ -38,7 +38,7 @@ import { toast } from 'sonner';
 // =====================================================
 
 const cobrancaSchema = z.object({
-  tipo_cobranca: z.enum(['whatsapp', 'email', 'telefone', 'presencial', 'outros'], {
+  tipo_cobranca: z.enum(['whatsapp_manual', 'whatsapp_api'], {
     required_error: 'Selecione o tipo de cobrança'
   }),
   template_id: z.string().optional(),
@@ -58,39 +58,18 @@ type CobrancaFormData = z.infer<typeof cobrancaSchema>;
 
 const TIPOS_COBRANCA = [
   {
-    value: 'whatsapp',
-    label: 'WhatsApp',
+    value: 'whatsapp_manual',
+    label: 'WhatsApp Manual',
     icon: MessageSquare,
     color: 'bg-green-100 text-green-800 border-green-200',
-    description: 'Enviar mensagem via WhatsApp'
+    description: 'Abrir WhatsApp no celular (manual)'
   },
   {
-    value: 'email',
-    label: 'E-mail',
-    icon: Mail,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
-    description: 'Enviar e-mail de cobrança'
-  },
-  {
-    value: 'telefone',
-    label: 'Telefone',
-    icon: Phone,
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
-    description: 'Ligação telefônica'
-  },
-  {
-    value: 'presencial',
-    label: 'Presencial',
-    icon: User,
-    color: 'bg-orange-100 text-orange-800 border-orange-200',
-    description: 'Contato presencial'
-  },
-  {
-    value: 'outros',
-    label: 'Outros',
-    icon: ExternalLink,
-    color: 'bg-gray-100 text-gray-800 border-gray-200',
-    description: 'Outros meios de contato'
+    value: 'whatsapp_api',
+    label: 'WhatsApp API',
+    icon: MessageSquare,
+    color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    description: 'Enviar direto pelo sistema (automático)'
   }
 ] as const;
 
@@ -106,7 +85,7 @@ interface CobrancaModalProps {
   historico: HistoricoCobranca[];
   onEnviarCobranca: (
     ingressoId: string,
-    tipo: 'whatsapp' | 'email' | 'telefone' | 'presencial' | 'outros',
+    tipo: 'whatsapp_manual' | 'whatsapp_api',
     mensagem?: string,
     observacoes?: string
   ) => Promise<void>;
@@ -146,7 +125,7 @@ export function CobrancaModal({
   const form = useForm<CobrancaFormData>({
     resolver: zodResolver(cobrancaSchema),
     defaultValues: {
-      tipo_cobranca: 'whatsapp',
+      tipo_cobranca: 'whatsapp_manual',
       template_id: '',
       mensagem_personalizada: '',
       observacoes: ''
@@ -166,7 +145,12 @@ export function CobrancaModal({
 
   // Filtrar templates por tipo selecionado
   useEffect(() => {
-    const templatesDisponiveis = templates.filter(t => t.tipo === tipoSelecionado);
+    // Para WhatsApp manual e API, usar templates do tipo 'whatsapp'
+    const tipoTemplate = (tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') 
+      ? 'whatsapp' 
+      : tipoSelecionado;
+    
+    const templatesDisponiveis = templates.filter(t => t.tipo === tipoTemplate);
     if (templatesDisponiveis.length > 0 && !templateId) {
       form.setValue('template_id', '0'); // Primeiro template
       setTemplateSelecionado(templatesDisponiveis[0]);
@@ -188,14 +172,31 @@ export function CobrancaModal({
   const handleSubmit = async (data: CobrancaFormData) => {
     setIsSubmitting(true);
     try {
+      // Se for WhatsApp manual, abrir WhatsApp ANTES de registrar e limpar o form
+      if (data.tipo_cobranca === 'whatsapp_manual' && ingresso.cliente?.telefone) {
+        // Abrir WhatsApp imediatamente com a mensagem atual
+        const telefone = ingresso.cliente.telefone.replace(/\D/g, '');
+        const telefoneFormatado = telefone.startsWith('55') ? telefone : '55' + telefone;
+        const mensagem = encodeURIComponent(data.mensagem_personalizada);
+        const url = `https://wa.me/${telefoneFormatado}?text=${mensagem}`;
+        
+        console.log('🔗 Abrindo WhatsApp Manual:', { telefone: telefoneFormatado, mensagem: data.mensagem_personalizada });
+        window.open(url, '_blank');
+        
+        toast.success('Cobrança registrada! WhatsApp aberto com mensagem.');
+      }
+      
       await onEnviarCobranca(
         ingresso.id,
         data.tipo_cobranca,
         data.mensagem_personalizada,
         data.observacoes
       );
+      
       form.reset();
       onClose();
+      
+      // Para WhatsApp API, a mensagem já é mostrada pelo hook
     } catch (error) {
       console.error('Erro ao enviar cobrança:', error);
     } finally {
@@ -215,7 +216,11 @@ export function CobrancaModal({
   };
 
   const handleTemplateChange = (templateIndex: string) => {
-    const templatesDisponiveis = templates.filter(t => t.tipo === tipoSelecionado);
+    const tipoTemplate = (tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') 
+      ? 'whatsapp' 
+      : tipoSelecionado;
+    
+    const templatesDisponiveis = templates.filter(t => t.tipo === tipoTemplate);
     const index = parseInt(templateIndex);
     if (templatesDisponiveis[index]) {
       setTemplateSelecionado(templatesDisponiveis[index]);
@@ -230,9 +235,22 @@ export function CobrancaModal({
   };
 
   const handleOpenWhatsApp = () => {
-    const telefone = ingresso.cliente?.telefone?.replace(/\D/g, '');
+    if (!ingresso.cliente?.telefone) {
+      toast.error('Cliente não possui telefone cadastrado');
+      return;
+    }
+
+    let telefone = ingresso.cliente.telefone.replace(/\D/g, '');
+    
+    // Garantir que tenha o código do país (55)
+    if (!telefone.startsWith('55')) {
+      telefone = '55' + telefone;
+    }
+    
     const mensagem = encodeURIComponent(form.getValues('mensagem_personalizada'));
-    const url = `https://wa.me/55${telefone}?text=${mensagem}`;
+    const url = `https://wa.me/${telefone}?text=${mensagem}`;
+    
+    console.log('🔗 Abrindo WhatsApp:', { telefone, url });
     window.open(url, '_blank');
   };
 
@@ -242,12 +260,18 @@ export function CobrancaModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto"
+        aria-describedby="cobranca-modal-description"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-blue-600" />
             Cobrança - {ingresso.cliente?.nome}
           </DialogTitle>
+          <div id="cobranca-modal-description" className="sr-only">
+            Modal para registrar cobrança de ingresso pendente
+          </div>
         </DialogHeader>
 
         {/* Informações do Ingresso */}
@@ -367,7 +391,12 @@ export function CobrancaModal({
                 />
 
                 {/* Template */}
-                {templates.filter(t => t.tipo === tipoSelecionado).length > 0 && (
+                {templates.filter(t => {
+                  const tipoTemplate = (tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') 
+                    ? 'whatsapp' 
+                    : tipoSelecionado;
+                  return t.tipo === tipoTemplate;
+                }).length > 0 && (
                   <FormField
                     control={form.control}
                     name="template_id"
@@ -382,7 +411,12 @@ export function CobrancaModal({
                           </FormControl>
                           <SelectContent>
                             {templates
-                              .filter(t => t.tipo === tipoSelecionado)
+                              .filter(t => {
+                                const tipoTemplate = (tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') 
+                                  ? 'whatsapp' 
+                                  : tipoSelecionado;
+                                return t.tipo === tipoTemplate;
+                              })
                               .map((template, index) => (
                                 <SelectItem key={index} value={index.toString()}>
                                   {template.titulo}
@@ -415,7 +449,7 @@ export function CobrancaModal({
                             <Copy className="h-3 w-3" />
                             Copiar
                           </Button>
-                          {tipoSelecionado === 'whatsapp' && ingresso.cliente?.telefone && (
+                          {(tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') && ingresso.cliente?.telefone && (
                             <Button
                               type="button"
                               variant="outline"
@@ -424,7 +458,7 @@ export function CobrancaModal({
                               className="gap-1"
                             >
                               <ExternalLink className="h-3 w-3" />
-                              Abrir WhatsApp
+                              {tipoSelecionado === 'whatsapp_manual' ? 'Abrir WhatsApp' : 'Testar Mensagem'}
                             </Button>
                           )}
                         </div>
@@ -472,7 +506,10 @@ export function CobrancaModal({
                     className="flex-1 gap-2"
                   >
                     <Send className="h-4 w-4" />
-                    {isSubmitting ? 'Enviando...' : 'Registrar Cobrança'}
+                    {isSubmitting ? 'Enviando...' : 
+                     tipoSelecionado === 'whatsapp_manual' ? 'Registrar e Abrir WhatsApp' :
+                     tipoSelecionado === 'whatsapp_api' ? 'Enviar via WhatsApp API' :
+                     'Registrar Cobrança'}
                   </Button>
                   
                   <Button

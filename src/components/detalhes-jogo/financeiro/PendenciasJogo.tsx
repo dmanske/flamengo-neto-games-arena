@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IngressoPendente, HistoricoCobranca, TemplateCobranca } from '@/hooks/financeiro/useCobrancaJogo';
 import { JogoDetails } from '@/hooks/useJogoDetails';
@@ -26,9 +26,7 @@ import {
   Search,
   Calendar,
   Star,
-  Edit,
-  Send,
-  Copy,
+
   DollarSign
 } from 'lucide-react';
 
@@ -46,7 +44,7 @@ interface PendenciasJogoProps {
     prioridadeBaixa: number;
     ticketMedioPendente: number;
   };
-  onRegistrarCobranca: (ingressoId: string, tipo: 'whatsapp' | 'email' | 'telefone' | 'presencial' | 'outros', mensagem?: string) => Promise<string>;
+  onRegistrarCobranca: (ingressoId: string, tipo: 'whatsapp_manual' | 'whatsapp_api', mensagem?: string, observacoes?: string) => Promise<string>;
   onMarcarComoRespondido: (cobrancaId: string, resposta: string) => Promise<void>;
   onMarcarComoPago: (ingressoId: string) => Promise<void>;
   templates: TemplateCobranca[];
@@ -69,10 +67,8 @@ export function PendenciasJogo({
   const [busca, setBusca] = useState('');
   const [showCobrancaModal, setShowCobrancaModal] = useState(false);
   const [ingressoSelecionado, setIngressoSelecionado] = useState<IngressoPendente | null>(null);
-  const [showMensagemModal, setShowMensagemModal] = useState(false);
-  const [tipoMensagem, setTipoMensagem] = useState<'whatsapp' | 'email'>('whatsapp');
-  const [mensagemEditavel, setMensagemEditavel] = useState('');
-  const [assuntoEmail, setAssuntoEmail] = useState('');
+
+
 
   // Usar ingressos pendentes do hook ou filtrar dos ingressos diretos
   const ingressosPendentesReais = useMemo(() => {
@@ -167,44 +163,7 @@ export function PendenciasJogo({
     };
   }, [ingressosPendentesReais, ingressosFiltrados, jogo.jogo_data]);
 
-  // Função para gerar mensagem padrão
-  const gerarMensagemPadrao = (ingresso: IngressoPendente, tipo: 'whatsapp' | 'email') => {
-    const nome = ingresso.cliente?.nome.split(' ')[0] || 'Cliente';
-    
-    if (tipo === 'email') {
-      return `Olá ${nome},
 
-Esperamos que esteja bem!
-
-Identificamos uma pendência em seu ingresso para o jogo:
-• Valor pendente: ${formatCurrency(ingresso.valor_final)}
-• Setor: ${ingresso.setor_estadio}
-• Adversário: ${ingresso.adversario}
-
-Para regularizar, você pode:
-💳 PIX: (11) 99999-9999
-🔗 Link de pagamento: https://pay.exemplo.com/123
-
-Qualquer dúvida, estamos à disposição!
-
-Atenciosamente,
-Equipe de Ingressos Flamengo`;
-    } else {
-      return `Oi ${nome}! 👋
-
-Falta apenas *${formatCurrency(ingresso.valor_final)}* para quitar seu ingresso.
-
-🎫 *Detalhes do Ingresso:*
-• Jogo: Flamengo vs ${ingresso.adversario}
-• Setor: ${ingresso.setor_estadio}
-• Valor: ${formatCurrency(ingresso.valor_final)}
-
-💳 PIX: (11) 99999-9999
-🔗 Link: https://pay.exemplo.com/123
-
-Qualquer dúvida, estou aqui! 🔴⚫`;
-    }
-  };
 
   // Função para abrir modal de cobrança
   const abrirModalCobranca = (ingresso: IngressoPendente) => {
@@ -212,53 +171,9 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
     setShowCobrancaModal(true);
   };
 
-  // Função para abrir modal de edição (mantida para compatibilidade)
-  const abrirModalEdicao = (ingresso: IngressoPendente, tipo: 'whatsapp' | 'email') => {
-    setIngressoSelecionado(ingresso);
-    setTipoMensagem(tipo);
-    setMensagemEditavel(gerarMensagemPadrao(ingresso, tipo));
-    setAssuntoEmail('Pendência Financeira - Ingresso Flamengo');
-    setShowMensagemModal(true);
-  };
 
-  // Função para copiar mensagem
-  const copiarMensagem = async () => {
-    try {
-      await navigator.clipboard.writeText(mensagemEditavel);
-      toast.success('Mensagem copiada!');
-    } catch (error) {
-      toast.error('Erro ao copiar mensagem');
-    }
-  };
 
-  // Função para enviar mensagem editada
-  const enviarMensagem = async () => {
-    if (!ingressoSelecionado) return;
 
-    try {
-      if (tipoMensagem === 'email') {
-        const mailtoLink = `mailto:${ingressoSelecionado.cliente?.email || ''}?subject=${encodeURIComponent(assuntoEmail)}&body=${encodeURIComponent(mensagemEditavel)}`;
-        window.open(mailtoLink);
-      } else {
-        const telefone = ingressoSelecionado.cliente?.telefone?.replace(/\D/g, '') || '';
-        const mensagemEncoded = encodeURIComponent(mensagemEditavel);
-        const url = `https://wa.me/55${telefone}?text=${mensagemEncoded}`;
-        window.open(url, '_blank');
-      }
-
-      // Registrar a tentativa de contato
-      await onRegistrarCobranca(
-        ingressoSelecionado.id,
-        tipoMensagem,
-        mensagemEditavel
-      );
-
-      toast.success(`${tipoMensagem === 'email' ? 'Email' : 'WhatsApp'} aberto com sucesso!`);
-      setShowMensagemModal(false);
-    } catch (error) {
-      toast.error('Erro ao enviar mensagem');
-    }
-  };
 
   const handleMarcarComoPago = async (ingresso: IngressoPendente) => {
     if (confirm(`Marcar ingresso de ${ingresso.cliente?.nome} como pago?`)) {
@@ -269,11 +184,20 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
   // Função para enviar cobrança via modal
   const handleEnviarCobranca = async (
     ingressoId: string,
-    tipo: 'whatsapp' | 'email' | 'telefone' | 'presencial' | 'outros',
+    tipo: 'whatsapp_manual' | 'whatsapp_api',
     mensagem?: string,
     observacoes?: string
   ) => {
-    await onRegistrarCobranca(ingressoId, tipo, mensagem);
+    console.log('🔄 PendenciasJogo - Enviando cobrança:', {
+      ingressoId,
+      tipo,
+      mensagem: mensagem?.substring(0, 50) + '...',
+      observacoes,
+      temObservacoes: !!observacoes
+    });
+    
+    // ✅ CORREÇÃO: Passar observações para onRegistrarCobranca
+    await onRegistrarCobranca(ingressoId, tipo, mensagem, observacoes);
   };
 
   // Filtrar histórico para o ingresso selecionado
@@ -597,25 +521,9 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
                         Cobrança
                       </Button>
                       
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => abrirModalEdicao(ingresso, 'whatsapp')}
-                        className="px-3"
-                      >
-                        <MessageCircle className="h-4 w-4 mr-1" />
-                        WhatsApp
-                      </Button>
 
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMarcarComoPago(ingresso)}
-                        className="px-3"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Pago
-                      </Button>
+
+                      {/* Botão "Pago" removido - usar sistema de pagamentos */}
                     </div>
                   </div>
                 </div>
@@ -625,106 +533,7 @@ Qualquer dúvida, estou aqui! 🔴⚫`;
         </CardContent>
       </Card>
 
-      {/* Modal de Edição de Mensagem */}
-      <Dialog open={showMensagemModal} onOpenChange={setShowMensagemModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-blue-600" />
-              Editar Mensagem - {tipoMensagem === 'email' ? 'Email' : 'WhatsApp'}
-              {ingressoSelecionado && (
-                <span className="text-sm font-normal text-gray-600">
-                  para {ingressoSelecionado.cliente?.nome}
-                </span>
-              )}
-            </DialogTitle>
-          </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Informações do Ingresso */}
-            {ingressoSelecionado && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Valor Pendente:</span>
-                    <p className="text-red-600 font-bold">{formatCurrency(ingressoSelecionado.valor_final)}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">Setor:</span>
-                    <p className="font-bold">{ingressoSelecionado.setor_estadio}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">Adversário:</span>
-                    <p className="font-bold">{ingressoSelecionado.adversario}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium">Tentativas:</span>
-                    <p className="font-bold">{ingressoSelecionado.total_tentativas_cobranca}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Campo de Assunto (apenas para email) */}
-            {tipoMensagem === 'email' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Assunto:</label>
-                <Input
-                  value={assuntoEmail}
-                  onChange={(e) => setAssuntoEmail(e.target.value)}
-                  placeholder="Assunto do email..."
-                />
-              </div>
-            )}
-
-            {/* Editor de Mensagem */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">
-                  {tipoMensagem === 'email' ? 'Corpo do Email:' : 'Mensagem do WhatsApp:'}
-                </label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copiarMensagem}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copiar
-                </Button>
-              </div>
-              
-              <Textarea
-                value={mensagemEditavel}
-                onChange={(e) => setMensagemEditavel(e.target.value)}
-                placeholder={`Digite sua ${tipoMensagem === 'email' ? 'mensagem de email' : 'mensagem do WhatsApp'}...`}
-                className="min-h-[200px] font-mono text-sm"
-              />
-              
-              <div className="text-xs text-gray-500">
-                {mensagemEditavel.length} caracteres
-              </div>
-            </div>
-
-            {/* Ações */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowMensagemModal(false)}
-              >
-                Cancelar
-              </Button>
-              
-              <Button
-                onClick={enviarMensagem}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Enviar {tipoMensagem === 'email' ? 'Email' : 'WhatsApp'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal de Cobrança Completo */}
       {ingressoSelecionado && (

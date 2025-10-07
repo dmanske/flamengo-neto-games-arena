@@ -249,6 +249,66 @@ export async function enviarViaZAPI(passageiros: Passageiro[], mensagem: string,
   return resultados;
 }
 
+// Função para enviar mensagem individual de cobrança
+export async function enviarMensagemCobranca(
+  telefone: string,
+  mensagem: string,
+  nomeCliente: string
+): Promise<{ sucesso: boolean; messageId?: string; erro?: string }> {
+  console.log(`📱 Enviando cobrança via WhatsApp para ${nomeCliente} (${telefone})`);
+
+  try {
+    // Limpar e formatar telefone
+    let telefoneFormatado = telefone.replace(/\D/g, '');
+    if (!telefoneFormatado.startsWith('55')) {
+      telefoneFormatado = '55' + telefoneFormatado;
+    }
+
+    // Personalizar mensagem com nome do cliente
+    const mensagemPersonalizada = mensagem.replace(/{NOME}/g, nomeCliente);
+
+    const response = await fetch(`https://api.z-api.io/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/send-text`, {
+      method: 'POST',
+      headers: getZAPIHeaders(),
+      body: JSON.stringify({
+        phone: telefoneFormatado,
+        message: mensagemPersonalizada
+      })
+    });
+
+    const result = await response.json();
+    console.log(`📋 Resposta da Z-API para cobrança:`, result);
+
+    if (response.ok && result.messageId) {
+      console.log(`✅ Cobrança enviada para ${nomeCliente} - MessageID: ${result.messageId}`);
+      return { 
+        sucesso: true, 
+        messageId: result.messageId 
+      };
+    } else {
+      let erro = 'Erro desconhecido';
+      
+      if (result.error === "INSTANCE_NOT_CONNECTED") {
+        erro = 'Instância Z-API desconectada. Escaneie o QR Code novamente.';
+      } else if (result.error === "PHONE_NUMBER_INVALID") {
+        erro = `Número de telefone inválido: ${telefone}`;
+      } else if (result.error === "your client-token is not configured") {
+        erro = 'Token da Z-API inválido. Verifique suas credenciais.';
+      } else {
+        erro = result.message || result.error || `Erro HTTP ${response.status}`;
+      }
+
+      console.error(`❌ Erro ao enviar cobrança para ${nomeCliente}:`, erro);
+      return { sucesso: false, erro };
+    }
+
+  } catch (error) {
+    const mensagemErro = error instanceof Error ? error.message : 'Erro de conexão';
+    console.error(`❌ Erro ao enviar cobrança para ${nomeCliente}:`, mensagemErro);
+    return { sucesso: false, erro: mensagemErro };
+  }
+}
+
 // Função principal que escolhe o tipo de envio
 export async function enviarMensagemMassa(
   passageiros: Passageiro[],
