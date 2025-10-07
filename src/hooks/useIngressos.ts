@@ -370,7 +370,7 @@ export function useIngressos() {
       // Buscar o ingresso atual para comparar o status e dados
       const { data: ingressoAtual, error: errorBusca } = await supabase
         .from('ingressos')
-        .select('situacao_financeira, valor_final, cliente_id, viagem_id')
+        .select('situacao_financeira, valor_final, cliente_id, viagem_id, preco_custo, preco_venda, desconto')
         .eq('id', id)
         .single();
 
@@ -410,9 +410,25 @@ export function useIngressos() {
         }
       }
 
+      // 🎯 CORREÇÃO: Verificar se apenas o preço de custo foi alterado
+      const apenasPrecoCustomudou = (
+        dados.preco_custo !== undefined && 
+        dados.preco_custo !== ingressoAtual.preco_custo &&
+        (dados.preco_venda === undefined || dados.preco_venda === ingressoAtual.preco_venda) &&
+        (dados.desconto === undefined || dados.desconto === ingressoAtual.desconto) &&
+        dados.situacao_financeira === undefined
+      );
+
+      // Se apenas o preço de custo mudou e o ingresso estava pago, preservar o status
+      let dadosParaAtualizar = { ...dados };
+      if (apenasPrecoCustomudou && ingressoAtual.situacao_financeira === 'pago') {
+        console.log('🔒 Preservando status "pago" - apenas preço de custo foi alterado');
+        dadosParaAtualizar.situacao_financeira = 'pago'; // Forçar manter como pago
+      }
+
       const { error } = await supabase
         .from('ingressos')
-        .update(dados)
+        .update(dadosParaAtualizar)
         .eq('id', id);
 
       if (error) {
@@ -423,7 +439,7 @@ export function useIngressos() {
       }
 
       // Se o status mudou de "pendente" para "pago", criar um pagamento automático
-      if (ingressoAtual.situacao_financeira === 'pendente' && dados.situacao_financeira === 'pago') {
+      if (ingressoAtual.situacao_financeira === 'pendente' && dadosParaAtualizar.situacao_financeira === 'pago') {
         // Criando pagamento automático
         
         const valorPagamento = ingressoAtual.valor_final;
@@ -446,7 +462,12 @@ export function useIngressos() {
         }
       }
 
-      toast.success('Ingresso atualizado com sucesso!');
+      // Mostrar mensagem específica se preservou o status
+      if (apenasPrecoCustomudou && ingressoAtual.situacao_financeira === 'pago') {
+        toast.success('Preço de custo atualizado! Status "pago" foi preservado.');
+      } else {
+        toast.success('Ingresso atualizado com sucesso!');
+      }
       
       // Recarregar lista
       await buscarIngressos();

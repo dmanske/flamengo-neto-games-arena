@@ -288,25 +288,29 @@ export function IngressoFormModal({
   const onSubmit = async (data: IngressoFormData) => {
     
     try {
-      // Não incluir campos calculados (valor_final, lucro, margem_percentual são colunas geradas)
-      // Definir situacao_financeira baseado no pagamento inicial
-      const situacaoFinanceira = pagamentoInicial.registrar && pagamentoInicial.valor >= valoresCalculados.valorFinal 
-        ? 'pago' as const
-        : 'pendente' as const;
-        
-      const dadosParaSalvar = {
-        ...data,
-        situacao_financeira: situacaoFinanceira
-      } as IngressoFormData;
-      
-
-      
       let sucesso = false;
       
       if (ingresso) {
+        // 🎯 CORREÇÃO: Para edição, não enviar situacao_financeira automaticamente
+        // Deixar que a lógica do hook decida se deve preservar o status
+        const dadosParaSalvar = {
+          ...data
+          // Não incluir situacao_financeira para permitir que o hook preserve o status quando apropriado
+        };
+        
         // Editar ingresso existente
         sucesso = await atualizarIngresso(ingresso.id, dadosParaSalvar);
       } else {
+        // Para criação, definir situacao_financeira baseado no pagamento inicial
+        const situacaoFinanceira = pagamentoInicial.registrar && pagamentoInicial.valor >= valoresCalculados.valorFinal 
+          ? 'pago' as const
+          : 'pendente' as const;
+          
+        const dadosParaSalvar = {
+          ...data,
+          situacao_financeira: situacaoFinanceira
+        } as IngressoFormData;
+
         // Criar novo ingresso - passar valor calculado como backup e dados de pagamento inicial
         const dadosComExtras = {
           ...dadosParaSalvar,

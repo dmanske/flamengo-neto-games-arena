@@ -22,7 +22,7 @@ export function usePagamentosIngressos() {
   });
 
   // Função para atualizar status do ingresso baseado nos pagamentos
-  const atualizarStatusIngresso = useCallback(async (ingressoId: string) => {
+  const atualizarStatusIngresso = useCallback(async (ingressoId: string, forcarRecalculo: boolean = false) => {
     try {
       // Buscar dados do ingresso
       const { data: ingresso, error: errorIngresso } = await supabase
@@ -50,15 +50,33 @@ export function usePagamentosIngressos() {
       const totalPago = pagamentos?.reduce((sum, pag) => sum + pag.valor_pago, 0) || 0;
       const valorFinal = ingresso.valor_final;
 
-      // Determinar novo status
-      let novoStatus: SituacaoFinanceiraIngresso;
+      // 🎯 CORREÇÃO: Ser mais conservador ao alterar status
+      // Só alterar o status se:
+      // 1. Foi forçado o recálculo (quando adicionamos/removemos pagamentos)
+      // 2. O ingresso está pendente e foi totalmente pago
+      // 3. O ingresso está pago mas não há pagamentos registrados
+
+      let novoStatus: SituacaoFinanceiraIngresso = ingresso.situacao_financeira;
       
-      if (totalPago >= valorFinal) {
-        novoStatus = 'pago';
-      } else if (totalPago > 0) {
-        novoStatus = 'pendente'; // Parcialmente pago, mas ainda pendente
+      if (forcarRecalculo) {
+        // Recálculo completo quando explicitamente solicitado
+        if (totalPago >= valorFinal && valorFinal > 0) {
+          novoStatus = 'pago';
+        } else if (totalPago > 0) {
+          novoStatus = 'pendente';
+        } else {
+          novoStatus = 'pendente';
+        }
       } else {
-        novoStatus = 'pendente';
+        // Recálculo conservador - apenas mudanças óbvias
+        if (ingresso.situacao_financeira === 'pendente' && totalPago >= valorFinal && valorFinal > 0) {
+          // Ingresso pendente que foi totalmente pago
+          novoStatus = 'pago';
+        } else if (ingresso.situacao_financeira === 'pago' && totalPago === 0) {
+          // Ingresso marcado como pago mas sem pagamentos registrados
+          novoStatus = 'pendente';
+        }
+        // Caso contrário, manter o status atual
       }
 
       // Atualizar apenas se o status mudou
@@ -76,7 +94,7 @@ export function usePagamentosIngressos() {
           return false;
         }
 
-
+        console.log(`✅ Status do ingresso atualizado: ${ingresso.situacao_financeira} → ${novoStatus}`);
       }
 
       return true;
@@ -139,8 +157,8 @@ export function usePagamentosIngressos() {
         return false;
       }
 
-      // Atualizar status do ingresso baseado nos pagamentos
-      const statusAtualizado = await atualizarStatusIngresso(dados.ingresso_id);
+      // Atualizar status do ingresso baseado nos pagamentos (forçar recálculo ao adicionar pagamento)
+      const statusAtualizado = await atualizarStatusIngresso(dados.ingresso_id, true);
       
       if (!statusAtualizado) {
         console.warn('Status do ingresso não foi atualizado corretamente');
@@ -180,9 +198,9 @@ export function usePagamentosIngressos() {
         return false;
       }
 
-      // Se temos o ingresso_id, atualizar status
+      // Se temos o ingresso_id, atualizar status (forçar recálculo ao editar pagamento)
       if (dados.ingresso_id) {
-        const statusAtualizado = await atualizarStatusIngresso(dados.ingresso_id);
+        const statusAtualizado = await atualizarStatusIngresso(dados.ingresso_id, true);
         
         if (!statusAtualizado) {
           console.warn('Status do ingresso não foi atualizado corretamente após edição');
@@ -218,8 +236,8 @@ export function usePagamentosIngressos() {
         return false;
       }
 
-      // Atualizar status do ingresso
-      const statusAtualizado = await atualizarStatusIngresso(ingressoId);
+      // Atualizar status do ingresso (forçar recálculo ao deletar pagamento)
+      const statusAtualizado = await atualizarStatusIngresso(ingressoId, true);
       
       if (!statusAtualizado) {
         console.warn('Status do ingresso não foi atualizado corretamente após deletar pagamento');
