@@ -103,9 +103,6 @@ export function FinanceiroJogo({ jogo, ingressos }: FinanceiroJogoProps) {
         <TabsContent value="clientes">
           <ListaClientesJogo
             ingressos={ingressos}
-            historicoCobrancas={cobrancaJogo.historicoCobrancas}
-            onMarcarComoPago={cobrancaJogo.marcarComoPago}
-            onRegistrarCobranca={cobrancaJogo.registrarCobranca}
           />
         </TabsContent>
 

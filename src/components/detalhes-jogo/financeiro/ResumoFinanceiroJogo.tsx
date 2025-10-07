@@ -128,8 +128,8 @@ export function ResumoFinanceiroJogo({
     ticket_medio: jogo.total_ingressos > 0 ? estatisticasIngressos.totalReceita / jogo.total_ingressos : 0
   };
 
-  // Análise dos setores (top 3)
-  const topSetores = useMemo(() => {
+  // Análise de todos os setores
+  const todosSetores = useMemo(() => {
     const setores = ingressos.reduce((acc, ing) => {
       const setor = ing.setor_estadio;
       if (!acc[setor]) {
@@ -147,14 +147,13 @@ export function ResumoFinanceiroJogo({
       return acc;
     }, {} as Record<string, any>);
     
-    // Calcular preço médio e ordenar por receita
+    // Calcular preço médio e ordenar por receita (todos os setores)
     return Object.values(setores)
       .map((setor: any) => ({
         ...setor,
         precoMedio: setor.receita / setor.quantidade
       }))
-      .sort((a: any, b: any) => b.receita - a.receita)
-      .slice(0, 3);
+      .sort((a: any, b: any) => b.receita - a.receita);
   }, [ingressos]);
 
   // Componente auxiliar para renderizar valores ocultos/visíveis
@@ -229,7 +228,7 @@ export function ResumoFinanceiroJogo({
       </div>
 
       {/* Cards Principais de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Receita Total */}
         <Card className="hover:shadow-md transition-shadow duration-200">
           <CardContent className="p-6">
@@ -315,6 +314,31 @@ export function ResumoFinanceiroJogo({
                 )}
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Receita Paga */}
+        <Card className="hover:shadow-md transition-shadow duration-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Receita Paga</p>
+                <div className="text-green-600">
+                  {renderHiddenValue(
+                    formatCurrency(estatisticasIngressos.receitaPaga),
+                    showValues.receita,
+                    'receita',
+                    'R$ ••••••'
+                  )}
+                </div>
+                {showValues.receita && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {jogo.ingressos_pagos} ingresso{jogo.ingressos_pagos !== 1 ? 's' : ''} pago{jogo.ingressos_pagos !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -452,6 +476,105 @@ export function ResumoFinanceiroJogo({
           </CardContent>
         </Card>
       </div>
+
+      {/* Card de Ingressos por Setor */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            Ingressos por Setor
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Resumo Total */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {jogo.total_ingressos}
+                </div>
+                <div className="text-sm text-gray-600">Total de Ingressos</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {jogo.ingressos_pagos}
+                </div>
+                <div className="text-sm text-gray-600">Pagos</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {jogo.total_ingressos - jogo.ingressos_pagos}
+                </div>
+                <div className="text-sm text-gray-600">Pendentes</div>
+              </div>
+            </div>
+
+            {/* Breakdown por Setor */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-800">Distribuição por Setor:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {todosSetores.map((setor, index) => {
+                  const percentualTotal = jogo.total_ingressos > 0 
+                    ? (setor.quantidade / jogo.total_ingressos * 100) 
+                    : 0;
+                  
+                  return (
+                    <div key={setor.nome} className="p-3 border rounded-lg hover:shadow-sm transition-shadow">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm">{setor.nome}</span>
+                        <Badge variant={index < 3 ? "default" : "secondary"} className="text-xs">
+                          #{index + 1}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Quantidade:</span>
+                          <span className="font-medium">{setor.quantidade}</span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">% do Total:</span>
+                          <span className="font-medium">{percentualTotal.toFixed(1)}%</span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Receita:</span>
+                          <span className="font-medium text-green-600">
+                            {formatCurrency(setor.receita)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Lucro:</span>
+                          <span className={`font-medium ${setor.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(setor.lucro)}
+                          </span>
+                        </div>
+                        
+                        {/* Barra de progresso visual */}
+                        <div className="mt-2">
+                          <Progress 
+                            value={percentualTotal} 
+                            className="h-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {todosSetores.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum ingresso encontrado para este jogo</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Gráfico de Evolução Temporal das Vendas */}
       {estatisticasIngressos.evolucaoTemporal.length > 0 && (
@@ -639,112 +762,9 @@ export function ResumoFinanceiroJogo({
         </Card>
       )}
 
-      {/* Análise por Status de Pagamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Análise por Status de Pagamento
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(estatisticasIngressos.receitaPaga)}
-              </div>
-              <div className="text-sm text-green-700 font-medium">
-                Receita Paga
-              </div>
-              <div className="text-xs text-green-600 mt-1">
-                {jogo.ingressos_pagos} ingresso{jogo.ingressos_pagos !== 1 ? 's' : ''}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {estatisticasIngressos.totalReceita > 0 
-                  ? `${((estatisticasIngressos.receitaPaga / estatisticasIngressos.totalReceita) * 100).toFixed(1)}% do total`
-                  : '0% do total'
-                }
-              </div>
-            </div>
 
-            <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="text-2xl font-bold text-yellow-600">
-                {formatCurrency(estatisticasIngressos.receitaPendente)}
-              </div>
-              <div className="text-sm text-yellow-700 font-medium">
-                Receita Pendente
-              </div>
-              <div className="text-xs text-yellow-600 mt-1">
-                {jogo.ingressos_pendentes} ingresso{jogo.ingressos_pendentes !== 1 ? 's' : ''}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {estatisticasIngressos.totalReceita > 0 
-                  ? `${((estatisticasIngressos.receitaPendente / estatisticasIngressos.totalReceita) * 100).toFixed(1)}% do total`
-                  : '0% do total'
-                }
-              </div>
-            </div>
 
-            <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(estatisticasIngressos.receitaCancelada)}
-              </div>
-              <div className="text-sm text-red-700 font-medium">
-                Receita Cancelada
-              </div>
-              <div className="text-xs text-red-600 mt-1">
-                {ingressos.filter(ing => ing.situacao_financeira === 'cancelado').length} ingresso{ingressos.filter(ing => ing.situacao_financeira === 'cancelado').length !== 1 ? 's' : ''}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Valor perdido por cancelamentos
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Top 3 Setores por Performance */}
-      {topSetores.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              🏟️ Top 3 Setores por Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topSetores.map((setor, index) => (
-                <div key={setor.nome} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">{setor.nome}</div>
-                      <div className="text-sm text-gray-600">
-                        {setor.quantidade} ingresso{setor.quantidade > 1 ? 's' : ''} • 
-                        Preço médio: {formatCurrency(setor.precoMedio)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">{formatCurrency(setor.receita)}</div>
-                    <div className={`text-sm font-medium ${setor.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      Lucro: {formatCurrency(setor.lucro)}
-                    </div>
-                    <Badge 
-                      variant={index === 0 ? 'default' : 'secondary'} 
-                      className="mt-1"
-                    >
-                      {index === 0 ? '🥇 Melhor' : index === 1 ? '🥈 2º Lugar' : '🥉 3º Lugar'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Estado vazio */}
       {ingressos.length === 0 && (

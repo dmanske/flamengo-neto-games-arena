@@ -154,79 +154,7 @@ export function ReceitasJogo({
         </Card>
       </div>
 
-      {/* Seção de Receitas Automáticas (Ingressos) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Receitas Automáticas (Ingressos)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Resumo por status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h3 className="font-medium text-green-800">Ingressos Pagos</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(receitasIngressos.paga)}
-                </p>
-                <p className="text-sm text-green-700">
-                  {jogo.ingressos_pagos} de {jogo.total_ingressos} ingressos
-                </p>
-              </div>
-              
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h3 className="font-medium text-yellow-800">Ingressos Pendentes</h3>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {formatCurrency(receitasIngressos.pendente)}
-                </p>
-                <p className="text-sm text-yellow-700">
-                  {jogo.ingressos_pendentes} ingressos pendentes
-                </p>
-              </div>
-            </div>
 
-            {/* Lista resumida de clientes (top 5) */}
-            {ingressos.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-700 mb-3">Principais Clientes:</h4>
-                <div className="space-y-2">
-                  {ingressos
-                    .sort((a, b) => b.valor_final - a.valor_final)
-                    .slice(0, 5)
-                    .map((ingresso) => (
-                      <div key={ingresso.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{ingresso.cliente?.nome}</p>
-                          <p className="text-sm text-gray-600">
-                            {ingresso.setor_estadio} • {ingresso.situacao_financeira}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">
-                            {formatCurrency(ingresso.valor_final)}
-                          </p>
-                          <Badge 
-                            variant={ingresso.situacao_financeira === 'pago' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {ingresso.situacao_financeira}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  {ingressos.length > 5 && (
-                    <p className="text-sm text-gray-500 text-center py-2">
-                      +{ingressos.length - 5} outros ingressos
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Seção de Receitas Manuais */}
       <Card>

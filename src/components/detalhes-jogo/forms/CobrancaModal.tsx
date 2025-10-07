@@ -26,8 +26,7 @@ import {
   History,
   Copy,
   ExternalLink,
-  AlertTriangle,
-  CheckCircle
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -89,7 +88,7 @@ interface CobrancaModalProps {
     mensagem?: string,
     observacoes?: string
   ) => Promise<void>;
-  onMarcarComoPago: (ingressoId: string) => Promise<void>;
+
   onGerarMensagem: (template: TemplateCobranca, ingresso: IngressoPendente) => string;
   isLoading?: boolean;
 }
@@ -105,7 +104,6 @@ export function CobrancaModal({
   templates,
   historico,
   onEnviarCobranca,
-  onMarcarComoPago,
   onGerarMensagem,
   isLoading = false
 }: CobrancaModalProps) {
@@ -204,16 +202,7 @@ export function CobrancaModal({
     }
   };
 
-  const handleMarcarComoPago = async () => {
-    if (confirm(`Confirma que ${ingresso.cliente?.nome} pagou o ingresso de ${formatCurrency(ingresso.valor_final)}?`)) {
-      try {
-        await onMarcarComoPago(ingresso.id);
-        onClose();
-      } catch (error) {
-        console.error('Erro ao marcar como pago:', error);
-      }
-    }
-  };
+
 
   const handleTemplateChange = (templateIndex: string) => {
     const tipoTemplate = (tipoSelecionado === 'whatsapp_manual' || tipoSelecionado === 'whatsapp_api') 
@@ -498,29 +487,18 @@ export function CobrancaModal({
                   )}
                 />
 
-                {/* Botões de Ação */}
-                <div className="flex gap-2 pt-4">
+                {/* Botão de Ação */}
+                <div className="pt-4">
                   <Button
                     type="submit"
                     disabled={isSubmitting || isLoading}
-                    className="flex-1 gap-2"
+                    className="w-full gap-2"
                   >
                     <Send className="h-4 w-4" />
                     {isSubmitting ? 'Enviando...' : 
                      tipoSelecionado === 'whatsapp_manual' ? 'Registrar e Abrir WhatsApp' :
                      tipoSelecionado === 'whatsapp_api' ? 'Enviar via WhatsApp API' :
                      'Registrar Cobrança'}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleMarcarComoPago}
-                    disabled={isLoading}
-                    className="gap-2"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Marcar como Pago
                   </Button>
                 </div>
               </form>

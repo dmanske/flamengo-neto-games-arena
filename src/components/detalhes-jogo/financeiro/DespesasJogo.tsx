@@ -61,12 +61,7 @@ export function DespesasJogo({
     }, {} as Record<string, number>)
   };
 
-  // Calcular margem por ingresso
-  const margemPorIngresso = ingressos.map(ing => ({
-    ...ing,
-    margem: ing.valor_final - (ing.preco_custo || 0),
-    margemPercentual: ing.valor_final > 0 ? ((ing.valor_final - (ing.preco_custo || 0)) / ing.valor_final) * 100 : 0
-  }));
+
 
   const handleNovaDespesa = () => {
     setEditingDespesa(null);
@@ -161,84 +156,7 @@ export function DespesasJogo({
         </Card>
       </div>
 
-      {/* Análise de Margem por Ingresso */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Análise de Margem por Ingresso
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Resumo de margens */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h3 className="font-medium text-green-800">Margem Média</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {margemPorIngresso.length > 0 
-                    ? (margemPorIngresso.reduce((sum, ing) => sum + ing.margemPercentual, 0) / margemPorIngresso.length).toFixed(1)
-                    : 0
-                  }%
-                </p>
-              </div>
-              
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-medium text-blue-800">Melhor Margem</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  {margemPorIngresso.length > 0 
-                    ? Math.max(...margemPorIngresso.map(ing => ing.margemPercentual)).toFixed(1)
-                    : 0
-                  }%
-                </p>
-              </div>
-              
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <h3 className="font-medium text-red-800">Pior Margem</h3>
-                <p className="text-2xl font-bold text-red-600">
-                  {margemPorIngresso.length > 0 
-                    ? Math.min(...margemPorIngresso.map(ing => ing.margemPercentual)).toFixed(1)
-                    : 0
-                  }%
-                </p>
-              </div>
-            </div>
 
-            {/* Top 5 ingressos por margem */}
-            {margemPorIngresso.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-700 mb-3">Top 5 Ingressos por Margem:</h4>
-                <div className="space-y-2">
-                  {margemPorIngresso
-                    .sort((a, b) => b.margemPercentual - a.margemPercentual)
-                    .slice(0, 5)
-                    .map((ingresso) => (
-                      <div key={ingresso.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{ingresso.cliente?.nome}</p>
-                          <p className="text-sm text-gray-600">
-                            {ingresso.setor_estadio} • Venda: {formatCurrency(ingresso.valor_final)} • Custo: {formatCurrency(ingresso.preco_custo || 0)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">
-                            {formatCurrency(ingresso.margem)}
-                          </p>
-                          <Badge 
-                            variant={ingresso.margemPercentual >= 20 ? 'default' : ingresso.margemPercentual >= 0 ? 'secondary' : 'destructive'}
-                            className="text-xs"
-                          >
-                            {ingresso.margemPercentual.toFixed(1)}%
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Custos por Setor */}
       {Object.keys(custosIngressos.porSetor).length > 0 && (

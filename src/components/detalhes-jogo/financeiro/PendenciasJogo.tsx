@@ -208,26 +208,7 @@ export function PendenciasJogo({
 
   return (
     <div className="space-y-6">
-      {/* Barra de Busca */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por nome, telefone ou setor..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="text-sm text-gray-600 flex items-center">
-              <Users className="h-4 w-4 mr-1" />
-              {ingressosFiltrados.length} de {ingressosPendentesReais.length} ingressos
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Cards de Resumo Melhorados */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -411,6 +392,22 @@ export function PendenciasJogo({
               {ingressosFiltrados.length}
             </Badge>
           </CardTitle>
+          {/* Barra de Busca */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome, telefone ou setor..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="text-sm text-gray-600 flex items-center">
+              <Users className="h-4 w-4 mr-1" />
+              {ingressosFiltrados.length} de {ingressosPendentesReais.length} ingressos
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {ingressosFiltrados.length === 0 ? (
@@ -547,7 +544,6 @@ export function PendenciasJogo({
           templates={templates}
           historico={historicoIngressoSelecionado}
           onEnviarCobranca={handleEnviarCobranca}
-          onMarcarComoPago={onMarcarComoPago}
           onGerarMensagem={onGerarMensagem}
         />
       )}

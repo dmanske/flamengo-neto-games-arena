@@ -1,82 +1,72 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Ingresso } from '@/types/ingressos';
-import { HistoricoCobranca } from '@/hooks/financeiro/useCobrancaJogo';
-import { formatCurrency, formatPhone } from '@/utils/formatters';
-import { formatarDataBrasil } from '@/utils/dateUtils';
-import { Search, Users, CheckCircle, MessageCircle, Phone, Mail } from 'lucide-react';
+import { formatCurrency, formatPhone, formatCPF } from '@/utils/formatters';
+import { Search, Users } from 'lucide-react';
 
 interface ListaClientesJogoProps {
   ingressos: Ingresso[];
-  historicoCobrancas: HistoricoCobranca[];
-  onMarcarComoPago: (ingressoId: string) => Promise<void>;
-  onRegistrarCobranca: (ingressoId: string, tipo: 'whatsapp' | 'email' | 'telefone' | 'presencial' | 'outros', mensagem?: string) => Promise<string>;
 }
 
 export function ListaClientesJogo({
-  ingressos,
-  historicoCobrancas,
-  onMarcarComoPago,
-  onRegistrarCobranca
+  ingressos
 }: ListaClientesJogoProps) {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [filtroSetor, setFiltroSetor] = useState<string>('todos');
 
-  // Processar dados dos clientes com informações de cobrança
+  // Processar dados dos clientes
   const clientesProcessados = useMemo(() => {
     return ingressos.map(ingresso => {
-      const cobrancasDoIngresso = historicoCobrancas.filter(h => h.ingresso_id === ingresso.id);
-      const ultimaCobranca = cobrancasDoIngresso.sort((a, b) => 
-        new Date(b.data_envio).getTime() - new Date(a.data_envio).getTime()
-      )[0];
-
       return {
         ...ingresso,
-        totalCobrancas: cobrancasDoIngresso.length,
-        ultimaCobranca: ultimaCobranca?.data_envio,
-        ultimoTipoCobranca: ultimaCobranca?.tipo_cobranca,
-        statusUltimaCobranca: ultimaCobranca?.status,
         lucroIndividual: ingresso.valor_final - (ingresso.preco_custo || 0),
         margemPercentual: ingresso.valor_final > 0 ? 
           ((ingresso.valor_final - (ingresso.preco_custo || 0)) / ingresso.valor_final) * 100 : 0
       };
     });
-  }, [ingressos, historicoCobrancas]);
+  }, [ingressos]);
 
-  // Aplicar filtros
+  // Aplicar filtros e ordenação alfabética
   const clientesFiltrados = useMemo(() => {
-    return clientesProcessados.filter(cliente => {
-      // Filtro de busca
-      if (busca) {
-        const termoBusca = busca.toLowerCase();
-        const matchNome = cliente.cliente?.nome?.toLowerCase().includes(termoBusca);
-        const matchCPF = cliente.cliente?.cpf?.includes(termoBusca);
-        const matchTelefone = cliente.cliente?.telefone?.includes(termoBusca);
-        const matchSetor = cliente.setor_estadio?.toLowerCase().includes(termoBusca);
-        
-        if (!matchNome && !matchCPF && !matchTelefone && !matchSetor) {
+    return clientesProcessados
+      .filter(cliente => {
+        // Filtro de busca
+        if (busca) {
+          const termoBusca = busca.toLowerCase();
+          const matchNome = cliente.cliente?.nome?.toLowerCase().includes(termoBusca);
+          const matchCPF = cliente.cliente?.cpf?.includes(termoBusca);
+          const matchTelefone = cliente.cliente?.telefone?.includes(termoBusca);
+          const matchSetor = cliente.setor_estadio?.toLowerCase().includes(termoBusca);
+          
+          if (!matchNome && !matchCPF && !matchTelefone && !matchSetor) {
+            return false;
+          }
+        }
+
+        // Filtro de status
+        if (filtroStatus !== 'todos' && cliente.situacao_financeira !== filtroStatus) {
           return false;
         }
-      }
 
-      // Filtro de status
-      if (filtroStatus !== 'todos' && cliente.situacao_financeira !== filtroStatus) {
-        return false;
-      }
+        // Filtro de setor
+        if (filtroSetor !== 'todos' && cliente.setor_estadio !== filtroSetor) {
+          return false;
+        }
 
-      // Filtro de setor
-      if (filtroSetor !== 'todos' && cliente.setor_estadio !== filtroSetor) {
-        return false;
-      }
-
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        // Ordenação alfabética por nome do cliente
+        const nomeA = a.cliente?.nome?.toLowerCase() || '';
+        const nomeB = b.cliente?.nome?.toLowerCase() || '';
+        return nomeA.localeCompare(nomeB, 'pt-BR');
+      });
   }, [clientesProcessados, busca, filtroStatus, filtroSetor]);
 
   // Obter setores únicos para o filtro
@@ -96,16 +86,7 @@ export function ListaClientesJogo({
     return { total, pagos, pendentes, cancelados, valorTotal, lucroTotal };
   }, [clientesFiltrados]);
 
-  const handleMarcarComoPago = async (cliente: any) => {
-    if (confirm(`Marcar ingresso de ${cliente.cliente?.nome} como pago?`)) {
-      await onMarcarComoPago(cliente.id);
-    }
-  };
 
-  const handleEnviarCobranca = async (cliente: any, tipo: 'whatsapp' | 'email' | 'telefone') => {
-    const mensagem = `Cobrança enviada via ${tipo} para ${cliente.cliente?.nome}`;
-    await onRegistrarCobranca(cliente.id, tipo, mensagem);
-  };
 
   return (
     <div className="space-y-6">
@@ -133,7 +114,7 @@ export function ListaClientesJogo({
                   {estatisticas.total > 0 ? ((estatisticas.pagos / estatisticas.total) * 100).toFixed(1) : 0}%
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="text-2xl">✅</div>
             </div>
           </CardContent>
         </Card>
@@ -226,8 +207,8 @@ export function ListaClientesJogo({
                     <TableHead>Valor</TableHead>
                     <TableHead>Lucro</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Cobranças</TableHead>
-                    <TableHead>Ações</TableHead>
+
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -236,15 +217,14 @@ export function ListaClientesJogo({
                       <TableCell>
                         <div>
                           <div className="font-medium">{cliente.cliente?.nome}</div>
-                          <div className="text-sm text-gray-500">{cliente.cliente?.cpf}</div>
+                          <div className="text-sm text-gray-500 font-mono">
+                            {formatCPF(cliente.cliente?.cpf || '')}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div>{formatPhone(cliente.cliente?.telefone || '')}</div>
-                          <div className="text-gray-500 truncate max-w-32" title={cliente.cliente?.email}>
-                            {cliente.cliente?.email}
-                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -276,48 +256,8 @@ export function ListaClientesJogo({
                           {cliente.situacao_financeira}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{cliente.totalCobrancas} tentativa{cliente.totalCobrancas !== 1 ? 's' : ''}</div>
-                          {cliente.ultimaCobranca && (
-                            <div className="text-xs text-gray-500">
-                              Última: {formatarDataBrasil(cliente.ultimaCobranca)}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {cliente.situacao_financeira === 'pendente' && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMarcarComoPago(cliente)}
-                                title="Marcar como pago"
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEnviarCobranca(cliente, 'whatsapp')}
-                                title="Enviar cobrança via WhatsApp"
-                              >
-                                <MessageCircle className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEnviarCobranca(cliente, 'telefone')}
-                                title="Registrar cobrança por telefone"
-                              >
-                                <Phone className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+
+
                     </TableRow>
                   ))}
                 </TableBody>
