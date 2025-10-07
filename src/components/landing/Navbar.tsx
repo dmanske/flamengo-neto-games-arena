@@ -78,9 +78,9 @@ const Navbar = () => {
                 className="h-10 md:h-12 w-auto object-contain bg-transparent"
                 style={{ backgroundColor: 'transparent' }}
               />
-              <div className="hidden md:block">
+              <div className="hidden md:block text-center">
                 <h2 className="text-lg font-bold text-foreground">Neto Tours Viagens</h2>
-                <p className="text-xs text-muted-foreground">Realizando sonhos, criando histórias</p>
+                <p className="text-xs text-muted-foreground italic">Realizando sonhos, criando histórias</p>
               </div>
             </motion.div>
 
