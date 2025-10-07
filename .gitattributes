@@ -1,0 +1,2 @@
+src/assets/landing/*.webm filter=lfs diff=lfs merge=lfs -text
+src/assets/landing/*.mp4 filter=lfs diff=lfs merge=lfs -text
