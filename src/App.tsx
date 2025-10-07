@@ -95,6 +95,9 @@ import FornecedorDetalhes from "@/pages/FornecedorDetalhes";
 // Import Sistema de Templates WhatsApp
 import { TemplatesWhatsApp } from "@/pages/TemplatesWhatsApp";
 
+// Import Página de Regras de Viagem
+import RegrasViagem from "@/pages/RegrasViagem";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -130,6 +133,9 @@ function App() {
               {/* Páginas públicas Lista de Presença */}
               <Route path="/lista-presenca/:viagemId" element={<ListaPresencaPublica />} />
               <Route path="/lista-presenca/:viagemId/onibus/:onibusId" element={<ListaPresencaOnibusPublica />} />
+              
+              {/* Página pública Regras de Viagem */}
+              <Route path="/regrasdeviagens" element={<RegrasViagem />} />
               
               {/* Página de acesso admin */}
               <Route path="/admin" element={<Login />} />
