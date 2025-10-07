@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Home, Store, Settings, ClipboardList, DollarSign, Calculator, Ticket, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Store, Settings, ClipboardList, DollarSign, Calculator, Ticket, Building2 } from "lucide-react";
 import LogoEmpresa from "@/components/empresa/LogoEmpresa";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,21 +46,26 @@ const NavItem = ({
   );
 };
 
-// LandingPageLink component
-const LandingPageLink = ({ onClick }: { onClick?: () => void }) => {
+// Componente para itens desabilitados
+const DisabledNavItem = ({
+  icon,
+  title
+}: {
+  icon: React.ReactNode;
+  title: string;
+}) => {
   return (
-    <Link 
-      to="/site" 
-      onClick={onClick} 
-      className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap group hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700 text-gray-600 hover:text-blue-700"
-    >
-      <div className="flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-        <Home className="h-5 w-5" />
+    <div className="flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all duration-200 whitespace-nowrap cursor-not-allowed opacity-50">
+      <div className="flex-shrink-0">
+        {icon}
       </div>
-      <span className="font-medium">Site</span>
-    </Link>
+      <span className="font-medium">{title}</span>
+      <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">Em breve</span>
+    </div>
   );
 };
+
+
 
 const MainLayout = () => {
   const {
@@ -132,7 +137,6 @@ const MainLayout = () => {
             to="/dashboard" 
             onClick={closeMenu} 
           />
-          <LandingPageLink onClick={closeMenu} />
           <NavItem 
             icon={<CalendarDays className="h-5 w-5" />} 
             title="Viagens" 
@@ -185,27 +189,9 @@ const MainLayout = () => {
             onClick={closeMenu} 
           />
           <NavItem 
-            icon={<Store className="h-5 w-5" />} 
-            title="Loja Pública" 
-            to="/dashboard/loja" 
-            onClick={closeMenu} 
-          />
-          <NavItem 
-            icon={<Settings className="h-5 w-5" />} 
-            title="Admin Loja" 
-            to="/dashboard/loja-admin" 
-            onClick={closeMenu} 
-          />
-          <NavItem 
             icon={<DollarSign className="h-5 w-5" />} 
             title="Financeiro" 
             to="/dashboard/financeiro" 
-            onClick={closeMenu} 
-          />
-          <NavItem 
-            icon={<CreditCard className="h-5 w-5" />} 
-            title="Pagamentos" 
-            to="/dashboard/pagamentos" 
             onClick={closeMenu} 
           />
           <NavItem 
@@ -220,6 +206,25 @@ const MainLayout = () => {
             to="/dashboard/empresa/configuracoes" 
             onClick={closeMenu} 
           />
+          
+          {/* Seção de itens desabilitados */}
+          <div className="pt-4 border-t border-gray-200 mt-4">
+            <div className="px-1 mb-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Em Desenvolvimento</span>
+            </div>
+            <DisabledNavItem 
+              icon={<CreditCard className="h-5 w-5" />} 
+              title="Pagamentos" 
+            />
+            <DisabledNavItem 
+              icon={<Store className="h-5 w-5" />} 
+              title="Loja Pública" 
+            />
+            <DisabledNavItem 
+              icon={<Settings className="h-5 w-5" />} 
+              title="Admin Loja" 
+            />
+          </div>
         </div>
       </ScrollArea>
       
