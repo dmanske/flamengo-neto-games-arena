@@ -43,7 +43,10 @@ import LojaAdmin from '@/pages/LojaAdmin';
 
 // Landing Page
 import CadastroPublico from "@/pages/CadastroPublico";
-import Index from "@/pages/Index";
+import LandingPage from "@/pages/LandingPage";
+import ContatoSucesso from "@/pages/ContatoSucesso";
+import Gallery from "@/pages/Gallery";
+import GalleryEvent from "@/pages/GalleryEvent";
 import Homepage from "@/pages/Homepage";
 
 // Galeria Pages
@@ -102,7 +105,12 @@ function App() {
           <SidebarProvider>
             <Routes>
               {/* Landing Page como página inicial */}
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Páginas da Landing Page */}
+              <Route path="/contato/sucesso" element={<ContatoSucesso />} />
+              <Route path="/galeria" element={<Gallery />} />
+              <Route path="/galeria/:slug" element={<GalleryEvent />} />
               
               {/* Homepage completa */}
               <Route path="/homepage" element={<Homepage />} />
@@ -110,7 +118,7 @@ function App() {
               {/* Loja pública */}
               <Route path="/loja" element={<Loja />} />
               
-              {/* Galeria pública */}
+              {/* Galeria pública (páginas antigas) */}
               <Route path="/galeria-fotos" element={<GaleriaFotos />} />
               <Route path="/galeria-videos" element={<GaleriaVideos />} />
               
@@ -122,6 +130,9 @@ function App() {
               {/* Páginas públicas Lista de Presença */}
               <Route path="/lista-presenca/:viagemId" element={<ListaPresencaPublica />} />
               <Route path="/lista-presenca/:viagemId/onibus/:onibusId" element={<ListaPresencaOnibusPublica />} />
+              
+              {/* Página de acesso admin */}
+              <Route path="/admin" element={<Login />} />
               
               {/* Auth routes */}
               <Route path="/login" element={<Login />} />
