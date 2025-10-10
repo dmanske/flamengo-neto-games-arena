@@ -1,6 +1,6 @@
 import React from 'react';
 import { Ingresso } from '@/types/ingressos';
-import { formatCPF, formatBirthDate } from '@/utils/formatters';
+import { formatCPF, formatBirthDate, formatCurrency } from '@/utils/formatters';
 import { useEmpresa } from '@/hooks/useEmpresa';
 import { formatDateTimeSafe } from '@/lib/date-utils';
 
@@ -42,6 +42,28 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
       acc[setor] = (acc[setor] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
+
+    // Calcular custos por setor
+    const custosPorSetor = ingressos.reduce((acc, ingresso) => {
+      const setor = ingresso.setor_estadio || 'Sem setor';
+      if (!acc[setor]) {
+        acc[setor] = {
+          quantidade: 0,
+          custoUnitario: ingresso.preco_custo,
+          custoTotal: 0
+        };
+      }
+      acc[setor].quantidade += 1;
+      acc[setor].custoTotal += ingresso.preco_custo;
+      return acc;
+    }, {} as Record<string, { quantidade: number; custoUnitario: number; custoTotal: number }>);
+
+    // Calcular totais financeiros
+    const totalIngressos = ingressos.length;
+    const custoTotalGeral = ingressos.reduce((total, ingresso) => total + ingresso.preco_custo, 0);
+    
+    // Valor total a pagar ao fornecedor = Total de custos
+    const valorTotalPagar = custoTotalGeral;
 
     return (
       <>
@@ -230,6 +252,27 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
           </div>
         </div>
 
+        {/* Card Resumo Financeiro */}
+        <div className="mb-8 no-break">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-6 max-w-md mx-auto">
+            <h3 className="font-bold text-green-800 mb-4 text-lg text-center">💰 RESUMO FINANCEIRO</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center bg-white rounded-lg p-3 shadow-sm">
+                <span className="font-medium text-gray-700">Total de Ingressos:</span>
+                <span className="text-xl font-bold text-green-600">{totalIngressos}</span>
+              </div>
+              
+              <div className="flex justify-between items-center bg-white rounded-lg p-3 shadow-sm">
+                <span className="font-medium text-gray-700">Valor Total a Pagar ao Fornecedor:</span>
+                <span className="text-xl font-bold text-green-600">
+                  {formatCurrency(valorTotalPagar)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Distribuição por Setores */}
         <div className="mb-8 no-break">
           <h3 className="font-semibold text-gray-800 mb-6 text-lg text-center">Distribuição por Setores do Maracanã</h3>
@@ -251,6 +294,61 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
                 </div>
               ))
             }
+          </div>
+        </div>
+
+        {/* Custos por Setor */}
+        <div className="mb-8 no-break">
+          <h3 className="font-semibold text-gray-800 mb-6 text-lg text-center">💸 Custos por Setor</h3>
+          
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-orange-100">
+                  <tr>
+                    <th className="border-b border-orange-200 p-4 text-left font-semibold text-orange-800">Setor</th>
+                    <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Quantidade</th>
+                    <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Custo Unitário</th>
+                    <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Custo Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(custosPorSetor)
+                    .sort(([a], [b]) => {
+                      if (a === 'Sem setor') return 1;
+                      if (b === 'Sem setor') return -1;
+                      return a.localeCompare(b, 'pt-BR');
+                    })
+                    .map(([setor, dados]) => (
+                      <tr key={setor} className="hover:bg-orange-25">
+                        <td className="border-b border-orange-100 p-4 font-medium text-gray-800">
+                          {setor === 'Sem setor' ? 'Sem setor definido' : setor}
+                        </td>
+                        <td className="border-b border-orange-100 p-4 text-center font-semibold text-orange-700">
+                          {dados.quantidade}
+                        </td>
+                        <td className="border-b border-orange-100 p-4 text-center text-gray-700">
+                          {formatCurrency(dados.custoUnitario)}
+                        </td>
+                        <td className="border-b border-orange-100 p-4 text-center font-bold text-orange-600">
+                          {formatCurrency(dados.custoTotal)}
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+                <tfoot className="bg-orange-200">
+                  <tr>
+                    <td className="p-4 font-bold text-orange-900" colSpan={3}>
+                      TOTAL GERAL DE CUSTOS:
+                    </td>
+                    <td className="p-4 text-center font-bold text-xl text-orange-900">
+                      {formatCurrency(custoTotalGeral)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
 
