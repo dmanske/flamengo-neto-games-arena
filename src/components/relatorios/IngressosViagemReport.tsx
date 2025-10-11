@@ -1,8 +1,9 @@
 import React from 'react';
 import { PassageiroDisplay } from '@/hooks/useViagemDetails';
-import { formatCPF, formatBirthDate, calcularIdade } from '@/utils/formatters';
+import { formatCPF, formatBirthDate, calcularIdade, formatCurrency } from '@/utils/formatters';
 import { useEmpresa } from '@/hooks/useEmpresa';
 import { formatDateTimeSafe } from '@/lib/date-utils';
+import { useViagemSetoresPrecos } from '@/hooks/useViagemSetoresPrecos';
 import { ReportFilters } from '@/types/report-filters';
 import { 
   categorizarIdadePorPasseio, 
@@ -40,6 +41,7 @@ interface IngressosViagemReportProps {
   jogoInfo: JogoInfo;
   filters?: ReportFilters;
   onibusList?: OnibusData[];
+  viagemId?: string;
 }
 
 // Função para obter ícone por tipo
@@ -73,9 +75,127 @@ const obterPrioridadePasseio = (nomePasseio: string): number => {
 };
 
 export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosViagemReportProps>(
-  ({ passageiros, jogoInfo, filters, onibusList = [] }, ref) => {
+  ({ passageiros, jogoInfo, filters, onibusList = [], viagemId }, ref) => {
     // Hook para dados da empresa
     const { empresa } = useEmpresa();
+    
+    // Hook para preços dos setores (apenas se viagemId estiver disponível)
+    const { setoresPrecos, temPrecosCadastrados, carregarSetoresPrecos } = useViagemSetoresPrecos(viagemId || '');
+    
+    // Forçar recarga dos preços quando o componente é renderizado
+    React.useEffect(() => {
+      if (viagemId) {
+        console.log('🔄 [IngressosViagemReport] Recarregando preços dos setores...');
+        carregarSetoresPrecos();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viagemId]); // Só recarrega quando viagemId muda
+    
+    // Filtrar apenas passageiros com setor do Maracanã
+    const passageirosComSetor = passageiros.filter(p => p.setor_maracana);
+    
+    // Calcular resumo financeiro baseado nos passageiros do relatório
+    const resumoIngressos = React.useMemo(() => {
+      if (!temPrecosCadastrados || setoresPrecos.length === 0 || !passageirosComSetor.length) {
+        return null;
+      }
+
+      // Usar a MESMA lógica da "Distribuição por Setor" que já funciona
+      const setorCount = passageirosComSetor.reduce((acc, passageiro) => {
+        const setor = passageiro.setor_maracana || 'Sem setor';
+        acc[setor] = (acc[setor] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calcular custos e vendas por setor usando os dados da distribuição
+      const custosPorSetor: Record<string, any> = {};
+      let totalIngressos = 0;
+      let totalCusto = 0;
+      let totalVenda = 0;
+
+      // Função para fazer matching inteligente de setores
+      const encontrarPrecoSetor = (nomeSetor: string) => {
+        // 1. Busca exata
+        let precoSetor = setoresPrecos.find(p => p.setor_nome === nomeSetor);
+        if (precoSetor) return precoSetor;
+
+        // 2. Busca por palavras-chave (case insensitive)
+        const nomeNormalizado = nomeSetor.toLowerCase();
+        
+        precoSetor = setoresPrecos.find(p => {
+          const precoNormalizado = p.setor_nome.toLowerCase();
+          
+          // Matching por palavras-chave
+          if (nomeNormalizado.includes('norte') && precoNormalizado.includes('norte')) return true;
+          if (nomeNormalizado.includes('sul') && precoNormalizado.includes('sul')) return true;
+          if (nomeNormalizado.includes('leste') && precoNormalizado.includes('leste')) return true;
+          if (nomeNormalizado.includes('oeste') && precoNormalizado.includes('oeste')) return true;
+          if (nomeNormalizado.includes('maracanã') && precoNormalizado.includes('maracanã')) return true;
+          if (nomeNormalizado.includes('premium') && precoNormalizado.includes('premium')) return true;
+          
+          return false;
+        });
+
+        return precoSetor;
+      };
+
+      // Para cada setor que TEM passageiros (da distribuição)
+      Object.entries(setorCount).forEach(([setor, quantidade]) => {
+        // Buscar o preço cadastrado para este setor (com matching inteligente)
+        const precoSetor = encontrarPrecoSetor(setor);
+        
+        // Debug: Log detalhado do matching
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔍 Setor "${setor}": ${quantidade} passageiros, preço encontrado:`, precoSetor ? `SIM (${precoSetor.setor_nome})` : 'NÃO');
+        }
+        
+        if (precoSetor && quantidade > 0) {
+          const custoTotal = quantidade * precoSetor.preco_custo;
+          const vendaTotal = quantidade * precoSetor.preco_venda;
+          const lucroTotal = vendaTotal - custoTotal;
+
+          custosPorSetor[setor] = {
+            quantidade,
+            custo_unitario: precoSetor.preco_custo,
+            custo_total: custoTotal,
+            venda_unitaria: precoSetor.preco_venda,
+            venda_total: vendaTotal,
+            lucro_total: lucroTotal
+          };
+
+          totalIngressos += quantidade;
+          totalCusto += custoTotal;
+          totalVenda += vendaTotal;
+        }
+      });
+
+      const totalLucro = totalVenda - totalCusto;
+      const margemPercentual = totalVenda > 0 ? (totalLucro / totalVenda) * 100 : 0;
+
+      const resultado = {
+        total_ingressos: totalIngressos,
+        total_custo: totalCusto,
+        total_venda: totalVenda,
+        total_lucro: totalLucro,
+        margem_percentual: margemPercentual,
+        custos_por_setor: custosPorSetor
+      };
+
+      // Debug: Log dos cálculos
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💰 [IngressosViagemReport] Cálculos Financeiros:', {
+          passageirosComSetor: passageirosComSetor.length,
+          setoresPrecos: setoresPrecos.length,
+          setorCount, // Distribuição que já funciona
+          setoresNomes: setoresPrecos.map(p => p.setor_nome), // Nomes cadastrados
+          setoresPassageiros: Object.keys(setorCount), // Nomes dos passageiros
+          custosPorSetor,
+          resultado
+        });
+      }
+
+      return resultado;
+    }, [temPrecosCadastrados, setoresPrecos, passageirosComSetor]);
     
     // Debug: Verificação de dados recebidos
     if (process.env.NODE_ENV === 'development') {
@@ -119,9 +239,6 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
     });
 
     const localJogoTexto = jogoInfo.local_jogo === 'casa' ? 'Maracanã' : 'Fora de Casa';
-
-    // Filtrar apenas passageiros com setor do Maracanã
-    const passageirosComSetor = passageiros.filter(p => p.setor_maracana);
 
     return (
       <>
@@ -326,36 +443,88 @@ export const IngressosViagemReport = React.forwardRef<HTMLDivElement, IngressosV
           )}
         </div>
 
-        {/* Distribuição por Setor - Oculto no modo comprar passeios e transfer */}
-        {!filters?.modoComprarPasseios && !filters?.modoTransfer && (
-          <div className="mb-8 page-break">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Distribuição por Setor</h3>
-            
-            {(() => {
-              const setorCount = passageirosComSetor.reduce((acc, passageiro) => {
-                const setor = passageiro.setor_maracana || 'Sem setor';
-                acc[setor] = (acc[setor] || 0) + 1;
-                return acc;
-              }, {} as Record<string, number>);
-              
-              const setoresOrdenados = Object.entries(setorCount)
-                .sort(([a], [b]) => a.localeCompare(b, 'pt-BR'));
-              
-              return (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-                  {setoresOrdenados.map(([setor, quantidade]) => (
-                    <div key={setor} className="bg-gray-50 p-4 rounded-lg border">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{quantidade}</div>
-                        <div className="text-sm text-gray-600 mt-1">{setor}</div>
-                      </div>
-                    </div>
-                  ))}
+        {/* Cards Financeiros - Apenas para modo ingressos e se tiver preços cadastrados */}
+        {!filters?.modoComprarPasseios && !filters?.modoTransfer && temPrecosCadastrados && resumoIngressos && (
+          <>
+            {/* Card Resumo Financeiro */}
+            <div className="mb-8 no-break">
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-6 max-w-md mx-auto">
+                <h3 className="font-bold text-green-800 mb-4 text-lg text-center">💰 RESUMO FINANCEIRO</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-white rounded-lg p-3 shadow-sm">
+                    <span className="font-medium text-gray-700">Total de Ingressos:</span>
+                    <span className="text-xl font-bold text-green-600">{resumoIngressos.total_ingressos}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center bg-white rounded-lg p-3 shadow-sm">
+                    <span className="font-medium text-gray-700">Valor Total a Pagar ao Fornecedor:</span>
+                    <span className="text-xl font-bold text-green-600">
+                      {formatCurrency(resumoIngressos.total_custo)}
+                    </span>
+                  </div>
                 </div>
-              );
-            })()} 
-          </div>
+              </div>
+            </div>
+
+            {/* Custos por Setor */}
+            <div className="mb-8 no-break">
+              <h3 className="font-semibold text-gray-800 mb-6 text-lg text-center">💸 Custos por Setor</h3>
+              
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-orange-100">
+                      <tr>
+                        <th className="border-b border-orange-200 p-4 text-left font-semibold text-orange-800">Setor</th>
+                        <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Quantidade</th>
+                        <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Custo Unitário</th>
+                        <th className="border-b border-orange-200 p-4 text-center font-semibold text-orange-800">Custo Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(resumoIngressos.custos_por_setor)
+                        .sort(([a], [b]) => {
+                          if (a === 'Sem setor') return 1;
+                          if (b === 'Sem setor') return -1;
+                          return a.localeCompare(b, 'pt-BR');
+                        })
+                        .map(([setor, dados]) => (
+                          <tr key={setor} className="hover:bg-orange-25">
+                            <td className="border-b border-orange-100 p-4 font-medium text-gray-800">
+                              {setor === 'Sem setor' ? 'Sem setor definido' : setor}
+                            </td>
+                            <td className="border-b border-orange-100 p-4 text-center font-semibold text-orange-700">
+                              {dados.quantidade}
+                            </td>
+                            <td className="border-b border-orange-100 p-4 text-center text-gray-700">
+                              {formatCurrency(dados.custo_unitario)}
+                            </td>
+                            <td className="border-b border-orange-100 p-4 text-center font-bold text-orange-600">
+                              {formatCurrency(dados.custo_total)}
+                            </td>
+                          </tr>
+                        ))
+                      }
+                    </tbody>
+                    <tfoot className="bg-orange-200">
+                      <tr>
+                        <td className="p-4 font-bold text-orange-900" colSpan={3}>
+                          TOTAL GERAL DE CUSTOS:
+                        </td>
+                        <td className="p-4 text-center font-bold text-xl text-orange-900">
+                          {formatCurrency(resumoIngressos.total_custo)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </>
         )}
+
+
 
         {/* Seções específicas do modo comprar passeios e transfer */}
         {(filters?.modoComprarPasseios || filters?.modoTransfer) && (

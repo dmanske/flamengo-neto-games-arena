@@ -30,6 +30,7 @@ import ListaClientes from './ListaClientes';
 import DespesaForm from './DespesaForm';
 import ReceitaForm from './ReceitaForm';
 import { RelatorioFinanceiro } from './RelatorioFinanceiro';
+import { SetoresIngressosForm } from './SetoresIngressosForm';
 
 interface FinanceiroViagemProps {
   viagemId: string;
@@ -350,10 +351,11 @@ export function FinanceiroViagem({ viagemId, onDataUpdate }: FinanceiroViagemPro
 
       {/* Tabs de Conteúdo */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="receitas">Receitas</TabsTrigger>
           <TabsTrigger value="despesas">Despesas</TabsTrigger>
+          <TabsTrigger value="ingressos">🎫 Ingressos</TabsTrigger>
           <TabsTrigger value="clientes">Lista de Clientes</TabsTrigger>
           <TabsTrigger value="pendencias">Pendências</TabsTrigger>
           <TabsTrigger value="graficos">Gráficos</TabsTrigger>
@@ -1297,6 +1299,13 @@ export function FinanceiroViagem({ viagemId, onDataUpdate }: FinanceiroViagemPro
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="ingressos" className="space-y-6">
+          <SetoresIngressosForm 
+            viagemId={viagemId}
+            onSuccess={fetchAllData}
+          />
         </TabsContent>
 
         <TabsContent value="clientes">

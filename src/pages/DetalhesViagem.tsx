@@ -359,6 +359,7 @@ const DetalhesViagem = () => {
              }}
              filters={filters}
              onibusList={onibusList}
+             viagemId={id}
            />
         ) : (
           <ViagemReport

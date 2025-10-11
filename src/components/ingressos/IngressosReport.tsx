@@ -273,29 +273,7 @@ export const IngressosReport = React.forwardRef<HTMLDivElement, IngressosReportP
           </div>
         </div>
 
-        {/* Distribuição por Setores */}
-        <div className="mb-8 no-break">
-          <h3 className="font-semibold text-gray-800 mb-6 text-lg text-center">Distribuição por Setores do Maracanã</h3>
-          
-          <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
-            {Object.entries(distribuicaoPorSetor)
-              .sort(([a], [b]) => {
-                if (a === 'Sem setor') return 1;
-                if (b === 'Sem setor') return -1;
-                return a.localeCompare(b, 'pt-BR');
-              })
-              .map(([setor, quantidade]) => (
-                <div key={setor} className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-red-600 mb-1">{quantidade}</div>
-                  <div className="text-sm text-gray-600 mb-1">ingressos</div>
-                  <div className="text-sm font-semibold text-gray-800">
-                    {setor === 'Sem setor' ? 'Sem ingresso' : setor}
-                  </div>
-                </div>
-              ))
-            }
-          </div>
-        </div>
+
 
         {/* Custos por Setor */}
         <div className="mb-8 no-break">
