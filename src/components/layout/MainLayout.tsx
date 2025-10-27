@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Store, Settings, ClipboardList, DollarSign, Calculator, Ticket, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Bus, CreditCard, ChevronLeft, ChevronRight, Menu, UserPlus, MessageSquare, Store, Settings, ClipboardList, DollarSign, Calculator, Ticket, Building2, Wallet } from "lucide-react";
 import LogoEmpresa from "@/components/empresa/LogoEmpresa";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -186,6 +186,12 @@ const MainLayout = () => {
             icon={<Calculator className="h-5 w-5" />} 
             title="Créditos de Viagem" 
             to="/dashboard/creditos" 
+            onClick={closeMenu} 
+          />
+          <NavItem 
+            icon={<Wallet className="h-5 w-5" />} 
+            title="Créditos Pré-pagos" 
+            to="/dashboard/creditos-prepagos" 
             onClick={closeMenu} 
           />
           <NavItem 

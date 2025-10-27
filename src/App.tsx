@@ -83,6 +83,10 @@ import ViagensIngressos from "@/pages/ViagensIngressos";
 // Import Sistema de Créditos de Viagem
 import Creditos from "@/pages/Creditos";
 
+// Import Sistema de Créditos Pré-pagos (Wallet)
+import CreditosPrePagos from "@/pages/CreditosPrePagos";
+import WalletClienteDetalhes from "@/pages/WalletClienteDetalhes";
+
 // Import Sistema de Configuração de Passeios
 import ConfiguracaoPasseios from "@/pages/ConfiguracaoPasseios";
 
@@ -188,6 +192,10 @@ function App() {
                   
                   {/* Sistema de Créditos de Viagem */}
                   <Route path="creditos" element={<Creditos />} />
+                  
+                  {/* Sistema de Créditos Pré-pagos (Wallet) */}
+                  <Route path="creditos-prepagos" element={<CreditosPrePagos />} />
+                  <Route path="creditos-prepagos/cliente/:id" element={<WalletClienteDetalhes />} />
                   
                   {/* Sistema de Configuração de Passeios */}
                   <Route path="configuracao-passeios" element={<ConfiguracaoPasseios />} />

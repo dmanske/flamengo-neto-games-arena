@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,8 @@ import {
   BarChart3,
   Loader2,
   Ticket,
-  Wallet
+  Wallet,
+  Calculator
 } from 'lucide-react';
 import { useClienteDetalhes } from '@/hooks/useClienteDetalhes';
 import { formatPhone, formatCPF, formatarNomeComPreposicoes } from '@/utils/formatters';
@@ -28,16 +29,26 @@ import HistoricoViagens from '@/components/cliente-detalhes/HistoricoViagens';
 import SituacaoFinanceira from '@/components/cliente-detalhes/SituacaoFinanceira';
 import IngressosCliente from '@/components/cliente-detalhes/IngressosCliente';
 import CreditosCliente from '@/components/cliente-detalhes/CreditosCliente';
+import CarteiraCliente from '@/components/cliente-detalhes/CarteiraCliente';
 
 import EstatisticasInsights from '@/components/cliente-detalhes/EstatisticasInsights';
 import AcoesRapidas from '@/components/cliente-detalhes/AcoesRapidas';
 
-type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'insights' | 'ingressos' | 'creditos';
+type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'insights' | 'ingressos' | 'creditos' | 'carteira';
 
 const ClienteDetalhes = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('pessoal');
+  
+  // Verificar se há parâmetro tab na URL
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType;
+    if (tabParam && ['pessoal', 'viagens', 'financeiro', 'insights', 'ingressos', 'creditos', 'carteira'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   
   const { cliente, loading, error } = useClienteDetalhes(id || '');
 
@@ -75,7 +86,8 @@ const ClienteDetalhes = () => {
     { id: 'viagens', label: 'Viagens', icon: Calendar },
     { id: 'financeiro', label: 'Financeiro', icon: CreditCard },
     { id: 'ingressos', label: 'Ingressos', icon: Ticket },
-    { id: 'creditos', label: 'Créditos', icon: Wallet },
+    { id: 'creditos', label: 'Créditos', icon: Calculator },
+    { id: 'carteira', label: 'Carteira', icon: Wallet },
     { id: 'insights', label: 'Insights', icon: BarChart3 },
   ] as const;
 
@@ -91,6 +103,16 @@ const ClienteDetalhes = () => {
         return <IngressosCliente clienteId={id || ''} cliente={cliente.cliente} />;
       case 'creditos':
         return <CreditosCliente clienteId={id || ''} cliente={cliente.cliente} />;
+      case 'carteira':
+        return <CarteiraCliente 
+          clienteId={id || ''} 
+          cliente={{
+            id: cliente.cliente.id.toString(),
+            nome: cliente.cliente.nome,
+            telefone: cliente.cliente.telefone,
+            email: cliente.cliente.email
+          }} 
+        />;
       case 'insights':
         return <EstatisticasInsights clienteId={id || ''} />;
       default:
