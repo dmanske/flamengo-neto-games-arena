@@ -7,6 +7,7 @@ import { Calendar, MapPin, Users, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import FloatingWhatsApp from "@/components/landing/FloatingWhatsApp";
+import { useEffect } from "react";
 
 // Import images
 import tripFlaFlu from "@/assets/landing/trip-fla-flu.jpg";
@@ -98,13 +99,25 @@ const GalleryEvent = () => {
 
   const event = slug ? eventsData[slug] : null;
 
+  // Corrigir scroll quando a página carrega
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!event) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center landing-page">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-foreground mb-4">Evento não encontrado</h1>
           <Link to="/galeria">
-            <Button variant="default">Voltar para Galeria</Button>
+            <Button variant="default">Voltar para Galeria Completa</Button>
           </Link>
         </div>
       </div>
@@ -117,13 +130,13 @@ const GalleryEvent = () => {
       <FloatingWhatsApp />
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-16 overflow-hidden">
+      <section className="relative pt-40 pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <Link to="/galeria">
             <Button variant="ghost" className="mb-6 group">
               <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
-              Voltar para Galeria
+              Voltar para Galeria Completa
             </Button>
           </Link>
 

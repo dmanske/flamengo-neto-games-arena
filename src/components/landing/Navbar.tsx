@@ -26,7 +26,7 @@ const Navbar = () => {
     { name: "Ônibus", href: "#buses" },
     { name: "Ingressos", href: "#ticket-info" },
     { name: "Próximas Viagens", href: "#upcoming-trips" },
-    { name: "Passeios", href: "#tours" },
+    { name: "Viagens Realizadas", href: "#completed-trips" },
     { name: "Depoimentos", href: "#testimonials" },
     { name: "Contato", href: "#contact" },
   ];

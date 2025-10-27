@@ -92,7 +92,7 @@ const ContatoSucesso = () => {
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button asChild variant="ghost" size="sm">
-                    <Link to="/galeria">Ver Galeria</Link>
+                    <Link to="/galeria">Ver Galeria Completa</Link>
                   </Button>
                   <Button asChild variant="ghost" size="sm">
                     <Link to="/#tours">Conhecer os Tours</Link>

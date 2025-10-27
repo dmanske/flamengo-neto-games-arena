@@ -17,7 +17,7 @@ const busFeatures = [
 
 const BusShowcase = () => {
   return (
-    <section id="buses" className="py-20 bg-gradient-to-b from-background to-muted/30">
+    <section id="buses" className="py-20 bg-gradient-to-b from-background to-muted/30" style={{ scrollMarginTop: '80px' }}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

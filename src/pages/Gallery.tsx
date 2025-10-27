@@ -5,15 +5,28 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import FloatingWhatsApp from "@/components/landing/FloatingWhatsApp";
 import GalleryGrid from "@/components/landing/GalleryGrid";
+import { useEffect } from "react";
 
 const Gallery = () => {
+  // Corrigir scroll quando a página carrega
+  useEffect(() => {
+    // Aguardar um pouco para garantir que a página carregou
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <div className="min-h-screen bg-background landing-page">
       <Navbar />
       <FloatingWhatsApp />
-      
+
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 overflow-hidden">
+      <section className="relative pt-20 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div

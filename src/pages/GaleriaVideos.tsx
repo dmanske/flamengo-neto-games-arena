@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { EnhancedCard } from "@/components/ui/enhanced-card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,18 @@ import {
 const GaleriaVideos = () => {
   const navigate = useNavigate();
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  
+  // Corrigir scroll quando a página carrega
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
   const [videoSelecionado, setVideoSelecionado] = useState<any>(null);
   const [termoBusca, setTermoBusca] = useState('');
 
@@ -143,7 +155,7 @@ const GaleriaVideos = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-red-900 to-black">
       {/* Header */}
-      <div className="relative overflow-hidden py-16 px-4">
+      <div className="relative overflow-hidden pt-40 pb-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-red-900/50 to-black/50"></div>
         <div className="container mx-auto relative z-10">
           <div className="flex items-center justify-between mb-8">

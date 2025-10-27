@@ -1,17 +1,32 @@
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Bus, MessageCircle, Clock } from "lucide-react";
+import { Calendar, MapPin, Bus, MessageCircle, Clock, Loader2 } from "lucide-react";
 import TripBanner from "@/components/landing/TripBanner";
 import flamengoLogo from "@/assets/landing/flamengo-logo-oficial.png";
-import logoPalmeiras from "@/assets/landing/logo-palmeiras.png";
-import logoRacing from "@/assets/landing/logo-racing.png";
-import logoSport from "@/assets/landing/logo-sport.png";
-import logoBragantino from "@/assets/landing/logo-bragantino.png";
-import logoSantos from "@/assets/landing/logo-santos.png";
+import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
+// Interface para viagem do Supabase
+interface ViagemSupabase {
+  id: string;
+  adversario: string;
+  data_jogo: string;
+  data_saida: string | null;
+  local_jogo: string;
+  cidade_embarque: string;
+  nome_estadio: string | null;
+  valor_padrao: number | null;
+  logo_flamengo: string | null;
+  logo_adversario: string | null;
+  status_viagem: string;
+}
+
+// Interface para trip formatada
 interface Trip {
   id: string;
   opponentLogo: string;
@@ -25,140 +40,110 @@ interface Trip {
   price: string;
   highlights: string[];
   whatsappMessage: string;
+  logoOrder?: {
+    primeiro: string;
+    segundo: string;
+  };
 }
 
-const upcomingTrips: Trip[] = [
-  {
-    id: "1",
-    opponentLogo: logoPalmeiras,
-    title: "Flamengo x Palmeiras",
-    date: "19/10/2025",
-    location: "Maracanã - RJ",
-    championship: "Brasileirão",
+// Função para determinar o tipo de campeonato baseado no adversário
+const getTipoJogo = (adversario: string, dataJogo?: string): string => {
+  const adversarioLower = adversario.toLowerCase();
+  
+  // Casos específicos manuais
+  if (adversarioLower.includes('estudiantes')) {
+    return 'Libertadores';
+  }
+  
+  // Casos gerais
+  const classicos = ['vasco', 'botafogo', 'fluminense'];
+  const libertadores = ['racing', 'peñarol', 'river plate', 'boca juniors'];
+  
+  if (classicos.some(time => adversarioLower.includes(time))) {
+    return 'Clássico';
+  } else if (libertadores.some(time => adversarioLower.includes(time))) {
+    return 'Libertadores';
+  } else {
+    return 'Brasileirão';
+  }
+};
+
+// Função para formatar viagem do Supabase para Trip
+const formatarViagem = (viagem: ViagemSupabase): Trip => {
+  const dataJogo = new Date(viagem.data_jogo);
+  const dataJogoFormatada = format(dataJogo, "dd/MM/yyyy", { locale: ptBR });
+  const horaJogoFormatada = format(dataJogo, "HH:mm", { locale: ptBR });
+  
+  // Data de saída (apenas data, sem horário)
+  let dataSaidaInfo = "";
+  if (viagem.data_saida) {
+    const dataSaida = new Date(viagem.data_saida);
+    const dataSaidaFormatada = format(dataSaida, "dd/MM/yyyy", { locale: ptBR });
+    dataSaidaInfo = `Saída da Viagem: ${dataSaidaFormatada}`;
+  }
+  
+  const preco = viagem.valor_padrao 
+    ? `R$ ${viagem.valor_padrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    : 'Consulte';
+    
+  const estadio = viagem.nome_estadio || 'Estádio';
+  const cidade = viagem.local_jogo || 'Rio de Janeiro';
+  
+  // Determinar se é jogo em casa ou fora
+  const isJogoEmCasa = cidade.toLowerCase().includes('rio de janeiro') || 
+                      cidade.toLowerCase().includes('rio') ||
+                      estadio.toLowerCase().includes('maracanã');
+  
+  // Definir título e logos baseado em casa/fora
+  let title, logoOrder;
+  if (isJogoEmCasa) {
+    // Jogo em casa: Flamengo x Adversário
+    title = `Flamengo x ${viagem.adversario}`;
+    logoOrder = {
+      primeiro: viagem.logo_flamengo || flamengoLogo,
+      segundo: viagem.logo_adversario || `https://via.placeholder.com/100x100?text=${viagem.adversario.substring(0, 3).toUpperCase()}`
+    };
+  } else {
+    // Jogo fora: Adversário x Flamengo
+    title = `${viagem.adversario} x Flamengo`;
+    logoOrder = {
+      primeiro: viagem.logo_adversario || `https://via.placeholder.com/100x100?text=${viagem.adversario.substring(0, 3).toUpperCase()}`,
+      segundo: viagem.logo_flamengo || flamengoLogo
+    };
+  }
+  
+  const whatsappMessage = `Olá! Gostaria de mais informações sobre a viagem:
+🏆 ${title}
+📅 ${dataJogoFormatada} às ${horaJogoFormatada}
+📍 ${estadio} - ${cidade}
+🚌 Embarque: Blumenau e outras cidades a consultar
+${dataSaidaInfo ? `🗓️ ${dataSaidaInfo}` : ''}
+💰 Valor: ${preco}
+
+Aguardo retorno!`;
+
+  return {
+    id: viagem.id,
+    opponentLogo: logoOrder.segundo,
+    title: title,
+    date: `Data do Jogo: ${dataJogoFormatada} às ${horaJogoFormatada}`,
+    location: `Local do Jogo: ${cidade}`,
+    championship: getTipoJogo(viagem.adversario),
     busType: "Executivo com ar condicionado",
-    departure: "09:00 - Blumenau (18/10/2025)",
-    returnTime: "Após o jogo",
-    price: "R$ 890,00",
+    departure: `Embarque: Blumenau e outras cidades a consultar`,
+    returnTime: dataSaidaInfo || "Saída a definir",
+    price: `Valor: ${preco}`,
     highlights: [
       "Assento confortável e reclinável",
       "Wi-Fi a bordo",
       "Lanche e água inclusos",
       "Seguro viagem",
     ],
-    whatsappMessage: `Olá! Gostaria de mais informações sobre a viagem:
-🏆 Flamengo x Palmeiras
-📅 19/10/2025
-📍 Maracanã - RJ
-🚌 Saída de Blumenau às 09:00 (18/10/2025)
-💰 Valor: R$ 890,00
-
-Aguardo retorno!`,
-  },
-  {
-    id: "2",
-    opponentLogo: logoRacing,
-    title: "Flamengo x Racing",
-    date: "22/10/2025",
-    location: "Maracanã - RJ",
-    championship: "Libertadores",
-    busType: "Executivo com ar condicionado",
-    departure: "09:00 - Blumenau (21/10/2025)",
-    returnTime: "Após o jogo",
-    price: "R$ 1.290,00",
-    highlights: [
-      "Assento confortável e reclinável",
-      "Wi-Fi a bordo",
-      "Lanche e água inclusos",
-      "Seguro viagem",
-    ],
-    whatsappMessage: `Olá! Gostaria de mais informações sobre a viagem:
-🏆 Flamengo x Racing
-📅 22/10/2025
-📍 Maracanã - RJ
-🚌 Saída de Blumenau às 09:00 (21/10/2025)
-💰 Valor: R$ 1.290,00
-
-Aguardo retorno!`,
-  },
-  {
-    id: "3",
-    opponentLogo: logoSport,
-    title: "Flamengo x Sport",
-    date: "01/11/2025",
-    location: "Maracanã - RJ",
-    championship: "Brasileirão",
-    busType: "Executivo com ar condicionado",
-    departure: "09:00 - Blumenau (31/10/2025)",
-    returnTime: "Após o jogo",
-    price: "R$ 750,00",
-    highlights: [
-      "Assento confortável e reclinável",
-      "Wi-Fi a bordo",
-      "Lanche e água inclusos",
-      "Seguro viagem",
-    ],
-    whatsappMessage: `Olá! Gostaria de mais informações sobre a viagem:
-🏆 Flamengo x Sport
-📅 01/11/2025
-📍 Maracanã - RJ
-🚌 Saída de Blumenau às 09:00 (31/10/2025)
-💰 Valor: R$ 750,00
-
-Aguardo retorno!`,
-  },
-  {
-    id: "4",
-    opponentLogo: logoSantos,
-    title: "Flamengo x Santos",
-    date: "09/11/2025",
-    location: "Maracanã - RJ",
-    championship: "Brasileirão",
-    busType: "Executivo com ar condicionado",
-    departure: "09:00 - Blumenau (08/11/2025)",
-    returnTime: "Após o jogo",
-    price: "R$ 890,00",
-    highlights: [
-      "Assento confortável e reclinável",
-      "Wi-Fi a bordo",
-      "Lanche e água inclusos",
-      "Seguro viagem",
-    ],
-    whatsappMessage: `Olá! Gostaria de mais informações sobre a viagem:
-🏆 Flamengo x Santos
-📅 09/11/2025
-📍 Maracanã - RJ
-🚌 Saída de Blumenau às 09:00 (08/11/2025)
-💰 Valor: R$ 890,00
-
-Aguardo retorno!`,
-  },
-  {
-    id: "5",
-    opponentLogo: logoBragantino,
-    title: "Flamengo x Bragantino",
-    date: "23/11/2025",
-    location: "Maracanã - RJ",
-    championship: "Brasileirão",
-    busType: "Executivo com ar condicionado",
-    departure: "09:00 - Blumenau (22/11/2025)",
-    returnTime: "Após o jogo",
-    price: "R$ 890,00",
-    highlights: [
-      "Assento confortável e reclinável",
-      "Wi-Fi a bordo",
-      "Lanche e água inclusos",
-      "Seguro viagem",
-    ],
-    whatsappMessage: `Olá! Gostaria de mais informações sobre a viagem:
-🏆 Flamengo x Bragantino
-📅 23/11/2025
-📍 Maracanã - RJ
-🚌 Saída de Blumenau às 09:00 (22/11/2025)
-💰 Valor: R$ 890,00
-
-Aguardo retorno!`,
-  },
-];
+    whatsappMessage,
+    // Adicionar propriedades para os logos
+    logoOrder: logoOrder
+  };
+};
 
 const UpcomingTrips = () => {
   const { ref, inView } = useInView({
@@ -166,13 +151,57 @@ const UpcomingTrips = () => {
     threshold: 0.1,
   });
 
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Buscar próximas viagens do Supabase
+  useEffect(() => {
+    const buscarProximasViagens = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const hoje = new Date().toISOString();
+        
+        const { data, error: supabaseError } = await supabase
+          .from('viagens')
+          .select(`
+            id, adversario, data_jogo, data_saida, local_jogo, cidade_embarque,
+            nome_estadio, valor_padrao, logo_flamengo, logo_adversario, status_viagem
+          `)
+          .gte('data_jogo', hoje)
+          .in('status_viagem', ['Aberta', 'Em andamento'])
+          .order('data_jogo', { ascending: true })
+          .limit(6);
+
+        if (supabaseError) {
+          throw supabaseError;
+        }
+
+        if (data) {
+          const viagensFormatadas = data.map(formatarViagem);
+          setTrips(viagensFormatadas);
+        }
+
+      } catch (err) {
+        console.error('Erro ao buscar próximas viagens:', err);
+        setError('Erro ao carregar viagens. Tente novamente mais tarde.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    buscarProximasViagens();
+  }, []);
+
   const handleWhatsAppClick = (message: string) => {
     const phoneNumber = "554799921907";
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (
-    <section id="upcoming-trips" ref={ref} className="py-20 bg-gradient-to-b from-background to-muted/30">
+    <section id="upcoming-trips" ref={ref} className="py-20 bg-gradient-to-b from-background to-muted/30" style={{ scrollMarginTop: '80px' }}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -188,29 +217,66 @@ const UpcomingTrips = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {upcomingTrips.map((trip, index) => (
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-lg">Carregando próximas viagens...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-600 text-lg mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Tentar Novamente
+            </Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && trips.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Nenhuma viagem disponível</h3>
+            <p className="text-gray-600 mb-6">
+              No momento não há viagens programadas. Entre em contato para mais informações!
+            </p>
+            <Button onClick={() => handleWhatsAppClick("Olá! Gostaria de saber sobre as próximas viagens do Flamengo.")}>
+              <MessageCircle className="h-5 w-5 mr-2" />
+              Entrar em Contato
+            </Button>
+          </div>
+        )}
+
+        {/* Trips Grid */}
+        {!isLoading && !error && trips.length > 0 && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {trips.map((trip, index) => (
             <motion.div
               key={trip.id}
               initial={{ opacity: 0, y: 30 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.2 }}
             >
-              <Card className="group relative overflow-hidden hover-float hover:shadow-glow transition-all duration-300 h-full flex flex-col">
+              <Card className="group relative hover-float hover:shadow-glow transition-all duration-300 h-full flex flex-col">
                 {/* Banner Dinâmico */}
                 <TripBanner 
                   title={trip.title}
                   flamengoLogo={flamengoLogo}
                   opponentLogo={trip.opponentLogo}
                   championship={trip.championship}
+                  logoOrder={trip.logoOrder}
                 />
                 
-                {/* Preço Badge */}
+                {/* Badge do Valor */}
                 <div className="px-6 pt-4">
                   <Badge className="bg-green-600/90 backdrop-blur-sm text-white border-0 shadow-lg font-bold text-base px-3 py-1">
                     {trip.price}
                   </Badge>
                 </div>
+
 
                 {/* Conteúdo */}
                 <CardContent className="p-6 flex-grow flex flex-col">
@@ -228,9 +294,16 @@ const UpcomingTrips = () => {
                       <span>{trip.busType}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                      <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                       <span>{trip.departure}</span>
                     </div>
+                    {trip.returnTime !== "Saída a definir" && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>{trip.returnTime}</span>
+                      </div>
+                    )}
+
                   </div>
 
                   {/* Destaques */}
@@ -248,8 +321,7 @@ const UpcomingTrips = () => {
 
                   {/* CTA WhatsApp */}
                   <Button 
-                    variant="whatsapp" 
-                    className="w-full mt-auto"
+                    className="w-full mt-auto bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => handleWhatsAppClick(trip.whatsappMessage)}
                   >
                     <MessageCircle className="h-5 w-5 mr-2" />
@@ -260,9 +332,10 @@ const UpcomingTrips = () => {
                 {/* Efeito de borda gradiente */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-yellow-400 opacity-0 group-hover:opacity-30 blur transition duration-500 -z-10" />
               </Card>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

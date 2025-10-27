@@ -7,6 +7,7 @@ import BusShowcase from "@/components/landing/BusShowcase";
 import Testimonials from "@/components/landing/Testimonials";
 import TicketInfo from "@/components/landing/TicketInfo";
 import UpcomingTrips from "@/components/landing/UpcomingTrips";
+import CompletedTrips from "@/components/landing/CompletedTrips";
 import Tours from "@/components/landing/Tours";
 import Contact from "@/components/landing/Contact";
 import FloatingWhatsApp from "@/components/landing/FloatingWhatsApp";
@@ -24,6 +25,7 @@ const LandingPage = () => {
       <Testimonials />
       <TicketInfo />
       <UpcomingTrips />
+      <CompletedTrips />
       <Tours />
       <InstagramSection />
       <Contact />

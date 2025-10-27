@@ -29,6 +29,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-oswald { font-family: 'Oswald', sans-serif; }
@@ -70,6 +73,7 @@
                 <nav class="hidden md:flex space-x-8">
                     <a href="#viagens" class="text-gray-700 hover:text-neto-primary transition">Viagens</a>
                     <a href="#passeios" class="text-gray-700 hover:text-neto-primary transition">Passeios</a>
+                    <a href="viagens-realizadas.html" class="text-gray-700 hover:text-neto-primary transition">Histórico</a>
                     <a href="#sobre" class="text-gray-700 hover:text-neto-primary transition">Sobre Nós</a>
                     <a href="#contato" class="text-gray-700 hover:text-neto-primary transition">Contato</a>
                 </nav>
@@ -198,131 +202,12 @@
                 <p class="text-xl text-gray-600">Não perca nenhum jogo importante!</p>
             </div>
             
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Card Viagem 1 -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                    <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=250&fit=crop" 
-                             alt="Estádio" class="w-full h-48 object-cover">
-                        <div class="absolute top-4 left-4 bg-neto-red text-white px-3 py-1 rounded-full text-sm font-semibold">
-                            CLÁSSICO
-                        </div>
-                        <div class="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                            Vagas Limitadas
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="font-oswald font-bold text-xl mb-2">🔥 GRANDE CLÁSSICO</h3>
-                        <div class="space-y-2 mb-4">
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
-                                15/09/2025 - 16:00h
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
-                                Maracanã - Rio de Janeiro
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-users mr-2 text-neto-primary"></i>
-                                35 vagas disponíveis
-                            </p>
-                        </div>
-                        <div class="border-t pt-4">
-                            <p class="text-2xl font-bold text-neto-primary mb-4">
-                                A partir de <span class="text-3xl">R$ 1.280</span>
-                            </p>
-                            <div class="flex gap-2">
-                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
-                                    Ver Detalhes
-                                </button>
-                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
-                                    Reservar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Viagem 2 -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                    <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=250&fit=crop" 
-                             alt="Arena" class="w-full h-48 object-cover">
-                        <div class="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                            BRASILEIRÃO
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="font-oswald font-bold text-xl mb-2">⚽ JOGO DECISIVO</h3>
-                        <div class="space-y-2 mb-4">
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
-                                22/09/2025 - 19:00h
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
-                                Arena - São Paulo
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-users mr-2 text-neto-primary"></i>
-                                42 vagas disponíveis
-                            </p>
-                        </div>
-                        <div class="border-t pt-4">
-                            <p class="text-2xl font-bold text-neto-primary mb-4">
-                                A partir de <span class="text-3xl">R$ 1.480</span>
-                            </p>
-                            <div class="flex gap-2">
-                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
-                                    Ver Detalhes
-                                </button>
-                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
-                                    Reservar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card Viagem 3 -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover">
-                    <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?w=400&h=250&fit=crop" 
-                             alt="Copa" class="w-full h-48 object-cover">
-                        <div class="absolute top-4 left-4 bg-neto-accent text-black px-3 py-1 rounded-full text-sm font-semibold">
-                            COPA
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <h3 class="font-oswald font-bold text-xl mb-2">🏆 FINAL DA COPA</h3>
-                        <div class="space-y-2 mb-4">
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-alt mr-2 text-neto-primary"></i>
-                                29/09/2025 - 21:30h
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-map-marker-alt mr-2 text-neto-primary"></i>
-                                Maracanã - Rio de Janeiro
-                            </p>
-                            <p class="flex items-center text-gray-600">
-                                <i class="fas fa-users mr-2 text-neto-primary"></i>
-                                28 vagas disponíveis
-                            </p>
-                        </div>
-                        <div class="border-t pt-4">
-                            <p class="text-2xl font-bold text-neto-primary mb-4">
-                                A partir de <span class="text-3xl">R$ 1.380</span>
-                            </p>
-                            <div class="flex gap-2">
-                                <button class="flex-1 bg-neto-primary text-white py-2 rounded-lg hover:bg-blue-700 transition">
-                                    Ver Detalhes
-                                </button>
-                                <button class="flex-1 border-2 border-neto-primary text-neto-primary py-2 rounded-lg hover:bg-neto-primary hover:text-white transition">
-                                    Reservar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Container dinâmico para próximas viagens -->
+            <div id="proximas-viagens-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Cards serão carregados dinamicamente via JavaScript -->
+                <div class="col-span-full flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-neto-primary"></div>
+                    <span class="ml-3 text-gray-600">Carregando próximas viagens...</span>
                 </div>
             </div>
             
@@ -786,5 +671,11 @@
 
         counters.forEach(counter => counterObserver.observe(counter));
     </script>
+
+    <!-- Configuração do Supabase -->
+    <script src="js/config.js"></script>
+    
+    <!-- Sistema de Viagens Dinâmicas -->
+    <script src="js/viagens-dinamicas.js"></script>
 </body>
 </html>

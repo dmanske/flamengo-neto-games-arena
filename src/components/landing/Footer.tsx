@@ -34,8 +34,8 @@ const Footer = () => {
     href: "#upcoming-trips",
     isRoute: false
   }, {
-    name: "Passeios",
-    href: "#tours",
+    name: "Viagens Realizadas",
+    href: "#completed-trips",
     isRoute: false
   }, {
     name: "Depoimentos",

@@ -13,7 +13,7 @@ const TicketInfo = () => {
   };
 
   return (
-    <section id="ticket-info" className="py-16 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10">
+    <section id="ticket-info" className="pt-24 pb-16 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10">
       <div className="container mx-auto px-4">
         <motion.div
           ref={ref}

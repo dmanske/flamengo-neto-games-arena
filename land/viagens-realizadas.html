@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Viagens Realizadas - Neto Tours | Histórico de Sucesso</title>
+    <meta name="description" content="Confira o histórico completo das viagens realizadas pela Neto Tours. Mais de 1.000 viagens de sucesso levando torcedores para os jogos do Flamengo.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neto-primary': '#1E40AF',
+                        'neto-secondary': '#10B981',
+                        'neto-accent': '#F59E0B',
+                        'neto-red': '#EF4444'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .hero-bg {
+            background: linear-gradient(135deg, #1E40AF 0%, #10B981 50%, #F59E0B 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(30, 64, 175, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-r from-neto-primary to-neto-secondary rounded-full flex items-center justify-center">
+                        <i class="fas fa-bus text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-oswald font-bold text-2xl text-neto-primary">NETO TOURS</h1>
+                        <p class="text-sm text-gray-600">Sua Caravana Oficial</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:flex space-x-8">
+                    <a href="landing-neto-tours.html" class="text-gray-700 hover:text-neto-primary transition">Início</a>
+                    <a href="landing-neto-tours.html#viagens" class="text-gray-700 hover:text-neto-primary transition">Próximas Viagens</a>
+                    <a href="landing-neto-tours.html#passeios" class="text-gray-700 hover:text-neto-primary transition">Passeios</a>
+                    <a href="#" class="text-neto-primary font-semibold">Histórico</a>
+                    <a href="landing-neto-tours.html#contato" class="text-gray-700 hover:text-neto-primary transition">Contato</a>
+                </nav>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="https://wa.me/5521999999999" target="_blank" 
+                       class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                        <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+                    </a>
+                    <button class="md:hidden text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="font-oswald font-bold text-4xl md:text-6xl mb-6">
+                    🏆 VIAGENS REALIZADAS
+                </h1>
+                <p class="text-xl md:text-2xl mb-4 font-semibold">
+                    Histórico de Sucesso da Neto Tours
+                </p>
+                <p class="text-lg opacity-90 max-w-3xl mx-auto mb-8">
+                    Confira todas as viagens que já realizamos com segurança e alegria. 
+                    Mais de 15 anos levando torcedores apaixonados para os jogos!
+                </p>
+                
+                <div class="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-3xl font-bold mb-1">1.000+</div>
+                        <div class="text-sm opacity-80">Viagens Realizadas</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-3xl font-bold mb-1">50.000+</div>
+                        <div class="text-sm opacity-80">Torcedores Atendidos</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                        <div class="text-3xl font-bold mb-1">100%</div>
+                        <div class="text-sm opacity-80">Segurança</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filtros -->
+    <section class="py-8 bg-white border-b">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button class="px-6 py-2 bg-neto-primary text-white rounded-lg hover:bg-blue-700 transition">
+                    Todas as Viagens
+                </button>
+                <button class="px-6 py-2 border border-neto-primary text-neto-primary rounded-lg hover:bg-neto-primary hover:text-white transition">
+                    Clássicos
+                </button>
+                <button class="px-6 py-2 border border-neto-primary text-neto-primary rounded-lg hover:bg-neto-primary hover:text-white transition">
+                    Brasileirão
+                </button>
+                <button class="px-6 py-2 border border-neto-primary text-neto-primary rounded-lg hover:bg-neto-primary hover:text-white transition">
+                    Copa do Brasil
+                </button>
+                <button class="px-6 py-2 border border-neto-primary text-neto-primary rounded-lg hover:bg-neto-primary hover:text-white transition">
+                    Libertadores
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Viagens Realizadas -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-4">
+                    📚 NOSSO HISTÓRICO
+                </h2>
+                <p class="text-xl text-gray-600">Cada viagem é uma história de sucesso!</p>
+            </div>
+            
+            <!-- Container dinâmico para viagens realizadas -->
+            <div id="viagens-realizadas-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Cards serão carregados dinamicamente via JavaScript -->
+                <div class="col-span-full flex justify-center items-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-neto-primary"></div>
+                    <span class="ml-3 text-gray-600">Carregando histórico de viagens...</span>
+                </div>
+            </div>
+            
+            <!-- Botão Ver Mais -->
+            <div class="text-center mt-12">
+                <button class="bg-neto-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+                    Carregar Mais Viagens
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Estatísticas -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="font-oswald font-bold text-4xl text-neto-primary mb-4">
+                    📊 NÚMEROS QUE IMPRESSIONAM
+                </h2>
+                <p class="text-xl text-gray-600">15 anos de tradição e excelência</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center p-6 bg-blue-50 rounded-xl border border-blue-100">
+                    <div class="text-4xl font-bold text-neto-primary mb-2">1.000+</div>
+                    <div class="text-lg font-semibold mb-1">Viagens Realizadas</div>
+                    <div class="text-sm text-gray-600">Desde 2009</div>
+                </div>
+                
+                <div class="text-center p-6 bg-green-50 rounded-xl border border-green-100">
+                    <div class="text-4xl font-bold text-neto-secondary mb-2">50k+</div>
+                    <div class="text-lg font-semibold mb-1">Torcedores Atendidos</div>
+                    <div class="text-sm text-gray-600">Clientes satisfeitos</div>
+                </div>
+                
+                <div class="text-center p-6 bg-yellow-50 rounded-xl border border-yellow-100">
+                    <div class="text-4xl font-bold text-neto-accent mb-2">27</div>
+                    <div class="text-lg font-semibold mb-1">Estados Visitados</div>
+                    <div class="text-sm text-gray-600">Todo o Brasil</div>
+                </div>
+                
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                    <div class="text-4xl font-bold text-neto-red mb-2">100%</div>
+                    <div class="text-lg font-semibold mb-1">Segurança</div>
+                    <div class="text-sm text-gray-600">Zero acidentes</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="hero-bg text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="font-oswald font-bold text-4xl mb-6">
+                🚌 Quer Fazer Parte da Nossa História?
+            </h2>
+            <p class="text-xl mb-8 opacity-90 max-w-3xl mx-auto">
+                Não perca a próxima viagem! Reserve sua vaga e venha viver 
+                momentos inesquecíveis com a família Neto Tours.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <a href="landing-neto-tours.html#viagens" 
+                   class="bg-white text-neto-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition shadow-lg">
+                    <i class="fas fa-calendar-alt mr-2"></i>Ver Próximas Viagens
+                </a>
+                <a href="https://wa.me/5521999999999?text=Olá! Vi o histórico de viagens e quero participar da próxima!" 
+                   target="_blank"
+                   class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-neto-primary transition">
+                    <i class="fab fa-whatsapp mr-2"></i>Reservar Agora
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-neto-primary to-neto-secondary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bus text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-oswald font-bold text-lg">NETO TOURS</h3>
+                            <p class="text-sm opacity-80">Sua Caravana Oficial</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Há 15 anos levando torcedores apaixonados para os jogos com segurança, 
+                        conforto e a melhor experiência.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Navegação</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="landing-neto-tours.html" class="hover:text-white transition">Início</a></li>
+                        <li><a href="landing-neto-tours.html#viagens" class="hover:text-white transition">Próximas Viagens</a></li>
+                        <li><a href="#" class="hover:text-white transition">Histórico</a></li>
+                        <li><a href="landing-neto-tours.html#passeios" class="hover:text-white transition">Passeios</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Contato</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            (21) 99999-9999
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            contato@netotours.com.br
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Rio de Janeiro - RJ
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Redes Sociais</h4>
+                    <div class="flex space-x-4 mb-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-neto-primary transition">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500">
+                        Siga-nos para novidades e promoções exclusivas!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Neto Tours. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Animação de entrada dos cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Aplicar animação aos cards quando carregarem
+        setTimeout(() => {
+            document.querySelectorAll('.card-hover').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+        }, 1000);
+    </script>
+
+    <!-- Configuração do Supabase -->
+    <script src="js/config.js"></script>
+    
+    <!-- Sistema de Viagens Dinâmicas -->
+    <script src="js/viagens-dinamicas.js"></script>
+</body>
+</html>

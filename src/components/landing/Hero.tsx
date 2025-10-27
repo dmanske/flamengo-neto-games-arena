@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Carousel,
@@ -14,48 +14,107 @@ import type { CarouselApi } from "@/components/ui/carousel";
 import heroImage from "@/assets/landing/hero-maracana.jpg";
 import maracanaFanImg from "@/assets/landing/maracana-fan.png";
 import flamengoLogo from "@/assets/landing/flamengo-logo-oficial.png";
-import logoPalmeiras from "@/assets/landing/logo-palmeiras.png";
-import logoRacing from "@/assets/landing/logo-racing.png";
-import logoSport from "@/assets/landing/logo-sport.png";
-import logoBragantino from "@/assets/landing/logo-bragantino.png";
+import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface BannerTrip {
   id: string;
   title: string;
   opponentLogo: string;
   date: string;
+  cidade: string;
+  logoOrder: {
+    primeiro: string;
+    segundo: string;
+  };
 }
 
-const bannerTrips: BannerTrip[] = [
-  {
-    id: "1",
-    title: "Flamengo x Palmeiras",
-    opponentLogo: logoPalmeiras,
-    date: "19/10/2025",
-  },
-  {
-    id: "2",
-    title: "Flamengo x Racing",
-    opponentLogo: logoRacing,
-    date: "22/10/2025",
-  },
-  {
-    id: "3",
-    title: "Flamengo x Sport",
-    opponentLogo: logoSport,
-    date: "01/11/2025",
-  },
-  {
-    id: "4",
-    title: "Flamengo x Bragantino",
-    opponentLogo: logoBragantino,
-    date: "23/11/2025",
-  },
-];
+interface ViagemSupabase {
+  id: string;
+  adversario: string;
+  data_jogo: string;
+  local_jogo: string;
+  nome_estadio: string | null;
+  logo_adversario: string | null;
+}
 
 const Hero = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [bannerTrips, setBannerTrips] = useState<BannerTrip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Buscar próximas viagens para o banner
+  useEffect(() => {
+    const buscarProximasViagens = async () => {
+      try {
+        setIsLoading(true);
+        
+        const hoje = new Date().toISOString();
+        
+        const { data, error } = await supabase
+          .from('viagens')
+          .select('id, adversario, data_jogo, local_jogo, logo_adversario')
+          .gte('data_jogo', hoje)
+          .in('status_viagem', ['Aberta', 'Em andamento'])
+          .order('data_jogo', { ascending: true })
+          .limit(4);
+
+        if (error) {
+          console.error('Erro ao buscar viagens para banner:', error);
+          return;
+        }
+
+        if (data) {
+          const viagensFormatadas: BannerTrip[] = data.map((viagem: ViagemSupabase) => {
+            const dataJogo = new Date(viagem.data_jogo);
+            const dataFormatada = format(dataJogo, "dd/MM/yyyy", { locale: ptBR });
+            
+            // Determinar se é jogo em casa ou fora
+            const isJogoEmCasa = viagem.local_jogo?.toLowerCase().includes('rio de janeiro') || 
+                                viagem.local_jogo?.toLowerCase().includes('rio');
+            
+            const logoAdversario = viagem.logo_adversario || `https://via.placeholder.com/100x100?text=${viagem.adversario.substring(0, 3).toUpperCase()}`;
+            
+            let title, logoOrder;
+            if (isJogoEmCasa) {
+              // Jogo em casa: Flamengo x Adversário
+              title = `Flamengo x ${viagem.adversario}`;
+              logoOrder = {
+                primeiro: flamengoLogo,
+                segundo: logoAdversario
+              };
+            } else {
+              // Jogo fora: Adversário x Flamengo
+              title = `${viagem.adversario} x Flamengo`;
+              logoOrder = {
+                primeiro: logoAdversario,
+                segundo: flamengoLogo
+              };
+            }
+
+            return {
+              id: viagem.id,
+              title,
+              opponentLogo: logoAdversario,
+              date: dataFormatada,
+              cidade: viagem.local_jogo || 'Rio de Janeiro',
+              logoOrder
+            };
+          });
+          
+          setBannerTrips(viagensFormatadas);
+        }
+      } catch (error) {
+        console.error('Erro inesperado ao buscar viagens:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    buscarProximasViagens();
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -66,13 +125,15 @@ const Hero = () => {
       setCurrent(api.selectedScrollSnap());
     });
 
-    // Auto-play
-    const interval = setInterval(() => {
+    // Auto-play apenas se houver viagens
+    if (bannerTrips.length > 0) {
+      const interval = setInterval(() => {
       api.scrollNext();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [api]);
+    }
+  }, [api, bannerTrips.length]);
 
   const scrollToContact = () => {
     const element = document.querySelector("#contact");
@@ -129,7 +190,21 @@ const Hero = () => {
             className="w-full max-w-6xl mx-auto"
           >
             <CarouselContent>
-              {bannerTrips.map((trip) => (
+              {isLoading ? (
+                <CarouselItem>
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    <span className="ml-3 text-white">Carregando próximos jogos...</span>
+                  </div>
+                </CarouselItem>
+              ) : bannerTrips.length === 0 ? (
+                <CarouselItem>
+                  <div className="text-center py-8">
+                    <p className="text-white text-lg">Nenhum jogo programado no momento</p>
+                  </div>
+                </CarouselItem>
+              ) : (
+                bannerTrips.map((trip) => (
                 <CarouselItem key={trip.id}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -161,8 +236,8 @@ const Hero = () => {
                               className="flex items-center justify-center bg-white/10 backdrop-blur-md rounded-xl md:rounded-2xl p-3 md:p-4 shadow-2xl border border-white/20"
                             >
                               <img 
-                                src={flamengoLogo} 
-                                alt="Flamengo" 
+                                src={trip.logoOrder.primeiro} 
+                                alt="Primeiro Time" 
                                 className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-2xl"
                               />
                             </motion.div>
@@ -183,8 +258,8 @@ const Hero = () => {
                               className="flex items-center justify-center bg-white/10 backdrop-blur-md rounded-xl md:rounded-2xl p-3 md:p-4 shadow-2xl border border-white/20"
                             >
                               <img 
-                                src={trip.opponentLogo} 
-                                alt="Adversário" 
+                                src={trip.logoOrder.segundo} 
+                                alt="Segundo Time" 
                                 className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-2xl"
                               />
                             </motion.div>
@@ -201,7 +276,7 @@ const Hero = () => {
                               {trip.title}
                             </h3>
                             <p className="text-sm md:text-base text-white/90 drop-shadow-md">
-                              {trip.date} • Maracanã
+                              {trip.date} • {trip.cidade}
                             </p>
                           </motion.div>
                         </div>
@@ -209,7 +284,8 @@ const Hero = () => {
                     </Card>
                   </motion.div>
                 </CarouselItem>
-              ))}
+                ))
+              )}
             </CarouselContent>
             <CarouselPrevious className="left-2 md:left-4" />
             <CarouselNext className="right-2 md:right-4" />
@@ -257,7 +333,7 @@ const Hero = () => {
           }} className="inline-flex items-center gap-2 px-6 py-3 bg-primary/30 backdrop-blur-sm rounded-full border border-primary/50 mb-8">
               <MapPin className="w-4 h-4 text-white" />
               <span className="text-sm font-medium text-white">
-                Experiências Inesquecíveis no Maracanã
+                Experiências Inesquecíveis nos Estádios
               </span>
             </motion.div>
 
@@ -304,11 +380,11 @@ const Hero = () => {
           }} transition={{
             delay: 0.8
           }} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button variant="default" size="xl" onClick={scrollToContact} className="group">
+            <Button variant="default" size="lg" onClick={scrollToContact} className="group px-8 py-3">
               Reserve Sua Vaga
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="outline" size="xl" onClick={() => {
+            <Button variant="outline" size="lg" onClick={() => {
               const element = document.querySelector("#upcoming-trips");
               element?.scrollIntoView({
                 behavior: "smooth"
