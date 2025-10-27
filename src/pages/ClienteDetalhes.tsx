@@ -28,13 +28,13 @@ import InformacoesPessoais from '@/components/cliente-detalhes/InformacoesPessoa
 import HistoricoViagens from '@/components/cliente-detalhes/HistoricoViagens';
 import SituacaoFinanceira from '@/components/cliente-detalhes/SituacaoFinanceira';
 import IngressosCliente from '@/components/cliente-detalhes/IngressosCliente';
-import CreditosCliente from '@/components/cliente-detalhes/CreditosCliente';
+// CreditosCliente removido - usando apenas CarteiraCliente
 import CarteiraCliente from '@/components/cliente-detalhes/CarteiraCliente';
 
 import EstatisticasInsights from '@/components/cliente-detalhes/EstatisticasInsights';
 import AcoesRapidas from '@/components/cliente-detalhes/AcoesRapidas';
 
-type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'insights' | 'ingressos' | 'creditos' | 'carteira';
+type TabType = 'pessoal' | 'viagens' | 'financeiro' | 'insights' | 'ingressos' | 'carteira';
 
 const ClienteDetalhes = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +45,7 @@ const ClienteDetalhes = () => {
   // Verificar se há parâmetro tab na URL
   useEffect(() => {
     const tabParam = searchParams.get('tab') as TabType;
-    if (tabParam && ['pessoal', 'viagens', 'financeiro', 'insights', 'ingressos', 'creditos', 'carteira'].includes(tabParam)) {
+    if (tabParam && ['pessoal', 'viagens', 'financeiro', 'insights', 'ingressos', 'carteira'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -86,7 +86,7 @@ const ClienteDetalhes = () => {
     { id: 'viagens', label: 'Viagens', icon: Calendar },
     { id: 'financeiro', label: 'Financeiro', icon: CreditCard },
     { id: 'ingressos', label: 'Ingressos', icon: Ticket },
-    { id: 'creditos', label: 'Créditos', icon: Calculator },
+    // Aba de créditos removida - usando apenas carteira
     { id: 'carteira', label: 'Carteira', icon: Wallet },
     { id: 'insights', label: 'Insights', icon: BarChart3 },
   ] as const;
@@ -101,8 +101,7 @@ const ClienteDetalhes = () => {
         return <SituacaoFinanceira clienteId={id || ''} cliente={cliente.cliente} />;
       case 'ingressos':
         return <IngressosCliente clienteId={id || ''} cliente={cliente.cliente} />;
-      case 'creditos':
-        return <CreditosCliente clienteId={id || ''} cliente={cliente.cliente} />;
+      // Caso 'creditos' removido - usando apenas carteira
       case 'carteira':
         return <CarteiraCliente 
           clienteId={id || ''} 

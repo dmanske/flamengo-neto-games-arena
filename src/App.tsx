@@ -80,8 +80,7 @@ import DetalhesJogoIngressos from "@/pages/DetalhesJogoIngressos";
 import CadastrarViagemIngressos from "@/pages/CadastrarViagemIngressos";
 import ViagensIngressos from "@/pages/ViagensIngressos";
 
-// Import Sistema de Créditos de Viagem
-import Creditos from "@/pages/Creditos";
+// Sistema de Créditos de Viagem removido - usando apenas Créditos Pré-pagos
 
 // Import Sistema de Créditos Pré-pagos (Wallet)
 import CreditosPrePagos from "@/pages/CreditosPrePagos";
@@ -190,8 +189,7 @@ function App() {
                   <Route path="cadastrar-viagem-ingressos" element={<CadastrarViagemIngressos />} />
                   <Route path="viagens-ingressos" element={<ViagensIngressos />} />
                   
-                  {/* Sistema de Créditos de Viagem */}
-                  <Route path="creditos" element={<Creditos />} />
+                  {/* Sistema de Créditos de Viagem removido - usando apenas Créditos Pré-pagos */}
                   
                   {/* Sistema de Créditos Pré-pagos (Wallet) */}
                   <Route path="creditos-prepagos" element={<CreditosPrePagos />} />

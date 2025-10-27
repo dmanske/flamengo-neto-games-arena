@@ -12,7 +12,7 @@ export * from './supabase';
 export * from './financeiro';
 export * from './ingressos';
 export * from './passeio';
-export * from './creditos';
+// export * from './creditos'; // Sistema de créditos antigo removido
 export * from './fornecedores';
 export * from './pagamento-avancado';
 export * from './pagamentos-separados';

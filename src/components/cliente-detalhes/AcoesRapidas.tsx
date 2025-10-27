@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   MessageSquare,
-  Mail,
-  UserPlus
+  Mail
 } from 'lucide-react';
-import InscricaoViagemModal from './InscricaoViagemModal';
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
 
 interface Cliente {
@@ -21,8 +19,6 @@ interface AcoesRapidasProps {
 }
 
 const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
-  const [inscricaoModalOpen, setInscricaoModalOpen] = useState(false);
-
   const abrirWhatsApp = () => {
     const telefone = cliente.telefone.replace(/\D/g, '');
     const mensagem = `Olá ${cliente.nome.split(' ')[0]}! Como posso ajudá-lo?`;
@@ -34,19 +30,6 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
     const assunto = `Contato - ${cliente.nome}`;
     const url = `mailto:${cliente.email}?subject=${encodeURIComponent(assunto)}`;
     window.location.href = url;
-  };
-
-
-
-
-  const inscreverViagem = () => {
-    setInscricaoModalOpen(true);
-  };
-
-  const handleInscricaoSuccess = () => {
-    // Aqui você pode adicionar lógica para atualizar a lista de viagens do cliente
-    // Por exemplo, recarregar os dados ou mostrar uma notificação
-    console.log('Inscrição realizada com sucesso!');
   };
 
   return (
@@ -93,36 +76,6 @@ const AcoesRapidas: React.FC<AcoesRapidasProps> = ({ cliente }) => {
           </Button>
         </CardContent>
       </Card>
-
-
-
-      {/* Viagens */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Viagens</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button
-            onClick={inscreverViagem}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Inscrever em Viagem
-          </Button>
-        </CardContent>
-      </Card>
-
-
-
-
-
-      {/* Modal de Inscrição em Viagem */}
-      <InscricaoViagemModal
-        isOpen={inscricaoModalOpen}
-        onClose={() => setInscricaoModalOpen(false)}
-        cliente={cliente}
-        onSuccess={handleInscricaoSuccess}
-      />
     </div>
   );
 };

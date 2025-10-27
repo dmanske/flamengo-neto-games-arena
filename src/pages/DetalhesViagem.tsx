@@ -27,8 +27,7 @@ import { ResumoCards } from "@/components/detalhes-viagem/ResumoCards";
 import { PasseiosExibicaoHibrida } from "@/components/viagem/PasseiosExibicaoHibrida";
 import { useViagemCompatibility } from "@/hooks/useViagemCompatibility";
 import { useViagemFinanceiro } from "@/hooks/financeiro/useViagemFinanceiro";
-import { VincularCreditoModal } from "@/components/creditos/VincularCreditoModal";
-import { useCreditos } from "@/hooks/useCreditos";
+// Sistema de créditos antigo removido - usando apenas carteira pré-paga
 
 import { toast } from "sonner";
 
@@ -166,8 +165,7 @@ const DetalhesViagem = () => {
   // Hook para carregar passeios (para filtros de viagens novas)
   const { passeios } = usePasseios();
 
-  // Hook para operações com créditos
-  const { desvincularPassageiroViagem } = useCreditos();
+  // Sistema de créditos antigo removido
 
   // Expor função para recarregar passageiros globalmente
   React.useEffect(() => {
@@ -285,30 +283,9 @@ const DetalhesViagem = () => {
     setDetailsPassageiroOpen(true);
   };
 
-  // Handler para desvincular passageiro da viagem (manter crédito)
+  // Sistema de desvinculação de crédito removido - usando apenas carteira pré-paga
   const handleDesvincularCredito = async (passageiro: any) => {
-    const confirmar = window.confirm(
-      `Tem certeza que deseja desvincular ${passageiro.nome || passageiro.clientes?.nome} desta viagem?\n\n` +
-      `O passageiro será removido da viagem e o valor do crédito (R$ ${(passageiro.valor_credito_utilizado || 0).toFixed(2)}) será restaurado para uso futuro.`
-    );
-
-    if (!confirmar) return;
-
-    const viagemPassageiroId = passageiro.viagem_passageiro_id || passageiro.id;
-    console.log('🔄 [DEBUG] Desvinculando passageiro:', {
-      nome: passageiro.nome || passageiro.clientes?.nome,
-      viagemPassageiroId,
-      creditoId: passageiro.credito_origem_id,
-      valorUtilizado: passageiro.valor_credito_utilizado
-    });
-
-    const sucesso = await desvincularPassageiroViagem(viagemPassageiroId);
-    
-    if (sucesso) {
-      // Recarregar dados da viagem
-      await refreshAllData();
-      console.log('✅ [DEBUG] Passageiro desvinculado e dados recarregados');
-    }
+    toast.info('Sistema de créditos antigo removido. Use a carteira pré-paga.');
   };
 
   if (isLoading) {
@@ -624,21 +601,7 @@ const DetalhesViagem = () => {
         />
       )}
 
-      {/* Modal de Vinculação de Crédito */}
-      <VincularCreditoModal
-        open={modalVincularAberto}
-        onOpenChange={setModalVincularAberto}
-        grupoCliente={clienteSelecionado}
-        onSuccess={() => {
-          setModalVincularAberto(false);
-          setClienteSelecionado(null);
-          toast.success('Crédito vinculado com sucesso!');
-        }}
-        onViagemUpdated={() => {
-          // Recarregar dados da viagem
-          fetchPassageiros(id);
-        }}
-      />
+      {/* Modal de Vinculação de Crédito removido - usando apenas carteira pré-paga */}
     </>
   );
 
@@ -649,7 +612,7 @@ const DetalhesViagem = () => {
       onPrint={(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? handleIngressosPrint : handlePrint}
       onExportPDF={(filters.modoComprarIngressos || filters.modoComprarPasseios || filters.modoTransfer) ? handleIngressosExportPDF : handleExportPDF}
       onOpenFilters={() => setFiltersDialogOpen(true)}
-      onVincularCredito={() => setModalVincularAberto(true)}
+      onVincularCredito={() => toast.info('Sistema de créditos antigo removido. Use a carteira pré-paga.')}
       onWhatsAppMassa={() => setWhatsAppMassaModalOpen(true)}
       onibusList={onibusList}
       passageiros={originalPassageiros}

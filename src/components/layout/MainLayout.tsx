@@ -182,12 +182,7 @@ const MainLayout = () => {
             to="/dashboard/ingressos" 
             onClick={closeMenu} 
           />
-          <NavItem 
-            icon={<Calculator className="h-5 w-5" />} 
-            title="Créditos de Viagem" 
-            to="/dashboard/creditos" 
-            onClick={closeMenu} 
-          />
+          {/* Créditos de Viagem removido - usando apenas Créditos Pré-pagos */}
           <NavItem 
             icon={<Wallet className="h-5 w-5" />} 
             title="Créditos Pré-pagos" 
