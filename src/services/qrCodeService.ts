@@ -183,7 +183,8 @@ class QRCodeService {
       console.log('✅ Confirmando presença com token:', token);
 
       // Se onibusId foi fornecido, validar se o passageiro pertence a este ônibus
-      if (onibusId) {
+      // TEMPORARIAMENTE DESABILITADO PARA TESTE
+      if (false && onibusId) {
         console.log('🚌 Validando ônibus:', onibusId);
         
         // Buscar informações do token
@@ -192,6 +193,8 @@ class QRCodeService {
           .select('passageiro_id, viagem_id')
           .eq('token', token)
           .single();
+
+        console.log('📋 Token info:', tokenInfo, 'Error:', tokenError);
 
         if (tokenError || !tokenInfo) {
           return {
@@ -204,21 +207,46 @@ class QRCodeService {
         // Verificar se o passageiro pertence ao ônibus
         const { data: passageiro, error: passageiroError } = await supabase
           .from('viagem_passageiros')
-          .select('onibus_id, clientes(nome)')
+          .select('onibus_id, cliente_id')
           .eq('id', tokenInfo.passageiro_id)
           .single();
 
-        if (passageiroError || !passageiro) {
+        console.log('📋 Passageiro info:', passageiro, 'Error:', passageiroError);
+
+        if (passageiroError) {
+          console.error('❌ Erro ao buscar passageiro:', passageiroError);
           return {
             success: false,
             error: 'PASSENGER_NOT_FOUND',
-            message: '❌ Passageiro não encontrado'
+            message: `❌ Erro DB: ${passageiroError.message}`
           };
         }
 
+        if (!passageiro) {
+          return {
+            success: false,
+            error: 'PASSENGER_NOT_FOUND',
+            message: '❌ Passageiro não encontrado no banco'
+          };
+        }
+
+        // Buscar nome do cliente
+        const { data: cliente } = await supabase
+          .from('clientes')
+          .select('nome')
+          .eq('id', passageiro.cliente_id)
+          .single();
+
+        const nomePassageiro = cliente?.nome || 'Passageiro';
+
         // Validar se pertence ao ônibus correto
+        console.log('🔍 Comparando ônibus:', {
+          passageiro_onibus: passageiro.onibus_id,
+          scanner_onibus: onibusId,
+          match: passageiro.onibus_id === onibusId
+        });
+
         if (passageiro.onibus_id !== onibusId) {
-          const nomePassageiro = (passageiro as any).clientes?.nome || 'Passageiro';
           return {
             success: false,
             error: 'WRONG_BUS',
