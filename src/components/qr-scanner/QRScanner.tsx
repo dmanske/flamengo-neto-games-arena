@@ -20,14 +20,21 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   onScanError
 }) => {
   const [isScanning, setIsScanning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [lastScannedToken, setLastScannedToken] = useState<string>('');
+  const [lastScannedName, setLastScannedName] = useState<string>('');
+  const [countdown, setCountdown] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
       stopScanning();
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
     };
   }, []);
 
@@ -88,10 +95,53 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       codeReaderRef.current = null;
     }
     setIsScanning(false);
+    setIsPaused(false);
     setLastScannedToken('');
+    setLastScannedName('');
+    setCountdown(0);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+  };
+
+  const pauseScanning = (passageiroNome: string) => {
+    setIsPaused(true);
+    setLastScannedName(passageiroNome);
+    setCountdown(5);
+
+    // Iniciar contagem regressiva
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          // Reativar scanner automaticamente
+          resumeScanning();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const resumeScanning = () => {
+    setIsPaused(false);
+    setLastScannedToken('');
+    setLastScannedName('');
+    setCountdown(0);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
   };
 
   const handleScan = async (token: string) => {
+    // Se está pausado, não processar
+    if (isPaused) {
+      return;
+    }
+
     try {
       console.log('📱 QR Code detectado:', token);
 
@@ -99,6 +149,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       const result = await qrCodeService.confirmPresence(token, 'qr_code');
 
       if (result.success) {
+        // Pausar scanner imediatamente
+        pauseScanning(result.data?.passageiro.nome || 'Passageiro');
+
         // Sucesso
         toast.success('✅ Presença confirmada!', {
           description: `${result.data?.passageiro.nome} foi registrado como presente`,
@@ -110,13 +163,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           onScanSuccess(result);
         }
 
-        // Limpar último token após 3 segundos para permitir próximo scan
-        setTimeout(() => {
-          setLastScannedToken('');
-        }, 3000);
-
       } else {
-        // Erro
+        // Erro - pausar por 3 segundos
+        setLastScannedToken(token);
+        
         toast.error('❌ Erro na confirmação', {
           description: result.message,
           duration: 5000,
@@ -126,7 +176,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           onScanError(result.message);
         }
 
-        // Limpar último token após 3 segundos para permitir retry
+        // Limpar após 3 segundos para permitir retry
         setTimeout(() => {
           setLastScannedToken('');
         }, 3000);
@@ -134,6 +184,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
     } catch (error) {
       console.error('❌ Erro ao processar QR code:', error);
+      
+      setLastScannedToken(token);
       
       toast.error('Erro ao processar', {
         description: 'Não foi possível confirmar a presença',
@@ -184,8 +236,28 @@ export const QRScanner: React.FC<QRScannerProps> = ({
               </div>
             )}
 
-            {/* Overlay de scan */}
-            {isScanning && (
+            {/* Overlay quando pausado */}
+            {isScanning && isPaused && (
+              <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
+                <div className="text-center text-white p-6">
+                  <CheckCircle className="h-16 w-16 mx-auto mb-4" />
+                  <p className="text-xl font-bold mb-2">✅ {lastScannedName}</p>
+                  <p className="text-lg mb-4">Presença confirmada!</p>
+                  <div className="text-4xl font-bold mb-4">{countdown}</div>
+                  <p className="text-sm">Preparando para próximo scan...</p>
+                  <Button
+                    onClick={resumeScanning}
+                    variant="secondary"
+                    className="mt-4"
+                  >
+                    Escanear Agora
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Overlay de scan ativo */}
+            {isScanning && !isPaused && (
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute inset-0 border-4 border-green-500/30 rounded-lg">
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-green-500 rounded-lg"></div>
@@ -205,14 +277,25 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                 Ativar Câmera
               </Button>
             ) : (
-              <Button 
-                onClick={stopScanning}
-                variant="destructive"
-                className="flex-1"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Parar Scanner
-              </Button>
+              <>
+                {isPaused && (
+                  <Button 
+                    onClick={resumeScanning}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Pronto para Próximo ({countdown}s)
+                  </Button>
+                )}
+                <Button 
+                  onClick={stopScanning}
+                  variant="destructive"
+                  className={isPaused ? '' : 'flex-1'}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Parar Scanner
+                </Button>
+              </>
             )}
           </div>
 
@@ -246,8 +329,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                     <li>Clique em "Ativar Câmera"</li>
                     <li>Permita o acesso à câmera quando solicitado</li>
                     <li>Aponte para o QR code do passageiro</li>
-                    <li>A presença será confirmada automaticamente</li>
+                    <li>Após confirmar, o scanner pausa por 5 segundos</li>
+                    <li>Clique em "Pronto para Próximo" ou aguarde reativar</li>
                   </ol>
+                  <p className="text-blue-600 font-medium mt-2">
+                    💡 O scanner pausa automaticamente após cada leitura para evitar duplicatas!
+                  </p>
                 </div>
               </div>
             </CardContent>
