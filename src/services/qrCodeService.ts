@@ -183,8 +183,7 @@ class QRCodeService {
       console.log('✅ Confirmando presença com token:', token);
 
       // Se onibusId foi fornecido, validar se o passageiro pertence a este ônibus
-      // TEMPORARIAMENTE DESABILITADO PARA TESTE
-      if (false && onibusId) {
+      if (onibusId) {
         console.log('🚌 Validando ônibus:', onibusId);
         
         // Buscar informações do token
@@ -194,9 +193,8 @@ class QRCodeService {
           .eq('token', token)
           .single();
 
-        console.log('📋 Token info:', tokenInfo, 'Error:', tokenError);
-
         if (tokenError || !tokenInfo) {
+          console.log('❌ Token não encontrado');
           return {
             success: false,
             error: 'TOKEN_NOT_FOUND',
@@ -207,46 +205,39 @@ class QRCodeService {
         // Verificar se o passageiro pertence ao ônibus
         const { data: passageiro, error: passageiroError } = await supabase
           .from('viagem_passageiros')
-          .select('onibus_id, cliente_id')
+          .select(`
+            onibus_id,
+            clientes!viagem_passageiros_cliente_id_fkey (
+              nome
+            )
+          `)
           .eq('id', tokenInfo.passageiro_id)
           .single();
 
-        console.log('📋 Passageiro info:', passageiro, 'Error:', passageiroError);
-
-        if (passageiroError) {
+        if (passageiroError || !passageiro) {
           console.error('❌ Erro ao buscar passageiro:', passageiroError);
           return {
             success: false,
             error: 'PASSENGER_NOT_FOUND',
-            message: `❌ Erro DB: ${passageiroError.message}`
+            message: '❌ Passageiro não encontrado'
           };
         }
 
-        if (!passageiro) {
-          return {
-            success: false,
-            error: 'PASSENGER_NOT_FOUND',
-            message: '❌ Passageiro não encontrado no banco'
-          };
-        }
+        const nomePassageiro = (passageiro as any).clientes?.nome || 'Passageiro';
 
-        // Buscar nome do cliente
-        const { data: cliente } = await supabase
-          .from('clientes')
-          .select('nome')
-          .eq('id', passageiro.cliente_id)
-          .single();
+        // Normalizar IDs para comparação (remover espaços, lowercase)
+        const passageiroOnibusId = String(passageiro.onibus_id || '').trim().toLowerCase();
+        const scannerOnibusId = String(onibusId).trim().toLowerCase();
 
-        const nomePassageiro = cliente?.nome || 'Passageiro';
-
-        // Validar se pertence ao ônibus correto
-        console.log('🔍 Comparando ônibus:', {
-          passageiro_onibus: passageiro.onibus_id,
-          scanner_onibus: onibusId,
-          match: passageiro.onibus_id === onibusId
+        console.log('🔍 Comparando:', {
+          passageiro: passageiroOnibusId,
+          scanner: scannerOnibusId,
+          match: passageiroOnibusId === scannerOnibusId
         });
 
-        if (passageiro.onibus_id !== onibusId) {
+        // Validar se pertence ao ônibus correto
+        if (passageiroOnibusId !== scannerOnibusId) {
+          console.log(`❌ ${nomePassageiro} está em outro ônibus`);
           return {
             success: false,
             error: 'WRONG_BUS',
