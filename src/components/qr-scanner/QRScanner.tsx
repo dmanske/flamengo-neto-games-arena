@@ -105,6 +105,15 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   };
 
   const pauseScanning = (passageiroNome: string) => {
+    console.log('⏸️ PAUSANDO SCANNER - Parando completamente');
+    
+    // PARAR O SCANNER COMPLETAMENTE
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+      console.log('✅ Scanner parado e resetado');
+    }
+
     setIsPaused(true);
     setLastScannedName(passageiroNome);
     setCountdown(5);
@@ -126,13 +135,45 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     }, 1000);
   };
 
-  const resumeScanning = () => {
+  const resumeScanning = async () => {
+    console.log('▶️ RETOMANDO SCANNER - Reiniciando leitura');
+    
     setIsPaused(false);
     setLastScannedToken('');
     setLastScannedName('');
     setCountdown(0);
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
+    }
+
+    // REINICIAR O SCANNER
+    try {
+      const codeReader = new BrowserMultiFormatReader();
+      codeReaderRef.current = codeReader;
+
+      if (videoRef.current) {
+        await codeReader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current,
+          async (result, error) => {
+            if (result) {
+              const token = result.getText();
+              
+              // Evitar processar o mesmo token múltiplas vezes
+              if (token === lastScannedToken) {
+                return;
+              }
+
+              setLastScannedToken(token);
+              await handleScan(token);
+            }
+          }
+        );
+        console.log('✅ Scanner reiniciado com sucesso');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao reiniciar scanner:', error);
+      toast.error('Erro ao reiniciar scanner');
     }
   };
 
@@ -238,19 +279,21 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
             {/* Overlay quando pausado */}
             {isScanning && isPaused && (
-              <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
+              <div className="absolute inset-0 flex items-center justify-center bg-green-500/95 backdrop-blur-sm">
                 <div className="text-center text-white p-6">
-                  <CheckCircle className="h-16 w-16 mx-auto mb-4" />
+                  <CheckCircle className="h-16 w-16 mx-auto mb-4 animate-bounce" />
                   <p className="text-xl font-bold mb-2">✅ {lastScannedName}</p>
                   <p className="text-lg mb-4">Presença confirmada!</p>
-                  <div className="text-4xl font-bold mb-4">{countdown}</div>
-                  <p className="text-sm">Preparando para próximo scan...</p>
+                  <div className="text-5xl font-bold mb-2">{countdown}</div>
+                  <p className="text-sm mb-4">⏸️ Scanner pausado</p>
+                  <p className="text-xs mb-4 opacity-80">Reativando automaticamente...</p>
                   <Button
                     onClick={resumeScanning}
                     variant="secondary"
-                    className="mt-4"
+                    size="lg"
+                    className="mt-2"
                   >
-                    Escanear Agora
+                    ▶️ Escanear Próximo Agora
                   </Button>
                 </div>
               </div>

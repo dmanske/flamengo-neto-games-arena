@@ -20,11 +20,13 @@
 - Experiência frustrante
 
 **Solução DEFINITIVA:**
-- ✅ **Scanner PAUSA automaticamente** após cada leitura bem-sucedida
+- ✅ **Scanner PARA COMPLETAMENTE** após cada leitura bem-sucedida
+- ✅ `codeReader.reset()` é chamado para parar a câmera de escanear
 - ✅ Tela verde com contagem regressiva de 5 segundos
-- ✅ Botão "Pronto para Próximo" para reativar antes dos 5 segundos
-- ✅ Reativação automática após 5 segundos
-- ✅ Impossível ler o mesmo QR code múltiplas vezes
+- ✅ Botão "Escanear Próximo Agora" para reativar antes dos 5 segundos
+- ✅ Reativação automática após 5 segundos (reinicia o scanner)
+- ✅ **IMPOSSÍVEL** ler o mesmo QR code múltiplas vezes
+- ✅ Scanner não roda "por baixo dos panos" quando pausado
 
 ### 3. ✅ Atualização Inteligente
 **Melhorias implementadas:**

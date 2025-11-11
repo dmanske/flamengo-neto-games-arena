@@ -3,6 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   QrCode, 
   MessageCircle, 
@@ -41,6 +51,9 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [onibusList, setOnibusList] = useState<any[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [showSendDialog, setShowSendDialog] = useState(false);
 
   useEffect(() => {
     loadExistingQRCodes();
@@ -109,8 +122,13 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       return;
     }
 
+    setShowSendDialog(true);
+  };
+
+  const confirmSendWhatsApp = async () => {
     try {
       setIsSending(true);
+      setShowSendDialog(false);
       
       const dadosViagem = {
         adversario: viagem.adversario,
@@ -225,12 +243,13 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       return;
     }
 
-    if (!confirm(`Deseja realmente deletar todos os ${qrCodes.length} QR codes?`)) {
-      return;
-    }
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDeleteAllQRCodes = async () => {
     try {
       setIsGenerating(true);
+      setShowDeleteDialog(false);
       
       const { error } = await supabase
         .from('passageiro_qr_tokens')
@@ -255,12 +274,13 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   };
 
   const handleRegenerateQRCodes = async () => {
-    if (!confirm('Deseja regenerar todos os QR codes? Os códigos antigos serão invalidados.')) {
-      return;
-    }
+    setShowRegenerateDialog(true);
+  };
 
+  const confirmRegenerateQRCodes = async () => {
     try {
       setIsGenerating(true);
+      setShowRegenerateDialog(false);
       
       await supabase
         .from('passageiro_qr_tokens')
@@ -598,6 +618,112 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* Dialog de Confirmação - Deletar Todos */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Deletar todos os QR Codes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a deletar <strong>{qrCodes.length} QR codes</strong>.
+              </p>
+              <p className="text-red-600 font-medium">
+                ⚠️ Esta ação não pode ser desfeita!
+              </p>
+              <p>
+                Os passageiros não poderão mais usar os QR codes enviados anteriormente.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAllQRCodes}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Sim, deletar todos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de Confirmação - Regenerar */}
+      <AlertDialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-blue-600" />
+              Regenerar todos os QR Codes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a regenerar <strong>{qrCodes.length} QR codes</strong>.
+              </p>
+              <p className="text-orange-600 font-medium">
+                ⚠️ Os códigos antigos serão invalidados!
+              </p>
+              <p>
+                Novos QR codes serão criados e você precisará enviá-los novamente aos passageiros.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRegenerateQRCodes}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Sim, regenerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de Confirmação - Enviar WhatsApp */}
+      <AlertDialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              Enviar QR Codes via WhatsApp?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a enviar <strong>{qrCodes.length} QR codes</strong> via WhatsApp.
+              </p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 my-2">
+                <p className="text-green-800 text-sm">
+                  📱 <strong>O que será enviado:</strong>
+                </p>
+                <ul className="text-green-700 text-sm mt-2 space-y-1 list-disc list-inside">
+                  <li>Imagem do QR code personalizado</li>
+                  <li>Instruções de uso</li>
+                  <li>Informações da viagem</li>
+                </ul>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                ⏱️ O envio pode levar alguns minutos (2 segundos entre cada mensagem).
+              </p>
+              <p className="text-orange-600 font-medium text-sm">
+                💰 Cada mensagem consumirá créditos da Z-API
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmSendWhatsApp}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Sim, enviar para {qrCodes.length} passageiros
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
