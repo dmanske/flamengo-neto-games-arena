@@ -34,6 +34,7 @@ const ZAPI_ENDPOINTS = {
   // Outros endpoints possíveis
   sendText: `${ZAPI_CONFIG.baseUrl}/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/send-text`,
   sendMessage: `${ZAPI_CONFIG.baseUrl}/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/send-message`,
+  sendImage: `${ZAPI_CONFIG.baseUrl}/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/send-image`,
   messages: `${ZAPI_CONFIG.baseUrl}/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/messages`
 };
 
@@ -344,4 +345,76 @@ export async function enviarMensagemMassa(
       taxa_sucesso: Math.round((sucessos / passageiros.length) * 100)
     }
   };
+}
+
+
+// Função para enviar imagem (QR Code) com legenda via Z-API
+export async function enviarImagemComLegenda(
+  telefone: string,
+  imagemBase64: string,
+  legenda: string,
+  nomeCliente: string
+): Promise<{ sucesso: boolean; messageId?: string; erro?: string }> {
+  console.log(`📱 Enviando imagem via WhatsApp para ${nomeCliente} (${telefone})`);
+
+  try {
+    // Limpar e formatar telefone
+    let telefoneFormatado = telefone.replace(/\D/g, '');
+    if (!telefoneFormatado.startsWith('55')) {
+      telefoneFormatado = '55' + telefoneFormatado;
+    }
+
+    // Personalizar legenda com nome do cliente
+    const legendaPersonalizada = legenda.replace(/{NOME}/g, nomeCliente);
+
+    // A Z-API aceita base64 completo (com prefixo) ou URL
+    // Vamos garantir que tenha o prefixo correto
+    let imagemFormatada = imagemBase64;
+    if (!imagemFormatada.startsWith('data:')) {
+      imagemFormatada = `data:image/png;base64,${imagemFormatada}`;
+    }
+
+    console.log('📋 Enviando imagem com formato:', imagemFormatada.substring(0, 50) + '...');
+
+    const response = await fetch(`https://api.z-api.io/instances/${ZAPI_CONFIG.instance}/token/${ZAPI_CONFIG.instanceToken}/send-image`, {
+      method: 'POST',
+      headers: getZAPIHeaders(),
+      body: JSON.stringify({
+        phone: telefoneFormatado,
+        image: imagemFormatada,
+        caption: legendaPersonalizada
+      })
+    });
+
+    const result = await response.json();
+    console.log(`📋 Resposta da Z-API para envio de imagem:`, result);
+
+    if (response.ok && result.messageId) {
+      console.log(`✅ Imagem enviada para ${nomeCliente} - MessageID: ${result.messageId}`);
+      return { 
+        sucesso: true, 
+        messageId: result.messageId 
+      };
+    } else {
+      let erro = 'Erro desconhecido';
+      
+      if (result.error === "INSTANCE_NOT_CONNECTED") {
+        erro = 'Instância Z-API desconectada. Escaneie o QR Code novamente.';
+      } else if (result.error === "PHONE_NUMBER_INVALID") {
+        erro = `Número de telefone inválido: ${telefone}`;
+      } else if (result.error === "your client-token is not configured") {
+        erro = 'Token da Z-API inválido. Verifique suas credenciais.';
+      } else {
+        erro = result.message || result.error || `Erro HTTP ${response.status}`;
+      }
+
+      console.error(`❌ Erro ao enviar imagem para ${nomeCliente}:`, erro);
+      return { sucesso: false, erro };
+    }
+
+  } catch (error) {
+    const mensagemErro = error instanceof Error ? error.message : 'Erro de conexão';
+    console.error(`❌ Erro ao enviar imagem para ${nomeCliente}:`, mensagemErro);
+    return { sucesso: false, erro: mensagemErro };
+  }
 }

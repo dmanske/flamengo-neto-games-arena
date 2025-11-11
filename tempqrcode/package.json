@@ -1,0 +1,21 @@
+{
+  "name": "sistema-qrcode-presenca",
+  "version": "1.0.0",
+  "description": "Sistema completo de QR Code para lista de presença",
+  "dependencies": {
+    "qrcode": "^1.5.3",
+    "@zxing/library": "^0.20.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5"
+  },
+  "keywords": [
+    "qrcode",
+    "presenca",
+    "lista",
+    "scanner",
+    "whatsapp"
+  ],
+  "author": "",
+  "license": "MIT"
+}

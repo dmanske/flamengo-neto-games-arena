@@ -101,6 +101,10 @@ import { TemplatesWhatsApp } from "@/pages/TemplatesWhatsApp";
 // Import Página de Regras de Viagem
 import RegrasViagem from "@/pages/RegrasViagem";
 
+// Import Sistema de QR Code
+import MeuQRCode from "@/pages/MeuQRCode";
+import ScannerPresencaPublico from "@/pages/ScannerPresencaPublico";
+
 const queryClient = new QueryClient()
 
 function App() {
@@ -139,6 +143,12 @@ function App() {
               
               {/* Página pública Regras de Viagem */}
               <Route path="/regrasdeviagens" element={<RegrasViagem />} />
+              
+              {/* Página pública QR Code */}
+              <Route path="/meu-qrcode/:token" element={<MeuQRCode />} />
+              
+              {/* Página pública Scanner de Presença */}
+              <Route path="/scanner-publico/:viagemId/:onibusId" element={<ScannerPresencaPublico />} />
               
               {/* Página de acesso admin */}
               <Route path="/admin" element={<Login />} />

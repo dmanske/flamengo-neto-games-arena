@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Users, DollarSign, UserCheck, UserX, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, DollarSign, UserCheck, UserX, TrendingUp, AlertCircle, QrCode } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { PasseiosTotaisCard } from "@/components/detalhes-viagem/PasseiosTotaisCard";
 import { LinksOnibusSection } from "@/components/lista-presenca/LinksOnibusSection";
 import { WhatsAppMassaModal } from "@/components/whatsapp-massa/WhatsAppMassaModal";
+import { QRCodeSection } from "@/components/qr-code/QRCodeSection";
 
 const DetalhesViagem = () => {
   const { id } = useParams<{ id: string }>();
@@ -373,7 +374,7 @@ const DetalhesViagem = () => {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="passageiros" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Passageiros
@@ -385,6 +386,10 @@ const DetalhesViagem = () => {
           <TabsTrigger value="presenca" className="flex items-center gap-2">
             <UserCheck className="h-4 w-4" />
             Presença
+          </TabsTrigger>
+          <TabsTrigger value="qrcodes" className="flex items-center gap-2">
+            <QrCode className="h-4 w-4" />
+            QR Codes
           </TabsTrigger>
         </TabsList>
 
@@ -562,6 +567,16 @@ const DetalhesViagem = () => {
                 </Button>
               </CardContent>
             </Card>
+        </TabsContent>
+
+        {/* Nova Aba QR Codes */}
+        <TabsContent value="qrcodes" className="space-y-6">
+          <QRCodeSection 
+            viagemId={id || ''}
+            viagem={viagem}
+            passageiros={originalPassageiros}
+            onUpdatePassageiros={() => fetchPassageiros(id || '')}
+          />
         </TabsContent>
       </Tabs>
 
