@@ -178,9 +178,56 @@ class QRCodeService {
   /**
    * Confirma presença usando um token
    */
-  async confirmPresence(token: string, method: 'qr_code' | 'qr_code_responsavel' = 'qr_code'): Promise<ConfirmationResult> {
+  async confirmPresence(token: string, method: 'qr_code' | 'qr_code_responsavel' = 'qr_code', onibusId?: string): Promise<ConfirmationResult> {
     try {
       console.log('✅ Confirmando presença com token:', token);
+
+      // Se onibusId foi fornecido, validar se o passageiro pertence a este ônibus
+      if (onibusId) {
+        console.log('🚌 Validando ônibus:', onibusId);
+        
+        // Buscar informações do token
+        const { data: tokenInfo, error: tokenError } = await supabase
+          .from('passageiro_qr_tokens')
+          .select('passageiro_id, viagem_id')
+          .eq('token', token)
+          .single();
+
+        if (tokenError || !tokenInfo) {
+          return {
+            success: false,
+            error: 'TOKEN_NOT_FOUND',
+            message: '❌ QR Code inválido'
+          };
+        }
+
+        // Verificar se o passageiro pertence ao ônibus
+        const { data: passageiro, error: passageiroError } = await supabase
+          .from('viagem_passageiros')
+          .select('onibus_id, clientes(nome)')
+          .eq('id', tokenInfo.passageiro_id)
+          .single();
+
+        if (passageiroError || !passageiro) {
+          return {
+            success: false,
+            error: 'PASSENGER_NOT_FOUND',
+            message: '❌ Passageiro não encontrado'
+          };
+        }
+
+        // Validar se pertence ao ônibus correto
+        if (passageiro.onibus_id !== onibusId) {
+          const nomePassageiro = (passageiro as any).clientes?.nome || 'Passageiro';
+          return {
+            success: false,
+            error: 'WRONG_BUS',
+            message: `❌ ${nomePassageiro} não pertence a este ônibus!`
+          };
+        }
+
+        console.log('✅ Passageiro pertence ao ônibus correto');
+      }
 
       const { data, error } = await supabase.rpc('validate_and_use_qr_token', {
         p_token: token,

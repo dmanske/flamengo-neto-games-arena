@@ -119,7 +119,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
     setIsPaused(true);
     setLastScannedName(passageiroNome);
-    setCountdown(3);
+    setCountdown(1.5);
 
     // Iniciar contagem regressiva
     if (countdownIntervalRef.current) {
@@ -128,14 +128,14 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
     countdownIntervalRef.current = setInterval(() => {
       setCountdown((prev) => {
-        if (prev <= 1) {
+        if (prev <= 0.1) {
           // Reativar scanner automaticamente
           resumeScanning();
           return 0;
         }
-        return prev - 1;
+        return prev - 0.1;
       });
-    }, 1000);
+    }, 100);
   };
 
   const resumeScanning = async () => {
@@ -207,8 +207,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     try {
       console.log('📱 QR Code detectado:', token);
 
-      // Confirmar presença
-      const result = await qrCodeService.confirmPresence(token, 'qr_code');
+      // Confirmar presença (com validação de ônibus se fornecido)
+      const result = await qrCodeService.confirmPresence(
+        token, 
+        onibusId ? 'qr_code_responsavel' : 'qr_code',
+        onibusId
+      );
 
       if (result.success) {
         // Pausar scanner imediatamente
@@ -305,7 +309,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                   <CheckCircle className="h-16 w-16 mx-auto mb-4 animate-bounce" />
                   <p className="text-xl font-bold mb-2">✅ {lastScannedName}</p>
                   <p className="text-lg mb-4">Presença confirmada!</p>
-                  <div className="text-5xl font-bold mb-2">{countdown}</div>
+                  <div className="text-5xl font-bold mb-2">{countdown.toFixed(1)}</div>
                   <p className="text-sm mb-4">⏸️ Scanner pausado</p>
                   <p className="text-xs mb-4 opacity-80">Reativando automaticamente...</p>
                   <Button
@@ -393,7 +397,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                     <li>Clique em "Ativar Câmera"</li>
                     <li>Permita o acesso à câmera quando solicitado</li>
                     <li>Aponte para o QR code do passageiro</li>
-                    <li>Após confirmar, o scanner pausa por 3 segundos</li>
+                    <li>Após confirmar, o scanner pausa por 1.5 segundos</li>
                     <li>Clique em "Pronto para Próximo" ou aguarde reativar</li>
                   </ol>
                   <p className="text-blue-600 font-medium mt-2">
