@@ -119,7 +119,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
     setIsPaused(true);
     setLastScannedName(passageiroNome);
-    setCountdown(5);
+    setCountdown(3);
 
     // Iniciar contagem regressiva
     if (countdownIntervalRef.current) {
@@ -141,17 +141,22 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const resumeScanning = async () => {
     console.log('▶️ RETOMANDO SCANNER - Reiniciando leitura');
     
-    // Limpar estados ANTES de reiniciar
-    const shouldClearToken = lastScannedToken;
+    // PRIMEIRO: Parar o countdown imediatamente
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    
+    // SEGUNDO: Limpar estados
     setIsPaused(false);
     setLastScannedToken('');
     setLastScannedName('');
     setCountdown(0);
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-    }
 
-    // REINICIAR O SCANNER
+    // TERCEIRO: Aguardar um tick para garantir que os estados foram atualizados
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // QUARTO: REINICIAR O SCANNER
     try {
       const codeReader = new BrowserMultiFormatReader();
       codeReaderRef.current = codeReader;
@@ -169,9 +174,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
               
               // Evitar processar o mesmo token múltiplas vezes
               if (token === localLastToken) {
+                console.log('⏭️ Token duplicado ignorado:', token);
                 return;
               }
 
+              console.log('🆕 Novo token detectado:', token);
               localLastToken = token;
               setLastScannedToken(token);
               await handleScan(token);
@@ -386,7 +393,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
                     <li>Clique em "Ativar Câmera"</li>
                     <li>Permita o acesso à câmera quando solicitado</li>
                     <li>Aponte para o QR code do passageiro</li>
-                    <li>Após confirmar, o scanner pausa por 5 segundos</li>
+                    <li>Após confirmar, o scanner pausa por 3 segundos</li>
                     <li>Clique em "Pronto para Próximo" ou aguarde reativar</li>
                   </ol>
                   <p className="text-blue-600 font-medium mt-2">
