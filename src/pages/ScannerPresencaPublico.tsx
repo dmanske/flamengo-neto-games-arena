@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, CheckCircle, Clock, AlertCircle, Camera, Filter, Search, MapPin, Ticket, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, CheckCircle, Clock, AlertCircle, Camera, Filter, Search, MapPin, Ticket, TrendingUp, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QRScanner } from '@/components/qr-scanner/QRScanner';
@@ -89,17 +89,6 @@ const ScannerPresencaPublico = () => {
     if (viagemId && onibusId) {
       loadData();
     }
-  }, [viagemId, onibusId]);
-
-  // Atualização automática a cada 10 segundos
-  useEffect(() => {
-    if (!viagemId || !onibusId) return;
-
-    const interval = setInterval(() => {
-      loadData();
-    }, 10000); // Atualiza a cada 10 segundos
-
-    return () => clearInterval(interval);
   }, [viagemId, onibusId]);
 
   const loadData = async () => {
@@ -219,7 +208,6 @@ const ScannerPresencaPublico = () => {
 
   const handleScanSuccess = async (result: any) => {
     console.log('✅ Confirmação via scanner público:', result);
-    loadStats(); // Recarregar estatísticas
     
     // Adicionar à lista de confirmações recentes
     if (result.data) {
@@ -230,6 +218,13 @@ const ScannerPresencaPublico = () => {
       };
       
       setConfirmacoes(prev => [novaConfirmacao, ...prev.slice(0, 4)]);
+      
+      // Atualizar apenas o passageiro específico no estado local
+      setPassageiros(prev => prev.map(p => 
+        p.viagem_passageiro_id === result.data.viagem_passageiro_id
+          ? { ...p, status_presenca: 'presente' }
+          : p
+      ));
     }
   };
 
@@ -264,9 +259,6 @@ const ScannerPresencaPublico = () => {
           ? { ...p, status_presenca: novoStatus }
           : p
       ));
-
-      // Recarregar estatísticas
-      loadStats();
 
       // Mostrar toast de sucesso
       const acao = novoStatus === 'presente' ? 'confirmada' : 'removida';
@@ -519,9 +511,25 @@ const ScannerPresencaPublico = () => {
                   </div>
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{stats.taxa_presenca}%</div>
-                <div className="text-sm text-blue-700">Taxa de Presença</div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600">{stats.taxa_presenca}%</div>
+                  <div className="text-sm text-blue-700">Taxa de Presença</div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => loadData()}
+                  disabled={loading}
+                  className="text-xs"
+                >
+                  {loading ? (
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Atualizar
+                </Button>
               </div>
             </div>
           </CardContent>
