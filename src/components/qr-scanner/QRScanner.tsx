@@ -52,8 +52,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       const codeReader = new BrowserMultiFormatReader();
       codeReaderRef.current = codeReader;
 
-      // Iniciar scan
+      // Iniciar scan com controle local de token
       if (videoRef.current) {
+        let localLastToken = '';
+        
         codeReader.decodeFromVideoDevice(
           undefined,
           videoRef.current,
@@ -62,10 +64,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
               const token = result.getText();
               
               // Evitar processar o mesmo token múltiplas vezes
-              if (token === lastScannedToken) {
+              if (token === localLastToken) {
                 return;
               }
 
+              localLastToken = token;
               setLastScannedToken(token);
               await handleScan(token);
             }
@@ -138,6 +141,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   const resumeScanning = async () => {
     console.log('▶️ RETOMANDO SCANNER - Reiniciando leitura');
     
+    // Limpar estados ANTES de reiniciar
+    const shouldClearToken = lastScannedToken;
     setIsPaused(false);
     setLastScannedToken('');
     setLastScannedName('');
@@ -152,6 +157,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       codeReaderRef.current = codeReader;
 
       if (videoRef.current) {
+        // Usar uma variável local para controlar o último token escaneado
+        let localLastToken = '';
+        
         await codeReader.decodeFromVideoDevice(
           undefined,
           videoRef.current,
@@ -160,16 +168,22 @@ export const QRScanner: React.FC<QRScannerProps> = ({
               const token = result.getText();
               
               // Evitar processar o mesmo token múltiplas vezes
-              if (token === lastScannedToken) {
+              if (token === localLastToken) {
                 return;
               }
 
+              localLastToken = token;
               setLastScannedToken(token);
               await handleScan(token);
             }
           }
         );
         console.log('✅ Scanner reiniciado com sucesso');
+        
+        toast.success('Scanner reativado!', {
+          description: 'Pronto para escanear próximo QR code',
+          duration: 2000,
+        });
       }
     } catch (error) {
       console.error('❌ Erro ao reiniciar scanner:', error);
