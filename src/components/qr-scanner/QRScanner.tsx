@@ -110,10 +110,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           onScanSuccess(result);
         }
 
-        // Limpar último token após 3 segundos
+        // Limpar último token após 1 segundo para permitir próximo scan
         setTimeout(() => {
           setLastScannedToken('');
-        }, 3000);
+        }, 1000);
 
       } else {
         // Erro
@@ -126,10 +126,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           onScanError(result.message);
         }
 
-        // Limpar último token após 2 segundos para permitir retry
+        // Limpar último token após 1 segundo para permitir retry
         setTimeout(() => {
           setLastScannedToken('');
-        }, 2000);
+        }, 1000);
       }
 
     } catch (error) {
@@ -146,7 +146,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
 
       setTimeout(() => {
         setLastScannedToken('');
-      }, 2000);
+      }, 1000);
     }
   };
 
