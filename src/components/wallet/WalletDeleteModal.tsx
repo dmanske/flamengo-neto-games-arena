@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletAdmin } from '@/hooks/useWalletAdmin';
 import { formatCurrency } from '@/utils/formatters';
-import { Loader2, AlertTriangle, Trash2, XCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface WalletDeleteModalProps {
@@ -141,7 +141,7 @@ export const WalletDeleteModal: React.FC<WalletDeleteModalProps> = ({
           )}
 
           {/* Campo de Confirmação - Nome */}
-              <div className="space-y-2">
+          <div className="space-y-2">
                 <Label htmlFor="confirmacaoNome">
                   1. Digite o nome do cliente para confirmar *
                 </Label>

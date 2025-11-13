@@ -139,21 +139,23 @@ export default function WalletClienteDetalhes() {
   const ultimaMovimentacao = wallet.updated_at ? new Date(wallet.updated_at) : undefined;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={handleVoltar}>
+            <Button variant="ghost" onClick={handleVoltar} className="hover:bg-white/50">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-blue-600" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-lg">
+                  <Wallet className="h-6 w-6 text-white" />
+                </div>
                 Carteira - {cliente?.nome || 'Cliente'}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+              <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
                 {cliente?.telefone && (
                   <div className="flex items-center gap-1">
                     <Phone className="h-3 w-3" />
@@ -185,40 +187,44 @@ export default function WalletClienteDetalhes() {
 
         {/* Resumo Rápido e Ações */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Depositado</p>
-                  <p className="text-xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-slate-600">Total Depositado</p>
+                  <p className="text-2xl font-bold text-slate-900">
                     {formatCurrency(wallet.total_depositado)}
                   </p>
                 </div>
-                <TrendingUp className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Usado</p>
-                  <p className="text-xl font-bold text-red-600">
+                  <p className="text-sm font-medium text-slate-600">Total Usado</p>
+                  <p className="text-2xl font-bold text-slate-900">
                     {formatCurrency(wallet.total_usado)}
                   </p>
                 </div>
-                <TrendingDown className="h-6 w-6 text-red-600" />
+                <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
+                  <TrendingDown className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Última Movimentação</p>
-                  <p className="text-lg font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-600">Última Movimentação</p>
+                  <p className="text-lg font-bold text-slate-900">
                     {ultimaMovimentacao ? (
                       format(ultimaMovimentacao, 'dd/MM/yyyy', { locale: ptBR })
                     ) : (
@@ -226,7 +232,9 @@ export default function WalletClienteDetalhes() {
                     )}
                   </p>
                 </div>
-                <Calendar className="h-6 w-6 text-blue-600" />
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                  <Calendar className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>

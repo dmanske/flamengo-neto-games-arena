@@ -12,12 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletTransacoes } from '@/hooks/useWallet';
+import { useEmpresa } from '@/hooks/useEmpresa';
 import { formatCurrency, formatPhone } from '@/utils/formatters';
 import { Loader2, FileText, Download, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logoNetoTours from '@/assets/landing/neto-tours-original.png';
 
 interface WalletPDFGeneratorProps {
   clienteId: string;
@@ -46,6 +47,9 @@ export const WalletPDFGenerator: React.FC<WalletPDFGeneratorProps> = ({
   const [dataFim, setDataFim] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Dados da empresa
+  const { empresa } = useEmpresa();
 
   // Buscar transações do período
   const { data: transacoes, isLoading: loadingTransacoes } = useWalletTransacoes(
@@ -84,20 +88,48 @@ export const WalletPDFGenerator: React.FC<WalletPDFGeneratorProps> = ({
       // Criar documento PDF
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 15;
+      let yPos = 20;
 
-      // Logo (texto estilizado - você pode substituir por imagem depois)
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(220, 38, 38); // Vermelho
-      doc.text('NETO TOURS', pageWidth / 2, yPos, { align: 'center' });
+      // Logo da Empresa - Carregar e calcular proporção real
+      try {
+        // Criar uma imagem para pegar dimensões reais
+        const img = new Image();
+        img.src = logoNetoTours;
+        
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        
+        // Calcular proporção real da imagem
+        const aspectRatio = img.width / img.height;
+        
+        // Definir altura desejada e calcular largura proporcional
+        const logoHeight = 35; // 3x maior que antes (12 * 3 = 36)
+        const logoWidth = logoHeight * aspectRatio;
+        const logoX = (pageWidth - logoWidth) / 2;
+        
+        doc.addImage(logoNetoTours, 'PNG', logoX, yPos, logoWidth, logoHeight);
+        yPos += logoHeight + 10;
+      } catch (err) {
+        console.error('Erro ao carregar logo:', err);
+        // Fallback: usar texto se logo não carregar
+        const nomeEmpresa = empresa?.nome_fantasia?.toUpperCase() || empresa?.nome?.toUpperCase() || 'NETO TOURS VIAGENS';
+        
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(37, 99, 235);
+        doc.text(nomeEmpresa, pageWidth / 2, yPos, { align: 'center' });
+        
+        yPos += 7;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Turismo e Eventos', pageWidth / 2, yPos, { align: 'center' });
+        
+        yPos += 12;
+      }
       
-      yPos += 8;
-      doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text('Viagens e Turismo', pageWidth / 2, yPos, { align: 'center' });
-      
-      yPos += 12;
       
       // Cabeçalho
       doc.setFontSize(18);

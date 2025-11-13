@@ -26,13 +26,8 @@ import {
   TrendingDown, 
   Search, 
   Eye,
-  Plus,
   AlertTriangle,
   DollarSign,
-  Calendar,
-  Filter,
-  Download,
-  RefreshCw,
   Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -109,85 +104,96 @@ export default function CreditosPrePagos() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Wallet className="h-8 w-8 text-blue-600" />
-            Créditos Pré-pagos
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Sistema de carteira digital para clientes
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Header Modernizado */}
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
+                <Wallet className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent">
+                  Créditos Pré-pagos
+                </h1>
+                <p className="text-slate-600 text-lg">Sistema de carteira digital para clientes</p>
+              </div>
+            </div>
+          </div>
         
-        <div className="flex gap-3">
           <WalletDepositoButton
             onSuccess={handleRefresh}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6 py-3 text-base font-medium"
           />
         </div>
-      </div>
 
-      {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Clientes com Saldo</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {loadingResumo ? '...' : resumo?.total_clientes_com_saldo || 0}
-                </p>
+        {/* Cards de Resumo */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Clientes com Saldo</p>
+                  <p className="text-3xl font-bold text-slate-900">
+                    {loadingResumo ? '...' : resumo?.total_clientes_com_saldo || 0}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total em Carteiras</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {loadingResumo ? '...' : formatCurrency(resumo?.valor_total_carteiras || 0)}
-                </p>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Total em Carteiras</p>
+                  <p className="text-3xl font-bold text-slate-900">
+                    {loadingResumo ? '...' : formatCurrency(resumo?.valor_total_carteiras || 0)}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Depósitos Este Mês</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {loadingResumo ? '...' : formatCurrency(resumo?.depositos_mes_atual || 0)}
-                </p>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Depósitos Este Mês</p>
+                  <p className="text-3xl font-bold text-slate-900">
+                    {loadingResumo ? '...' : formatCurrency(resumo?.depositos_mes_atual || 0)}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Usos Este Mês</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {loadingResumo ? '...' : formatCurrency(resumo?.usos_mes_atual || 0)}
-                </p>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-600">Usos Este Mês</p>
+                  <p className="text-3xl font-bold text-slate-900">
+                    {loadingResumo ? '...' : formatCurrency(resumo?.usos_mes_atual || 0)}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
+                  <TrendingDown className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <TrendingDown className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
       {/* Alertas */}
       {resumo && resumo.clientes_saldo_baixo > 0 && (
@@ -448,21 +454,22 @@ export default function CreditosPrePagos() {
         </CardContent>
       </Card>
 
-      {/* Modal de Exclusão */}
-      {clienteParaExcluir && (
-        <WalletDeleteModal
-          clienteId={clienteParaExcluir.id}
-          clienteNome={clienteParaExcluir.nome}
-          saldoAtual={clienteParaExcluir.saldo}
-          totalTransacoes={clienteParaExcluir.transacoes}
-          isOpen={!!clienteParaExcluir}
-          onClose={() => setClienteParaExcluir(null)}
-          onSuccess={() => {
-            setClienteParaExcluir(null);
-            handleRefresh();
-          }}
-        />
-      )}
+        {/* Modal de Exclusão */}
+        {clienteParaExcluir && (
+          <WalletDeleteModal
+            clienteId={clienteParaExcluir.id}
+            clienteNome={clienteParaExcluir.nome}
+            saldoAtual={clienteParaExcluir.saldo}
+            totalTransacoes={clienteParaExcluir.transacoes}
+            isOpen={!!clienteParaExcluir}
+            onClose={() => setClienteParaExcluir(null)}
+            onSuccess={() => {
+              setClienteParaExcluir(null);
+              handleRefresh();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
