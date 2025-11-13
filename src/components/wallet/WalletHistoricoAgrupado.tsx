@@ -16,8 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useWalletTransacoesAgrupadas } from '@/hooks/useWallet';
-import { WalletHistoricoAgrupadoProps, FILTROS_RAPIDOS_OPTIONS } from '@/types/wallet';
+import { useWalletTransacoesAgrupadas, useWalletSaldo } from '@/hooks/useWallet';
+import { WalletHistoricoAgrupadoProps, FILTROS_RAPIDOS_OPTIONS, WalletTransacao } from '@/types/wallet';
+import { WalletTransacaoEditModal } from './WalletTransacaoEditModal';
+import { WalletTransacaoCancelModal } from './WalletTransacaoCancelModal';
 import { formatCurrency } from '@/utils/formatters';
 import { 
   ChevronDown, 
@@ -30,7 +32,10 @@ import {
   Wallet,
   CreditCard,
   Filter,
-  FileText
+  FileText,
+  Edit,
+  XCircle,
+  Settings
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -46,12 +51,18 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
   const [filtroAtivo, setFiltroAtivo] = useState(filtroRapido);
   const [buscaDescricao, setBuscaDescricao] = useState('');
   const [mesesAbertos, setMesesAbertos] = useState<Set<string>>(new Set(['0'])); // Primeiro mês aberto por padrão
+  
+  // Estados dos modais
+  const [transacaoParaEditar, setTransacaoParaEditar] = useState<WalletTransacao | null>(null);
+  const [transacaoParaCancelar, setTransacaoParaCancelar] = useState<WalletTransacao | null>(null);
 
   // Dados
-  const { data: transacoesPorMes, isLoading, error } = useWalletTransacoesAgrupadas(
+  const { data: transacoesPorMes, isLoading, error, refetch } = useWalletTransacoesAgrupadas(
     clienteId,
     filtroAtivo
   );
+  
+  const { data: wallet } = useWalletSaldo(clienteId);
 
   // Filtrar por busca de descrição
   const transacoesFiltradas = useMemo(() => {
@@ -97,8 +108,20 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
     return tipo === 'deposito' ? '💰' : '🛒';
   };
 
-  const getTransacaoColor = (tipo: 'deposito' | 'uso') => {
-    return tipo === 'deposito' ? 'text-green-600' : 'text-red-600';
+  const getTransacaoColor = (tipo: 'deposito' | 'uso' | 'ajuste') => {
+    if (tipo === 'deposito') return 'text-green-600';
+    if (tipo === 'uso') return 'text-red-600';
+    return 'text-orange-600';
+  };
+  
+  const handleEditSuccess = () => {
+    refetch();
+    setTransacaoParaEditar(null);
+  };
+  
+  const handleCancelSuccess = () => {
+    refetch();
+    setTransacaoParaCancelar(null);
   };
 
   const formatarData = (data: string) => {
@@ -268,21 +291,28 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
                     {mes.transacoes.map((transacao) => (
                       <div
                         key={transacao.id}
-                        className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className={cn(
+                          "flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors",
+                          transacao.cancelada && "opacity-60 bg-red-50"
+                        )}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1">
                           <div className="text-lg">
-                            {getTransacaoIcon(transacao.tipo)}
+                            {transacao.tipo === 'ajuste' ? '🔧' : getTransacaoIcon(transacao.tipo)}
                           </div>
                           
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="text-sm text-gray-600">
                                 {formatarData(transacao.created_at)}
                               </span>
                               
-                              <span className={cn('font-medium', getTransacaoColor(transacao.tipo))}>
-                                {transacao.tipo === 'deposito' ? '+' : '-'}
+                              <span className={cn(
+                                'font-medium',
+                                getTransacaoColor(transacao.tipo),
+                                transacao.cancelada && 'line-through'
+                              )}>
+                                {transacao.tipo === 'deposito' ? '+' : transacao.tipo === 'uso' ? '-' : '~'}
                                 {formatCurrency(transacao.valor)}
                               </span>
                               
@@ -291,11 +321,52 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
                                   {transacao.forma_pagamento}
                                 </Badge>
                               )}
+                              
+                              {/* Badge de Cancelada */}
+                              {transacao.cancelada && (
+                                <Badge variant="destructive" className="text-xs">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Cancelada
+                                </Badge>
+                              )}
+                              
+                              {/* Badge de Editada */}
+                              {transacao.editado_em && !transacao.cancelada && (
+                                <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Editada em {format(new Date(transacao.editado_em), 'dd/MM')}
+                                </Badge>
+                              )}
+                              
+                              {/* Badge de Ajuste */}
+                              {transacao.tipo === 'ajuste' && !transacao.cancelada && (
+                                <Badge className="text-xs bg-orange-100 text-orange-800">
+                                  <Settings className="h-3 w-3 mr-1" />
+                                  Ajuste Manual
+                                </Badge>
+                              )}
                             </div>
                             
                             {transacao.descricao && (
-                              <div className="text-sm text-gray-600">
+                              <div className={cn(
+                                "text-sm text-gray-600",
+                                transacao.cancelada && "line-through"
+                              )}>
                                 {transacao.descricao}
+                              </div>
+                            )}
+                            
+                            {/* Motivo do Cancelamento */}
+                            {transacao.cancelada && transacao.motivo_cancelamento && (
+                              <div className="text-xs text-red-600 mt-1 italic">
+                                Motivo: {transacao.motivo_cancelamento}
+                              </div>
+                            )}
+                            
+                            {/* Valor Original (se editada) */}
+                            {transacao.valor_original && !transacao.cancelada && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Valor original: {formatCurrency(transacao.valor_original)}
                               </div>
                             )}
                             
@@ -307,10 +378,38 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
                           </div>
                         </div>
 
-                        <div className="text-right text-xs text-gray-500">
-                          <div>{formatarDataCompleta(transacao.created_at)}</div>
-                          <div>
-                            Saldo: {formatCurrency(transacao.saldo_posterior)}
+                        <div className="flex items-center gap-2">
+                          {/* Botões de Ação */}
+                          {!transacao.cancelada && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTransacaoParaEditar(transacao)}
+                                className="h-8 w-8 p-0"
+                                title="Editar transação"
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTransacaoParaCancelar(transacao)}
+                                className="h-8 w-8 p-0"
+                                title="Cancelar transação"
+                              >
+                                <XCircle className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Info do Saldo */}
+                          <div className="text-right text-xs text-gray-500 ml-2">
+                            <div>{formatarDataCompleta(transacao.created_at)}</div>
+                            <div>
+                              Saldo: {formatCurrency(transacao.saldo_posterior)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -322,6 +421,22 @@ export const WalletHistoricoAgrupado: React.FC<WalletHistoricoAgrupadoProps> = (
           </div>
         )}
       </CardContent>
+      
+      {/* Modais de Edição e Cancelamento */}
+      <WalletTransacaoEditModal
+        transacao={transacaoParaEditar}
+        isOpen={!!transacaoParaEditar}
+        onClose={() => setTransacaoParaEditar(null)}
+        onSuccess={handleEditSuccess}
+      />
+      
+      <WalletTransacaoCancelModal
+        transacao={transacaoParaCancelar}
+        saldoAtual={wallet?.saldo_atual || 0}
+        isOpen={!!transacaoParaCancelar}
+        onClose={() => setTransacaoParaCancelar(null)}
+        onSuccess={handleCancelSuccess}
+      />
     </Card>
   );
 };

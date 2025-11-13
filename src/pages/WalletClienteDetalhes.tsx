@@ -8,7 +8,10 @@ import { WalletSaldoCard } from '@/components/wallet/WalletSaldoCard';
 import { WalletHistoricoAgrupado } from '@/components/wallet/WalletHistoricoAgrupado';
 import { WalletDepositoButton } from '@/components/wallet/WalletDepositoModal';
 import { WalletUsoButton } from '@/components/wallet/WalletUsoModal';
-import { useWalletSaldo } from '@/hooks/useWallet';
+import { WalletAjusteSaldoModal } from '@/components/wallet/WalletAjusteSaldoModal';
+import { WalletDeleteModal } from '@/components/wallet/WalletDeleteModal';
+import { WalletPDFGenerator } from '@/components/wallet/WalletPDFGenerator';
+import { useWalletSaldo, useWalletTransacoes } from '@/hooks/useWallet';
 import { useClientesParaWallet } from '@/hooks/useWallet';
 import { formatCurrency } from '@/utils/formatters';
 import { 
@@ -21,7 +24,10 @@ import {
   RefreshCw,
   Mail,
   Phone,
-  User
+  User,
+  Settings,
+  Trash2,
+  FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,9 +37,15 @@ export default function WalletClienteDetalhes() {
   const navigate = useNavigate();
   const [filtroHistorico, setFiltroHistorico] = useState<'mes_atual' | 'ultimos_3_meses' | 'ano_atual' | 'tudo'>('ultimos_3_meses');
   
+  // Estados dos modais administrativos
+  const [modalAjusteSaldo, setModalAjusteSaldo] = useState(false);
+  const [modalDelete, setModalDelete] = useState(false);
+  const [modalPDF, setModalPDF] = useState(false);
+  
   // Dados da carteira e cliente
   const { data: wallet, isLoading, error, refetch } = useWalletSaldo(id || '');
   const { data: clientes } = useClientesParaWallet();
+  const { data: transacoes } = useWalletTransacoes(id || '', {}, 1000);
   
   const cliente = clientes?.find(c => c.id === id);
 
@@ -158,12 +170,7 @@ export default function WalletClienteDetalhes() {
             </div>
           </div>
           
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-          </div>
+          {/* Botões removidos - agora estão nas ações rápidas */}
         </div>
 
         {/* Card de Saldo Principal */}
@@ -247,9 +254,31 @@ export default function WalletClienteDetalhes() {
                 />
               )}
               
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                <Mail className="h-4 w-4 mr-2" />
-                Enviar Extrato
+              <Button 
+                variant="outline" 
+                onClick={() => setModalAjusteSaldo(true)}
+                className="border-orange-300 text-orange-700 hover:bg-orange-50"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Ajustar Saldo
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setModalPDF(true)}
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Gerar PDF
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setModalDelete(true)}
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir Carteira
               </Button>
             </div>
           </CardContent>
@@ -379,6 +408,37 @@ export default function WalletClienteDetalhes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modais Administrativos */}
+      <WalletAjusteSaldoModal
+        clienteId={id}
+        clienteNome={cliente?.nome || 'Cliente'}
+        saldoAtual={wallet.saldo_atual}
+        isOpen={modalAjusteSaldo}
+        onClose={() => setModalAjusteSaldo(false)}
+        onSuccess={handleRefresh}
+      />
+
+      <WalletDeleteModal
+        clienteId={id}
+        clienteNome={cliente?.nome || 'Cliente'}
+        saldoAtual={wallet.saldo_atual}
+        totalTransacoes={transacoes?.length || 0}
+        isOpen={modalDelete}
+        onClose={() => setModalDelete(false)}
+      />
+
+      <WalletPDFGenerator
+        clienteId={id}
+        clienteNome={cliente?.nome || 'Cliente'}
+        clienteTelefone={cliente?.telefone}
+        clienteEmail={cliente?.email}
+        saldoAtual={wallet.saldo_atual}
+        totalDepositado={wallet.total_depositado}
+        totalUsado={wallet.total_usado}
+        isOpen={modalPDF}
+        onClose={() => setModalPDF(false)}
+      />
     </div>
   );
 }

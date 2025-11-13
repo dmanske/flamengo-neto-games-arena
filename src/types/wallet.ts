@@ -25,7 +25,7 @@ export interface ClienteWallet {
 export interface WalletTransacao {
   id: string;
   cliente_id: string;
-  tipo: 'deposito' | 'uso';
+  tipo: 'deposito' | 'uso' | 'ajuste';
   valor: number;
   saldo_anterior: number;
   saldo_posterior: number;
@@ -34,6 +34,13 @@ export interface WalletTransacao {
   referencia_externa?: string; // ID da compra quando aplicável
   usuario_admin?: string;
   created_at: string;
+  
+  // Novos campos para gestão administrativa
+  editado_em?: string;
+  editado_por?: string;
+  cancelada: boolean;
+  motivo_cancelamento?: string;
+  valor_original?: number;
   
   // Relacionamento
   cliente?: {
@@ -115,7 +122,7 @@ export interface WalletStatus {
 
 export interface FiltrosWallet {
   cliente_id?: string;
-  tipo?: 'deposito' | 'uso';
+  tipo?: 'deposito' | 'uso' | 'ajuste';
   data_inicio?: string;
   data_fim?: string;
   valor_minimo?: number;
@@ -199,6 +206,7 @@ export const FILTROS_RAPIDOS_OPTIONS = [
 export const TIPOS_TRANSACAO_OPTIONS = [
   { value: 'deposito', label: '💰 Depósito', color: 'green' },
   { value: 'uso', label: '🛒 Uso', color: 'red' },
+  { value: 'ajuste', label: '🔧 Ajuste', color: 'orange' },
 ] as const;
 
 // =====================================================
@@ -287,6 +295,54 @@ export const WALLET_ERROR_MESSAGES = {
   TRANSACAO_DUPLICADA: 'Esta transação já foi processada',
   PERMISSAO_NEGADA: 'Você não tem permissão para esta operação',
 } as const;
+
+// =====================================================
+// TIPOS PARA OPERAÇÕES ADMINISTRATIVAS
+// =====================================================
+
+export interface EditarTransacaoData {
+  transacao_id: string;
+  novo_valor: number;
+  nova_descricao: string;
+}
+
+export interface CancelarTransacaoData {
+  transacao_id: string;
+  motivo: string;
+}
+
+export interface AjustarSaldoData {
+  cliente_id: string;
+  novo_saldo: number;
+  motivo: string;
+}
+
+export const editarTransacaoSchema = z.object({
+  transacao_id: z.string().min(1, 'ID da transação é obrigatório'),
+  novo_valor: z.number()
+    .min(0.01, 'Valor deve ser maior que zero')
+    .max(50000, 'Valor máximo de R$ 50.000'),
+  nova_descricao: z.string()
+    .min(1, 'Descrição é obrigatória')
+    .max(500, 'Descrição muito longa'),
+});
+
+export const cancelarTransacaoSchema = z.object({
+  transacao_id: z.string().min(1, 'ID da transação é obrigatório'),
+  motivo: z.string()
+    .min(3, 'Motivo deve ter pelo menos 3 caracteres')
+    .max(500, 'Motivo muito longo'),
+});
+
+export const ajustarSaldoSchema = z.object({
+  cliente_id: z.string().min(1, 'Cliente é obrigatório'),
+  novo_saldo: z.number()
+    .min(0, 'Saldo não pode ser negativo')
+    .max(100000, 'Saldo máximo de R$ 100.000'),
+  motivo: z.string()
+    .min(3, 'Motivo deve ter pelo menos 3 caracteres')
+    .max(500, 'Motivo muito longo'),
+});
 
 // =====================================================
 // UTILITÁRIOS DE TIPO

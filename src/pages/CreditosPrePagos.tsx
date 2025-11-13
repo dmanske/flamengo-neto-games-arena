@@ -16,8 +16,9 @@ import {
   useWalletClientes 
 } from '@/hooks/useWallet';
 import { WalletDepositoButton } from '@/components/wallet/WalletDepositoModal';
+import { WalletDeleteModal } from '@/components/wallet/WalletDeleteModal';
 import { WalletSaldoCompacto } from '@/components/wallet/WalletSaldoCard';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatPhone } from '@/utils/formatters';
 import { 
   Wallet, 
   Users, 
@@ -31,7 +32,8 @@ import {
   Calendar,
   Filter,
   Download,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,6 +46,9 @@ export default function CreditosPrePagos() {
   // Estados locais
   const [buscaCliente, setBuscaCliente] = useState('');
   const [filtroSaldo, setFiltroSaldo] = useState<'todos' | 'com_saldo' | 'saldo_baixo'>('todos');
+  const [clienteParaExcluir, setClienteParaExcluir] = useState<{id: string, nome: string, saldo: number, transacoes: number} | null>(null);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 20;
 
   // Dados
   const { data: resumo, isLoading: loadingResumo, refetch: refetchResumo } = useWalletResumo();
@@ -52,16 +57,37 @@ export default function CreditosPrePagos() {
     saldo_minimo: filtroSaldo === 'com_saldo' ? 0.01 : undefined,
   });
 
-  // Filtrar clientes por saldo baixo
+  // Filtrar clientes por saldo baixo e ordenar alfabeticamente
   const clientesFiltrados = React.useMemo(() => {
     if (!clientes) return [];
     
+    let resultado = [...clientes];
+    
+    // Filtrar por saldo se necessário
     if (filtroSaldo === 'saldo_baixo') {
-      return clientes.filter(c => c.saldo_atual < 100);
+      resultado = resultado.filter(c => c.saldo_atual < 100);
     }
     
-    return clientes;
+    // Ordenar alfabeticamente por nome
+    resultado.sort((a, b) => {
+      const nomeA = a.cliente?.nome || '';
+      const nomeB = b.cliente?.nome || '';
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+    
+    return resultado;
   }, [clientes, filtroSaldo]);
+
+  // Paginação
+  const totalPaginas = Math.ceil(clientesFiltrados.length / ITENS_POR_PAGINA);
+  const indiceInicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const indiceFim = indiceInicio + ITENS_POR_PAGINA;
+  const clientesPaginados = clientesFiltrados.slice(indiceInicio, indiceFim);
+
+  // Resetar página quando filtros mudam
+  React.useEffect(() => {
+    setPaginaAtual(1);
+  }, [buscaCliente, filtroSaldo]);
 
   const handleRefresh = () => {
     refetchResumo();
@@ -97,11 +123,6 @@ export default function CreditosPrePagos() {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
-          
           <WalletDepositoButton
             onSuccess={handleRefresh}
             className="bg-blue-600 hover:bg-blue-700"
@@ -279,7 +300,7 @@ export default function CreditosPrePagos() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clientesFiltrados.map((cliente) => (
+                {clientesPaginados.map((cliente) => (
                   <TableRow key={cliente.id} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="font-medium text-gray-900">
@@ -290,7 +311,7 @@ export default function CreditosPrePagos() {
                     <TableCell>
                       <div className="text-sm text-gray-600">
                         {cliente.cliente?.telefone && (
-                          <div>📱 {cliente.cliente.telefone}</div>
+                          <div className="font-medium">📱 {formatPhone(cliente.cliente.telefone)}</div>
                         )}
                         {cliente.cliente?.email && (
                           <div className="text-xs text-gray-500">
@@ -346,6 +367,21 @@ export default function CreditosPrePagos() {
                           size="sm"
                           onSuccess={handleRefresh}
                         />
+                        
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setClienteParaExcluir({
+                            id: cliente.cliente_id,
+                            nome: cliente.cliente?.nome || 'Cliente',
+                            saldo: cliente.saldo_atual,
+                            transacoes: 0 // Não temos esse dado aqui
+                          })}
+                          title="Excluir carteira"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -353,8 +389,80 @@ export default function CreditosPrePagos() {
               </TableBody>
             </Table>
           )}
+
+          {/* Paginação */}
+          {totalPaginas > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-gray-600">
+                Mostrando {indiceInicio + 1} a {Math.min(indiceFim, clientesFiltrados.length)} de {clientesFiltrados.length} clientes
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
+                  disabled={paginaAtual === 1}
+                >
+                  Anterior
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                    let numeroPagina: number;
+                    if (totalPaginas <= 5) {
+                      numeroPagina = i + 1;
+                    } else if (paginaAtual <= 3) {
+                      numeroPagina = i + 1;
+                    } else if (paginaAtual >= totalPaginas - 2) {
+                      numeroPagina = totalPaginas - 4 + i;
+                    } else {
+                      numeroPagina = paginaAtual - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={numeroPagina}
+                        variant={paginaAtual === numeroPagina ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPaginaAtual(numeroPagina)}
+                        className={paginaAtual === numeroPagina ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                      >
+                        {numeroPagina}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
+                  disabled={paginaAtual === totalPaginas}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modal de Exclusão */}
+      {clienteParaExcluir && (
+        <WalletDeleteModal
+          clienteId={clienteParaExcluir.id}
+          clienteNome={clienteParaExcluir.nome}
+          saldoAtual={clienteParaExcluir.saldo}
+          totalTransacoes={clienteParaExcluir.transacoes}
+          isOpen={!!clienteParaExcluir}
+          onClose={() => setClienteParaExcluir(null)}
+          onSuccess={() => {
+            setClienteParaExcluir(null);
+            handleRefresh();
+          }}
+        />
+      )}
     </div>
   );
 }
