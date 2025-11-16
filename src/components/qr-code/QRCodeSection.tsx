@@ -175,13 +175,24 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     }
   };
 
+  const formatCPF = (cpf: string) => {
+    const cleaned = cpf.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+    }
+    return cpf;
+  };
+
   const enviarQRCodeViaZAPI = async (qrData: QRCodeData, dadosViagem: any) => {
-    const legenda = `🔥 *FLAMENGO vs ${dadosViagem.adversario.toUpperCase()}*
-📅 *Data:* ${dadosViagem.data_jogo}
+    // Buscar CPF do passageiro
+    const passageiro = passageiros.find(p => p.nome === qrData.passageiro.nome);
+    const cpf = passageiro?.cpf ? formatCPF(passageiro.cpf) : '';
+    
+    const legenda = `📅 *Data:* ${dadosViagem.data_jogo}
+👋Olá *${qrData.passageiro.nome}*!
+📄 CPF: ${cpf}
 
-👋 Olá *${qrData.passageiro.nome}*!
-
-📱 *SEU QR CODE PARA LISTA DE PRESENÇA*
+📱 *SEU QR CODE PARA PROCEDIMENTOS DE EMBARQUE*
 
 ✅ *Como usar:*
 1️⃣ Mostre este QR code na tela do seu celular
@@ -193,7 +204,8 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
 • Chegue com antecedência ao local de embarque
 • Em caso de dúvidas, entre em contato
 
-🔴⚫ Vamos juntos! 🔴⚫`;
+*Neto Tours Viagens*
+_Realizando sonhos, criando histórias_`;
 
     // Usar o serviço de WhatsApp para enviar imagem
     const { enviarImagemComLegenda } = await import('@/services/whatsappService');
