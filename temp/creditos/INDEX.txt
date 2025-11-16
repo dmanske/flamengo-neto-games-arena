@@ -1,0 +1,93 @@
+================================================================================
+PACOTE DE INSTALAÇÃO - SISTEMA DE CRÉDITOS PRÉ-PAGOS
+================================================================================
+
+📦 CONTEÚDO DO PACOTE
+
+1. COMECE AQUI:
+   ✅ README.md - Leia primeiro!
+   ✅ INSTALACAO-COMPLETA.md - Guia passo a passo
+   ✅ CHECKLIST-INSTALACAO.md - Checklist interativo
+
+2. ARQUIVOS DE CÓDIGO:
+   📁 components/wallet/ (6 componentes)
+   📁 hooks/ (1 hook)
+   📁 pages/ (2 páginas)
+   📁 types/ (1 arquivo de tipos)
+   📁 sql/ (1 script SQL)
+
+3. DOCUMENTAÇÃO:
+   📁 docs/ (5 arquivos técnicos)
+   📄 TROUBLESHOOTING.md
+   📄 ESTRUTURA-ARQUIVOS.md
+
+4. SUPORTE:
+   📄 package-dependencies.json
+
+================================================================================
+🚀 INSTALAÇÃO RÁPIDA (30-60 minutos)
+================================================================================
+
+1. Instalar dependências:
+   npm install jspdf jspdf-autotable
+
+2. Executar SQL:
+   Supabase → SQL Editor → sql/database-changes.sql
+
+3. Copiar arquivos:
+   cp -r components/wallet/* SEU_PROJETO/src/components/wallet/
+   cp hooks/* SEU_PROJETO/src/hooks/
+   cp pages/* SEU_PROJETO/src/pages/
+   cp types/* SEU_PROJETO/src/types/
+
+4. Configurar rotas e testar
+
+================================================================================
+📚 ORDEM DE LEITURA RECOMENDADA
+================================================================================
+
+1. README.md (5 min)
+2. INSTALACAO-COMPLETA.md (15 min)
+3. CHECKLIST-INSTALACAO.md (durante instalação)
+4. TROUBLESHOOTING.md (se necessário)
+5. docs/requirements.md (opcional)
+6. docs/design.md (opcional)
+
+================================================================================
+✨ FUNCIONALIDADES INCLUÍDAS
+================================================================================
+
+✅ Gestão de carteiras digitais
+✅ Depósitos e uso de créditos
+✅ Editar transações
+✅ Cancelar transações com estorno
+✅ Ajustar saldo manualmente
+✅ Excluir carteiras
+✅ Gerar extratos em PDF
+✅ Histórico completo com auditoria
+
+================================================================================
+🔧 REQUISITOS
+================================================================================
+
+- React 18+
+- TypeScript
+- Supabase (PostgreSQL)
+- TanStack Query
+- shadcn/ui
+- Tailwind CSS
+
+================================================================================
+📞 SUPORTE
+================================================================================
+
+Problemas? Consulte:
+1. TROUBLESHOOTING.md
+2. CHECKLIST-INSTALACAO.md
+3. docs/testing-guide.md
+
+================================================================================
+Versão: 1.0.0
+Data: 2025-01-13
+Compatível com: React 18+, Supabase, TypeScript
+================================================================================

@@ -1,0 +1,42 @@
+{
+  "name": "sistema-creditos-prepagos",
+  "version": "1.0.0",
+  "description": "Sistema de gestão de créditos pré-pagos (carteira digital)",
+  "dependencies": {
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "@tanstack/react-query": "^5.0.0",
+    "react-router-dom": "^6.0.0",
+    "date-fns": "^3.0.0",
+    "lucide-react": "^0.300.0",
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0"
+  },
+  "shadcnComponents": [
+    "dialog",
+    "button",
+    "input",
+    "label",
+    "alert",
+    "card",
+    "table",
+    "badge"
+  ],
+  "installCommands": {
+    "npm": "npm install jspdf jspdf-autotable @tanstack/react-query react-router-dom date-fns lucide-react @supabase/supabase-js",
+    "yarn": "yarn add jspdf jspdf-autotable @tanstack/react-query react-router-dom date-fns lucide-react @supabase/supabase-js",
+    "pnpm": "pnpm add jspdf jspdf-autotable @tanstack/react-query react-router-dom date-fns lucide-react @supabase/supabase-js"
+  },
+  "shadcnInstall": {
+    "command": "npx shadcn-ui@latest add",
+    "components": "dialog button input label alert card table badge"
+  }
+}

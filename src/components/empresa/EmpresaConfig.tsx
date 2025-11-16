@@ -26,6 +26,7 @@ interface EmpresaData {
   instagram: string;
   facebook: string;
   descricao: string;
+  regras_viagem_url: string;
 }
 
 export default function EmpresaConfig() {
@@ -45,7 +46,8 @@ export default function EmpresaConfig() {
     site: '',
     instagram: '',
     facebook: '',
-    descricao: ''
+    descricao: '',
+    regras_viagem_url: 'https://regras-de-viagem-4kqyq4b.gamma.site/'
   });
   
   const [loading, setLoading] = useState(false);
@@ -365,6 +367,20 @@ export default function EmpresaConfig() {
               placeholder="Descreva sua empresa..."
               rows={4}
             />
+          </div>
+
+          {/* URL Regras de Viagem */}
+          <div>
+            <Label htmlFor="regras_viagem_url">URL das Regras de Viagem</Label>
+            <Input
+              id="regras_viagem_url"
+              value={empresa.regras_viagem_url}
+              onChange={(e) => setEmpresa({...empresa, regras_viagem_url: e.target.value})}
+              placeholder="https://exemplo.com/regras"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Esta URL será exibida na página /regrasdeviagens do sistema
+            </p>
           </div>
 
           {/* Botão Salvar */}
