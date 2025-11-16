@@ -378,9 +378,30 @@ export default function EmpresaConfig() {
               onChange={(e) => setEmpresa({...empresa, regras_viagem_url: e.target.value})}
               placeholder="https://exemplo.com/regras"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Esta URL será exibida na página /regrasdeviagens do sistema
-            </p>
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800 mb-2">
+                📋 Link público das regras de viagem:
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm bg-white px-3 py-2 rounded border">
+                  https://www.netotours.com.br/regrasdeviagens
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText('https://www.netotours.com.br/regrasdeviagens');
+                    toast.success('Link copiado!');
+                  }}
+                >
+                  Copiar
+                </Button>
+              </div>
+              <p className="text-xs text-blue-600 mt-2">
+                Este é o link que você pode compartilhar com os clientes
+              </p>
+            </div>
           </div>
 
           {/* Botão Salvar */}
