@@ -140,7 +140,8 @@ export function GrupoIngressoSelect({
               <Palette className="h-3 w-3" />
               Cor do Grupo
             </Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            {/* Cores Pré-definidas */}
+            <div className="grid grid-cols-8 gap-2 mt-2">
               {CORES_GRUPOS_INGRESSOS.map((cor) => {
                 const jaUsada = coresUsadas.includes(cor);
                 return (
@@ -150,24 +151,56 @@ export function GrupoIngressoSelect({
                     onClick={() => setNovoGrupoCor(cor)}
                     disabled={disabled}
                     className={`
-                      w-8 h-8 rounded-full border-2 transition-all
+                      w-8 h-8 rounded-full border-2 transition-all hover:scale-105
                       ${novoGrupoCor === cor ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : ''}
-                      ${jaUsada ? 'opacity-50' : 'hover:scale-105'}
                     `}
                     style={{ 
                       backgroundColor: cor,
                       borderColor: novoGrupoCor === cor ? cor : 'transparent'
                     }}
-                    title={jaUsada ? `${cor} - já em uso` : cor}
-                  />
+                    title={jaUsada ? `${cor} - já em uso por outro grupo` : cor}
+                  >
+                    {jaUsada && (
+                      <div className="w-full h-full rounded-full bg-black bg-opacity-20 flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    )}
+                  </button>
                 );
               })}
             </div>
-            {coresUsadas.includes(novoGrupoCor) && (
-              <p className="text-xs text-amber-600 mt-1">
-                ⚠️ Esta cor já está sendo usada por outro grupo
-              </p>
-            )}
+            
+            {/* Seletor de Cor Personalizada */}
+            <div className="flex items-center gap-3 mt-3 p-3 bg-white rounded-lg border">
+              <Label className="text-sm font-medium">Cor personalizada:</Label>
+              <input
+                type="color"
+                value={novoGrupoCor}
+                onChange={(e) => setNovoGrupoCor(e.target.value)}
+                disabled={disabled}
+                className="w-10 h-8 rounded border cursor-pointer disabled:cursor-not-allowed"
+                title="Escolher cor personalizada"
+              />
+              <Input
+                type="text"
+                value={novoGrupoCor}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  // Validar se é uma cor hex válida
+                  if (/^#[0-9A-F]{6}$/i.test(valor) || valor === '') {
+                    setNovoGrupoCor(valor);
+                  }
+                }}
+                placeholder="#FF6B6B"
+                className="w-24 text-xs font-mono"
+                disabled={disabled}
+              />
+            </div>
+            
+            {/* Dica sobre cores */}
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Você pode usar qualquer cor, mesmo que já esteja em uso por outro grupo
+            </p>
           </div>
 
           <div className="flex gap-2 pt-2">
