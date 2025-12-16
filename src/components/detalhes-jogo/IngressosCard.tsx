@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,17 +18,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Eye, Edit, Trash2, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Trash2, Copy } from 'lucide-react';
 import { Ingresso, FiltrosIngressos, SituacaoFinanceiraIngresso } from '@/types/ingressos';
 import { formatCurrency, formatCPF, formatPhone, formatBirthDate } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { useCadastroFacial } from '@/hooks/useCadastroFacial';
 import { StatusCadastroFacial } from '@/components/ui/StatusCadastroFacial';
+import { useGruposIngressos } from '@/hooks/useGruposIngressos';
+import { GrupoIngressosCard } from './GrupoIngressos';
 
 interface IngressosCardProps {
   ingressos: Ingresso[];
   busca: string;
   filtros: FiltrosIngressos;
+  viagemIngressosId?: string;
   onBuscaChange: (busca: string) => void;
   onFiltrosChange: (filtros: FiltrosIngressos) => void;
   onVerDetalhes: (ingresso: Ingresso) => void;
@@ -41,6 +44,7 @@ export function IngressosCard({
   ingressos,
   busca,
   filtros,
+  viagemIngressosId,
   onBuscaChange,
   onFiltrosChange,
   onVerDetalhes,
@@ -48,8 +52,8 @@ export function IngressosCard({
   onDeletar,
   onNovoIngresso
 }: IngressosCardProps) {
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const ITENS_POR_PAGINA = 10;
+  // Hook para agrupamento de ingressos
+  const { agruparIngressos } = useGruposIngressos(viagemIngressosId);
 
   // Hook para cadastro facial
   const clienteIds = ingressos.map(i => i.cliente?.id).filter(Boolean) as string[];
@@ -79,27 +83,13 @@ export function IngressosCard({
       resultado = resultado.filter(ing => ing.situacao_financeira === filtros.situacao_financeira);
     }
 
-    // Ordenar alfabeticamente por nome do cliente
-    return resultado.sort((a, b) => {
-      const nomeA = a.cliente?.nome || '';
-      const nomeB = b.cliente?.nome || '';
-      return nomeA.localeCompare(nomeB, 'pt-BR');
-    });
+    return resultado;
   }, [ingressos, busca, filtros]);
 
-  // Paginação
-  const ingressosPaginados = useMemo(() => {
-    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
-    const fim = inicio + ITENS_POR_PAGINA;
-    return ingressosFiltrados.slice(inicio, fim);
-  }, [ingressosFiltrados, paginaAtual]);
-
-  const totalPaginas = Math.ceil(ingressosFiltrados.length / ITENS_POR_PAGINA);
-
-  // Reset página quando filtros mudarem
-  React.useEffect(() => {
-    setPaginaAtual(1);
-  }, [busca, filtros]);
+  // Agrupar ingressos filtrados
+  const { grupos, semGrupo } = useMemo(() => {
+    return agruparIngressos(ingressosFiltrados);
+  }, [ingressosFiltrados, agruparIngressos]);
 
   // Função para copiar campo específico do cliente
   const copiarCampo = (valor: string, nomeCampo: string) => {
@@ -198,231 +188,198 @@ export function IngressosCard({
           </div>
         </div>
 
-        {/* Tabela de ingressos */}
+        {/* Lista de ingressos com agrupamento */}
         {ingressosFiltrados.length > 0 ? (
-          <div className="space-y-4">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Data Nascimento</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Setor</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Lucro</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ingressosPaginados.map((ingresso) => (
-                    <TableRow key={ingresso.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <span>{ingresso.cliente?.nome || 'Cliente não encontrado'}</span>
-                          {ingresso.cliente?.nome && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copiarCampo(ingresso.cliente!.nome, 'Nome')}
-                              className="h-6 w-6 p-0 hover:bg-blue-100"
-                              title="Copiar nome"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono">
-                              {ingresso.cliente?.cpf ? formatCPF(ingresso.cliente.cpf) : '-'}
-                            </span>
-                            {ingresso.cliente?.cpf && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copiarCampo(ingresso.cliente!.cpf!, 'CPF')}
-                                className="h-6 w-6 p-0 hover:bg-blue-100"
-                                title="Copiar CPF"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                          {ingresso.cliente?.id && (
-                            <StatusCadastroFacial 
-                              clienteId={ingresso.cliente.id}
-                              cadastroFacialData={cadastroFacialData}
-                              loading={loadingCadastroFacial}
-                              onClick={toggleCadastroFacial}
-                            />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">
-                            {formatBirthDate(ingresso.cliente?.data_nascimento)}
-                          </span>
-                          {ingresso.cliente?.data_nascimento && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copiarCampo(
-                                formatBirthDate(ingresso.cliente!.data_nascimento!), 
-                                'Data de nascimento'
-                              )}
-                              className="h-6 w-6 p-0 hover:bg-blue-100"
-                              title="Copiar data de nascimento"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm space-y-1">
-                          {ingresso.cliente?.telefone && (
-                            <div className="flex items-center gap-2">
-                              <span>📱 {formatPhone(ingresso.cliente.telefone)}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copiarCampo(ingresso.cliente!.telefone!, 'Telefone')}
-                                className="h-6 w-6 p-0 hover:bg-blue-100"
-                                title="Copiar telefone"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                          {ingresso.cliente?.email && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 text-xs">✉️ {ingresso.cliente.email}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => copiarCampo(ingresso.cliente!.email!, 'Email')}
-                                className="h-6 w-6 p-0 hover:bg-blue-100"
-                                title="Copiar email"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{ingresso.setor_estadio}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(ingresso.valor_final)}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${ingresso.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(ingresso.lucro)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(ingresso.situacao_financeira)}>
-                          {getStatusText(ingresso.situacao_financeira)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onVerDetalhes(ingresso)}
-                            className="h-8 w-8 p-0"
-                            title="Ver detalhes"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onEditar(ingresso)}
-                            className="h-8 w-8 p-0"
-                            title="Editar ingresso"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onDeletar(ingresso)}
-                            className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
-                            title="Deletar ingresso"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          <div className="space-y-6">
+            {/* Renderizar Grupos */}
+            {grupos.map((grupo) => (
+              <GrupoIngressosCard
+                key={`${grupo.nome}-${grupo.cor}`}
+                grupo={grupo}
+                onVerDetalhes={onVerDetalhes}
+                onEditar={onEditar}
+                onDeletar={onDeletar}
+              />
+            ))}
 
-            {/* Controles de Paginação */}
-            {totalPaginas > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600">
-                  Mostrando {((paginaAtual - 1) * ITENS_POR_PAGINA) + 1} a {Math.min(paginaAtual * ITENS_POR_PAGINA, ingressosFiltrados.length)} de {ingressosFiltrados.length} ingressos
+            {/* Renderizar Ingressos Individuais (sem grupo) */}
+            {semGrupo.length > 0 && (
+              <div className="rounded-lg border overflow-hidden">
+                {/* Cabeçalho para ingressos sem grupo */}
+                <div className="px-4 py-3 bg-gray-50 border-b">
+                  <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                    Ingressos Individuais
+                    <Badge variant="secondary" className="text-xs">
+                      {semGrupo.length} {semGrupo.length === 1 ? 'ingresso' : 'ingressos'}
+                    </Badge>
+                  </h3>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPaginaAtual(prev => Math.max(1, prev - 1))}
-                    disabled={paginaAtual === 1}
-                    className="gap-1"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(totalPaginas, 5) }, (_, i) => {
-                      let pagina;
-                      if (totalPaginas <= 5) {
-                        pagina = i + 1;
-                      } else if (paginaAtual <= 3) {
-                        pagina = i + 1;
-                      } else if (paginaAtual >= totalPaginas - 2) {
-                        pagina = totalPaginas - 4 + i;
-                      } else {
-                        pagina = paginaAtual - 2 + i;
-                      }
-                      
-                      return (
-                        <Button
-                          key={pagina}
-                          variant={pagina === paginaAtual ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setPaginaAtual(pagina)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {pagina}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPaginaAtual(prev => Math.min(totalPaginas, prev + 1))}
-                    disabled={paginaAtual === totalPaginas}
-                    className="gap-1"
-                  >
-                    Próxima
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+
+                {/* Tabela para ingressos sem grupo */}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>CPF</TableHead>
+                        <TableHead>Data Nascimento</TableHead>
+                        <TableHead>Contato</TableHead>
+                        <TableHead>Setor</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Lucro</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {semGrupo.map((ingresso) => (
+                        <TableRow key={ingresso.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{ingresso.cliente?.nome || 'Cliente não encontrado'}</span>
+                              {ingresso.cliente?.nome && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copiarCampo(ingresso.cliente!.nome, 'Nome')}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                  title="Copiar nome"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-mono">
+                                  {ingresso.cliente?.cpf ? formatCPF(ingresso.cliente.cpf) : '-'}
+                                </span>
+                                {ingresso.cliente?.cpf && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => copiarCampo(ingresso.cliente!.cpf!, 'CPF')}
+                                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                                    title="Copiar CPF"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                              {ingresso.cliente?.id && (
+                                <StatusCadastroFacial 
+                                  clienteId={ingresso.cliente.id}
+                                  cadastroFacialData={cadastroFacialData}
+                                  loading={loadingCadastroFacial}
+                                  onClick={toggleCadastroFacial}
+                                />
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">
+                                {formatBirthDate(ingresso.cliente?.data_nascimento)}
+                              </span>
+                              {ingresso.cliente?.data_nascimento && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copiarCampo(
+                                    formatBirthDate(ingresso.cliente!.data_nascimento!), 
+                                    'Data de nascimento'
+                                  )}
+                                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                                  title="Copiar data de nascimento"
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm space-y-1">
+                              {ingresso.cliente?.telefone && (
+                                <div className="flex items-center gap-2">
+                                  <span>📱 {formatPhone(ingresso.cliente.telefone)}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => copiarCampo(ingresso.cliente!.telefone!, 'Telefone')}
+                                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                                    title="Copiar telefone"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                              {ingresso.cliente?.email && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500 text-xs">✉️ {ingresso.cliente.email}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => copiarCampo(ingresso.cliente!.email!, 'Email')}
+                                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                                    title="Copiar email"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{ingresso.setor_estadio}</TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(ingresso.valor_final)}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${ingresso.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(ingresso.lucro)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(ingresso.situacao_financeira)}>
+                              {getStatusText(ingresso.situacao_financeira)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onVerDetalhes(ingresso)}
+                                className="h-8 w-8 p-0"
+                                title="Ver detalhes"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onEditar(ingresso)}
+                                className="h-8 w-8 p-0"
+                                title="Editar ingresso"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onDeletar(ingresso)}
+                                className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                                title="Deletar ingresso"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}

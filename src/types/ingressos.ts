@@ -47,6 +47,10 @@ export interface Ingresso {
   situacao_financeira: SituacaoFinanceiraIngresso;
   observacoes?: string | null;
   
+  // Agrupamento
+  grupo_nome?: string | null;
+  grupo_cor?: string | null;
+  
   // Timestamps
   created_at: string;
   updated_at: string;

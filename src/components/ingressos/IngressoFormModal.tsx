@@ -51,6 +51,8 @@ import { ClienteSearchSelect } from './ClienteSearchSelect';
 import { SelectGroup, SelectLabel } from '@/components/ui/select';
 import { AdversarioSearchInput } from './AdversarioSearchInput';
 import { getSetorOptions } from '@/data/estadios';
+import { GrupoIngressoSelect } from './GrupoIngressoSelect';
+import { useGruposIngressos } from '@/hooks/useGruposIngressos';
 
 interface IngressoFormModalProps {
   open: boolean;
@@ -73,6 +75,12 @@ export function IngressoFormModal({
   const { pagamentos, buscarPagamentos, calcularResumo } = usePagamentosIngressos();
   
   const [viagensIngressos, setViagensIngressos] = useState<any[]>([]);
+  const [grupoNome, setGrupoNome] = useState<string | null>(null);
+  const [grupoCor, setGrupoCor] = useState<string | null>(null);
+  const [viagemIngressosIdParaGrupos, setViagemIngressosIdParaGrupos] = useState<string | undefined>(undefined);
+  
+  // Hook para grupos de ingressos
+  const { gruposExistentes } = useGruposIngressos(viagemIngressosIdParaGrupos);
   
   // Usar setores do Maracanã já definidos no sistema
   const setoresMaracana = getSetorOptions("Rio de Janeiro");
@@ -149,6 +157,13 @@ export function IngressoFormModal({
         });
         setLocalJogo(ingresso.local_jogo);
         
+        // Carregar grupo se existir
+        setGrupoNome((ingresso as any).grupo_nome || null);
+        setGrupoCor((ingresso as any).grupo_cor || null);
+        
+        // Definir viagem para buscar grupos existentes
+        setViagemIngressosIdParaGrupos(ingresso.viagem_ingressos_id || undefined);
+        
         // Buscar pagamentos para o resumo
         buscarPagamentos(ingresso.id);
       } else {
@@ -190,9 +205,20 @@ export function IngressoFormModal({
         }
 
         form.reset(dadosIniciais);
+        
+        // Limpar grupo para novo ingresso
+        setGrupoNome(null);
+        setGrupoCor(null);
+        
+        // Definir viagem para buscar grupos existentes
+        if (jogoPreSelecionado?.viagem_ingressos_id) {
+          setViagemIngressosIdParaGrupos(jogoPreSelecionado.viagem_ingressos_id);
+        } else {
+          setViagemIngressosIdParaGrupos(undefined);
+        }
       }
     }
-  }, [open, ingresso, form, buscarViagensAtivas]);
+  }, [open, ingresso, form, buscarViagensAtivas, jogoPreSelecionado]);
 
   // Calcular valores em tempo real
   useEffect(() => {
@@ -295,12 +321,15 @@ export function IngressoFormModal({
         // 🎯 CORREÇÃO: Para edição, não enviar situacao_financeira automaticamente
         // Deixar que a lógica do hook decida se deve preservar o status
         const dadosParaSalvar = {
-          ...data
+          ...data,
+          // Incluir dados do grupo
+          grupo_nome: grupoNome,
+          grupo_cor: grupoCor
           // Não incluir situacao_financeira para permitir que o hook preserve o status quando apropriado
         };
         
         // Editar ingresso existente
-        sucesso = await atualizarIngresso(ingresso.id, dadosParaSalvar);
+        sucesso = await atualizarIngresso(ingresso.id, dadosParaSalvar as any);
       } else {
         // Para criação, definir situacao_financeira baseado no pagamento inicial
         const situacaoFinanceira = pagamentoInicial.registrar && pagamentoInicial.valor >= valoresCalculados.valorFinal 
@@ -316,7 +345,10 @@ export function IngressoFormModal({
         const dadosComExtras = {
           ...dadosParaSalvar,
           valorFinalCalculado: valoresCalculados.valorFinal,
-          pagamentoInicial: pagamentoInicial.registrar ? pagamentoInicial : null
+          pagamentoInicial: pagamentoInicial.registrar ? pagamentoInicial : null,
+          // Incluir dados do grupo
+          grupo_nome: grupoNome,
+          grupo_cor: grupoCor
         };
         sucesso = await criarIngresso(dadosComExtras as any);
       }
@@ -446,6 +478,9 @@ export function IngressoFormModal({
                                       setLocalJogo('casa');
                                     }
                                   }
+                                  
+                                  // 🎯 CORREÇÃO: Limpar viagemIngressosIdParaGrupos quando seleciona viagem do sistema
+                                  setViagemIngressosIdParaGrupos(undefined);
                                 }} 
                                 value={field.value || 'nenhuma'}
                               >
@@ -533,6 +568,9 @@ export function IngressoFormModal({
                                       setLocalJogo(viagemSelecionada.local_jogo || 'casa');
                                     }
                                   }
+                                  
+                                  // 🎯 CORREÇÃO: Atualizar viagemIngressosIdParaGrupos para buscar grupos existentes
+                                  setViagemIngressosIdParaGrupos(value === 'nenhuma' ? undefined : value);
                                 }} 
                                 value={field.value || 'nenhuma'}
                               >
@@ -815,6 +853,25 @@ export function IngressoFormModal({
                           <FormMessage />
                         </FormItem>
                       )}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Agrupamento de Ingressos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Agrupamento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <GrupoIngressoSelect
+                      grupoNome={grupoNome}
+                      grupoCor={grupoCor}
+                      gruposExistentes={gruposExistentes}
+                      onGrupoChange={(nome, cor) => {
+                        setGrupoNome(nome);
+                        setGrupoCor(cor);
+                      }}
+                      disabled={estados.salvando}
                     />
                   </CardContent>
                 </Card>
