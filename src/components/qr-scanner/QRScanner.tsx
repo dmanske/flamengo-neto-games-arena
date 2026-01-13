@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BrowserMultiFormatReader } from '@zxing/library';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Camera, CameraOff, CheckCircle, XCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { qrCodeService, type ConfirmationResult } from '@/services/qrCodeService';
 
@@ -19,395 +19,428 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   onScanSuccess,
   onScanError
 }) => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [lastScannedToken, setLastScannedToken] = useState<string>('');
-  const [lastScannedName, setLastScannedName] = useState<string>('');
-  const [countdown, setCountdown] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    return () => {
-      stopScanning();
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    };
-  }, []);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [lastScannedToken, setLastScannedToken] = useState<string>('');
+  const [scanResult, setScanResult] = useState<ConfirmationResult | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanInterval, setScanInterval] = useState<NodeJS.Timeout | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
   const startScanning = async () => {
     try {
-      // Solicitar permissão da câmera
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      
-      setHasPermission(true);
       setIsScanning(true);
+      setScanResult(null);
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      });
 
-      // Inicializar leitor de QR code
-      const codeReader = new BrowserMultiFormatReader();
-      codeReaderRef.current = codeReader;
-
-      // Iniciar scan com controle local de token
+      setStream(mediaStream);
+      setHasPermission(true);
+      
       if (videoRef.current) {
-        let localLastToken = '';
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.play();
         
-        codeReader.decodeFromVideoDevice(
-          undefined,
-          videoRef.current,
-          async (result, error) => {
-            if (result) {
-              const token = result.getText();
-              
-              // Evitar processar o mesmo token múltiplas vezes
-              if (token === localLastToken) {
-                return;
-              }
-
-              localLastToken = token;
-              setLastScannedToken(token);
-              await handleScan(token);
-            }
-          }
-        );
+        const interval = setInterval(scanFrame, 500);
+        setScanInterval(interval);
       }
 
       toast.success('Câmera ativada!', {
-        description: 'Aponte para o QR code do passageiro',
+        description: '📷 Aponte para o QR code do passageiro',
         duration: 3000,
       });
 
     } catch (error) {
       console.error('❌ Erro ao acessar câmera:', error);
       setHasPermission(false);
-      
-      toast.error('Erro ao acessar câmera', {
-        description: 'Verifique as permissões do navegador',
+      toast.error('Erro de câmera', {
+        description: '📷 Não foi possível acessar a câmera. Verifique as permissões.',
         duration: 5000,
       });
+      setIsScanning(false);
     }
   };
 
-  const stopScanning = () => {
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
-      codeReaderRef.current = null;
-    }
-    setIsScanning(false);
-    setIsPaused(false);
-    setLastScannedToken('');
-    setLastScannedName('');
-    setCountdown(0);
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-    }
-  };
-
-  const pauseScanning = (passageiroNome: string) => {
-    console.log('⏸️ PAUSANDO SCANNER - Parando completamente');
-    
-    // PARAR O SCANNER COMPLETAMENTE
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
-      codeReaderRef.current = null;
-      console.log('✅ Scanner parado e resetado');
-    }
-
-    setIsPaused(true);
-    setLastScannedName(passageiroNome);
-    setCountdown(1.5);
-
-    // Iniciar contagem regressiva
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-    }
-
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 0.1) {
-          // Reativar scanner automaticamente
-          resumeScanning();
-          return 0;
-        }
-        return prev - 0.1;
-      });
-    }, 100);
-  };
-
-  const resumeScanning = async () => {
-    console.log('▶️ RETOMANDO SCANNER - Reiniciando leitura');
-    
-    // PRIMEIRO: Parar o countdown imediatamente
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-    
-    // SEGUNDO: Limpar estados
-    setIsPaused(false);
-    setLastScannedToken('');
-    setLastScannedName('');
-    setCountdown(0);
-
-    // TERCEIRO: Aguardar um tick para garantir que os estados foram atualizados
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    // QUARTO: REINICIAR O SCANNER
+  const processQRCode = async (imageData: ImageData): Promise<string | null> => {
     try {
-      const codeReader = new BrowserMultiFormatReader();
-      codeReaderRef.current = codeReader;
-
-      if (videoRef.current) {
-        // Usar uma variável local para controlar o último token escaneado
-        let localLastToken = '';
-        
-        await codeReader.decodeFromVideoDevice(
-          undefined,
-          videoRef.current,
-          async (result, error) => {
-            if (result) {
-              const token = result.getText();
-              
-              // Evitar processar o mesmo token múltiplas vezes
-              if (token === localLastToken) {
-                console.log('⏭️ Token duplicado ignorado:', token);
-                return;
-              }
-
-              console.log('🆕 Novo token detectado:', token);
-              localLastToken = token;
-              setLastScannedToken(token);
-              await handleScan(token);
-            }
+      const { BrowserQRCodeReader } = await import('@zxing/library');
+      const codeReader = new BrowserQRCodeReader();
+      
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = imageData.width;
+      tempCanvas.height = imageData.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      if (!tempCtx) return null;
+      
+      tempCtx.putImageData(imageData, 0, 0);
+      
+      const dataUrl = tempCanvas.toDataURL();
+      const img = new Image();
+      
+      return new Promise((resolve) => {
+        img.onload = async () => {
+          try {
+            const result = await codeReader.decodeFromImageElement(img);
+            resolve(result.getText());
+          } catch {
+            resolve(null);
           }
-        );
-        console.log('✅ Scanner reiniciado com sucesso');
-        
-        toast.success('Scanner reativado!', {
-          description: 'Pronto para escanear próximo QR code',
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      console.error('❌ Erro ao reiniciar scanner:', error);
-      toast.error('Erro ao reiniciar scanner');
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+      });
+    } catch {
+      return null;
     }
   };
 
-  const handleScan = async (token: string) => {
-    // Se está pausado, não processar
-    if (isPaused) {
-      return;
-    }
+  const scanFrame = async () => {
+    if (!videoRef.current || !canvasRef.current || isProcessing) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
     try {
-      console.log('📱 QR Code detectado:', token);
+      const qrText = await processQRCode(imageData);
+      
+      if (qrText && qrText !== lastScannedToken) {
+        setLastScannedToken(qrText);
+        setIsProcessing(true);
+        
+        await handleQRCodeDetected(qrText);
+      }
+    } catch {
+      // Ignorar erros de decodificação
+    }
+  };
 
-      // Confirmar presença (com validação de ônibus se fornecido)
-      const result = await qrCodeService.confirmPresence(
-        token, 
+  const handleQRCodeDetected = async (qrText: string) => {
+    try {
+      console.log('📱 QR Code escaneado:', qrText);
+      
+      const confirmationResult = await qrCodeService.confirmPresence(
+        qrText, 
         onibusId ? 'qr_code_responsavel' : 'qr_code',
         onibusId
       );
 
-      if (result.success) {
-        // Pausar scanner imediatamente
-        pauseScanning(result.data?.passageiro.nome || 'Passageiro');
+      setScanResult(confirmationResult);
 
-        // Sucesso
-        toast.success('✅ Presença confirmada!', {
-          description: `${result.data?.passageiro.nome} foi registrado como presente`,
-          duration: 5000,
+      if (confirmationResult.success) {
+        toast.success('🎉 Presença confirmada!', {
+          description: `${confirmationResult.data?.passageiro.nome} foi registrado como presente.`,
+          duration: 4000,
         });
-
-        // Callback de sucesso
-        if (onScanSuccess) {
-          onScanSuccess(result);
-        }
-
-      } else {
-        // Erro - pausar por 3 segundos
-        setLastScannedToken(token);
+        onScanSuccess?.(confirmationResult);
         
-        toast.error('❌ Erro na confirmação', {
-          description: result.message,
-          duration: 5000,
-        });
-
-        if (onScanError) {
-          onScanError(result.message);
-        }
-
-        // Limpar após 3 segundos para permitir retry
         setTimeout(() => {
           setLastScannedToken('');
+          setScanResult(null);
+          setIsProcessing(false);
+        }, 3000);
+      } else {
+        toast.error('Erro na confirmação', {
+          description: confirmationResult.message,
+          duration: 5000,
+        });
+        onScanError?.(confirmationResult.message);
+        
+        setTimeout(() => {
+          setLastScannedToken('');
+          setScanResult(null);
+          setIsProcessing(false);
         }, 3000);
       }
 
-    } catch (error) {
-      console.error('❌ Erro ao processar QR code:', error);
-      
-      setLastScannedToken(token);
-      
-      toast.error('Erro ao processar', {
-        description: 'Não foi possível confirmar a presença',
+    } catch (scanError) {
+      console.error('❌ Erro ao processar QR code:', scanError);
+      toast.error('Erro no processamento', {
+        description: '🔧 Não foi possível processar o QR code.',
         duration: 4000,
       });
-
-      if (onScanError) {
-        onScanError('Erro ao processar QR code');
-      }
-
+      onScanError?.('Erro ao processar QR code');
+      
       setTimeout(() => {
         setLastScannedToken('');
+        setScanResult(null);
+        setIsProcessing(false);
       }, 3000);
     }
   };
 
+  const stopScanning = () => {
+    if (scanInterval) {
+      clearInterval(scanInterval);
+      setScanInterval(null);
+    }
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setIsScanning(false);
+    setScanResult(null);
+    setLastScannedToken('');
+    setIsProcessing(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      stopScanning();
+    };
+  }, []);
+
+  const resetScanner = () => {
+    stopScanning();
+    setTimeout(() => {
+      startScanning();
+    }, 500);
+  };
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardContent className="p-6">
-        <div className="space-y-4">
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Camera className="h-5 w-5" />
+          Scanner QR Code
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Aponte a câmera para o QR code do passageiro
+        </p>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Área do vídeo com design moderno */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
+          <video
+            ref={videoRef}
+            className={`w-full h-80 object-cover ${isScanning ? 'block' : 'hidden'}`}
+            playsInline
+            muted
+            autoPlay
+          />
           
-          {/* Título */}
-          <div className="text-center">
-            <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
-              <Camera className="h-5 w-5" />
-              Scanner de QR Code
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isScanning ? 'Aponte a câmera para o QR code' : 'Clique para ativar a câmera'}
-            </p>
-          </div>
-
-          {/* Vídeo da câmera */}
-          <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              playsInline
-              muted
-            />
-            
-            {!isScanning && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <div className="text-center text-white">
-                  <Camera className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Câmera desativada</p>
-                </div>
-              </div>
-            )}
-
-            {/* Overlay quando pausado */}
-            {isScanning && isPaused && (
-              <div className="absolute inset-0 flex items-center justify-center bg-green-500/95 backdrop-blur-sm">
-                <div className="text-center text-white p-6">
-                  <CheckCircle className="h-16 w-16 mx-auto mb-4 animate-bounce" />
-                  <p className="text-xl font-bold mb-2">✅ {lastScannedName}</p>
-                  <p className="text-lg mb-4">Presença confirmada!</p>
-                  <div className="text-5xl font-bold mb-2">{countdown.toFixed(1)}</div>
-                  <p className="text-sm mb-4">⏸️ Scanner pausado</p>
-                  <p className="text-xs mb-4 opacity-80">Reativando automaticamente...</p>
-                  <Button
-                    onClick={resumeScanning}
-                    variant="secondary"
-                    size="lg"
-                    className="mt-2"
-                  >
-                    ▶️ Escanear Próximo Agora
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Overlay de scan ativo */}
-            {isScanning && !isPaused && (
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-0 border-4 border-green-500/30 rounded-lg">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-green-500 rounded-lg"></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Botões de controle */}
-          <div className="flex gap-3">
-            {!isScanning ? (
-              <Button 
-                onClick={startScanning}
-                className="flex-1"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Ativar Câmera
-              </Button>
-            ) : (
-              <>
-                {isPaused && (
-                  <Button 
-                    onClick={resumeScanning}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Pronto para Próximo ({countdown}s)
-                  </Button>
-                )}
-                <Button 
-                  onClick={stopScanning}
-                  variant="destructive"
-                  className={isPaused ? '' : 'flex-1'}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Parar Scanner
-                </Button>
-              </>
-            )}
-          </div>
-
-          {/* Mensagem de permissão negada */}
-          {hasPermission === false && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-semibold text-red-800 mb-1">
-                      Permissão de câmera negada
-                    </p>
-                    <p className="text-red-700">
-                      Para usar o scanner, você precisa permitir o acesso à câmera nas configurações do navegador.
-                    </p>
+          {/* Canvas oculto para processamento */}
+          <canvas ref={canvasRef} className="hidden" />
+          
+          {!isScanning && (
+            <div className="w-full h-80 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+              <div className="text-center">
+                <div className="relative mb-4">
+                  <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                    <Camera className="h-10 w-10 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-gray-600 font-medium">Câmera desligada</p>
+                <p className="text-gray-500 text-sm mt-1">Clique em "Iniciar Scanner" para ativar</p>
+              </div>
+            </div>
           )}
 
-          {/* Instruções */}
-          <Card className="bg-blue-50 border-blue-200">
+          {/* Overlay de escaneamento com design moderno */}
+          {isScanning && !scanResult && !isProcessing && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              {/* Área de foco do QR Code */}
+              <div className="relative">
+                <div className="w-64 h-64 border-4 border-white rounded-2xl shadow-2xl bg-white/10 backdrop-blur-sm">
+                  {/* Cantos animados */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-400 rounded-tl-2xl animate-pulse"></div>
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-400 rounded-tr-2xl animate-pulse"></div>
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-400 rounded-bl-2xl animate-pulse"></div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-400 rounded-br-2xl animate-pulse"></div>
+                  
+                  {/* Linha de escaneamento */}
+                  <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse"></div>
+                  
+                  {/* Texto de instrução */}
+                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+                    Posicione o QR Code aqui
+                  </div>
+                </div>
+              </div>
+              
+              {/* Overlay escuro nas bordas */}
+              <div className="absolute inset-0 bg-black/40 pointer-events-none">
+                <div className="absolute inset-0" style={{
+                  background: 'radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.7) 70%)'
+                }}></div>
+              </div>
+            </div>
+          )}
+
+          {/* Overlay de resultado com animação */}
+          {scanResult && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <div className="text-center text-white p-6 bg-white/10 rounded-2xl border border-white/20 shadow-2xl">
+                {scanResult.success ? (
+                  <>
+                    <div className="relative mb-4">
+                      <CheckCircle className="h-16 w-16 text-green-400 mx-auto animate-bounce" />
+                      <div className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-green-400/20 animate-ping"></div>
+                    </div>
+                    <p className="font-bold text-lg mb-2">✅ Presença Confirmada!</p>
+                    <p className="text-green-300 font-medium">{scanResult.data?.passageiro.nome}</p>
+                    <div className="mt-3 px-3 py-1 bg-green-500/20 rounded-full text-xs text-green-300">
+                      Confirmação realizada com sucesso
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative mb-4">
+                      <XCircle className="h-16 w-16 text-red-400 mx-auto animate-pulse" />
+                      <div className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-red-400/20 animate-ping"></div>
+                    </div>
+                    <p className="font-bold text-lg mb-2">❌ Erro na Confirmação</p>
+                    <p className="text-red-300 text-sm">{scanResult.message}</p>
+                    <div className="mt-3 px-3 py-1 bg-red-500/20 rounded-full text-xs text-red-300">
+                      Tente novamente
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Indicador de processamento */}
+          {isProcessing && !scanResult && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <div className="text-center text-white p-6 bg-white/10 rounded-2xl border border-white/20">
+                <div className="relative mb-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mx-auto"></div>
+                  <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-pulse"></div>
+                </div>
+                <p className="font-medium">🔍 Processando QR Code...</p>
+                <div className="mt-2 w-32 h-1 bg-white/20 rounded-full mx-auto overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${isScanning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+            <Badge 
+              variant={isScanning ? "default" : "secondary"}
+              className={`${isScanning ? 'bg-green-500 hover:bg-green-600' : ''}`}
+            >
+              {isScanning ? "🔍 Escaneando" : "⏸️ Parado"}
+            </Badge>
+          </div>
+          
+          {isProcessing && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              ⚡ Processando...
+            </Badge>
+          )}
+        </div>
+
+        {/* Controles */}
+        <div className="flex gap-3">
+          {!isScanning ? (
+            <Button 
+              onClick={startScanning} 
+              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              🚀 Iniciar Scanner
+            </Button>
+          ) : (
+            <>
+              <Button 
+                onClick={stopScanning} 
+                variant="outline" 
+                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <CameraOff className="h-4 w-4 mr-2" />
+                ⏹️ Parar Scanner
+              </Button>
+              
+              <Button 
+                onClick={resetScanner} 
+                variant="outline" 
+                size="icon"
+                className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                title="Reiniciar Scanner"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Mensagem de permissão negada */}
+        {hasPermission === false && (
+          <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-semibold text-blue-800 mb-2">Como usar:</p>
-                  <ol className="text-blue-700 space-y-1 list-decimal list-inside">
-                    <li>Clique em "Ativar Câmera"</li>
-                    <li>Permita o acesso à câmera quando solicitado</li>
-                    <li>Aponte para o QR code do passageiro</li>
-                    <li>Após confirmar, o scanner pausa por 1.5 segundos</li>
-                    <li>Clique em "Pronto para Próximo" ou aguarde reativar</li>
-                  </ol>
-                  <p className="text-blue-600 font-medium mt-2">
-                    💡 O scanner pausa automaticamente após cada leitura para evitar duplicatas!
+                  <p className="font-semibold text-red-800 mb-1">
+                    Permissão de câmera negada
+                  </p>
+                  <p className="text-red-700">
+                    Para usar o scanner, permita o acesso à câmera nas configurações do navegador.
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+        )}
 
+        {/* Instruções */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+          <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+            💡 Como usar o scanner:
+          </h4>
+          <div className="text-sm text-blue-800 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+              <span>Posicione o QR code dentro da área destacada</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+              <span>Mantenha o dispositivo estável e bem iluminado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              <span>Aguarde a confirmação automática</span>
+            </div>
+          </div>
+          
+          <div className="mt-3 p-2 bg-white/50 rounded-lg border border-blue-200">
+            <p className="text-xs text-blue-700 font-medium flex items-center gap-1">
+              ⚡ <strong>Dica:</strong> O scanner funciona automaticamente - não precisa tirar foto!
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
