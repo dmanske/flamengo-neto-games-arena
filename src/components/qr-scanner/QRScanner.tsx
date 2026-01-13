@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserMultiFormatReader } from '@zxing/library';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,38 +20,73 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   onScanSuccess,
   onScanError
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [lastScannedToken, setLastScannedToken] = useState<string>('');
-  const [scanResult, setScanResult] = useState<ConfirmationResult | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [scanInterval, setScanInterval] = useState<NodeJS.Timeout | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [lastScannedToken, setLastScannedToken] = useState<string>('');
+  const [lastScannedName, setLastScannedName] = useState<string>('');
+  const [countdown, setCountdown] = useState(0);
+  const [scanResult, setScanResult] = useState<'success' | 'error' | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false); // Proteção extra
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isPausedRef = useRef(false); // Ref para acesso síncrono
+
+  useEffect(() => {
+    return () => {
+      stopScanning();
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, []);
 
   const startScanning = async () => {
     try {
+      // Solicitar permissão da câmera
+      await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      setHasPermission(true);
       setIsScanning(true);
       setScanResult(null);
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        }
-      });
 
-      setStream(mediaStream);
-      setHasPermission(true);
-      
+      // Inicializar leitor de QR code
+      const codeReader = new BrowserMultiFormatReader();
+      codeReaderRef.current = codeReader;
+
+      // Iniciar scan com controle local de token
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+        let localLastToken = '';
         
-        const interval = setInterval(scanFrame, 500);
-        setScanInterval(interval);
+        codeReader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current,
+          async (result) => {
+            if (result) {
+              const token = result.getText();
+              
+              // PROTEÇÃO 1: Verificar ref síncrona (mais confiável que state)
+              if (isPausedRef.current) {
+                console.log('🛑 BLOQUEADO: Scanner pausado (ref), ignorando:', token);
+                return;
+              }
+              
+              // PROTEÇÃO 2: Evitar processar o mesmo token múltiplas vezes
+              if (token === localLastToken) {
+                return;
+              }
+
+              localLastToken = token;
+              setLastScannedToken(token);
+              await handleScan(token);
+            }
+          }
+        );
       }
 
       toast.success('Câmera ativada!', {
@@ -61,163 +97,203 @@ export const QRScanner: React.FC<QRScannerProps> = ({
     } catch (error) {
       console.error('❌ Erro ao acessar câmera:', error);
       setHasPermission(false);
-      toast.error('Erro de câmera', {
-        description: '📷 Não foi possível acessar a câmera. Verifique as permissões.',
+      
+      toast.error('Erro ao acessar câmera', {
+        description: 'Verifique as permissões do navegador',
         duration: 5000,
       });
-      setIsScanning(false);
-    }
-  };
-
-  const processQRCode = async (imageData: ImageData): Promise<string | null> => {
-    try {
-      const { BrowserQRCodeReader } = await import('@zxing/library');
-      const codeReader = new BrowserQRCodeReader();
-      
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = imageData.width;
-      tempCanvas.height = imageData.height;
-      const tempCtx = tempCanvas.getContext('2d');
-      
-      if (!tempCtx) return null;
-      
-      tempCtx.putImageData(imageData, 0, 0);
-      
-      const dataUrl = tempCanvas.toDataURL();
-      const img = new Image();
-      
-      return new Promise((resolve) => {
-        img.onload = async () => {
-          try {
-            const result = await codeReader.decodeFromImageElement(img);
-            resolve(result.getText());
-          } catch {
-            resolve(null);
-          }
-        };
-        img.onerror = () => resolve(null);
-        img.src = dataUrl;
-      });
-    } catch {
-      return null;
-    }
-  };
-
-  const scanFrame = async () => {
-    if (!videoRef.current || !canvasRef.current || isProcessing) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    try {
-      const qrText = await processQRCode(imageData);
-      
-      if (qrText && qrText !== lastScannedToken) {
-        setLastScannedToken(qrText);
-        setIsProcessing(true);
-        
-        await handleQRCodeDetected(qrText);
-      }
-    } catch {
-      // Ignorar erros de decodificação
-    }
-  };
-
-  const handleQRCodeDetected = async (qrText: string) => {
-    try {
-      console.log('📱 QR Code escaneado:', qrText);
-      
-      const confirmationResult = await qrCodeService.confirmPresence(
-        qrText, 
-        onibusId ? 'qr_code_responsavel' : 'qr_code',
-        onibusId
-      );
-
-      setScanResult(confirmationResult);
-
-      if (confirmationResult.success) {
-        toast.success('🎉 Presença confirmada!', {
-          description: `${confirmationResult.data?.passageiro.nome} foi registrado como presente.`,
-          duration: 4000,
-        });
-        onScanSuccess?.(confirmationResult);
-        
-        setTimeout(() => {
-          setLastScannedToken('');
-          setScanResult(null);
-          setIsProcessing(false);
-        }, 3000);
-      } else {
-        toast.error('Erro na confirmação', {
-          description: confirmationResult.message,
-          duration: 5000,
-        });
-        onScanError?.(confirmationResult.message);
-        
-        setTimeout(() => {
-          setLastScannedToken('');
-          setScanResult(null);
-          setIsProcessing(false);
-        }, 3000);
-      }
-
-    } catch (scanError) {
-      console.error('❌ Erro ao processar QR code:', scanError);
-      toast.error('Erro no processamento', {
-        description: '🔧 Não foi possível processar o QR code.',
-        duration: 4000,
-      });
-      onScanError?.('Erro ao processar QR code');
-      
-      setTimeout(() => {
-        setLastScannedToken('');
-        setScanResult(null);
-        setIsProcessing(false);
-      }, 3000);
     }
   };
 
   const stopScanning = () => {
-    if (scanInterval) {
-      clearInterval(scanInterval);
-      setScanInterval(null);
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
     }
-
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
     setIsScanning(false);
-    setScanResult(null);
+    setIsPaused(false);
     setLastScannedToken('');
-    setIsProcessing(false);
+    setLastScannedName('');
+    setCountdown(0);
+    setScanResult(null);
+    setErrorMessage('');
+    isPausedRef.current = false; // Resetar ref
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
   };
 
-  useEffect(() => {
-    return () => {
-      stopScanning();
-    };
-  }, []);
+  const pauseScanning = (passageiroNome: string, isSuccess: boolean, error?: string) => {
+    console.log('⏸️ PAUSANDO SCANNER - Parando completamente');
+    
+    // PROTEÇÃO: Marcar como pausado IMEDIATAMENTE (ref é síncrona)
+    isPausedRef.current = true;
+    setIsPaused(true);
+    setIsProcessing(false);
+    
+    // PARAR O SCANNER COMPLETAMENTE - isso impede novos scans
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+      console.log('✅ Scanner parado e resetado');
+    }
+    setLastScannedName(passageiroNome);
+    setScanResult(isSuccess ? 'success' : 'error');
+    setErrorMessage(error || '');
+    setCountdown(isSuccess ? 2.0 : 3.0); // 2s para sucesso, 3s para erro
+
+    // Iniciar contagem regressiva
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 0.1) {
+          // Reativar scanner automaticamente
+          resumeScanning();
+          return 0;
+        }
+        return prev - 0.1;
+      });
+    }, 100);
+  };
+
+  const resumeScanning = async () => {
+    console.log('▶️ RETOMANDO SCANNER - Reiniciando leitura');
+    
+    // PRIMEIRO: Parar o countdown imediatamente
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    
+    // SEGUNDO: Limpar estados
+    isPausedRef.current = false; // Liberar ref primeiro
+    setIsPaused(false);
+    setLastScannedToken('');
+    setLastScannedName('');
+    setCountdown(0);
+    setScanResult(null);
+    setErrorMessage('');
+    setIsProcessing(false);
+
+    // TERCEIRO: Aguardar um tick para garantir que os estados foram atualizados
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // QUARTO: REINICIAR O SCANNER
+    try {
+      const codeReader = new BrowserMultiFormatReader();
+      codeReaderRef.current = codeReader;
+
+      if (videoRef.current) {
+        let localLastToken = '';
+        
+        await codeReader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current,
+          async (result) => {
+            if (result) {
+              const token = result.getText();
+              
+              // PROTEÇÃO: Verificar ref síncrona
+              if (isPausedRef.current) {
+                console.log('🛑 BLOQUEADO: Scanner pausado (ref), ignorando:', token);
+                return;
+              }
+              
+              if (token === localLastToken) {
+                return;
+              }
+
+              localLastToken = token;
+              setLastScannedToken(token);
+              await handleScan(token);
+            }
+          }
+        );
+        console.log('✅ Scanner reiniciado com sucesso');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao reiniciar scanner:', error);
+      toast.error('Erro ao reiniciar scanner');
+    }
+  };
+
+  const handleScan = async (token: string) => {
+    // PROTEÇÃO 1: Verificar ref síncrona (mais confiável)
+    if (isPausedRef.current) {
+      console.log('🛑 BLOQUEADO em handleScan: Scanner pausado (ref)');
+      return;
+    }
+    
+    // PROTEÇÃO 2: Verificar state
+    if (isPaused) {
+      console.log('🛑 BLOQUEADO em handleScan: Scanner pausado (state)');
+      return;
+    }
+    
+    // PROTEÇÃO 3: Verificar se já está processando
+    if (isProcessing) {
+      console.log('🛑 BLOQUEADO em handleScan: Já processando outro QR');
+      return;
+    }
+    
+    // Marcar como processando IMEDIATAMENTE
+    setIsProcessing(true);
+    isPausedRef.current = true; // Bloquear novos scans durante processamento
+
+    try {
+      console.log('📱 QR Code detectado:', token);
+
+      const result = await qrCodeService.confirmPresence(
+        token, 
+        onibusId ? 'qr_code_responsavel' : 'qr_code',
+        onibusId
+      );
+
+      if (result.success) {
+        // Pausar scanner imediatamente com sucesso
+        pauseScanning(result.data?.passageiro.nome || 'Passageiro', true);
+
+        toast.success('🎉 Presença confirmada!', {
+          description: `${result.data?.passageiro.nome} foi registrado como presente`,
+          duration: 4000,
+        });
+
+        onScanSuccess?.(result);
+
+      } else {
+        // Pausar scanner com erro
+        pauseScanning('Erro', false, result.message);
+        
+        toast.error('❌ Erro na confirmação', {
+          description: result.message,
+          duration: 5000,
+        });
+
+        onScanError?.(result.message);
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao processar QR code:', error);
+      
+      pauseScanning('Erro', false, 'Não foi possível processar o QR code');
+      
+      toast.error('Erro ao processar', {
+        description: 'Não foi possível confirmar a presença',
+        duration: 4000,
+      });
+
+      onScanError?.('Erro ao processar QR code');
+    }
+  };
 
   const resetScanner = () => {
     stopScanning();
     setTimeout(() => {
       startScanning();
-    }, 500);
+    }, 300);
   };
 
   return (
@@ -233,21 +309,18 @@ export const QRScanner: React.FC<QRScannerProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Área do vídeo com design moderno */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
+        {/* Área do vídeo */}
+        <div className="relative overflow-hidden rounded-xl bg-black">
           <video
             ref={videoRef}
-            className={`w-full h-80 object-cover ${isScanning ? 'block' : 'hidden'}`}
+            className="w-full h-80 object-cover"
             playsInline
             muted
-            autoPlay
           />
           
-          {/* Canvas oculto para processamento */}
-          <canvas ref={canvasRef} className="hidden" />
-          
+          {/* Overlay quando câmera desligada */}
           {!isScanning && (
-            <div className="w-full h-80 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
               <div className="text-center">
                 <div className="relative mb-4">
                   <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto shadow-lg">
@@ -263,82 +336,64 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             </div>
           )}
 
-          {/* Overlay de escaneamento com design moderno */}
-          {isScanning && !scanResult && !isProcessing && (
-            <div className="absolute inset-0 flex items-center justify-center">
+          {/* Overlay de escaneamento ativo - SEM blur */}
+          {isScanning && !isPaused && (
+            <div className="absolute inset-0 pointer-events-none">
               {/* Área de foco do QR Code */}
-              <div className="relative">
-                <div className="w-64 h-64 border-4 border-white rounded-2xl shadow-2xl bg-white/10 backdrop-blur-sm">
-                  {/* Cantos animados */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-400 rounded-tl-2xl animate-pulse"></div>
-                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-400 rounded-tr-2xl animate-pulse"></div>
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-400 rounded-bl-2xl animate-pulse"></div>
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-400 rounded-br-2xl animate-pulse"></div>
-                  
-                  {/* Linha de escaneamento */}
-                  <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-64 h-64 border-4 border-white/80 rounded-2xl">
+                    {/* Cantos animados */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-green-400 rounded-tl-2xl animate-pulse"></div>
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-green-400 rounded-tr-2xl animate-pulse"></div>
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-400 rounded-bl-2xl animate-pulse"></div>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-400 rounded-br-2xl animate-pulse"></div>
+                    
+                    {/* Linha de escaneamento */}
+                    <div className="absolute inset-x-4 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse"></div>
+                  </div>
                   
                   {/* Texto de instrução */}
-                  <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+                  <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-white text-sm font-medium bg-black/60 px-3 py-1 rounded-full whitespace-nowrap">
                     Posicione o QR Code aqui
                   </div>
                 </div>
               </div>
-              
-              {/* Overlay escuro nas bordas */}
-              <div className="absolute inset-0 bg-black/40 pointer-events-none">
-                <div className="absolute inset-0" style={{
-                  background: 'radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.7) 70%)'
-                }}></div>
-              </div>
             </div>
           )}
 
-          {/* Overlay de resultado com animação */}
-          {scanResult && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <div className="text-center text-white p-6 bg-white/10 rounded-2xl border border-white/20 shadow-2xl">
-                {scanResult.success ? (
+          {/* Overlay quando PAUSADO - BLOQUEIA completamente */}
+          {isScanning && isPaused && (
+            <div className={`absolute inset-0 flex items-center justify-center ${
+              scanResult === 'success' ? 'bg-green-500/95' : 'bg-red-500/95'
+            }`}>
+              <div className="text-center text-white p-6">
+                {scanResult === 'success' ? (
                   <>
-                    <div className="relative mb-4">
-                      <CheckCircle className="h-16 w-16 text-green-400 mx-auto animate-bounce" />
-                      <div className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-green-400/20 animate-ping"></div>
-                    </div>
-                    <p className="font-bold text-lg mb-2">✅ Presença Confirmada!</p>
-                    <p className="text-green-300 font-medium">{scanResult.data?.passageiro.nome}</p>
-                    <div className="mt-3 px-3 py-1 bg-green-500/20 rounded-full text-xs text-green-300">
-                      Confirmação realizada com sucesso
-                    </div>
+                    <CheckCircle className="h-16 w-16 mx-auto mb-4 animate-bounce" />
+                    <p className="text-xl font-bold mb-2">✅ {lastScannedName}</p>
+                    <p className="text-lg mb-4">Presença confirmada!</p>
                   </>
                 ) : (
                   <>
-                    <div className="relative mb-4">
-                      <XCircle className="h-16 w-16 text-red-400 mx-auto animate-pulse" />
-                      <div className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-red-400/20 animate-ping"></div>
-                    </div>
-                    <p className="font-bold text-lg mb-2">❌ Erro na Confirmação</p>
-                    <p className="text-red-300 text-sm">{scanResult.message}</p>
-                    <div className="mt-3 px-3 py-1 bg-red-500/20 rounded-full text-xs text-red-300">
-                      Tente novamente
-                    </div>
+                    <XCircle className="h-16 w-16 mx-auto mb-4 animate-pulse" />
+                    <p className="text-xl font-bold mb-2">❌ Erro na Confirmação</p>
+                    <p className="text-sm mb-4 opacity-90">{errorMessage}</p>
                   </>
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Indicador de processamento */}
-          {isProcessing && !scanResult && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <div className="text-center text-white p-6 bg-white/10 rounded-2xl border border-white/20">
-                <div className="relative mb-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mx-auto"></div>
-                  <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-pulse"></div>
-                </div>
-                <p className="font-medium">🔍 Processando QR Code...</p>
-                <div className="mt-2 w-32 h-1 bg-white/20 rounded-full mx-auto overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse"></div>
-                </div>
+                
+                <div className="text-5xl font-bold mb-2">{countdown.toFixed(1)}</div>
+                <p className="text-sm mb-4">⏸️ Scanner pausado</p>
+                <p className="text-xs mb-4 opacity-80">Reativando automaticamente...</p>
+                
+                <Button
+                  onClick={resumeScanning}
+                  variant="secondary"
+                  size="lg"
+                  className="mt-2"
+                >
+                  ▶️ Escanear Próximo Agora
+                </Button>
               </div>
             </div>
           )}
@@ -347,20 +402,31 @@ export const QRScanner: React.FC<QRScannerProps> = ({
         {/* Status */}
         <div className="flex items-center justify-center gap-3">
           <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${isScanning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+            <div className={`w-3 h-3 rounded-full ${
+              isScanning 
+                ? isPaused 
+                  ? 'bg-yellow-500' 
+                  : 'bg-green-500 animate-pulse' 
+                : 'bg-gray-400'
+            }`}></div>
             <Badge 
               variant={isScanning ? "default" : "secondary"}
-              className={`${isScanning ? 'bg-green-500 hover:bg-green-600' : ''}`}
+              className={`${
+                isScanning 
+                  ? isPaused 
+                    ? 'bg-yellow-500 hover:bg-yellow-600' 
+                    : 'bg-green-500 hover:bg-green-600' 
+                  : ''
+              }`}
             >
-              {isScanning ? "🔍 Escaneando" : "⏸️ Parado"}
+              {isScanning 
+                ? isPaused 
+                  ? "⏸️ Pausado" 
+                  : "🔍 Escaneando" 
+                : "⏹️ Parado"
+              }
             </Badge>
           </div>
-          
-          {isProcessing && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              ⚡ Processando...
-            </Badge>
-          )}
         </div>
 
         {/* Controles */}
@@ -375,14 +441,24 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             </Button>
           ) : (
             <>
-              <Button 
-                onClick={stopScanning} 
-                variant="outline" 
-                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-              >
-                <CameraOff className="h-4 w-4 mr-2" />
-                ⏹️ Parar Scanner
-              </Button>
+              {isPaused ? (
+                <Button 
+                  onClick={resumeScanning}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  ▶️ Próximo ({countdown.toFixed(1)}s)
+                </Button>
+              ) : (
+                <Button 
+                  onClick={stopScanning} 
+                  variant="outline" 
+                  className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                >
+                  <CameraOff className="h-4 w-4 mr-2" />
+                  ⏹️ Parar Scanner
+                </Button>
+              )}
               
               <Button 
                 onClick={resetScanner} 
@@ -438,7 +514,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
           
           <div className="mt-3 p-2 bg-white/50 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-700 font-medium flex items-center gap-1">
-              ⚡ <strong>Dica:</strong> O scanner funciona automaticamente - não precisa tirar foto!
+              ⚡ <strong>Proteção:</strong> O scanner pausa automaticamente após cada leitura!
             </p>
           </div>
         </div>
