@@ -52,6 +52,9 @@ export function IngressosCard({
   onDeletar,
   onNovoIngresso
 }: IngressosCardProps) {
+  // Estado para filtro de grupo
+  const [grupoSelecionado, setGrupoSelecionado] = React.useState<string>('todos');
+  
   // Hook para agrupamento de ingressos
   const { agruparIngressos } = useGruposIngressos(viagemIngressosId);
 
@@ -67,15 +70,43 @@ export function IngressosCard({
   const ingressosFiltrados = useMemo(() => {
     let resultado = [...ingressos];
 
-    // Aplicar busca
+    // Aplicar busca - se encontrar alguém do grupo, inclui o grupo inteiro
     if (busca.trim()) {
       const termoBusca = busca.toLowerCase().trim();
-      resultado = resultado.filter(ingresso => 
-        ingresso.cliente?.nome.toLowerCase().includes(termoBusca) ||
-        ingresso.cliente?.cpf?.includes(termoBusca) ||
-        ingresso.cliente?.telefone?.includes(termoBusca) ||
-        ingresso.setor_estadio.toLowerCase().includes(termoBusca)
+      
+      // Encontrar IDs dos ingressos que correspondem à busca
+      const idsEncontrados = new Set(
+        resultado
+          .filter(ingresso => 
+            ingresso.cliente?.nome.toLowerCase().includes(termoBusca) ||
+            ingresso.cliente?.cpf?.includes(termoBusca) ||
+            ingresso.cliente?.telefone?.includes(termoBusca) ||
+            ingresso.setor_estadio.toLowerCase().includes(termoBusca)
+          )
+          .map(i => i.id)
       );
+
+      // Se encontrou alguém, incluir todos do mesmo grupo
+      const gruposEncontrados = new Set<string>();
+      resultado.forEach(ingresso => {
+        if (idsEncontrados.has(ingresso.id) && ingresso.grupo_nome && ingresso.grupo_cor) {
+          gruposEncontrados.add(`${ingresso.grupo_nome}-${ingresso.grupo_cor}`);
+        }
+      });
+
+      // Filtrar: incluir quem foi encontrado OU quem está no mesmo grupo
+      resultado = resultado.filter(ingresso => {
+        // Se foi encontrado diretamente
+        if (idsEncontrados.has(ingresso.id)) return true;
+        
+        // Se está em um grupo que foi encontrado
+        if (ingresso.grupo_nome && ingresso.grupo_cor) {
+          const grupoId = `${ingresso.grupo_nome}-${ingresso.grupo_cor}`;
+          if (gruposEncontrados.has(grupoId)) return true;
+        }
+        
+        return false;
+      });
     }
 
     // Aplicar filtros
@@ -90,6 +121,30 @@ export function IngressosCard({
   const { grupos, semGrupo } = useMemo(() => {
     return agruparIngressos(ingressosFiltrados);
   }, [ingressosFiltrados, agruparIngressos]);
+
+  // Lista de grupos disponíveis para o filtro
+  const gruposDisponiveis = useMemo(() => {
+    const todosGrupos = agruparIngressos(ingressos);
+    return todosGrupos.grupos;
+  }, [ingressos, agruparIngressos]);
+
+  // Aplicar filtro de grupo
+  const gruposFiltrados = useMemo(() => {
+    if (grupoSelecionado === 'todos') {
+      return grupos;
+    }
+    if (grupoSelecionado === 'sem-grupo') {
+      return [];
+    }
+    return grupos.filter(g => `${g.nome}-${g.cor}` === grupoSelecionado);
+  }, [grupos, grupoSelecionado]);
+
+  const semGrupoFiltrado = useMemo(() => {
+    if (grupoSelecionado === 'todos' || grupoSelecionado === 'sem-grupo') {
+      return semGrupo;
+    }
+    return [];
+  }, [semGrupo, grupoSelecionado]);
 
   // Função para copiar campo específico do cliente
   const copiarCampo = (valor: string, nomeCampo: string) => {
@@ -167,6 +222,33 @@ export function IngressosCard({
           
           <div className="flex gap-2">
             <Select
+              value={grupoSelecionado}
+              onValueChange={setGrupoSelecionado}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por grupo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os grupos</SelectItem>
+                <SelectItem value="sem-grupo">Sem grupo</SelectItem>
+                {gruposDisponiveis.map((grupo) => (
+                  <SelectItem 
+                    key={`${grupo.nome}-${grupo.cor}`} 
+                    value={`${grupo.nome}-${grupo.cor}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full border"
+                        style={{ backgroundColor: grupo.cor, borderColor: grupo.cor }}
+                      />
+                      <span>{grupo.nome}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select
               value={filtros.situacao_financeira || 'todos'}
               onValueChange={(value) => 
                 onFiltrosChange({ 
@@ -192,7 +274,7 @@ export function IngressosCard({
         {ingressosFiltrados.length > 0 ? (
           <div className="space-y-6">
             {/* Renderizar Grupos */}
-            {grupos.map((grupo) => (
+            {gruposFiltrados.map((grupo) => (
               <GrupoIngressosCard
                 key={`${grupo.nome}-${grupo.cor}`}
                 grupo={grupo}
@@ -203,14 +285,14 @@ export function IngressosCard({
             ))}
 
             {/* Renderizar Ingressos Individuais (sem grupo) */}
-            {semGrupo.length > 0 && (
+            {semGrupoFiltrado.length > 0 && (
               <div className="rounded-lg border overflow-hidden">
                 {/* Cabeçalho para ingressos sem grupo */}
                 <div className="px-4 py-3 bg-gray-50 border-b">
                   <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
                     Ingressos Individuais
                     <Badge variant="secondary" className="text-xs">
-                      {semGrupo.length} {semGrupo.length === 1 ? 'ingresso' : 'ingressos'}
+                      {semGrupoFiltrado.length} {semGrupoFiltrado.length === 1 ? 'ingresso' : 'ingressos'}
                     </Badge>
                   </h3>
                 </div>
@@ -232,7 +314,7 @@ export function IngressosCard({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {semGrupo.map((ingresso) => (
+                      {semGrupoFiltrado.map((ingresso) => (
                         <TableRow key={ingresso.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">

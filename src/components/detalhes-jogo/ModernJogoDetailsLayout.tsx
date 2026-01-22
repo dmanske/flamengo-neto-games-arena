@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Edit } from 'lucide-react';
 import { JogoDetails } from '@/hooks/useJogoDetails';
 import { formatCurrency } from '@/utils/formatters';
 import { formatarDataHoraBrasil } from '@/utils/dateUtils';
@@ -11,6 +11,7 @@ interface ModernJogoDetailsLayoutProps {
   onVoltar: () => void;
   onDeletar: () => void;
   onExportarPDF: () => void;
+  onEditar?: () => void;
   children: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ function ModernJogoDetailsLayout({
   onVoltar,
   onDeletar,
   onExportarPDF,
+  onEditar,
   children
 }: ModernJogoDetailsLayoutProps) {
   
@@ -39,6 +41,17 @@ function ModernJogoDetailsLayout({
           </Button>
           
           <div className="flex gap-3">
+            {onEditar && (
+              <Button
+                variant="outline"
+                onClick={onEditar}
+                className="gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Editar Jogo
+              </Button>
+            )}
+            
             <Button
               variant="outline"
               onClick={onExportarPDF}

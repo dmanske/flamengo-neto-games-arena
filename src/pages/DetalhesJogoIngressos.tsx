@@ -9,6 +9,7 @@ import { FinanceiroJogo } from '@/components/detalhes-jogo/FinanceiroJogo';
 import { IngressoFormModal } from '@/components/ingressos/IngressoFormModal';
 import { IngressoDetailsModal } from '@/components/ingressos/IngressoDetailsModal';
 import { IngressosReport } from '@/components/ingressos/IngressosReport';
+import { EditarJogoModal } from '@/components/detalhes-jogo/EditarJogoModal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +42,7 @@ export default function DetalhesJogoIngressos() {
   // Estados dos modais
   const [modalFormAberto, setModalFormAberto] = useState(false);
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
+  const [modalEditarJogoAberto, setModalEditarJogoAberto] = useState(false);
   const [ingressoSelecionado, setIngressoSelecionado] = useState<Ingresso | null>(null);
   
   // Estados de confirmação
@@ -162,6 +164,52 @@ export default function DetalhesJogoIngressos() {
     handleExportPDF();
   };
 
+  // Função para abrir modal de editar jogo
+  const handleEditarJogo = () => {
+    setModalEditarJogoAberto(true);
+  };
+
+  // Função para salvar edição do jogo
+  const handleSalvarEdicaoJogo = async (novaData: string) => {
+    if (!jogo) return;
+
+    try {
+      // Se não existe viagem_ingressos_id, atualizar diretamente os ingressos
+      if (!jogo.viagem_ingressos_id) {
+        // Atualizar todos os ingressos deste jogo
+        const { error: errorIngressos } = await supabase
+          .from('ingressos')
+          .update({ jogo_data: novaData })
+          .in('id', ingressos.map(ing => ing.id));
+
+        if (errorIngressos) throw errorIngressos;
+      } else {
+        // Atualizar a viagem de ingressos
+        const { error: errorViagem } = await supabase
+          .from('viagens_ingressos')
+          .update({ data_jogo: novaData })
+          .eq('id', jogo.viagem_ingressos_id);
+
+        if (errorViagem) throw errorViagem;
+
+        // Também atualizar os ingressos vinculados
+        const { error: errorIngressos } = await supabase
+          .from('ingressos')
+          .update({ jogo_data: novaData })
+          .eq('viagem_ingressos_id', jogo.viagem_ingressos_id);
+
+        if (errorIngressos) throw errorIngressos;
+      }
+
+      toast.success('Data do jogo atualizada com sucesso!');
+      setModalEditarJogoAberto(false);
+      recarregarDados();
+    } catch (error) {
+      console.error('Erro ao atualizar data do jogo:', error);
+      toast.error('Erro ao atualizar data do jogo');
+    }
+  };
+
 
 
   // Função chamada quando modal de formulário é fechado com sucesso
@@ -248,6 +296,7 @@ export default function DetalhesJogoIngressos() {
         onVoltar={voltarParaIngressos}
         onDeletar={handleDeletarJogo}
         onExportarPDF={handleExportarPDFJogo}
+        onEditar={handleEditarJogo}
       >
         {/* Sistema de abas */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'ingressos' | 'financeiro')} className="w-full">
@@ -303,6 +352,15 @@ export default function DetalhesJogoIngressos() {
           }
         }}
         ingresso={ingressoSelecionado}
+      />
+
+      {/* Modal de editar jogo */}
+      <EditarJogoModal
+        open={modalEditarJogoAberto}
+        onOpenChange={setModalEditarJogoAberto}
+        dataAtual={jogo.jogo_data}
+        adversario={jogo.adversario}
+        onSalvar={handleSalvarEdicaoJogo}
       />
 
       {/* Dialog de confirmação */}
