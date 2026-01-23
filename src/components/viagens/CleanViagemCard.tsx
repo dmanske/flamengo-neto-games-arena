@@ -59,6 +59,14 @@ export function CleanViagemCard({
     }
   };
 
+  const formatDateOnly = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      return 'Data inválida';
+    }
+  };
+
   const formatDateTime = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -164,16 +172,6 @@ export function CleanViagemCard({
           
           {/* Details list */}
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
-                <Calendar className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-professional-navy font-medium text-sm">Data do Jogo</span>
-                <span className="text-professional-slate text-xs">{formatDateTime(viagem.data_jogo)}</span>
-              </div>
-            </div>
-            
             {viagem.data_saida && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
@@ -181,10 +179,20 @@ export function CleanViagemCard({
                 </div>
                 <div className="flex flex-col">
                   <span className="text-professional-navy font-medium text-sm">Saída da Viagem</span>
-                  <span className="text-professional-slate text-xs">{formatDateTime(viagem.data_saida)}</span>
+                  <span className="text-professional-slate text-xs">{formatDateOnly(viagem.data_saida)}</span>
                 </div>
               </div>
             )}
+            
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 flex items-center justify-center text-professional-blue">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-professional-navy font-medium text-sm">Data do Jogo</span>
+                <span className="text-professional-slate text-xs">{formatDateOnly(viagem.data_jogo)}</span>
+              </div>
+            </div>
             
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 flex items-center justify-center text-professional-blue">

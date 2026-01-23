@@ -132,7 +132,10 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       
       const dadosViagem = {
         adversario: viagem.adversario,
-        data_jogo: format(new Date(viagem.data_jogo), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+        data_jogo: format(new Date(viagem.data_jogo), "dd/MM/yyyy", { locale: ptBR }),
+        data_saida: viagem.data_saida 
+          ? format(new Date(viagem.data_saida), "dd/MM/yyyy", { locale: ptBR })
+          : format(new Date(viagem.data_jogo), "dd/MM/yyyy", { locale: ptBR }),
         local: viagem.local || 'Estádio'
       };
 
@@ -188,11 +191,17 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     const passageiro = passageiros.find(p => p.nome === qrData.passageiro.nome);
     const cpf = passageiro?.cpf ? formatCPF(passageiro.cpf) : '';
     
-    const legenda = `📅 *Data:* ${dadosViagem.data_jogo}
-👋Olá *${qrData.passageiro.nome}*!
+    // Formatar datas sem hora
+    const dataSaida = dadosViagem.data_saida || dadosViagem.data_jogo;
+    const dataJogo = dadosViagem.data_jogo;
+    
+    const legenda = `👋Olá *${qrData.passageiro.nome}*!
 📄 CPF: ${cpf}
 
-📱 *SEU QR CODE PARA PROCEDIMENTOS DE EMBARQUE*
+📅 *Data de Embarque:* ${dataSaida}
+📅 *Data do Jogo:* ${dataJogo}
+
+📱 SEGUE SEU QR CODE PARA PROCEDIMENTOS DE EMBARQUE
 
 ✅ *Como usar:*
 1️⃣ Mostre este QR code na tela do seu celular
@@ -202,6 +211,13 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
 ⚠️ *IMPORTANTE:*
 • Mantenha a tela ligada e com bom brilho
 • Chegue com antecedência ao local de embarque
+
+*Informativo importante:*
+Para ciência e conferência das regras da viagem, horários e locais de embarque, segue o link abaixo.
+É fundamental que todos leiam com atenção para estarmos alinhados e evitar qualquer imprevisto.
+
+https://www.netotours.com.br/regrasdeviagens
+
 • Em caso de dúvidas, entre em contato
 
 *Neto Tours Viagens*
@@ -335,7 +351,10 @@ _Realizando sonhos, criando histórias_`;
     try {
       const dadosViagem = {
         adversario: viagem.adversario,
-        data_jogo: format(new Date(viagem.data_jogo), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+        data_jogo: format(new Date(viagem.data_jogo), "dd/MM/yyyy", { locale: ptBR }),
+        data_saida: viagem.data_saida 
+          ? format(new Date(viagem.data_saida), "dd/MM/yyyy", { locale: ptBR })
+          : format(new Date(viagem.data_jogo), "dd/MM/yyyy", { locale: ptBR }),
         local: viagem.local || 'Estádio'
       };
 

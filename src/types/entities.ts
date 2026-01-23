@@ -77,6 +77,7 @@ export interface Viagem {
   id: string;
   adversario: string;
   data_jogo: string;
+  data_saida?: string; // Data de embarque/saída da viagem
   cidade_embarque: string;
   status_viagem: string;
   valor_padrao: number | null;
