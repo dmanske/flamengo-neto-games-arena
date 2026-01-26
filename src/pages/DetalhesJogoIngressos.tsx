@@ -315,6 +315,7 @@ export default function DetalhesJogoIngressos() {
               ingressos={ingressos}
               busca={busca}
               filtros={filtros}
+              jogo={jogo}
               onBuscaChange={setBusca}
               onFiltrosChange={setFiltros}
               onVerDetalhes={handleVerDetalhes}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, AlertTriangle, Trash2, ChevronLeft, ChevronRight, Copy, Eye, Edit } from 'lucide-react';
+import { X, AlertTriangle, Trash2, ChevronLeft, ChevronRight, Copy, Eye, Edit, FileText } from 'lucide-react';
 import { formatDateTimeSafe } from '@/lib/date-utils';
 import { toast } from 'sonner';
 import { useCadastroFacial } from '@/hooks/useCadastroFacial';
@@ -20,6 +20,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -114,6 +125,54 @@ export function IngressosJogoModal({
       toast.success(`${nomeCampo} copiado!`);
     }).catch(() => {
       toast.error(`Erro ao copiar ${nomeCampo.toLowerCase()}`);
+    });
+  };
+
+  // Função para copiar informações completas para o taxista
+  const copiarInfoTaxista = (ingresso: Ingresso) => {
+    const cliente = ingresso.cliente;
+    if (!cliente) {
+      toast.error('Informações do cliente não disponíveis');
+      return;
+    }
+
+    // Buscar outros ingressos do mesmo grupo
+    const grupoIngressos = ingresso.grupo_nome 
+      ? ingressos.filter(i => i.grupo_nome === ingresso.grupo_nome && i.grupo_cor === ingresso.grupo_cor)
+      : [ingresso];
+
+    let texto = '';
+    
+    // Informações principais
+    texto += `👤 CLIENTE: ${cliente.nome}\n`;
+    texto += `📱 TELEFONE: ${formatPhone(cliente.telefone || 'Não informado')}\n`;
+    
+    // Se tiver grupo, listar todos os membros
+    if (ingresso.grupo_nome && grupoIngressos.length > 1) {
+      texto += `\n👥 GRUPO: ${ingresso.grupo_nome} (${grupoIngressos.length} pessoas)\n`;
+      texto += `━━━━━━━━━━━━━━━━━━━━\n`;
+      grupoIngressos.forEach((ing, index) => {
+        texto += `${index + 1}. ${ing.cliente?.nome || 'N/A'}\n`;
+        if (ing.cliente?.telefone) {
+          texto += `   📱 ${formatPhone(ing.cliente.telefone)}\n`;
+        }
+      });
+      texto += `━━━━━━━━━━━━━━━━━━━━\n`;
+    }
+    
+    // Observações
+    if (ingresso.observacoes) {
+      texto += `\n📝 OBSERVAÇÕES:\n${ingresso.observacoes}\n`;
+    }
+    
+    // Informações do jogo
+    texto += `\n⚽ JOGO: ${jogo.local_jogo === 'fora' ? `${jogo.adversario} × Flamengo` : `Flamengo × ${jogo.adversario}`}\n`;
+    texto += `🎫 SETOR: ${ingresso.setor_estadio}\n`;
+
+    navigator.clipboard.writeText(texto).then(() => {
+      toast.success('Informações copiadas! Pronto para enviar ao taxista 🚕');
+    }).catch(() => {
+      toast.error('Erro ao copiar informações');
     });
   };
 
@@ -306,6 +365,56 @@ export function IngressosJogoModal({
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>
+                            )}
+                            {ingresso.observacoes && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 hover:bg-amber-100 text-amber-600"
+                                          title="Ver observações"
+                                        >
+                                          <FileText className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-80">
+                                        <div className="space-y-3">
+                                          <h4 className="font-semibold text-sm flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-amber-600" />
+                                            Observações
+                                          </h4>
+                                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                            {ingresso.observacoes}
+                                          </p>
+                                          <div className="pt-2 border-t">
+                                            <Button
+                                              onClick={() => copiarInfoTaxista(ingresso)}
+                                              className="w-full gap-2"
+                                              size="sm"
+                                              variant="outline"
+                                            >
+                                              <Copy className="h-3.5 w-3.5" />
+                                              Copiar Info para Taxista 🚕
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs">
+                                      {ingresso.observacoes.length > 50 
+                                        ? `${ingresso.observacoes.substring(0, 50)}...` 
+                                        : ingresso.observacoes
+                                      }
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
                           </div>
                         </TableCell>

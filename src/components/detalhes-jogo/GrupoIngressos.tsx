@@ -1,6 +1,17 @@
-import { Users, Palette, Eye, Edit, Trash2, Copy, Share2 } from 'lucide-react';
+import { Users, Palette, Eye, Edit, Trash2, Copy, Share2, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { GrupoIngressos } from '@/types/grupos-ingressos';
 import type { Ingresso, SituacaoFinanceiraIngresso } from '@/types/ingressos';
 import { formatCurrency, formatCPF, formatPhone, formatBirthDate } from '@/utils/formatters';
@@ -13,6 +24,10 @@ import { supabase } from '@/lib/supabase';
 
 interface GrupoIngressosProps {
   grupo: GrupoIngressos;
+  jogo?: {
+    adversario: string;
+    local_jogo: 'casa' | 'fora';
+  };
   onVerDetalhes: (ingresso: Ingresso) => void;
   onEditar: (ingresso: Ingresso) => void;
   onDeletar: (ingresso: Ingresso) => void;
@@ -20,6 +35,7 @@ interface GrupoIngressosProps {
 
 export function GrupoIngressosCard({
   grupo,
+  jogo,
   onVerDetalhes,
   onEditar,
   onDeletar
@@ -141,6 +157,49 @@ export function GrupoIngressosCard({
       toast.success(`${nomeCampo} copiado!`);
     }).catch(() => {
       toast.error(`Erro ao copiar ${nomeCampo.toLowerCase()}`);
+    });
+  };
+
+  // Função para copiar informações completas para o taxista
+  const copiarInfoTaxista = (ingresso: Ingresso) => {
+    const cliente = ingresso.cliente;
+    if (!cliente) {
+      toast.error('Informações do cliente não disponíveis');
+      return;
+    }
+
+    let texto = '';
+    
+    // Informações principais
+    texto += `👤 CLIENTE: ${cliente.nome}\n`;
+    texto += `📱 TELEFONE: ${formatPhone(cliente.telefone || 'Não informado')}\n`;
+    
+    // Informações do grupo
+    texto += `\n👥 GRUPO: ${grupo.nome} (${grupo.total_membros} pessoas)\n`;
+    texto += `━━━━━━━━━━━━━━━━━━━━\n`;
+    grupo.ingressos.forEach((ing, index) => {
+      texto += `${index + 1}. ${ing.cliente?.nome || 'N/A'}\n`;
+      if (ing.cliente?.telefone) {
+        texto += `   📱 ${formatPhone(ing.cliente.telefone)}\n`;
+      }
+    });
+    texto += `━━━━━━━━━━━━━━━━━━━━\n`;
+    
+    // Observações
+    if (ingresso.observacoes) {
+      texto += `\n📝 OBSERVAÇÕES:\n${ingresso.observacoes}\n`;
+    }
+    
+    // Informações do jogo (se disponível)
+    if (jogo) {
+      texto += `\n⚽ JOGO: ${jogo.local_jogo === 'fora' ? `${jogo.adversario} × Flamengo` : `Flamengo × ${jogo.adversario}`}\n`;
+    }
+    texto += `🎫 SETOR: ${ingresso.setor_estadio}\n`;
+
+    navigator.clipboard.writeText(texto).then(() => {
+      toast.success('Informações copiadas! Pronto para enviar ao taxista 🚕');
+    }).catch(() => {
+      toast.error('Erro ao copiar informações');
     });
   };
 
@@ -277,6 +336,56 @@ export function GrupoIngressosCard({
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
+                    )}
+                    {ingresso.observacoes && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0 hover:bg-amber-100 text-amber-600"
+                                  title="Ver observações"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80">
+                                <div className="space-y-3">
+                                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-amber-600" />
+                                    Observações
+                                  </h4>
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {ingresso.observacoes}
+                                  </p>
+                                  <div className="pt-2 border-t">
+                                    <Button
+                                      onClick={() => copiarInfoTaxista(ingresso)}
+                                      className="w-full gap-2"
+                                      size="sm"
+                                      variant="outline"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                      Copiar Info para Taxista 🚕
+                                    </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              {ingresso.observacoes.length > 50 
+                                ? `${ingresso.observacoes.substring(0, 50)}...` 
+                                : ingresso.observacoes
+                              }
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 </td>
