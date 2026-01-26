@@ -308,8 +308,8 @@ export function IngressosCard({
                         <TableHead>Contato</TableHead>
                         <TableHead>Setor</TableHead>
                         <TableHead>Valor</TableHead>
-                        <TableHead>Lucro</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Lucro</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -418,14 +418,14 @@ export function IngressosCard({
                             {formatCurrency(ingresso.valor_final)}
                           </TableCell>
                           <TableCell>
-                            <span className={`font-medium ${ingresso.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(ingresso.lucro)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
                             <Badge variant={getStatusBadgeVariant(ingresso.situacao_financeira)}>
                               {getStatusText(ingresso.situacao_financeira)}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${ingresso.lucro >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(ingresso.lucro)}
+                            </span>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
